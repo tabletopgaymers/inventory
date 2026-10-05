@@ -21,7 +21,7 @@ The optional TG Inventory prototype is read-only and is not behavior authority.
 Keep this task's evidence in its assigned planning task record; Management owns
 shared registers. Verification is not independent review or phase completion.
 
-## Hosted development update — October 5, 2026
+## Hosted development update â€” October 5, 2026
 
 The user's explicit hosted-development brief supersedes the local-only exclusion
 for configuration validation, safe preparation tooling, isolated tests and setup

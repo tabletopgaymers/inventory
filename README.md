@@ -60,7 +60,13 @@ required or supplied; never use a destructive reset on the local application dat
 The page prominently identifies local development, shows successful database status
 and PHP/Laravel/MariaDB versions, and includes no inventory actions or sample identities.
 Unavailable service/configuration returns HTTP 503 with a safe message before session
-middleware can expose connection errors. The shared stylesheet uses purple headings,
+middleware can expose connection errors. After a successful probe, PDO/query failures
+originating in Laravel's database session handler return the same safe HTTP 503
+presentation through the exception handler, without ordinary raw exception reporting.
+Unsuccessful new-session insert recovery also returns safe HTTP 503. A zero-row
+fallback update succeeds only when the saved row matches the intended session payload;
+successful concurrent-insert recovery and existing-session no-op updates remain valid.
+Other exceptions retain normal reporting and rendering. The shared stylesheet uses purple headings,
 green successful status and amber unavailable status, with desktop and narrow-screen
 layout and white print backgrounds; those are the current baseline presentation rules.
 
@@ -69,165 +75,146 @@ Hosted development support is described below; no deployment has been performed 
 setup evidence remain authoritative in the planning workspace:
 `C:\Users\delug\Documents\ChatGPT\TG Dev Inventory\work\tasks\phase-02-local-baseline.md`.
 
-## Hosted development: Forge
+## Phase 2 development publication candidate
 
-Explicit user brief, October 5, 2026: support the existing Forge hosted development
-site, without executing live changes. `APP_ENV=development` is the only hosted
-baseline designation; `production`, `staging` and other environments are rejected.
-Never disguise the host as local. Both local/testing names and TCP restrictions
-remain intact. The page identifies HOSTED DEVELOPMENT BASELINE for development.
+This source is prepared under D-169; independent review and actual hosted setup
+verification are separate gates. No Phase 3 features are included. Preserve APP_KEY,
+passwords, shared storage and existing databases. Target only Forge server 794348,
+site 3411668, inventorydev, main, PHP 8.5, public/ and
+https://dev-inventory.tabletopgaymers.org. These administration identifiers are
+previous user reports; verify them before changing the site.
 
-Target: Tech for Service / meeple01 (server 794348), site 3411668,
-isolated user inventorydev, custom repository git@github.com:tabletopgaymers/inventory.git,
-branch main, PHP 8.5, HTTPS https://dev-inventory.tabletopgaymers.org, web directory
-/public. These are user-reported administration facts, not agent server verification.
-MariaDB must be 10.11.x (10.11.14 was previously reported). No Node build is needed.
+### Isolated automated checks
 
-### 1. Inspect before saving or deploying
+`.github/workflows/development.yml` runs locked dependencies and `composer check`
+on PHP 8.5 with an ephemeral MariaDB 10.11 container. It creates only disposable
+local/test schemas and synthetic CI passwords, never connects to the hosted DB and
+needs no private application credentials. Pull requests and manual branch runs
+check without deploying; only successful main checks request development deployment.
+The deploy job has `needs: checks`, so failed checks skip it. No asset build is needed.
+A hook response only acknowledges the request; verify Forge completion separately.
 
-In Forge, open only this site's Environment and deployment script. Inspect privately;
-do not send the environment contents or secret-bearing deployment hook anywhere.
-Confirm the deployed commit in Forge and the active release (`git rev-parse HEAD`
-from the application release directory is safe). Existing main 8a95f53 does not
-include this hosted update. The implementation changes need separate commit/push
-and deployment authorization before they become available on the server.
+### Cut over the existing hook safely
 
-### 2. Save the shared environment privately
+After independent source review, before publishing the candidate:
 
-Use the site's Forge environment editor. Preserve the existing APP_KEY and database
-password; do not replace the whole file, regenerate a working key or reuse local
-credentials. If the key is missing, arrange private generation once, for this site's
-shared environment, before checks; never print its value. These settings are nonsecret:
+1. Disable the existing direct GitHub push webhook and Forge push-to-deploy for this
+   development site. Do not duplicate triggers. Preserve the existing active release.
+2. Privately save the existing site's hook as the GitHub `development` environment
+   secret `DEVELOPMENT_DEPLOY_HOOK`. Limit environment deployment branches to main.
+   Never print the URL, add it to source or share it with PR/branch jobs. Only trusted
+   maintainers can edit main/workflows/environment secrets or the Forge script.
+3. Save the deployment sequence below in this site only. Preserve Forge's release
+   creation, working-directory, Composer install, activation and queue macros.
+   Keep installation from composer.lock; never composer update or generic migration.
+4. Publish the reviewed source only after Owl releases the review gate. Confirm the
+   Actions checks succeed, the deploy job requests it, Forge activates the matching
+   SHA and the page displays that same full SHA. A newer main pushed during a queued
+   request can cause a safe SHA mismatch; rerun the latest successful main workflow.
 
-```dotenv
-APP_NAME="TG Inventory"
-APP_ENV=development
-APP_DEBUG=false
-APP_URL=https://dev-inventory.tabletopgaymers.org
-APP_MAINTENANCE_DRIVER=file
-DB_CONNECTION=mariadb
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=tg_inventory_dev
-DB_USERNAME=tg_inventory_dev
-SESSION_DRIVER=database
-SESSION_CONNECTION=mariadb
-SESSION_TABLE=sessions
-SESSION_LIFETIME=120
-SESSION_ENCRYPT=true
-SESSION_SECURE_COOKIE=true
-SESSION_HTTP_ONLY=true
-SESSION_SAME_SITE=lax
-SESSION_PATH=/
-SESSION_DOMAIN=null
-SESSION_COOKIE=tg_inventory_dev_session
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-FILESYSTEM_DISK=local
-MAIL_MAILER=array
-LOG_CHANNEL=single
-LOG_LEVEL=warning
-```
+The CI-only private hook is the trust boundary. A holder of the hook can supply a
+checked SHA; this is not cryptographic or independent GitHub attestation. Disable
+all bypass triggers and control hook custody. Manual Deploy Now without the CI
+parameter must fail. Do not remove the gate to work around a failed deployment.
+Forge exposes custom `checked_sha` as `FORGE_VAR_CHECKED_SHA`; its
+`forge_deploy_commit` is only a history label and does not select the actual source.
+The gate compares the full SHA to actual clean Git HEAD before writing a release-local
+ignored revision marker. It refuses missing, malformed or mismatched revisions and
+source changes. The only dirty-status allowance is a real storage directory link
+outside the release, its untracked link entry and deletions of the ten known tracked
+storage .gitignore placeholders. Other shared paths, source modifications, staged
+changes and unexpected untracked files are rejected. Confirm the actual site's
+shared paths match this supported layout before publication.
 
-Privately retain/set DB_PASSWORD and APP_KEY. Remove nonempty DB_URL, DB_SOCKET and
-DB_PREFIX overrides; the baseline rejects URL/socket/prefix routing. The account
-must have rights only on tg_inventory_dev: SELECT/INSERT/UPDATE/DELETE for runtime,
-plus CREATE/ALTER/INDEX/DROP for guarded schema preparation. An administrator should
-inspect existing grants privately; readiness checks do not prove their complete scope.
-No grant changes or account resets are part of agent execution. Do not enable debug.
-
-Forge shares .env automatically and storage is already shared. Edit that shared
-configuration through Forge, not a disposable release copy. Keep bootstrap/cache
-release-specific. Each new release must build its own configuration cache after
-shared .env is linked. Environment changes do not update an existing config cache.
-Use `config:clear` on the active release when correcting its environment, then
-`config:cache` once correct; both affect that release and require Jeff's action.
-Use the site's PHP 8.5 binary (`$FORGE_PHP` in the deploy script), not an assumed
-server-default PHP. Never use `--env=development` to mask a wrong effective APP_ENV;
-commands should read the shared environment/cache normally.
-
-### 3. Read-only schema inspection, then preparation only if needed
-
-After the updated source is installed, run from the active application release as
-inventorydev, using PHP 8.5:
+After CREATE_RELEASE, `cd "$FORGE_RELEASE_DIRECTORY"`, shared environment linkage
+and existing locked Composer installation, insert these lines before ACTIVATE_RELEASE:
 
 ```sh
-php artisan baseline:schema
-php artisan baseline:check
-```
-
-`baseline:schema` first validates effective configuration, connects using the
-intended account, checks SELECT 1/current schema/MariaDB version, then inspects table
-names, required session column names and the baseline migration record. It does not
-write data or reveal credentials/table contents. It reports one of:
-
-- Verified schema/record: skip preparation; `baseline:check` should exit 0.
-- Pending baseline migration: only after inspection and authorization, run
-  `php artisan baseline:prepare --hosted`, then `baseline:check`.
-- Existing schema needs inspection: stop. Preserve it; privately inspect structure
-  and migration history with the administrator before deciding any repair. An existing
-  sessions table with a missing migration record must not be blindly recreated.
-
-Preparation rechecks schema, refuses unrelated tables/inconsistent baseline state,
-and runs only the existing sessions migration; it never resets/drops existing data
-or seeds users. No new migration was added. The explicit --hosted option prevents
-accidental hosted preparation. Do not use migrate:fresh, migrate:refresh, rollback
-or generic migration commands to troubleshoot this installation.
-
-`baseline:check` checks required column presence and migration record, not complete
-column types/indexes or every grant. A trusted HTTPS 200 with Database check passed,
-the hosted label and current runtime versions also exercises actual session access.
-Inspect cookie Secure/HttpOnly/SameSite flags without sharing values. Verify public
-CSS loads and requests for /.env, /.git/config, /composer.json and /storage/logs/laravel.log
-are denied (403/404). Report only safe status/versions/command exit codes. HTTP 503
-alone does not distinguish pre-query configuration rejection from database failure.
-
-### 4. Deploy script: gate a candidate release before activation
-
-Jeff reviews/submits the script. Keep Forge's existing CREATE_RELEASE,
-`cd $FORGE_RELEASE_DIRECTORY`, ACTIVATE_RELEASE and RESTART_QUEUES macros intact.
-Keep Composer installation using the lockfile (no update), and no npm commands.
-Remove/replace automatic generic migration steps for this baseline. After Composer
-installation and the shared environment link, but before ACTIVATE_RELEASE, insert:
-
-```sh
+"$FORGE_PHP" scripts/release-gate.php || exit 1
 "$FORGE_PHP" artisan config:cache || exit 1
 "$FORGE_PHP" artisan baseline:schema || exit 1
 "$FORGE_PHP" artisan baseline:check || exit 1
 "$FORGE_PHP" artisan view:cache || exit 1
 ```
 
-For the first deployment only, if read-only inspection reports a pending migration
-and Jeff authorizes it, place `"$FORGE_PHP" artisan baseline:prepare --hosted || exit 1`
-between schema and readiness checks. Remove that temporary line once prepared;
-future deployments should verify readiness without schema changes. Schema is shared
-across releases, so zero downtime does not roll back database changes or shared .env
-changes. A failed readiness gate must exit before activation. Do not run composer
-check/PHPUnit on the host: they require the private local/test databases and dev tools.
+Retain ACTIVATE_RELEASE and RESTART_QUEUES afterward. No test/development packages or
+CI database are required on the host. The marker must precede config:cache because
+Laravel caches it. For a clean local copy after publication, set the process variable
+`FORGE_VAR_CHECKED_SHA` to its full Git HEAD, run `php scripts/release-gate.php`, unset
+that variable and clear local configuration cache. A dirty copy is intentionally
+unrecorded. Do not manually set a marker to claim an unverified deployed identity.
 
-### 5. Verify main push-to-deploy after readiness
+### Hosted configuration and schema
 
-Keep webhook setup pending until the site is ready and Jeff approves a deployment.
-Custom Git requires a manually configured deployment hook. Jeff privately pastes the
-Forge hook into GitHub Settings > Webhooks; JSON, push event only, SSL verification,
-Active, separate Secret blank as described in the administration brief. Never save
-or display the URL. GitHub push webhooks cover all branches. The site's configured main branch controls
-which source is deployed; do not assume the direct hook filters non-main events.
-Forge documents forge_deploy_branch for callers that supply the actual event branch;
-a static main parameter cannot establish event filtering. If strict main-only triggers
-are needed and the direct hook does not filter payloads, stop and arrange a separately
-approved branch-filtering integration before enabling automatic deployment.
-Do not duplicate an existing hook; inspect safely without sharing the URL.
+Keep the existing private shared .env, APP_KEY and DB_PASSWORD. Required nonsecret
+settings: APP_ENV=development, APP_DEBUG=false,
+APP_URL=https://dev-inventory.tabletopgaymers.org, DB_CONNECTION=mariadb,
+DB_HOST=127.0.0.1, DB_PORT=3306, DB_DATABASE=DB_USERNAME=tg_inventory_dev.
+No DB_URL, socket or prefix override. Sessions: database driver, mariadb/default
+connection, sessions table, encryption, Secure, HttpOnly, SameSite=lax, path /,
+null domain, and a dedicated cookie name. Cache=file, queue=sync, mail=array.
+Shared .env/storage remain shared; bootstrap/cache remains release-local.
 
-After saving, a ping delivery alone does not verify push deployment. At a separately
-authorized real main push, check GitHub's recent push delivery response and Forge's
-successful deployment entry; compare the exact deployed SHA to GitHub main/active
-release. Then repeat HTTPS/database/session checks. A successful webhook HTTP response
-only establishes acceptance, not completed deployment. No empty test commit or replay
-of a delivery is required; a replay also triggers deployment and needs authorization.
+Privately verify grants only on the dedicated schema (escape underscores in SQL
+GRANT targets). Runtime needs SELECT/INSERT/UPDATE/DELETE; existing guarded schema
+preparation needs CREATE/ALTER/INDEX/DROP. Inspect existing grants without resetting
+accounts. `baseline:schema` and `baseline:check` are read-only; their checks prove
+required table/column names and migration record, not full grants/types/indexes.
+Only if inspection finds a pending baseline migration and separately authorized,
+`php artisan baseline:prepare --hosted` prepares it non-destructively. Inconsistent
+existing schema requires inspection; never migrate:fresh/refresh/rollback on hosted.
 
-Official references: [Forge deployments](https://laravel.com/forge/docs/sites/deployments)
-(shared paths, release macros and deployment hooks) and
-[Laravel configuration](https://github.com/laravel/docs/blob/13.x/configuration.md)
-(configuration caching). Host configuration, grants, schema, exact deployed revision
-and webhook operation remain unverified until Jeff supplies safe results.
+Restrict unfinished development through this site's Forge password protection or
+an existing compatible access mechanism; verify unauthenticated requests challenge
+and authorized HTTPS succeeds. Do not implement application authentication here.
+Later Microsoft callback access must be reassessed in its own authorized task.
+Do not globally modify server security or unrelated sites. Verify authorized page
+200, database success, matching revision, protected session cookie flags and
+403/404 for /.env, /.git/config, /composer.json, /storage/logs/laravel.log.
+Never retain credential-bearing headers, cookie values or private response bodies.
+
+### Failure demonstration and recovery
+
+Once the reviewed workflow and cutover are available, manually dispatch it on
+**main** with `fail_check=true`. This run is otherwise eligible for deployment;
+its deliberate check must fail and the dependent deploy job must visibly skip.
+Retain the failed run, skipped job and unchanged active hosted SHA as evidence.
+The process-only failure occurs after normal checks and before the hook job;
+it modifies neither source nor the active release. Then demonstrate a successful
+main run with `fail_check=false`. Branch/PR failures are supplementary controls:
+they cannot establish this main dependency because they cannot deploy even when
+checks succeed. A local gate simulation does not prove hosted/CI enforcement.
+
+Before publication, record the active release directory/SHA and confirm retained
+previous releases (Forge normally retains four). A pre-activation failure keeps
+`current` on the previous release; inspect the safe failed stage, repair the candidate
+and rerun checks. No shared environment/schema changes are included in deployment.
+For a post-activation source fault, the site operator uses the site's supported
+previous-release recovery or atomically restores current to a verified retained
+release, checks its cached settings, and verifies HTTPS/revision/session readiness.
+If exact recovery controls/access are missing, obtain them before claiming recovery
+verified. Source rollback does not restore a shared database, environment or storage.
+
+Before retaining meaningful development data, verify the existing daily Forge backup
+actually includes tg_inventory_dev, record schedule/retention, obtain one successful
+backup and confirm private retrieval. Existing reported schedule: 09:00 UTC, seven
+days, include-future-databases; this is not newly verified configuration. Preserve
+private backup storage/access. Restore only to a separately provisioned disposable
+database for a recovery rehearsal; never overwrite hosted data. Do not add paid
+backup services or change unrelated database backups under this task.
+
+### Disposable test reset
+
+Never reset local application or hosted data. For the approved throwaway
+`tg_inventory_test` only, first clear local config cache and verify effective
+APP_ENV=testing, loopback DB, exact tg_inventory_test schema/account and that no
+valuable data exists. Run `php artisan baseline:check --env=testing` and stop on any
+failure. Only then an operator may run `php artisan migrate:fresh --env=testing`
+without seeders, followed by the test readiness check and `composer check`.
+Do not use this as a schema troubleshooting command. A fresh clean installation
+uses `baseline:prepare --env=testing`, not a reset.
+
+References: [Forge deployments](https://laravel.com/forge/docs/sites/deployments)
+(custom parameters, shared paths, release macros and retention),
+[PHP setup action](https://github.com/shivammathur/setup-php), and
+[MariaDB container healthcheck](https://mariadb.com/docs/server/server-management/automated-mariadb-deployment-and-administration/docker-and-mariadb/using-healthcheck-sh).

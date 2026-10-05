@@ -1,0 +1,91 @@
+name: Development baseline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      fail_check:
+        description: Demonstrate rejection before requesting a deployment
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    services:
+      mariadb:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: disposable-ci-root
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql
+          tools: composer:v2
+          coverage: none
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist
+      - name: Prepare disposable databases
+        env:
+          DB_CONTAINER: ${{ job.services.mariadb.id }}
+        run: |
+          docker exec -i "$DB_CONTAINER" mariadb -uroot -pdisposable-ci-root <<'SQL'
+          CREATE DATABASE tg_inventory_local CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+          CREATE DATABASE tg_inventory_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+          CREATE USER 'tg_inventory_local'@'%' IDENTIFIED BY 'disposable-ci-local';
+          CREATE USER 'tg_inventory_test'@'%' IDENTIFIED BY 'disposable-ci-test';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON `tg\_inventory\_local`.* TO 'tg_inventory_local'@'%';
+          GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON `tg\_inventory\_test`.* TO 'tg_inventory_test'@'%';
+          SQL
+          cp .env.example .env
+          cp .env.testing.example .env.testing
+          sed -i 's/^DB_PASSWORD=$/DB_PASSWORD=disposable-ci-local/' .env
+          sed -i 's/^DB_PASSWORD=$/DB_PASSWORD=disposable-ci-test/' .env.testing
+          php artisan key:generate
+          php artisan key:generate --env=testing
+          php artisan baseline:prepare
+          php artisan baseline:prepare --env=testing
+      - name: Automated application checks
+        env:
+          RELEASE_STATUS_FIXTURE: ${{ runner.temp }}/release-storage-fixture
+        # Native symlinks exercise Forge's Linux storage substitution in Git.
+        run: |
+          bash tests/release-storage-fixture.sh "$PWD" "$RELEASE_STATUS_FIXTURE"
+          composer check
+      - name: Deliberately failing check demonstration
+        if: github.event_name == 'workflow_dispatch' && inputs.fail_check
+        run: exit 1
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    environment: development
+    steps:
+      - name: Request exact checked development candidate
+        env:
+          DEPLOY_HOOK: ${{ secrets.DEVELOPMENT_DEPLOY_HOOK }}
+          CHECKED_SHA: ${{ github.sha }}
+        run: |
+          set +x
+          test -n "$DEPLOY_HOOK"
+          curl --fail --silent --output /dev/null --get "$DEPLOY_HOOK" \
+            --data-urlencode 'forge_deploy_branch=main' \
+            --data-urlencode "forge_deploy_commit=$CHECKED_SHA" \
+            --data-urlencode "checked_sha=$CHECKED_SHA"

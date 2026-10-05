@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TG Inventory — Local development baseline</title>
+    <title>TG Inventory — Development baseline</title>
     <link rel="stylesheet" href="/baseline.css">
 </head>
 <body>
@@ -13,6 +13,7 @@
         <p class="status {{ $ready ? 'success' : 'warning' }}" role="status">{{ $message }}</p>
         <p>This development page verifies the application foundation. Inventory workflows are not available yet.</p>
         <dl>
+            <dt>Revision</dt><dd>{{ config('baseline.revision') ?? 'Unrecorded working copy' }}</dd>
             <dt>PHP</dt><dd>{{ $phpVersion }}</dd>
             <dt>Laravel</dt><dd>{{ $laravelVersion }}</dd>
             @if ($ready)

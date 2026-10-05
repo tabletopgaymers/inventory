@@ -16,6 +16,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(CheckBaseline::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->report(function (PDOException $exception) {
+            if (CheckBaseline::isSessionFailure($exception, request())) {
+                return false;
+            }
+        });
+        $exceptions->render(function (PDOException $exception, Request $request) {
+            if (CheckBaseline::isSessionFailure($exception, $request)) {
+                return CheckBaseline::sessionFailureResponse($request);
+            }
+        });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

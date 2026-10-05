@@ -38,6 +38,7 @@ auth.json
 /.baseline-staging/
 /.phpunit.cache/
 /bootstrap/cache/*.php
+/bootstrap/cache/revision
 /storage/logs/*
 !.env.testing.example
 /.baseline-reinstall/
