@@ -28,7 +28,7 @@ class BaselineTest extends TestCase
 
     public function test_the_page_reports_the_verified_database_without_connection_settings(): void
     {
-        $this->get('/')
+        $this->get('/baseline')
             ->assertOk()
             ->assertSee('LOCAL DEVELOPMENT BASELINE')
             ->assertSee('Database check passed.')
@@ -54,7 +54,7 @@ class BaselineTest extends TestCase
     public function test_incorrect_database_configuration_returns_a_safe_unavailable_page(): void
     {
         config(['database.connections.mariadb.database' => 'unapproved_database']);
-        $this->get('/')
+        $this->get('/baseline')
             ->assertStatus(503)
             ->assertSee('Development configuration needs attention.')
             ->assertDontSee('unapproved_database')
@@ -65,7 +65,7 @@ class BaselineTest extends TestCase
     {
         config(['database.connections.mariadb.password' => 'intentional-invalid-check-value']);
         DB::purge('mariadb');
-        $this->get('/')
+        $this->get('/baseline')
             ->assertStatus(503)
             ->assertSee('Database check failed.')
             ->assertDontSee('intentional-invalid-check-value')
@@ -76,7 +76,7 @@ class BaselineTest extends TestCase
     public function test_a_missing_key_is_not_reported_as_ready(): void
     {
         config(['app.key' => '']);
-        $this->get('/')
+        $this->get('/baseline')
             ->assertStatus(503)
             ->assertSee('Development configuration needs attention.')
             ->assertDontSee('Database check passed.');
@@ -107,7 +107,7 @@ class BaselineTest extends TestCase
         config(['session.driver' => 'database', 'session.lottery' => $operation === 'gc' ? [1, 1] : [0, 1]]);
         Log::spy();
 
-        $this->get('/')
+        $this->get('/baseline')
             ->assertStatus(503)
             ->assertSee('Database session check failed. Run the documented baseline checks.')
             ->assertDontSee('Database check passed.')
@@ -178,7 +178,7 @@ class BaselineTest extends TestCase
         config(['session.driver' => 'database', 'session.connection' => null, 'session.lottery' => [0, 1], 'session.encrypt' => true]);
         $this->assertInstanceOf(BaselineDatabaseSessionHandler::class, app('session')->driver()->getHandler());
         Log::spy();
-        $response = $this->get('/')->assertStatus($status)
+        $response = $this->get('/baseline')->assertStatus($status)
             ->assertDontSee('synthetic-private')->assertDontSee('SQLSTATE');
         if ($status === 503) {
             $response->assertSee('Database session check failed. Run the documented baseline checks.')
@@ -216,7 +216,7 @@ class BaselineTest extends TestCase
         app('session')->extend('database', fn () => new BaselineDatabaseSessionHandler($connection, 'sessions', 120));
         config(['session.driver' => 'database', 'session.lottery' => [0, 1]]);
         Log::spy();
-        $this->get('/')->assertOk()->assertSee('Database check passed.');
+        $this->get('/baseline')->assertOk()->assertSee('Database check passed.');
         Log::shouldNotHaveReceived('error');
     }
 

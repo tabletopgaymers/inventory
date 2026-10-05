@@ -30,3 +30,14 @@ https://dev-inventory.tabletopgaymers.org. Preserve local/testing isolation.
 No commits/push, live migrations, deployments, administration submissions or server
 changes are authorized by this brief. Jeff enters secrets and performs submissions.
 Keep implementation evidence in the existing assigned planning task record.
+
+## Phase 3 update — October 5, 2026
+
+D-177 supersedes the earlier authentication exclusion for the bounded task
+work/tasks/phase-03-authentication.md in the planning workspace. Signinwright
+Fox 05 is the sole application writer. Authentication dependencies, application
+implementation and isolated tests are authorized. Stop at exact-candidate handoff
+for independent review; no push/deployment until Management review clearance.
+Preserve Basic protection, administrative forge access, development grants,
+production, unrelated services and private-input exclusions. Route questions
+through Owl. No later-phase execution.

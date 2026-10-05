@@ -1,6 +1,111 @@
 # inventory
 Web application for basic management of inventory items.
 
+## Phase 3 authentication candidate
+
+D-177 authorizes this bounded development slice. Application implementation is
+prepared for independent review; publication/live provider acceptance remain
+separate evidence. `/` and `/users` require an enabled authenticated account;
+`/profile` saves only the current user's names and organizational contact.
+`/baseline` retains the safe runtime/revision diagnostic. Microsoft sign-in is
+the only login method; there is no password registration/reset flow.
+
+Prepare the existing isolated local and test schemas with `baseline:prepare`
+as below, then run `authentication:prepare` and
+`authentication:prepare --env=testing`. These are non-destructive forward
+migrations. Incomplete or inconsistent schema stops preparation for inspection;
+never repair it with a destructive reset. Tests use synthetic identity GUIDs,
+blank names and explicitly synthetic contact addresses, never real fixtures.
+
+Privately supply MICROSOFT_TENANT_ID, MICROSOFT_CLIENT_ID,
+MICROSOFT_CLIENT_SECRET, MICROSOFT_REDIRECT_URI,
+MICROSOFT_POST_LOGOUT_REDIRECT_URI, MICROSOFT_BOOTSTRAP_TENANT_ID and
+MICROSOFT_BOOTSTRAP_OBJECT_ID. Verify the bootstrap identity in Entra first;
+its tenant must equal the verified TG tenant. Configuration never derives role
+authority from an email. No values belong in Git or diagnostics. Keep distinct
+12-month local/hosted secrets within the approved development registration.
+
+The exact callback is `/auth/microsoft/callback`, and sign-out return is
+`/signed-out`, at `https://tg-inventory-app.test` locally and
+`https://dev-inventory.tabletopgaymers.org` hosted. Only scopes openid, profile,
+email and User.Read are requested. Stateful Socialite PKCE is enabled on both
+requests. Claims are validated by the maintained adapter; the application
+checks tenant and consistent Graph/object identity. Tokens are never persisted.
+
+Normal authentication ends at 30 idle minutes or 12 absolute hours. Remembered
+authentication uses a persistent encrypted database-session cookie with rolling
+seven-day server expiry. There is no separate indefinite remember-token path.
+Database session retention is seven days for both modes; middleware enforces
+the shorter normal deadlines before protected access. Only explicit browser
+navigation (Sec-Fetch-User) or CSRF-protected marked form activity renews timers;
+automatic polling does not. A site logout destroys the current database session.
+Microsoft sign-out requires its separate explicit CSRF-protected button.
+
+Initial bootstrap grants basic access, then one Admin grant after the designated
+user self-attests valid organizational contact. Consumption and audit are
+transactional. Later sign-ins/profile saves never restore removed Admin access.
+Role/disablement controls refresh current permissions and serialize changes
+with profile/bootstrap updates. Audits have no update/delete application route.
+Re-enablement, last-holder and recovery policies remain outside this slice.
+
+### Authentication publication and compatible recovery
+
+Independent review must cover both the minimal compatibility bridge
+`1dd60a4ad7a19526bd3abdf536d391dac5376a87` and the final authentication revision.
+First publish/verify the bridge through existing main CI/Forge with the existing
+baseline gate. It retains Phase 2 baseline behavior and accepts either the
+healthy session-only schema or complete verified authentication schema. Keep
+that exact healthy release retained before publishing the authentication source.
+Do not use original Phase 2 `2d845bca2e93c7fc89d919e6b1af2c212dfd2d1d` as a
+working recovery target after migration; it rejects authentication tables.
+
+For the authentication candidate, after existing Composer/shared-path macros and
+before ACTIVATE_RELEASE, replace the baseline gate block with:
+
+```sh
+"$FORGE_PHP" scripts/authentication-release-gate.php || exit 1
+```
+
+Retain ACTIVATE_RELEASE and RESTART_QUEUES afterward. The script checks the exact
+CI revision/clean source, clears stale configuration, verifies the isolated
+baseline and private provider settings, applies only the forward authentication
+migration, caches configuration and checks schema/authentication/views. Any
+failure stops activation; shared data is retained for inspection. A partial DDL
+failure requires inspected forward repair, never rollback/drop/reset. The gate
+does not prove real provider exchange or consent.
+
+Keep whole-site Basic protection. Confirm callback compatibility with a live
+browser before acceptance. Provider codes/tokens must not enter access logs:
+review this site's callback logging and error-monitoring configuration; use a
+query-free URI access-log format or scoped callback access logging exclusion.
+Do not capture callback query strings, authorization headers or provider bodies
+in evidence. Application callback failures expose only a generic restart.
+Any concrete server configuration change needs the existing scoped coordination.
+
+If activation fails, the compatible bridge remains current. If a source fault
+appears after activation, the authorized site operator restores the verified
+retained bridge release with its own cached configuration. Keep whole-site Basic
+protection during recovery; the bridge exposes only the development baseline,
+not authenticated application data. Authentication data remains untouched.
+Confirm HTTPS, full bridge revision and baseline readiness; do not claim source
+recovery reverses database/environment changes. A failed candidate's secret-rich
+configuration cache remains private and release-local.
+
+### Living presentation/component guide
+
+`public/app.css` is the single authentication presentation stylesheet, authored
+independently. Shared Blade `layout` supplies purple navigation/title, feedback,
+missing-contact prompts and a development revision footer. `.primary` is the
+final action; `.discard` identifies Discard/disable; `.notice`, `.warning` and
+`.error` distinguish success, attention and failure with visible text. Labeled
+inputs and checkbox rows support keyboard use; `.sr-only` supplies user context
+for repeated directory actions. `.table-wrap` scrolls the directory on narrow
+screens; essential form controls remain usable without horizontal scrolling.
+Maintain these documented components with their stylesheet when changing them.
+
+The historical Phase 2 instructions below remain foundation/setup evidence;
+this section supersedes their authentication/schema exclusions for D-177 only.
+
 ## Local development baseline
 
 The original local baseline is authorized under planning decision D-164. Application

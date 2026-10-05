@@ -62,6 +62,8 @@ jobs:
           php artisan key:generate --env=testing
           php artisan baseline:prepare
           php artisan baseline:prepare --env=testing
+          php artisan authentication:prepare
+          php artisan authentication:prepare --env=testing
       - name: Automated application checks
         env:
           RELEASE_STATUS_FIXTURE: ${{ runner.temp }}/release-storage-fixture

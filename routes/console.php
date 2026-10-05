@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\BaselineProbe;
+use App\Support\MicrosoftConfiguration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
@@ -70,3 +71,57 @@ Artisan::command('baseline:schema', function () {
         return 1;
     }
 })->purpose('Read-only inspection before any baseline preparation');
+
+Artisan::command('authentication:prepare {--hosted}', function () {
+    $probe = app(BaselineProbe::class);
+    if (! $probe->inspect()['ready'] || (app()->environment('development') && ! $this->option('hosted'))) {
+        $this->error('Authentication preparation requires the healthy isolated baseline and explicit hosted option.');
+
+        return 1;
+    }
+    try {
+        $state = $probe->schemaState(DB::connection('mariadb'));
+        if (! $state['canPrepare']) {
+            throw new RuntimeException;
+        }
+        $status = $this->callSilent('migrate', ['--no-interaction' => true, '--force' => true, '--path' => 'database/migrations/2026_10_05_010000_create_authentication_tables.php']);
+        if ($status !== 0 || ! $probe->schemaState(DB::connection('mariadb'))['authenticationReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Authentication schema verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Authentication preparation failed; activation must stop. Retain data for inspection.');
+
+        return 1;
+    }
+})->purpose('Apply only the approved non-destructive authentication migration');
+
+Artisan::command('authentication:check', function () {
+    try {
+        if (! app(BaselineProbe::class)->inspect()['ready']
+            || ! app(BaselineProbe::class)->schemaState(DB::connection('mariadb'))['authenticationReady']
+            || ! app(MicrosoftConfiguration::class)->ready()) {
+            throw new RuntimeException;
+        }
+        $this->info('Authentication schema and private development configuration verified; live provider verification is separate.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Authentication readiness failed; activation must stop. Check private setup.');
+
+        return 1;
+    }
+})->purpose('Validate private settings without printing secrets or claiming live provider exchange');
+
+Artisan::command('authentication:configuration', function () {
+    if (! app(MicrosoftConfiguration::class)->ready()) {
+        $this->error('Private Microsoft configuration is incomplete or inconsistent; activation must stop.');
+
+        return 1;
+    }
+    $this->info('Private Microsoft development configuration is structurally consistent. Provider registration verification is separate.');
+
+    return 0;
+})->purpose('Fail safely before migration if private provider configuration is not ready');
