@@ -80,15 +80,43 @@ class BaselineProbe
     {
         $schema = $database->getSchemaBuilder();
         $tables = $schema->getTableListing(null, false);
-        $known = array_diff($tables, ['migrations', 'sessions']) === [];
+        $authentication = [
+            'users' => ['id', 'first_name', 'last_name', 'provider_email', 'contact_email', 'contact_attested', 'enabled', 'created_at', 'updated_at'],
+            'external_identities' => ['id', 'user_id', 'provider', 'tenant_id', 'object_id', 'created_at', 'updated_at'],
+            'user_roles' => ['user_id', 'role'],
+            'authentication_bootstraps' => ['key', 'user_id', 'consumed_at'],
+            'access_audits' => ['id', 'actor_id', 'target_id', 'action', 'previous', 'current', 'occurred_at'],
+        ];
+        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication))) === [];
         $sessions = in_array('sessions', $tables, true);
         $ledger = in_array('migrations', $tables, true);
         $migration = '2026_10_05_000000_create_sessions_table';
         $recorded = $ledger && $database->table('migrations')->where('migration', $migration)->exists();
         $columns = ['id', 'user_id', 'ip_address', 'user_agent', 'payload', 'last_activity'];
         $compatible = $sessions && array_diff($columns, $schema->getColumnListing('sessions')) === [];
+        $authPresent = array_intersect(array_keys($authentication), $tables);
+        $authReady = false;
+        $authCompatible = $authPresent === [];
+        if (count($authPresent) === count($authentication) && $ledger) {
+            $authReady = $database->table('migrations')->where('migration', '2026_10_05_010000_create_authentication_tables')->exists();
+            foreach ($authentication as $table => $required) {
+                $authReady = $authReady && array_diff($required, $schema->getColumnListing($table)) === [];
+            }
+            if ($authReady) {
+                $identityUnique = false;
+                foreach ($schema->getIndexes('external_identities') as $index) {
+                    if ($index['unique'] && $index['columns'] === ['provider', 'tenant_id', 'object_id']) {
+                        $identityUnique = true;
+                    }
+                }
+                $authReady = $identityUnique;
+            }
+            $authCompatible = $authReady;
+        }
+        $known = $known && $authCompatible;
 
         return [
+            'authenticationReady' => $authReady,
             'ready' => $known && $recorded && $compatible,
             'canPrepare' => $known && ((! $sessions && ! $recorded) || ($recorded && $compatible)),
             'message' => $known && $recorded && $compatible
