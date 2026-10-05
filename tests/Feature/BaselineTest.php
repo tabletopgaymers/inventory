@@ -48,7 +48,7 @@ class BaselineTest extends TestCase
         config(['database.connections.mariadb.database' => 'unapproved_database']);
         $this->get('/')
             ->assertStatus(503)
-            ->assertSee('Local configuration needs attention.')
+            ->assertSee('Development configuration needs attention.')
             ->assertDontSee('unapproved_database')
             ->assertDontSee('Database check passed.');
     }
@@ -70,7 +70,7 @@ class BaselineTest extends TestCase
         config(['app.key' => '']);
         $this->get('/')
             ->assertStatus(503)
-            ->assertSee('Local configuration needs attention.')
+            ->assertSee('Development configuration needs attention.')
             ->assertDontSee('Database check passed.');
     }
 

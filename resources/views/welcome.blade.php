@@ -8,10 +8,10 @@
 </head>
 <body>
     <main>
-        <p class="eyebrow">LOCAL DEVELOPMENT BASELINE</p>
+        <p class="eyebrow">{{ $baselineLabel }}</p>
         <h1>Tabletop Gaymers Inventory</h1>
         <p class="status {{ $ready ? 'success' : 'warning' }}" role="status">{{ $message }}</p>
-        <p>This local page verifies the application foundation. Inventory workflows are not available yet.</p>
+        <p>This development page verifies the application foundation. Inventory workflows are not available yet.</p>
         <dl>
             <dt>PHP</dt><dd>{{ $phpVersion }}</dd>
             <dt>Laravel</dt><dd>{{ $laravelVersion }}</dd>

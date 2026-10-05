@@ -20,3 +20,13 @@ Local environment configuration is ignored. Never force-add ignored files.
 The optional TG Inventory prototype is read-only and is not behavior authority.
 Keep this task's evidence in its assigned planning task record; Management owns
 shared registers. Verification is not independent review or phase completion.
+
+## Hosted development update — October 5, 2026
+
+The user's explicit hosted-development brief supersedes the local-only exclusion
+for configuration validation, safe preparation tooling, isolated tests and setup
+instructions. Use APP_ENV=development, tg_inventory_dev database/account and
+https://dev-inventory.tabletopgaymers.org. Preserve local/testing isolation.
+No commits/push, live migrations, deployments, administration submissions or server
+changes are authorized by this brief. Jeff enters secrets and performs submissions.
+Keep implementation evidence in the existing assigned planning task record.

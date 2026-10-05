@@ -23,7 +23,7 @@ class CheckBaseline
             return $next($request);
         } catch (QueryException|PDOException) {
             $baseline['ready'] = false;
-            $baseline['message'] = 'Database session check failed. Run the documented local checks.';
+            $baseline['message'] = 'Database session check failed. Run the documented baseline checks.';
 
             return new \Illuminate\Http\Response(view('welcome', $baseline)->render(), 503);
         }
