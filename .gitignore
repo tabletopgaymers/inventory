@@ -28,3 +28,17 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+# Local baseline privacy and generated files
+.env.*
+!.env.example
+/_data/
+/_private/
+/_secrets/
+/.baseline-staging/
+/.phpunit.cache/
+/bootstrap/cache/*.php
+/storage/logs/*
+!.env.testing.example
+/.baseline-reinstall/
+/.idea/
