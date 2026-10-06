@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Support\BaselineProbe;
+use App\Support\CatalogSchema;
 use App\Support\InventorySchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
@@ -99,6 +100,9 @@ class InventorySchemaTest extends TestCase
             $session->shouldReceive('exists')->once()->andReturn($sessionRecorded);
             $ledger->shouldReceive('where')->with('migration', InventorySchema::MIGRATION)->andReturn($stock);
             $stock->shouldReceive('exists')->once()->andReturn($stockRecorded);
+            $catalog = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', CatalogSchema::MIGRATION)->andReturn($catalog);
+            $catalog->shouldReceive('exists')->once()->andReturn(false);
         }
         $state = app(BaselineProbe::class)->schemaState($database);
         $this->assertSame($ready, $state['ready']);

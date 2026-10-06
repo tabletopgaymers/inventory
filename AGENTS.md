@@ -55,3 +55,14 @@ main pushes through existing CI/Forge to dev-inventory, without renewed human
 approval. Preserve existing protection, private input exclusions and databases.
 No Phase 5, production, unrelated service changes or prototype copying.
 Questions, blockers and completion reports go to coordinating Owl.
+
+## Phase 5 update — October 6, 2026
+
+D-187 supersedes the Phase 5 hold and previous writer assignment for the bounded
+work/tasks/phase-05-daily-inventory.md brief. Catalogwright Moose 10 is the sole
+Phase 5 application writer, excluding Palette Chameleon 09's design sandbox.
+Clearwatch Kestrel 11 reviews exact frozen candidates independently. Owl coordinates
+shared routes, disposable test runtime and TG Jeff browser; publication requires
+Owl's exact reviewed-candidate clearance through existing development CI/Forge.
+Preserve accepted schema/data/history, private inputs and design changes. No
+Phase 6+, production, unrelated changes or additional agents. Report to Owl.

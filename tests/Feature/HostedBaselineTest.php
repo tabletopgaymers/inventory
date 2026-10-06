@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Support\BaselineProbe;
+use App\Support\CatalogSchema;
 use App\Support\InventorySchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
@@ -124,6 +125,9 @@ class HostedBaselineTest extends TestCase
             $sessionRecord->shouldReceive('exists')->andReturn($recorded);
             $ledger->shouldReceive('where')->with('migration', InventorySchema::MIGRATION)->andReturn($stockRecord);
             $stockRecord->shouldReceive('exists')->andReturn(false);
+            $catalogRecord = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', CatalogSchema::MIGRATION)->andReturn($catalogRecord);
+            $catalogRecord->shouldReceive('exists')->andReturn(false);
         }
         if (in_array('sessions', $tables)) {
             $schema->shouldReceive('getColumnListing')->with('sessions')->andReturn($columns);
