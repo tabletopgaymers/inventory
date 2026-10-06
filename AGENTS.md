@@ -41,3 +41,17 @@ for independent review; no push/deployment until Management review clearance.
 Preserve Basic protection, administrative forge access, development grants,
 production, unrelated services and private-input exclusions. Route questions
 through Owl. No later-phase execution.
+
+## Phase 4 update — October 5, 2026
+
+D-181 supersedes the earlier phase hold and Phase 3 writer assignment for the
+bounded work/tasks/phase-04-shared-foundations.md brief. Framewright Badger 07
+is the sole application writer. Stage 1 builds navigation and honest Planned
+summaries; Stage 2 starts only after Management's sequential handoff following
+Stage 1 review/delivery. Both stages and synthetic labels are user-approved.
+Freeze each exact candidate for Ledgerwatch Raven 08 independent review.
+D-180 authorizes Management-cleared reviewed development commits and ordinary
+main pushes through existing CI/Forge to dev-inventory, without renewed human
+approval. Preserve existing protection, private input exclusions and databases.
+No Phase 5, production, unrelated service changes or prototype copying.
+Questions, blockers and completion reports go to coordinating Owl.
