@@ -10,11 +10,11 @@
 <a class="skip-link" href="#main">Skip to content</a>
 <header class="guide-header">
     <div class="guide-width flex flex-wrap items-center justify-between gap-4 py-5">
-        <a href="/design/phase-a" class="text-xl font-semibold tracking-tight">TG Inventory <span class="font-normal text-base-content/65">/ Design</span></a>
+        <a href="/design/phase-a/overview" class="text-xl font-semibold tracking-tight">TG Inventory <span class="font-normal text-base-content/65">/ Design</span></a>
         <span class="badge badge-outline">Design proposal · static examples</span>
     </div>
     <nav class="guide-width flex flex-wrap gap-2 pb-4" aria-label="Style guide">
-        <a href="/design/phase-a" class="btn btn-sm {{ request()->is('design/phase-a') ? 'btn-primary' : 'btn-ghost' }}" @if(request()->is('design/phase-a')) aria-current="page" @endif>Overview</a>
+        <a href="/design/phase-a/overview" class="btn btn-sm {{ request()->is('design/phase-a/overview') ? 'btn-primary' : 'btn-ghost' }}" @if(request()->is('design/phase-a/overview')) aria-current="page" @endif>Overview</a>
         <a href="/design/phase-a/elements" class="btn btn-sm {{ request()->is('design/phase-a/elements') ? 'btn-primary' : 'btn-ghost' }}" @if(request()->is('design/phase-a/elements')) aria-current="page" @endif>General elements</a>
         <a href="/design/phase-a/examples" class="btn btn-sm {{ request()->is('design/phase-a/examples') ? 'btn-primary' : 'btn-ghost' }}" @if(request()->is('design/phase-a/examples')) aria-current="page" @endif>Example uses</a>
     </nav>
