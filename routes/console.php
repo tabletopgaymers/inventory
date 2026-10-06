@@ -2,10 +2,42 @@
 
 use App\Support\BaselineProbe;
 use App\Support\CatalogPreparation;
+use App\Support\DailyInventoryPreparation;
 use App\Support\InventoryPreparation;
 use App\Support\MicrosoftConfiguration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+
+Artisan::command('daily-inventory:prepare {--hosted}', function () {
+    try {
+        if (! app(DailyInventoryPreparation::class)->prepare((bool) $this->option('hosted'))) {
+            throw new RuntimeException;
+        }
+        $this->info('Count and cost schema verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Count and cost preparation failed; retain data for inspection.');
+
+        return 1;
+    }
+});
+
+Artisan::command('daily-inventory:check', function () {
+    try {
+        $probe = app(BaselineProbe::class);
+        if (! $probe->inspect()['ready'] || ! $probe->schemaState(DB::connection())['dailyInventoryReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Count and cost schema ready.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Count and cost readiness failed.');
+
+        return 1;
+    }
+});
 
 Artisan::command('catalog:prepare {--hosted}', function () {
     try {

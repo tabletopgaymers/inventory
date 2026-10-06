@@ -50,6 +50,12 @@ class NavigationTest extends TestCase
         $this->get('/')->assertOk()->assertSee('request supplies from storage')
             ->assertSee('request supplies to purchase')->assertSee('Location Counts');
         foreach (self::DESTINATIONS as $path) {
+            if ($path === '/inventory/location-counts') {
+                $this->get($path)->assertOk()->assertSee('Personal search name')->assertDontSee('Reconcile Inventory');
+                $this->post($path)->assertSessionHasErrors('action');
+
+                continue;
+            }
             if ($path === '/inventory/item-history') {
                 $this->get($path)->assertOk()->assertSee('Item &amp; History', false)->assertDontSee('Workflow preview')->assertDontSee('type="number"', false);
                 $this->post($path)->assertStatus(405);

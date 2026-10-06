@@ -58,7 +58,14 @@ class InventorySearch
 
     public function remember(int $user, array $criteria): void
     {
-        DB::table('inventory_preferences')->updateOrInsert(['user_id' => $user], ['criteria' => json_encode($criteria, JSON_THROW_ON_ERROR), 'updated_at' => now('UTC')]);
+        DB::transaction(function () use ($user, $criteria) {
+            DB::table('users')->where('id', $user)->lockForUpdate()->firstOrFail();
+            $previous = json_decode(DB::table('inventory_preferences')->where('user_id', $user)->value('criteria') ?? '{}', true);
+            if (is_array($previous) && isset($previous['saved_counts'])) {
+                $criteria['saved_counts'] = $previous['saved_counts'];
+            }
+            DB::table('inventory_preferences')->updateOrInsert(['user_id' => $user], ['criteria' => json_encode($criteria, JSON_THROW_ON_ERROR), 'updated_at' => now('UTC')]);
+        });
     }
 
     public function results(array $criteria): array

@@ -1,0 +1,17 @@
+:root { background: white; }
+.count-worksheet main { max-width: 100%; }
+.count-worksheet table { width: 100%; table-layout: fixed; }
+.count-worksheet col.item-name { width: 60%; }
+.count-worksheet col.quantity { width: 20%; }
+.count-worksheet .findings { min-width: 6rem; height: 2rem; }
+@media print {
+    @page { size: letter portrait; margin: 0.55in; }
+    html:has(body.count-worksheet), body.count-worksheet { background: white; color: black; font-size: 10pt; }
+    .count-worksheet main { margin: 0; padding: 0; background: white; box-shadow: none; border: 0; }
+    .count-worksheet .no-print { display: none; }
+    .count-worksheet thead { display: table-header-group; }
+    .count-worksheet tr { break-inside: avoid; }
+    .count-worksheet .collection-heading { break-after: avoid; }
+    .count-worksheet th, .count-worksheet td { padding: 0.12in; border: 1px solid #555; }
+    .count-worksheet td:first-child { overflow-wrap: anywhere; }
+}

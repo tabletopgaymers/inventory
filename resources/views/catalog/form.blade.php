@@ -17,6 +17,7 @@
 <p>Bundle values are hints; they do not enforce multiples or create kits.</p>
 @foreach(['irs_fmv'=>'IRS FMV','in_person_ask'=>'In-Person Ask','online_ask'=>'Online Ask'] as $field=>$label)<label>{{ $label }}<input name="{{ $field }}" inputmode="decimal" value="{{ old($field, $metadata?->$field) }}"></label>@endforeach
 <p>Optional monetary fields preserve blank and explicit zero. New items start with zero stock and unknown Unit Cost.</p>
+@if($record)<label>Current Unit Cost<input disabled value="{{ \App\Support\StockNumbers::displayCost($record->unit_cost) }}"></label>@if(auth()->user()->hasRole('admin'))<p><a href="/inventory/items/{{ $record->id }}/cost">Adjust Unit Cost with immutable history</a></p>@endif @endif
 @endif
 @if(in_array($kind, ['categories','collections','storage_locations']))<label>Description<textarea name="description" maxlength="5000">{{ old('description', $record?->description) }}</textarea></label>@endif
 @if($kind === 'suppliers')@foreach(['contact_name'=>'Contact name','email'=>'Email','phone'=>'Phone','website'=>'Website'] as $field=>$label)<label>{{ $label }}<input name="{{ $field }}" maxlength="255" value="{{ old($field, $record?->$field) }}"></label>@endforeach<label>Address<textarea name="address" maxlength="5000">{{ old('address', $record?->address) }}</textarea></label>@endif

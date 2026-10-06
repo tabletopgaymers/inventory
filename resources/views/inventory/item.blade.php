@@ -3,6 +3,7 @@
 @section('content')
 <p>{{ $item->sku }} · @if($catalogReady)<a href="/inventory/classification/category/{{ $item->category_id }}">{{ $item->category_name }}</a> · <a href="/inventory/classification/collection/{{ $item->collection_id }}">{{ $item->collection_name }}</a> · <span class="status-badge {{ $state }}">{{ ucfirst($state) }}</span>@else{{ $item->category_name }} · {{ $item->collection_name }}@endif</p>
 <p>Unit Cost: {{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}</p>
+@if($dailyReady && $canCost)<p><a href="/inventory/items/{{ $item->id }}/cost">Adjust Unit Cost</a></p>@endif
 @if($catalogReady)
 @if($canCorrect)<p><a class="button" href="/catalog/items/{{ $item->id }}/edit">Edit item details</a></p>@endif
 <dl class="item-metadata"><dt>Variety</dt><dd>{{ $metadata?->variety ?? '—' }}</dd><dt>Purpose</dt><dd>{{ $purpose?->name ?? '—' }}</dd><dt>Programs</dt><dd>{{ $programs->pluck('name')->join(', ') ?: '—' }}</dd><dt>Request bundle</dt><dd>{{ $metadata?->bundle_type ?? '—' }} @if($metadata?->bundle_quantity)· {{ number_format($metadata->bundle_quantity) }} individual units @endif</dd>

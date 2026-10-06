@@ -55,7 +55,9 @@ class InventoryController
     public function show(Request $request, int $item)
     {
         $this->ready();
-        $catalogReady = app(BaselineProbe::class)->schemaState(DB::connection())['catalogReady'];
+        $schema = app(BaselineProbe::class)->schemaState(DB::connection());
+        $catalogReady = $schema['catalogReady'];
+        $dailyReady = $schema['dailyInventoryReady'];
         $extraBalances = [];
         $metadata = null;
         $purpose = null;
@@ -80,8 +82,28 @@ class InventoryController
         $history = DB::table('inventory_adjustment_entries')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_adjustment_entries.inventory_adjustment_id')
             ->where('inventory_adjustments.item_id', $item)->select('inventory_adjustment_entries.*', 'inventory_adjustments.posted_at')
             ->orderBy($sort, $sort === 'description' ? 'asc' : 'desc')->orderByDesc('inventory_adjustment_entries.id')->get();
+        if ($dailyReady) {
+            $costHistory = DB::table('item_cost_entries')->where('item_id', $item)->get()->map(function ($entry) {
+                $entry->cost_entry_id = $entry->id;
+                $entry->description = 'Adjustment: Unit Cost';
+                $entry->quantity_change = null;
+                $entry->unit_cost = $entry->after_cost;
 
-        return view('inventory.item', ['item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history,
+                return $entry;
+            });
+            $history = $history->concat($costHistory)->sort(function ($a, $b) use ($sort) {
+                if ($sort === 'description') {
+                    $description = strnatcasecmp($a->description, $b->description);
+                    if ($description !== 0) {
+                        return $description;
+                    }
+                }
+
+                return strcmp($b->posted_at, $a->posted_at) ?: ($b->id <=> $a->id);
+            })->values();
+        }
+
+        return view('inventory.item', ['item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->hasRole('admin'),
             'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'purpose' => $purpose, 'programs' => $programs, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);
     }
 

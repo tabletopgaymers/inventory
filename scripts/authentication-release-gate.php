@@ -18,10 +18,12 @@ try {
         'forward inventory migration' => [PHP_BINARY, 'artisan', 'inventory:prepare', '--hosted'],
         'synthetic development references' => [PHP_BINARY, 'artisan', 'inventory:demo', '--hosted'],
         'forward catalog migration' => [PHP_BINARY, 'artisan', 'catalog:prepare', '--hosted'],
+        'forward count and cost migration' => [PHP_BINARY, 'artisan', 'daily-inventory:prepare', '--hosted'],
         'configuration cache' => [PHP_BINARY, 'artisan', 'config:cache'],
         'authentication readiness' => [PHP_BINARY, 'artisan', 'authentication:check'],
         'inventory readiness' => [PHP_BINARY, 'artisan', 'inventory:check'],
         'catalog readiness' => [PHP_BINARY, 'artisan', 'catalog:check'],
+        'count and cost readiness' => [PHP_BINARY, 'artisan', 'daily-inventory:check'],
         'views' => [PHP_BINARY, 'artisan', 'view:cache'],
     ];
     foreach ($commands as $stage => $command) {

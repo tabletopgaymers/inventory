@@ -8,6 +8,6 @@
 <li><a href="/inventory">Inventory</a> — search supplies, download matching quantities and open their item history.</li>
 <li><a href="/relocations">Relocations</a> — request supplies from storage. <span class="status-badge">Planned</span></li>
 <li><a href="/purchases">Purchases</a> — request supplies to purchase. <span class="status-badge">Planned</span></li>
-<li><a href="/inventory/location-counts">Location Counts</a> — count supplies at a storage location. <span class="status-badge">Planned</span></li>
+<li><a href="/inventory/location-counts">Location Counts</a> — save personal criteria, print a worksheet and reconcile counted supplies.</li>
 </ul>
 @endsection

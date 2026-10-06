@@ -1,6 +1,30 @@
 # inventory
 Web application for basic management of inventory items.
 
+## Phase 5 checkpoint 2
+
+Location Counts saves personal criteria only and reruns current data. Select one
+storage location; active items and inactive items with nonzero stock at that
+location are eligible. Print a grouped worksheet with recorded quantities and
+blank findings. Admin/Manager enter individual counts: blank skips, explicit zero
+clears, and thousands commas are accepted. Next reviews only changed items with
+optional per-item rationale. Edit retains inputs. Save applies absolute counts
+against locked current balances, atomically creates linked immutable per-item
+corrections, retains current exact cost, and handles repeated actor-bound Save.
+
+Admin-only Unit Cost replacement accepts exact nonnegative DECIMAL(24,12), with
+explicit zero unknown/n/a and blank invalid. Cost-only changes store immutable
+before/after, actor/time/item snapshots and optional rationale; no-op creates no
+history. Earlier quantity/cost records and balances remain unchanged. Item
+history merges both kinds, with cost adjustments showing no quantity effect.
+
+`daily-inventory:prepare` installs only the three tables already recognized by the
+reviewed checkpoint1 recovery source; `--hosted` remains mandatory for development
+publication. `daily-inventory:check` verifies readiness. Before hosted installation
+verify retained exact checkpoint1 source and its contract; never reset accepted
+stock/history. CI uses isolated clean local/test preparation; Forge forward
+preparation/readiness runs before activation. Design guide files remain separate.
+
 ## Phase 5 checkpoint 1
 
 D-187 authorizes catalog/reference maintenance and real inventory browsing/export.

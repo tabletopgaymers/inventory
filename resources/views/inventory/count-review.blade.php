@@ -1,0 +1,7 @@
+@extends('layout')
+@section('title', 'Review counts · '.$location->name)
+@section('content')
+<p>Only changed counts are listed. Save applies these absolute counts to current inventory; all other items remain unchanged.</p>
+<form method="post" action="/inventory/location-counts/{{ $token }}/save" data-unsaved>@csrf
+<div class="table-wrap"><table><thead><tr><th>Item</th><th class="number">Current</th><th class="number">Actual count</th><th class="number">Change</th><th>Optional rationale</th></tr></thead><tbody>@forelse($rows as $row)@php($count = \App\Support\DailyInventoryPosting::count($draft['counts'][$row['id']], 'count'))@php($before = $row['values']['storage:'.$location->id])<tr><th>{{ $row['name'] }}</th><td class="number">{{ number_format($before) }}</td><td class="number">{{ number_format($count) }}</td><td class="number">{{ $count - $before > 0 ? '+' : '' }}{{ number_format($count - $before) }}</td><td><input aria-label="Rationale for {{ $row['name'] }}" name="rationales[{{ $row['id'] }}]" maxlength="1000" value="{{ old('rationales.'.$row['id'], $draft['rationales'][$row['id']] ?? '') }}"></td></tr>@empty<tr><td colspan="5">No counts differ. Saving creates no item correction or history entry.</td></tr>@endforelse</tbody></table></div><div class="actions"><a class="discard" href="/inventory/location-counts?context={{ $token }}">Cancel</a><button name="action" value="edit">Edit</button><button name="action" value="save" class="primary">Save Updates</button></div></form><script src="/catalog.js" defer></script>
+@endsection
