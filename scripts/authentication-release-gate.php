@@ -16,7 +16,6 @@ try {
         'private provider configuration' => [PHP_BINARY, 'artisan', 'authentication:configuration'],
         'forward authentication migration' => [PHP_BINARY, 'artisan', 'authentication:prepare', '--hosted'],
         'forward inventory migration' => [PHP_BINARY, 'artisan', 'inventory:prepare', '--hosted'],
-        'synthetic development references' => [PHP_BINARY, 'artisan', 'inventory:demo', '--hosted'],
         'forward catalog migration' => [PHP_BINARY, 'artisan', 'catalog:prepare', '--hosted'],
         'forward count and cost migration' => [PHP_BINARY, 'artisan', 'daily-inventory:prepare', '--hosted'],
         'forward request intake migration' => [PHP_BINARY, 'artisan', 'requests:prepare', '--hosted'],
@@ -26,6 +25,7 @@ try {
         'catalog readiness' => [PHP_BINARY, 'artisan', 'catalog:check'],
         'count and cost readiness' => [PHP_BINARY, 'artisan', 'daily-inventory:check'],
         'request intake readiness' => [PHP_BINARY, 'artisan', 'requests:check'],
+        'approved development samples' => [PHP_BINARY, 'artisan', 'samples:seed', '--hosted'],
         'views' => [PHP_BINARY, 'artisan', 'view:cache'],
     ];
     foreach ($commands as $stage => $command) {

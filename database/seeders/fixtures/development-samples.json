@@ -1,0 +1,855 @@
+{
+  "version": "development-samples-v1",
+  "source": "Approved D-186 sample-data.md, copied October 6, 2026. Quantities generated under D-199/D-203; illustrative, not imported actual stock.",
+  "locations": [
+    "Central",
+    "Ames IA",
+    "Milwaukee WI",
+    "Indianapolis IN",
+    "Boston MA"
+  ],
+  "categories": [
+    {
+      "name": "Button",
+      "collections": [
+        {
+          "name": "Standard",
+          "prefix": "BTN-STD-",
+          "items": [
+            {
+              "name": "Ally",
+              "suffix": "ALLY",
+              "quantities": [
+                200,
+                0,
+                25,
+                50,
+                50
+              ]
+            },
+            {
+              "name": "Gaymer",
+              "suffix": "GAYMER",
+              "quantities": [
+                225,
+                25,
+                50,
+                75,
+                0
+              ]
+            },
+            {
+              "name": "Support Trans Youth",
+              "suffix": "SUPPORT-TRANS-YOUTH",
+              "quantities": [
+                250,
+                50,
+                0,
+                50,
+                25
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Special",
+          "prefix": "BTN-SPC-",
+          "items": [
+            {
+              "name": "Safe Space",
+              "suffix": "SAFE-SPACE",
+              "quantities": [
+                275,
+                0,
+                25,
+                75,
+                50
+              ]
+            },
+            {
+              "name": "I'll Go With You",
+              "suffix": "ILL-GO-WITH-YOU",
+              "quantities": [
+                300,
+                25,
+                50,
+                50,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Enamel Pin",
+      "collections": [
+        {
+          "name": "Tabletop Gaymers",
+          "prefix": "PIN-TG-",
+          "items": [
+            {
+              "name": "Pride Dragon",
+              "suffix": "PRIDE-DRAGON",
+              "quantities": [
+                40,
+                10,
+                0,
+                15,
+                5
+              ]
+            },
+            {
+              "name": "Hex Pride",
+              "suffix": "HEX-PRIDE",
+              "quantities": [
+                45,
+                0,
+                5,
+                10,
+                10
+              ]
+            },
+            {
+              "name": "10-Year Anniversary",
+              "suffix": "10-YEAR-ANNIVERSARY",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Animal",
+          "prefix": "PIN-ANM-",
+          "items": [
+            {
+              "name": "Puppers",
+              "suffix": "PUPPERS",
+              "quantities": [
+                55,
+                10,
+                0,
+                10,
+                5
+              ]
+            },
+            {
+              "name": "Kitten",
+              "suffix": "KITTEN",
+              "quantities": [
+                60,
+                0,
+                5,
+                15,
+                10
+              ]
+            },
+            {
+              "name": "Penguin Pals",
+              "suffix": "PENGUIN-PALS",
+              "quantities": [
+                40,
+                5,
+                10,
+                10,
+                0
+              ]
+            },
+            {
+              "name": "Ranger Raccoon",
+              "suffix": "RANGER-RACCOON",
+              "quantities": [
+                45,
+                10,
+                0,
+                15,
+                5
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Queer Coven",
+          "prefix": "PIN-QC-",
+          "items": [
+            {
+              "name": "Necromancer",
+              "suffix": "NECROMANCER",
+              "quantities": [
+                50,
+                0,
+                5,
+                10,
+                10
+              ]
+            },
+            {
+              "name": "Alchemist",
+              "suffix": "ALCHEMIST",
+              "quantities": [
+                55,
+                5,
+                10,
+                15,
+                0
+              ]
+            },
+            {
+              "name": "Oracle",
+              "suffix": "ORACLE",
+              "quantities": [
+                60,
+                10,
+                0,
+                10,
+                5
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ribbon",
+      "collections": [
+        {
+          "name": "Tabletop Gaymers",
+          "prefix": "RBN-TG-",
+          "items": [
+            {
+              "name": "Ally",
+              "suffix": "ALLY",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Gaymer",
+              "suffix": "GAYMER",
+              "quantities": [
+                900,
+                100,
+                200,
+                200,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Pronoun",
+          "prefix": "RPR-",
+          "items": [
+            {
+              "name": "He/Him",
+              "suffix": "HE-HIM",
+              "quantities": [
+                1000,
+                200,
+                0,
+                300,
+                100
+              ]
+            },
+            {
+              "name": "She/Her",
+              "suffix": "SHE-HER",
+              "quantities": [
+                1100,
+                0,
+                100,
+                200,
+                200
+              ]
+            },
+            {
+              "name": "They/Them",
+              "suffix": "THEY",
+              "quantities": [
+                1200,
+                100,
+                200,
+                300,
+                0
+              ]
+            },
+            {
+              "name": "Any/All",
+              "suffix": "ANY-ALL",
+              "quantities": [
+                800,
+                200,
+                0,
+                200,
+                100
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Pride Flag",
+          "prefix": "RBN-FLG-",
+          "items": [
+            {
+              "name": "Agender",
+              "suffix": "AGENDER",
+              "quantities": [
+                900,
+                0,
+                100,
+                300,
+                200
+              ]
+            },
+            {
+              "name": "Ally",
+              "suffix": "ALLY",
+              "quantities": [
+                1000,
+                100,
+                200,
+                200,
+                0
+              ]
+            },
+            {
+              "name": "Aromantic",
+              "suffix": "AROMANTIC",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Asexual",
+              "suffix": "ASEXUAL",
+              "quantities": [
+                1200,
+                0,
+                100,
+                200,
+                200
+              ]
+            },
+            {
+              "name": "Bigender",
+              "suffix": "BIGENDER",
+              "quantities": [
+                800,
+                100,
+                200,
+                300,
+                0
+              ]
+            },
+            {
+              "name": "Bisexual",
+              "suffix": "BISEXUAL",
+              "quantities": [
+                900,
+                200,
+                0,
+                200,
+                100
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Trays",
+          "prefix": "RBN-TRY-",
+          "items": [
+            {
+              "name": "Lids",
+              "suffix": "LIDS",
+              "quantities": [
+                1000,
+                0,
+                100,
+                300,
+                200
+              ]
+            },
+            {
+              "name": "Bases",
+              "suffix": "BASES",
+              "quantities": [
+                1100,
+                100,
+                200,
+                200,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tokens",
+      "collections": [
+        {
+          "name": "Sponsor",
+          "prefix": "TOK-SPN-",
+          "items": [
+            {
+              "name": "$25",
+              "suffix": "25",
+              "quantities": [
+                120,
+                20,
+                0,
+                30,
+                10
+              ]
+            },
+            {
+              "name": "$50",
+              "suffix": "50",
+              "quantities": [
+                80,
+                0,
+                10,
+                20,
+                20
+              ]
+            },
+            {
+              "name": "$100",
+              "suffix": "100",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Signage",
+      "collections": [
+        {
+          "name": "Standing Banner",
+          "prefix": "SGN-BNR-",
+          "items": [
+            {
+              "name": "Tabletop Gaymers",
+              "suffix": "TABLETOP-GAYMERS",
+              "quantities": [
+                10,
+                2,
+                0,
+                2,
+                1
+              ]
+            },
+            {
+              "name": "Event Schedule",
+              "suffix": "EVENT-SCHEDULE",
+              "quantities": [
+                11,
+                0,
+                1,
+                3,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Tablecloth",
+          "prefix": "SGN-TBL-",
+          "items": [
+            {
+              "name": "Tabletop Gaymers",
+              "suffix": "TABLETOP-GAYMERS",
+              "quantities": [
+                12,
+                1,
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "name": "Tabletop Gaymers 2020",
+              "suffix": "TABLETOP-GAYMERS-2020",
+              "quantities": [
+                8,
+                2,
+                0,
+                3,
+                1
+              ]
+            },
+            {
+              "name": "Tabletop Gaymers Runner",
+              "suffix": "TABLETOP-GAYMERS-RUNNER",
+              "quantities": [
+                9,
+                0,
+                1,
+                2,
+                2
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Hanging",
+          "prefix": "SGN-HNG-",
+          "items": [
+            {
+              "name": "Tabletop Gaymers",
+              "suffix": "TABLETOP-GAYMERS",
+              "quantities": [
+                10,
+                1,
+                2,
+                3,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Donation Handling",
+      "collections": [
+        {
+          "name": "Devices",
+          "prefix": "DON-DEV-",
+          "items": [
+            {
+              "name": "Square Space Reader",
+              "suffix": "SQUARE-SPACE-READER",
+              "quantities": [
+                11,
+                2,
+                0,
+                2,
+                1
+              ]
+            },
+            {
+              "name": "Tap Reader",
+              "suffix": "TAP-READER",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Hardware",
+          "prefix": "DON-HW-",
+          "items": [
+            {
+              "name": "Cash Box with Combination",
+              "suffix": "CASH-BOX-WITH-COMBINATION",
+              "quantities": [
+                8,
+                1,
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "name": "Cash Bags",
+              "suffix": "CASH-BAGS",
+              "quantities": [
+                9,
+                2,
+                0,
+                3,
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Material",
+          "prefix": "DON-MAT-",
+          "items": [
+            {
+              "name": "Deposit Bags",
+              "suffix": "DEPOSIT-BAGS",
+              "quantities": [
+                10,
+                0,
+                1,
+                2,
+                2
+              ]
+            },
+            {
+              "name": "Bill Straps",
+              "suffix": "BILL-STRAPS",
+              "quantities": [
+                11,
+                1,
+                2,
+                3,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Shipping",
+      "collections": [
+        {
+          "name": "Box",
+          "prefix": "SHP-BOX-",
+          "items": [
+            {
+              "name": "10 x 10 x 10/8/6 (S-535)",
+              "suffix": "10-X-10-X-10-8-6-S-535",
+              "quantities": [
+                120,
+                20,
+                0,
+                20,
+                10
+              ]
+            },
+            {
+              "name": "12 x 12 x 12 (S-4125)",
+              "suffix": "12-X-12-X-12-S-4125",
+              "quantities": [
+                80,
+                0,
+                10,
+                30,
+                20
+              ]
+            },
+            {
+              "name": "12 x 12 x 4 (S-4215)",
+              "suffix": "12-X-12-X-4-S-4215",
+              "quantities": [
+                90,
+                10,
+                20,
+                20,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Mailer",
+          "prefix": "SHP-MLR-",
+          "items": [
+            {
+              "name": "10 x 6 x — (B076DXRJZM)",
+              "suffix": "10-X-6-X-B076DXRJZM",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "12 x 8½ x — (B07WRZYFVW)",
+              "suffix": "12-X-8HALF-X-B07WRZYFVW",
+              "quantities": [
+                110,
+                0,
+                10,
+                20,
+                20
+              ]
+            },
+            {
+              "name": "12½ x 9½ x — (EP14PE_X)",
+              "suffix": "12HALF-X-9HALF-X-EP14PE-X",
+              "quantities": [
+                120,
+                10,
+                20,
+                30,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Supplies",
+      "collections": [
+        {
+          "name": "Tapes",
+          "prefix": "SUP-TAPE-",
+          "items": [
+            {
+              "name": "Packing Tape",
+              "suffix": "PACKING-TAPE",
+              "quantities": [
+                8,
+                2,
+                0,
+                2,
+                1
+              ]
+            },
+            {
+              "name": "Gaffers Tape",
+              "suffix": "GAFFERS-TAPE",
+              "quantities": [
+                9,
+                0,
+                1,
+                3,
+                2
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Printed Material",
+      "collections": [
+        {
+          "name": "Corporate Partners",
+          "prefix": "PRN-CORP-",
+          "items": [
+            {
+              "name": "Vendor In-Kind Receipt",
+              "suffix": "VENDOR-IN-KIND-RECEIPT",
+              "quantities": [
+                200,
+                20,
+                40,
+                40,
+                0
+              ]
+            },
+            {
+              "name": "Vendor In-Kind Record",
+              "suffix": "VENDOR-IN-KIND-RECORD",
+              "quantities": [
+                220,
+                40,
+                0,
+                60,
+                20
+              ]
+            },
+            {
+              "name": "Corporate Partner Handout",
+              "suffix": "CORPORATE-PARTNER-HANDOUT",
+              "quantities": [
+                240,
+                0,
+                20,
+                40,
+                40
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Info Sheets",
+          "prefix": "PRN-INFO-",
+          "items": [
+            {
+              "name": "How to be an Ally",
+              "suffix": "HOW-TO-BE-AN-ALLY",
+              "quantities": [
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            {
+              "name": "Donate Your Design",
+              "suffix": "DONATE-YOUR-DESIGN",
+              "quantities": [
+                180,
+                40,
+                0,
+                40,
+                20
+              ]
+            },
+            {
+              "name": "Gaming Safe Space",
+              "suffix": "GAMING-SAFE-SPACE",
+              "quantities": [
+                200,
+                0,
+                20,
+                60,
+                40
+              ]
+            },
+            {
+              "name": "Gayme Night",
+              "suffix": "GAYME-NIGHT",
+              "quantities": [
+                220,
+                20,
+                40,
+                40,
+                0
+              ]
+            },
+            {
+              "name": "Register Your Ribbon",
+              "suffix": "REGISTER-YOUR-RIBBON",
+              "quantities": [
+                240,
+                40,
+                0,
+                60,
+                20
+              ]
+            },
+            {
+              "name": "Become a Hero",
+              "suffix": "BECOME-A-HERO",
+              "quantities": [
+                160,
+                0,
+                20,
+                40,
+                40
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
