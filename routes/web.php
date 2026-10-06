@@ -50,3 +50,5 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/phase-five.php';
+
+require __DIR__.'/phase-six.php';

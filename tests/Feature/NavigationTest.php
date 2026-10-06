@@ -62,6 +62,16 @@ class NavigationTest extends TestCase
 
                 continue;
             }
+            if (in_array($path, ['/purchases', '/relocations'], true)) {
+                $this->get($path)->assertOk()->assertSee('Show statuses')->assertSee('New ')->assertDontSee('Workflow preview')->assertDontSee('>Planned<', false);
+                if ($path === '/purchases') {
+                    $this->post($path)->assertSessionHasErrors('token');
+                } else {
+                    $this->post($path)->assertStatus(405);
+                }
+
+                continue;
+            }
             if (in_array($path, ['/catalog', '/inventory'], true)) {
                 $this->get($path)->assertOk()->assertDontSee('Workflow preview')->assertDontSee('>Planned<', false);
                 $this->post($path)->assertStatus(405);

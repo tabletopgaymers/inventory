@@ -1,0 +1,1 @@
+<h2>Activity</h2><ol class="request-activity">@forelse($activity as $event)<li><strong>{{ $event->action }}</strong> · {{ $event->actor_name }} · <time>{{ \Illuminate\Support\Carbon::parse($event->occurred_at, 'UTC')->setTimezone('America/Chicago')->format('M j, Y H:i:s T') }}</time></li>@empty<li>No activity.</li>@endforelse</ol>

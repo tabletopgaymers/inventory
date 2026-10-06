@@ -32,3 +32,13 @@ right aligned. The scrollable full result table fixes headings and item names,
 with collection heading rows and a sticky bottom Download action. Narrow screens
 retain the table inside horizontal scrolling. Optional item money displays two
 decimals while stored exact precision and blank/zero remain unchanged.
+
+## Request intake
+
+Purchase/relocation indexes show persistent request statuses with immediate checkbox
+alternatives. Draft/Request/Requested keep yellow badges; Cancelled uses existing
+neutral archived styling. Request notes/details are escaped multiline plain text.
+Keep Requested Items visibly separate from explicit catalog search and use current
+source/destination projections. Preparation labels distinguish estimates and saved
+fulfillment from actual orders/shipments. Packing worksheets keep a blank Sent
+writing column and landscape print layout; no saved fulfillment becomes actual Sent.

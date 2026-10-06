@@ -70,6 +70,8 @@ jobs:
           php artisan catalog:prepare --env=testing
           php artisan daily-inventory:prepare
           php artisan daily-inventory:prepare --env=testing
+          php artisan requests:prepare
+          php artisan requests:prepare --env=testing
       - name: Automated application checks
         env:
           RELEASE_STATUS_FIXTURE: ${{ runner.temp }}/release-storage-fixture

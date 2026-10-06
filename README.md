@@ -1,6 +1,32 @@
 # inventory
 Web application for basic management of inventory items.
 
+## Phase 6 request intake
+
+Enabled signed-in users view saved purchase and relocation requests. Purchase
+details may all be blank; save a Draft before adding permanent notes. Creator
+ownership and attributed notes/activity remain retained. Basic users save their
+own Drafts; current elevated roles with valid organizational contact may submit
+their own. Admin/Procurement manages purchase Draft/Request preparation, while
+Admin/Manager manages relocation Draft/Requested preparation. Stale revisions
+retain entered values and require opening the latest saved request.
+
+Relocation title is required even for Drafts. Review/submission requires distinct
+active storage locations and at least one real catalog item. Quantities are
+individual whole units, including zero; projections use current balances. Copy
+starts independent unsaved work with only item IDs and requested quantities.
+Saved fulfillment is preparation; packing worksheets leave Sent blank. Request
+actions never reserve/post stock, change cost or create orders/shipments/receipts.
+
+`requests:prepare` installs only the seven-table contract recognized by retained
+reviewed recovery source **e0a654f1b600ad903c60eb83a61a780bf94f338a**. Preserve that
+release and verify its exact contract before approved hosted installation.
+Development requires `--hosted`; `requests:check` verifies exact readiness.
+CI prepares isolated local/test schemas and the existing Forge gate prepares and
+checks forward readiness before activation. Never roll live request schema back
+or remove permanent records; publication remains subject to independent review
+and Management's exact candidate approval.
+
 ## Phase 5 checkpoint 2
 
 Location Counts saves personal criteria only and reruns current data. Select one

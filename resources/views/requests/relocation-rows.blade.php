@@ -1,0 +1,8 @@
+@php($group = null)
+@foreach($rows as $item)@if($group !== $item['category'].' : '.$item['collection'])@php($group = $item['category'].' : '.$item['collection'])<tr class="collection-heading"><th colspan="{{ $columns ?? 4 }}">{{ $group }}</th></tr>@endif
+@php($quantity = $quantities[$item['id']] ?? 0)
+@php($numeric = is_scalar($quantity) && preg_match('/^\d[\d,]*$/',(string)$quantity) ? (int)str_replace(',','',(string)$quantity) : 0)
+<tr data-item-id="{{ $item['id'] }}"><th>{{ $item['name'] }}</th><td class="number" data-source="{{ $item['source'] }}">{{ number_format($item['source']) }} → <span data-source-after>{{ number_format($item['source']-$numeric) }}</span></td><td class="number" data-destination="{{ $item['destination'] }}">{{ number_format($item['destination']) }} → <span data-destination-after>{{ number_format($item['destination']+$numeric) }}</span></td><td class="number">@if($editing ?? false)<input data-request-quantity inputmode="numeric" aria-label="Request quantity for {{ $item['name'] }}" name="lines[{{ $item['id'] }}]" value="{{ $quantity }}">@else{{ number_format($numeric) }}@endif</td>@if($editing ?? false)<td><button type="button" data-remove-item>Remove</button></td>@endif
+@if($fulfillment ?? false)<td><input inputmode="numeric" aria-label="Fulfillment preparation for {{ $item['name'] }}" name="fulfillment[{{ $item['id'] }}]" value="{{ old('fulfillment.'.$item['id'], $lines[$item['id']]->fulfillment_quantity) }}" @disabled(!$manager || $row->status!=='Requested')></td>@endif
+@if($packing ?? false)<td class="packing-sent">&nbsp;</td>@endif</tr>
+@endforeach

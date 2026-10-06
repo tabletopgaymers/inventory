@@ -5,6 +5,7 @@ use App\Support\CatalogPreparation;
 use App\Support\DailyInventoryPreparation;
 use App\Support\InventoryPreparation;
 use App\Support\MicrosoftConfiguration;
+use App\Support\RequestPreparation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
@@ -236,3 +237,38 @@ Artisan::command('authentication:configuration', function () {
 
     return 0;
 })->purpose('Fail safely before migration if private provider configuration is not ready');
+
+Artisan::command('requests:check', function () {
+    try {
+        $ready = app(BaselineProbe::class)->inspect()['ready']
+            && app(BaselineProbe::class)->schemaState(DB::connection())['requestsReady'];
+        if (! $ready) {
+            $this->error('Request intake schema needs guarded preparation.');
+
+            return 1;
+        }
+        $this->info('Request intake schema verified; stock and cost remain separate.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Request schema check failed; private diagnostics withheld.');
+
+        return 1;
+    }
+});
+Artisan::command('requests:prepare {--hosted}', function () {
+    try {
+        if (! app(RequestPreparation::class)->prepare((bool) $this->option('hosted'))) {
+            $this->error('Request preparation blocked; inspect the current compatible development schema.');
+
+            return 1;
+        }
+        $this->info('Additive request intake schema verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Request preparation failed safely; inspect before retrying.');
+
+        return 1;
+    }
+});

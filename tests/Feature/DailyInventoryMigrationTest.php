@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Support\BaselineProbe;
 use App\Support\DailyInventoryPreparation;
 use App\Support\DailyInventorySchema;
+use App\Support\RequestSchema;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -16,6 +17,10 @@ class DailyInventoryMigrationTest extends TestCase
         $this->assertSame('tg_inventory_test', DB::connection()->getDatabaseName());
         $probe = app(BaselineProbe::class);
         $this->assertTrue($probe->schemaState(DB::connection())['dailyInventoryReady']);
+        $this->assertSame('35fc557173613fd8eecdd52c08c1190ee02528b295738e2881b7eb772b38a5a7', hash_file('sha256', app_path('Support/DailyInventorySchema.php')));
+        if (array_intersect(RequestSchema::TABLES, DB::getSchemaBuilder()->getTableListing(null, false)) !== []) {
+            $this->markTestSkipped('Installed request schema depends on count/cost tables; initial clean forward rehearsal retained separately.');
+        }
         foreach (DailyInventorySchema::TABLES as $table) {
             if (DB::table($table)->count() !== 0) {
                 $this->markTestSkipped('Nonempty count/cost tables preserved; destructive rehearsal is only for owned empty test install.');
