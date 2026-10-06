@@ -87,7 +87,7 @@ class BaselineProbe
             'authentication_bootstraps' => ['key', 'user_id', 'consumed_at'],
             'access_audits' => ['id', 'actor_id', 'target_id', 'action', 'previous', 'current', 'occurred_at'],
         ];
-        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication))) === [];
+        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication), InventorySchema::TABLES)) === [];
         $sessions = in_array('sessions', $tables, true);
         $ledger = in_array('migrations', $tables, true);
         $migration = '2026_10_05_000000_create_sessions_table';
@@ -113,10 +113,14 @@ class BaselineProbe
             }
             $authCompatible = $authReady;
         }
-        $known = $known && $authCompatible;
+        // Orphan stock migration records must also fail before authentication exists.
+        $inventory = app(InventorySchema::class)->state($database, $tables);
+        $known = $known && $authCompatible && $inventory['compatible']
+            && (! $inventory['ready'] || $authReady);
 
         return [
             'authenticationReady' => $authReady,
+            'inventoryReady' => $inventory['ready'],
             'ready' => $known && $recorded && $compatible,
             'canPrepare' => $known && ((! $sessions && ! $recorded) || ($recorded && $compatible)),
             'message' => $known && $recorded && $compatible

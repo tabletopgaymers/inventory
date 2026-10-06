@@ -50,6 +50,28 @@ Re-enablement, last-holder and recovery policies remain outside this slice.
 
 ### Authentication publication and compatible recovery
 
+#### Phase 4 stock-compatible bridge
+
+The first Stage 2 candidate changes only read-only schema compatibility. It does
+not install stock tables, expose stock UI or change the Forge gate entry point.
+`InventorySchema` declares seven correction-slice tables and migration identity
+`2026_10_06_000000_create_inventory_tables`. The baseline accepts the existing
+healthy authentication schema or the complete declared inventory schema; partial
+tables, a missing/orphan migration record, wrong columns/types/nullability,
+missing primary/unique keys, unsafe/missing foreign keys and non-InnoDB storage
+fail closed. Unknown tables remain rejected. Signed INT quantities and historical
+DECIMAL(24,12) costs are part of this compatibility contract.
+
+Publish this bridge only after independent review and Management clearance.
+Verify/retain its exact healthy release before publishing any stock migration.
+Existing Stage 1/authentication recovery releases reject stock tables and cannot
+serve as recovery source after that migration. The later correction release must
+match this contract, add guarded forward preparation/readiness and disposable CI
+stock preparation, and extend the existing authentication release gate internally.
+Do not activate a partial schema or delete balances/history to recover source.
+The bridge's disposable MariaDB tests create/remove only owned test fixtures;
+there is deliberately no business migration or stock preparation command here.
+
 Independent review must cover both the minimal compatibility bridge
 `1dd60a4ad7a19526bd3abdf536d391dac5376a87` and the final authentication revision.
 First publish/verify the bridge through existing main CI/Forge with the existing

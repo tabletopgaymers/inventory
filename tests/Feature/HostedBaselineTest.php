@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Support\BaselineProbe;
+use App\Support\InventorySchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -115,7 +116,14 @@ class HostedBaselineTest extends TestCase
         $database->shouldReceive('getSchemaBuilder')->andReturn($schema);
         $schema->shouldReceive('getTableListing')->with(null, false)->andReturn($tables);
         if (in_array('migrations', $tables)) {
-            $database->shouldReceive('table->where->exists')->andReturn($recorded);
+            $ledger = Mockery::mock();
+            $sessionRecord = Mockery::mock();
+            $stockRecord = Mockery::mock();
+            $database->shouldReceive('table')->with('migrations')->andReturn($ledger);
+            $ledger->shouldReceive('where')->with('migration', '2026_10_05_000000_create_sessions_table')->andReturn($sessionRecord);
+            $sessionRecord->shouldReceive('exists')->andReturn($recorded);
+            $ledger->shouldReceive('where')->with('migration', InventorySchema::MIGRATION)->andReturn($stockRecord);
+            $stockRecord->shouldReceive('exists')->andReturn(false);
         }
         if (in_array('sessions', $tables)) {
             $schema->shouldReceive('getColumnListing')->with('sessions')->andReturn($columns);
