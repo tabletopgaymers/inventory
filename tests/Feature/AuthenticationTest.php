@@ -200,23 +200,36 @@ class AuthenticationTest extends TestCase
         Log::shouldHaveReceived('warning')->once()->with('Microsoft sign-in failed.', ['stage' => 'provider exchange and claims']);
     }
 
-    public function test_actual_adapter_redirect_uses_fixed_tenant_exact_scopes_state_and_pkce(): void
+    public function test_actual_adapter_redirect_requests_account_selection_with_fixed_tenant_scopes_state_and_pkce(): void
     {
-        $this->get('/auth/microsoft/redirect?remember=1')->assertRedirect();
-        $response = $this->get('/auth/microsoft/redirect?remember=1');
-        $url = $response->headers->get('Location');
-        $this->assertStringContainsString('/'.self::TENANT.'/oauth2/v2.0/authorize', $url);
-        parse_str(parse_url($url, PHP_URL_QUERY), $query);
-        $scopes = explode(' ', $query['scope']);
-        sort($scopes);
-        $expected = ['openid', 'profile', 'email', 'User.Read'];
-        sort($expected);
-        $this->assertSame($expected, $scopes);
-        $this->assertSame('S256', $query['code_challenge_method']);
-        $this->assertNotEmpty($query['state']);
-        $verifier = session('code_verifier');
-        $this->assertSame(rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '='), $query['code_challenge']);
-        $this->assertTrue(session('microsoft_attempt.remember'));
+        foreach ([false, true] as $remember) {
+            $response = $this->get('/auth/microsoft/redirect?remember='.(int) $remember)->assertRedirect();
+            $url = $response->headers->get('Location');
+            $this->assertStringContainsString('/'.self::TENANT.'/oauth2/v2.0/authorize', $url);
+            parse_str(parse_url($url, PHP_URL_QUERY), $query);
+            $this->assertSame('select_account', $query['prompt']);
+            $this->assertSame('https://tg-inventory-app.test/auth/microsoft/callback', $query['redirect_uri']);
+            $scopes = explode(' ', $query['scope']);
+            sort($scopes);
+            $expected = ['openid', 'profile', 'email', 'User.Read'];
+            sort($expected);
+            $this->assertSame($expected, $scopes);
+            $this->assertSame('S256', $query['code_challenge_method']);
+            $this->assertNotEmpty($query['state']);
+            $this->assertSame(session('state'), $query['state']);
+            $verifier = session('code_verifier');
+            $this->assertSame(rtrim(strtr(base64_encode(hash('sha256', $verifier, true)), '+/', '-_'), '='), $query['code_challenge']);
+            $this->assertSame($remember, session('microsoft_attempt.remember'));
+        }
+    }
+
+    public function test_existing_authenticated_session_does_not_start_account_selection(): void
+    {
+        Socialite::shouldReceive('driver')->never();
+        $user = $this->user();
+        $this->signedIn($user)->get('/auth/microsoft/redirect')->assertRedirect('/');
+        $this->assertAuthenticatedAs($user);
+        $this->assertNull(session('microsoft_attempt'));
     }
 
     public function test_configuration_rejects_wrong_origins_tenants_scopes_and_missing_bootstrap(): void

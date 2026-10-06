@@ -29,7 +29,7 @@ class MicrosoftAuthController extends Controller
         try {
             $request->session()->put('microsoft_attempt', ['started' => now()->timestamp, 'remember' => $request->boolean('remember')]);
 
-            return $this->provider()->redirect();
+            return $this->provider()->with(['prompt' => 'select_account'])->redirect();
         } catch (Throwable) {
             return $this->failure($request);
         }
