@@ -1,0 +1,14 @@
+{
+  "name": "tg-design-phase-a-evaluation",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Scoped static Td guide build; not working application styling",
+  "scripts": {
+    "build": "tailwindcss -i ./input.css -o ../../../public/design/phase-a/evaluation.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "daisyui": "5.7.47",
+    "tailwindcss": "4.3.3"
+  }
+}
