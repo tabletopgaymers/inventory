@@ -6,6 +6,7 @@ use App\Support\BaselineProbe;
 use App\Support\CatalogSchema;
 use App\Support\DailyInventorySchema;
 use App\Support\InventorySchema;
+use App\Support\RequestSchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -132,6 +133,9 @@ class HostedBaselineTest extends TestCase
             $dailyRecord = Mockery::mock();
             $ledger->shouldReceive('where')->with('migration', DailyInventorySchema::MIGRATION)->andReturn($dailyRecord);
             $dailyRecord->shouldReceive('exists')->andReturn(false);
+            $requestRecord = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', RequestSchema::MIGRATION)->andReturn($requestRecord);
+            $requestRecord->shouldReceive('exists')->andReturn(false);
         }
         if (in_array('sessions', $tables)) {
             $schema->shouldReceive('getColumnListing')->with('sessions')->andReturn($columns);
@@ -139,6 +143,7 @@ class HostedBaselineTest extends TestCase
         $state = app(BaselineProbe::class)->schemaState($database);
         $this->assertSame($ready, $state['ready']);
         $this->assertSame($canPrepare, $state['canPrepare']);
+        $this->assertFalse($state['requestsReady']);
     }
 
     public static function schemaCases(): array

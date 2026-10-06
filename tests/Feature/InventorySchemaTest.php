@@ -6,6 +6,7 @@ use App\Support\BaselineProbe;
 use App\Support\CatalogSchema;
 use App\Support\DailyInventorySchema;
 use App\Support\InventorySchema;
+use App\Support\RequestSchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -107,10 +108,14 @@ class InventorySchemaTest extends TestCase
             $daily = Mockery::mock();
             $ledger->shouldReceive('where')->with('migration', DailyInventorySchema::MIGRATION)->andReturn($daily);
             $daily->shouldReceive('exists')->once()->andReturn(false);
+            $requests = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', RequestSchema::MIGRATION)->andReturn($requests);
+            $requests->shouldReceive('exists')->once()->andReturn(false);
         }
         $state = app(BaselineProbe::class)->schemaState($database);
         $this->assertSame($ready, $state['ready']);
         $this->assertSame($canPrepare, $state['canPrepare']);
+        $this->assertFalse($state['requestsReady']);
         $this->assertFalse($state['authenticationReady']);
         $this->assertFalse($state['inventoryReady']);
     }

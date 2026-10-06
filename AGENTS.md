@@ -66,3 +66,15 @@ shared routes, disposable test runtime and TG Jeff browser; publication requires
 Owl's exact reviewed-candidate clearance through existing development CI/Forge.
 Preserve accepted schema/data/history, private inputs and design changes. No
 Phase 6+, production, unrelated changes or additional agents. Report to Owl.
+
+## Phase 6 update — October 6, 2026
+
+D-190/D-192 supersede historical Phase6 holds for the bounded planning task
+work/tasks/phase-06-request-intake.md after Phase5 technical closure D-191.
+Intakewright Raccoon 12 is the sole Phase6 application writer, excluding all
+Phase A design paths. Flowwatch Falcon 13 independently reviews frozen candidates.
+Owl coordinates exclusive test/browser leases and exact reviewed publication
+approval through existing development CI/Forge. Preserve accepted schema, stock,
+cost and immutable history; bridge first, request installers/features only after
+scoped continuation. Stop after Phase6; no Phase7 posting, production, unrelated
+work, application redesign or Td adoption. Questions/blockers/completion go to Owl.
