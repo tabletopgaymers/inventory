@@ -1,6 +1,41 @@
 # inventory
 Web application for basic management of inventory items.
 
+## Phase 5 checkpoint 1
+
+D-187 authorizes catalog/reference maintenance and real inventory browsing/export.
+Enabled signed-in users browse all retained records; Admin/Manager maintain catalog
+metadata/lifecycle. New items have zero stock and unknown cost. Metadata edits do
+not post history or stock. SKU collisions and duplicate reference names fail
+transactionally; populated collection prefixes are immutable. Archive requires
+confirmation; restore goes to Inactive, with no child cascade or hard deletion.
+
+Inventory opens with remembered criteria and no automatic results. Search/Show All
+submit; pending changes keep old results. Item/location return refreshes submitted
+quantities while restoring pending controls/scroll/closed filters. CSV uses the
+last displayed complete actor-bound result payload for 30 minutes, including
+explicit zero and negative quantities; text/header formula prefixes are escaped.
+Only storage contributes to Available; typed active events/transit/ordered sources
+are read-only. Later transaction destinations are honestly unavailable.
+
+`catalog:prepare` installs only the declared eight additive tables after healthy
+baseline/authentication/inventory checks; `catalog:check` verifies their exact
+contract. Use `--env=testing` only for the reserved disposable database; local
+operations require coordinated runtime ownership. Hosted preparation is permitted
+only in the independently reviewed development gate with `--hosted`, after
+reconfirming retained healthy recovery source **e81dca9**. No generic migrations,
+applied migration edits, stock/history resets or production operations.
+The gate and disposable CI extend existing preparation/readiness internally.
+
+`DailyInventorySchema` additionally recognizes a read-only optional three-table
+Phase 5 count/cost contract. Checkpoint 1 installs none of those tables and exposes
+no count/cost workflow. Retain the reviewed checkpoint 1 release before checkpoint
+2's later installer. Absent future tables remain compatible; malformed/partial/
+orphan states and missing prerequisites fail closed. Source recovery preserves
+shared data rather than rolling schema backward. Design sandbox files, libraries
+and assets remain excluded from feature publication; its optional local-only
+loader remains inert when the dedicated route file is absent.
+
 ## Phase 3 authentication candidate
 
 D-177 authorizes this bounded development slice. Application implementation is

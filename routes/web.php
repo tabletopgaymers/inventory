@@ -7,6 +7,10 @@ use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+if (app()->environment(['local', 'development']) && is_file(__DIR__.'/design-phase-a.php')) {
+    require __DIR__.'/design-phase-a.php';
+}
+
 Route::get('/baseline', function (Request $request) {
     return view('welcome', $request->attributes->get('baseline'));
 });
@@ -24,7 +28,7 @@ Route::get('/signed-out', function (Request $request) {
 });
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home');
-    foreach (['catalog', 'inventory', 'purchases', 'relocations', 'events'] as $page) {
+    foreach (['purchases', 'relocations', 'events'] as $page) {
         Route::get('/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
     }
     foreach (['location-counts'] as $page) {
@@ -44,3 +48,5 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/{user}/roles', [UserController::class, 'role']);
     Route::post('/users/{user}/disable', [UserController::class, 'disable']);
 });
+
+require __DIR__.'/phase-five.php';

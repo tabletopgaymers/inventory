@@ -56,6 +56,12 @@ class NavigationTest extends TestCase
 
                 continue;
             }
+            if (in_array($path, ['/catalog', '/inventory'], true)) {
+                $this->get($path)->assertOk()->assertDontSee('Workflow preview')->assertDontSee('>Planned<', false);
+                $this->post($path)->assertStatus(405);
+
+                continue;
+            }
             $this->get($path)->assertOk()->assertSee('Planned')->assertSee('Intended actions')
                 ->assertSee('Related destinations')->assertSee('separate demonstration with sample data')
                 ->assertSee('target="_blank"', false)->assertSee('rel="noopener noreferrer"', false)

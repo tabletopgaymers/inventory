@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Support\BaselineProbe;
+use App\Support\CatalogRecords;
+use App\Support\InventorySearch;
 use App\Support\StockNumbers;
 use App\Support\StockPosting;
 use Illuminate\Database\QueryException;
@@ -28,7 +30,7 @@ class InventoryController
     {
         return DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')
             ->join('categories', 'categories.id', '=', 'collections.category_id')
-            ->select('items.*', 'collections.name as collection_name', 'categories.name as category_name')->where('items.id', $id)->firstOrFail();
+            ->select('items.*', 'collections.name as collection_name', 'categories.name as category_name', 'categories.id as category_id')->where('items.id', $id)->firstOrFail();
     }
 
     private function locations(int $item): Collection
@@ -53,13 +55,34 @@ class InventoryController
     public function show(Request $request, int $item)
     {
         $this->ready();
+        $catalogReady = app(BaselineProbe::class)->schemaState(DB::connection())['catalogReady'];
+        $extraBalances = [];
+        $metadata = null;
+        $purpose = null;
+        $programs = collect();
+        $state = 'active';
+        if ($catalogReady) {
+            $metadata = DB::table('item_metadata')->where('item_id', $item)->first();
+            $purpose = $metadata?->purpose_id ? app(CatalogRecords::class)->record('purposes', $metadata->purpose_id) : null;
+            $programs = DB::table('item_programs')->join('catalog_references', 'catalog_references.id', '=', 'item_programs.program_id')->where('item_id', $item)->orderBy('name')->get();
+            $state = app(CatalogRecords::class)->record('items', $item)->state;
+            $criteria = app(InventorySearch::class)->defaults();
+            $criteria['include_inactive'] = true;
+            $results = app(InventorySearch::class)->results($criteria);
+            $result = collect($results['rows'])->firstWhere('id', $item);
+            foreach (app(InventorySearch::class)->columns() as $key => $column) {
+                if ($column['kind'] !== 'storage') {
+                    $extraBalances[] = ['name' => $column['name'], 'quantity' => $result['values'][$key] ?? 0];
+                }
+            }
+        }
         $sort = $request->query('sort') === 'description' ? 'description' : 'posted_at';
         $history = DB::table('inventory_adjustment_entries')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_adjustment_entries.inventory_adjustment_id')
             ->where('inventory_adjustments.item_id', $item)->select('inventory_adjustment_entries.*', 'inventory_adjustments.posted_at')
             ->orderBy($sort, $sort === 'description' ? 'asc' : 'desc')->orderByDesc('inventory_adjustment_entries.id')->get();
 
         return view('inventory.item', ['item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history,
-            'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+            'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'purpose' => $purpose, 'programs' => $programs, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);
     }
 
     private function draft(Request $request, int $item, string $token): array

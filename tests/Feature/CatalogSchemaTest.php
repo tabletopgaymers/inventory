@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Support\BaselineProbe;
 use App\Support\CatalogSchema;
+use App\Support\DailyInventorySchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use Tests\TestCase;
@@ -122,7 +123,7 @@ class CatalogSchemaTest extends TestCase
         $schema->shouldReceive('getTableListing')->with(null, false)->andReturn(['migrations']);
         $ledger = Mockery::mock();
         $database->shouldReceive('table')->with('migrations')->andReturn($ledger);
-        foreach (['2026_10_05_000000_create_sessions_table' => false, '2026_10_06_000000_create_inventory_tables' => false, CatalogSchema::MIGRATION => true] as $migration => $exists) {
+        foreach (['2026_10_05_000000_create_sessions_table' => false, '2026_10_06_000000_create_inventory_tables' => false, CatalogSchema::MIGRATION => true, DailyInventorySchema::MIGRATION => false] as $migration => $exists) {
             $query = Mockery::mock();
             $ledger->shouldReceive('where')->with('migration', $migration)->andReturn($query);
             $query->shouldReceive('exists')->andReturn($exists);

@@ -1,10 +1,42 @@
 <?php
 
 use App\Support\BaselineProbe;
+use App\Support\CatalogPreparation;
 use App\Support\InventoryPreparation;
 use App\Support\MicrosoftConfiguration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+
+Artisan::command('catalog:prepare {--hosted}', function () {
+    try {
+        if (! app(CatalogPreparation::class)->prepare((bool) $this->option('hosted'))) {
+            throw new RuntimeException;
+        }
+        $this->info('Additive catalog schema verified; existing stock/history retained.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Catalog preparation failed; retain data for inspection and forward repair. Activation must stop.');
+
+        return 1;
+    }
+})->purpose('Guarded forward additive Phase 5 migration only');
+
+Artisan::command('catalog:check', function () {
+    try {
+        $probe = app(BaselineProbe::class);
+        if (! $probe->inspect()['ready'] || ! $probe->schemaState(DB::connection())['catalogReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Exact additive catalog schema and migration record verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Catalog readiness failed; activation must stop.');
+
+        return 1;
+    }
+})->purpose('Read-only exact catalog readiness check');
 
 Artisan::command('inventory:prepare {--hosted}', function () {
     try {

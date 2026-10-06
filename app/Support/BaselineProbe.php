@@ -87,7 +87,7 @@ class BaselineProbe
             'authentication_bootstraps' => ['key', 'user_id', 'consumed_at'],
             'access_audits' => ['id', 'actor_id', 'target_id', 'action', 'previous', 'current', 'occurred_at'],
         ];
-        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication), InventorySchema::TABLES, CatalogSchema::TABLES)) === [];
+        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication), InventorySchema::TABLES, CatalogSchema::TABLES, DailyInventorySchema::TABLES)) === [];
         $sessions = in_array('sessions', $tables, true);
         $ledger = in_array('migrations', $tables, true);
         $migration = '2026_10_05_000000_create_sessions_table';
@@ -116,13 +116,15 @@ class BaselineProbe
         // Orphan stock migration records must also fail before authentication exists.
         $inventory = app(InventorySchema::class)->state($database, $tables);
         $catalog = app(CatalogSchema::class)->state($database, $tables);
-        $known = $known && $authCompatible && $inventory['compatible'] && $catalog['compatible']
-            && (! $inventory['ready'] || $authReady) && (! $catalog['ready'] || $inventory['ready']);
+        $daily = app(DailyInventorySchema::class)->state($database, $tables);
+        $known = $known && $authCompatible && $inventory['compatible'] && $catalog['compatible'] && $daily['compatible']
+            && (! $inventory['ready'] || $authReady) && (! $catalog['ready'] || $inventory['ready']) && (! $daily['ready'] || $catalog['ready']);
 
         return [
             'authenticationReady' => $authReady,
             'inventoryReady' => $inventory['ready'],
             'catalogReady' => $catalog['ready'],
+            'dailyInventoryReady' => $daily['ready'],
             'ready' => $known && $recorded && $compatible,
             'canPrepare' => $known && ((! $sessions && ! $recorded) || ($recorded && $compatible)),
             'message' => $known && $recorded && $compatible

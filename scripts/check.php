@@ -36,12 +36,14 @@ try {
         'isolated test database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--env=testing', '--no-ansi'],
         'local inventory schema' => [PHP_BINARY, 'artisan', 'inventory:check', '--no-ansi'],
         'isolated test inventory schema' => [PHP_BINARY, 'artisan', 'inventory:check', '--env=testing', '--no-ansi'],
+        'local catalog schema' => [PHP_BINARY, 'artisan', 'catalog:check', '--no-ansi'],
+        'isolated test catalog schema' => [PHP_BINARY, 'artisan', 'catalog:check', '--env=testing', '--no-ansi'],
         'PHP formatting' => [PHP_BINARY, 'vendor/laravel/pint/builds/pint', '--test'],
         'database integration and failure handling' => [PHP_BINARY, 'vendor/phpunit/phpunit/phpunit', '--fail-on-warning', '--fail-on-risky', '--fail-on-deprecation'],
     ];
     foreach ($checks as $stage => $command) {
         $process = new Process($command, $root);
-        $process->setTimeout(120);
+        $process->setTimeout($stage === 'database integration and failure handling' ? 600 : 120);
         $process->run();
         if (! $process->isSuccessful()) {
             throw new RuntimeException('Check failed');

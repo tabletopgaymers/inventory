@@ -19,3 +19,16 @@ Use the shared primary button for Continue/Save/OK and discard link for Cancel.
 Review/history retains Date, Description, signed Quantity and Unit Cost, with an
 ordinary accessible description link as well as whole-row pointer navigation.
 Native departure confirmation preserves the form when Cancel is selected.
+
+## Catalog and inventory search
+
+Use separate Create/Edit forms with retained validation input, optional notes and
+explicit lifecycle actions. Archive has a named confirmation checkbox; Restore
+returns to Inactive. Shared green Active/neutral Archived badges show lifecycle.
+Browse controls query only on Search/Show All; pending changes retain displayed
+results and CSV. Alphabetical collection checklists flow down three/two/one columns.
+Storage and extra-source column choices are separate fieldsets; quantities stay
+right aligned. The scrollable full result table fixes headings and item names,
+with collection heading rows and a sticky bottom Download action. Narrow screens
+retain the table inside horizontal scrolling. Optional item money displays two
+decimals while stored exact precision and blank/zero remain unchanged.
