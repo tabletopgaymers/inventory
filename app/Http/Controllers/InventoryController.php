@@ -1,0 +1,163 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Support\BaselineProbe;
+use App\Support\StockNumbers;
+use App\Support\StockPosting;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class InventoryController
+{
+    private function ready(): void
+    {
+        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['inventoryReady'], 503, 'Inventory is not ready.');
+    }
+
+    private function correctionAccess(Request $request): void
+    {
+        $this->ready();
+        abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
+    }
+
+    private function item(int $id): object
+    {
+        return DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')
+            ->join('categories', 'categories.id', '=', 'collections.category_id')
+            ->select('items.*', 'collections.name as collection_name', 'categories.name as category_name')->where('items.id', $id)->firstOrFail();
+    }
+
+    private function locations(int $item): Collection
+    {
+        $balances = DB::table('inventory_balances')->where('item_id', $item)->pluck('quantity', 'storage_location_id');
+
+        return DB::table('storage_locations')->orderByDesc('is_central')->orderBy('name')->orderBy('id')->get()
+            ->map(function ($location) use ($balances) {
+                $location->quantity = (int) ($balances[$location->id] ?? 0);
+
+                return $location;
+            });
+    }
+
+    public function index()
+    {
+        $this->ready();
+
+        return view('inventory.index', ['items' => DB::table('items')->orderBy('name')->get()]);
+    }
+
+    public function show(Request $request, int $item)
+    {
+        $this->ready();
+        $sort = $request->query('sort') === 'description' ? 'description' : 'posted_at';
+        $history = DB::table('inventory_adjustment_entries')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_adjustment_entries.inventory_adjustment_id')
+            ->where('inventory_adjustments.item_id', $item)->select('inventory_adjustment_entries.*', 'inventory_adjustments.posted_at')
+            ->orderBy($sort, $sort === 'description' ? 'asc' : 'desc')->orderByDesc('inventory_adjustment_entries.id')->get();
+
+        return view('inventory.item', ['item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history,
+            'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+    }
+
+    private function draft(Request $request, int $item, string $token): array
+    {
+        abort_unless(Str::isUuid($token), 404);
+        $draft = $request->session()->get('stock_drafts.'.$token);
+        abort_unless(is_array($draft) && $draft['item'] === $item && $draft['actor'] === (int) $request->user()->id, 404);
+
+        return $draft;
+    }
+
+    public function edit(Request $request, int $item)
+    {
+        $this->correctionAccess($request);
+        $token = $request->query('operation');
+        $draft = is_string($token) ? $this->draft($request, $item, $token) : null;
+        if (! $draft) {
+            $token = (string) Str::uuid();
+            $draft = ['item' => $item, 'actor' => (int) $request->user()->id, 'rows' => [], 'reviewed' => false];
+            foreach ($this->locations($item) as $location) {
+                $draft['rows'][$location->id] = ['set' => (string) $location->quantity, 'adjust' => '0', 'rationale' => ''];
+            }
+            $request->session()->put('stock_drafts.'.$token, $draft);
+        }
+
+        return view('inventory.edit', ['item' => $this->item($item), 'locations' => $this->locations($item), 'draft' => $draft, 'token' => $token]);
+    }
+
+    public function preview(Request $request, int $item)
+    {
+        $this->correctionAccess($request);
+        $token = $request->input('operation');
+        abort_unless(is_string($token), 422);
+        $draft = $this->draft($request, $item, $token);
+        abort_if(DB::table('inventory_adjustments')->where('operation_id', $token)->exists(), 409);
+        $data = $request->validate(['rows' => ['required', 'array'], 'rows.*' => ['required', 'array:set,adjust,rationale'],
+            'rows.*.set' => ['required'], 'rows.*.adjust' => ['nullable'], 'rows.*.rationale' => ['nullable', 'string', 'max:1000']]);
+        $locations = $this->locations($item);
+        $expected = array_map('strval', $locations->pluck('id')->all());
+        $received = array_map('strval', array_keys($data['rows']));
+        sort($expected);
+        sort($received);
+        abort_unless($expected === $received, 422);
+        foreach ($data['rows'] as $id => $row) {
+            StockNumbers::finalQuantity($row['set'], $row['adjust'] ?? '', 'rows.'.$id);
+        }
+        $draft['rows'] = $data['rows'];
+        $draft['reviewed'] = true;
+        $request->session()->put('stock_drafts.'.$token, $draft);
+
+        return redirect('/inventory/items/'.$item.'/review/'.$token);
+    }
+
+    public function review(Request $request, int $item, string $operation)
+    {
+        $this->correctionAccess($request);
+        $draft = $this->draft($request, $item, $operation);
+        abort_unless($draft['reviewed'], 422);
+        $changes = [];
+        foreach ($this->locations($item) as $location) {
+            abort_unless(isset($draft['rows'][$location->id]), 422);
+            $row = $draft['rows'][$location->id];
+            $after = StockNumbers::finalQuantity($row['set'], $row['adjust'] ?? '', 'rows.'.$location->id);
+            if ($after !== $location->quantity) {
+                $changes[] = ['description' => 'Adjustment: '.$location->name, 'quantity_change' => $after - $location->quantity, 'rationale' => $row['rationale'] ?? ''];
+            }
+        }
+
+        return view('inventory.review', ['item' => $this->item($item), 'changes' => $changes, 'token' => $operation]);
+    }
+
+    public function save(Request $request, int $item, string $operation)
+    {
+        $this->correctionAccess($request);
+        $draft = $this->draft($request, $item, $operation);
+        abort_unless($draft['reviewed'], 422);
+        try {
+            $id = app(StockPosting::class)->post((int) $request->user()->id, $item, $operation, $draft['rows']);
+        } catch (QueryException) {
+            return back()->with('error', 'The correction could not be saved. Your review is retained; try again.');
+        }
+
+        return redirect('/inventory/adjustments/'.$id.'/result');
+    }
+
+    public function adjustment(int $adjustment, bool $result = false)
+    {
+        $this->ready();
+        $group = DB::table('inventory_adjustments')->where('id', $adjustment)->firstOrFail();
+        $entries = DB::table('inventory_adjustment_entries')->where('inventory_adjustment_id', $adjustment)->get()->sortBy('location_name')->values();
+        // Historical name determines central ordering; do not rewrite snapshots from current names.
+        $entries = $entries->sortBy(fn ($entry) => [$entry->location_name === 'Central' ? 0 : 1, $entry->location_name])->values();
+
+        return view($result ? 'inventory.result' : 'inventory.adjustment', ['group' => $group, 'entries' => $entries]);
+    }
+
+    public function result(int $adjustment)
+    {
+        return $this->adjustment($adjustment, true);
+    }
+}

@@ -34,6 +34,8 @@ try {
     $checks = [
         'local database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--no-ansi'],
         'isolated test database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--env=testing', '--no-ansi'],
+        'local inventory schema' => [PHP_BINARY, 'artisan', 'inventory:check', '--no-ansi'],
+        'isolated test inventory schema' => [PHP_BINARY, 'artisan', 'inventory:check', '--env=testing', '--no-ansi'],
         'PHP formatting' => [PHP_BINARY, 'vendor/laravel/pint/builds/pint', '--test'],
         'database integration and failure handling' => [PHP_BINARY, 'vendor/phpunit/phpunit/phpunit', '--fail-on-warning', '--fail-on-risky', '--fail-on-deprecation'],
     ];

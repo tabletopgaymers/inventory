@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MicrosoftAuthController;
 use App\Http\Controllers\PlannedPageController;
 use App\Http\Controllers\UserController;
@@ -26,9 +27,17 @@ Route::middleware('auth')->group(function () {
     foreach (['catalog', 'inventory', 'purchases', 'relocations', 'events'] as $page) {
         Route::get('/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
     }
-    foreach (['item-history', 'location-counts'] as $page) {
+    foreach (['location-counts'] as $page) {
         Route::get('/inventory/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
     }
+    Route::get('/inventory/item-history', [InventoryController::class, 'index']);
+    Route::get('/inventory/items/{item}', [InventoryController::class, 'show'])->whereNumber('item');
+    Route::get('/inventory/items/{item}/edit', [InventoryController::class, 'edit'])->whereNumber('item');
+    Route::post('/inventory/items/{item}/preview', [InventoryController::class, 'preview'])->whereNumber('item');
+    Route::get('/inventory/items/{item}/review/{operation}', [InventoryController::class, 'review'])->whereNumber('item');
+    Route::post('/inventory/items/{item}/review/{operation}', [InventoryController::class, 'save'])->whereNumber('item');
+    Route::get('/inventory/adjustments/{adjustment}', [InventoryController::class, 'adjustment'])->whereNumber('adjustment');
+    Route::get('/inventory/adjustments/{adjustment}/result', [InventoryController::class, 'result'])->whereNumber('adjustment');
     Route::view('/profile', 'profile');
     Route::post('/profile', [UserController::class, 'saveProfile']);
     Route::get('/users', [UserController::class, 'directory']);

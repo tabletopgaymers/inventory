@@ -50,7 +50,52 @@ Re-enablement, last-holder and recovery policies remain outside this slice.
 
 ### Authentication publication and compatible recovery
 
-#### Phase 4 stock-compatible bridge
+#### Phase 4 correction candidate — guarded publication
+
+Retained reviewed bridge: `04c00edc22172688e9ce30196d0e74a4ba070128`,
+Forge release `79443486`. Reverify it remains retained immediately before the
+later hosted migration; source recovery preserves balances/history and uses the
+retained release's own private configuration. Do not recover with an older
+schema-incompatible source or drop data. Partial DDL stops activation and needs
+inspected forward repair.
+
+Local/testing forward setup (no database reset): `php artisan inventory:prepare`
+and `php artisan inventory:prepare --env=testing`. `inventory:check` checks the
+exact contract read-only. Optional `inventory:demo` installs only approved
+fictional reference records in development, once, without identities/roles,
+stock or history. All commands deny production; hosted preparation/demo require
+`--hosted` and explicit final publication clearance. Do not run hosted commands
+before independent full-candidate review and Management handoff.
+
+The unchanged Forge entry point now checks the exact CI revision/configuration,
+baseline and private provider settings, prepares authentication, prepares the
+allowlisted inventory migration and approved development references, caches
+configuration, verifies authentication/inventory readiness and caches views
+before activation. CI prepares disposable stock schemas before required checks.
+No operational down/reset/refresh commands are part of this sequence.
+
+`/inventory/item-history` is now a working item index. Item/edit/review/save/result
+and immutable grouped adjustment detail use existing session/CSRF protection.
+Admin/Manager corrections serialize with existing access management and the item,
+validate all storage targets, and atomically post balances/history once per
+server-session-bound operation UUID. Repeated Save returns the existing result;
+no-op confirms retain an operation group but create no History entries. An
+absolute Set plus Adjust is the requested final value; deltas are computed from
+the serialized current state without rebasing the count. Inputs/results are
+bounded to ±1,000,000,000, preserving signed INT deltas; browser BigInt previews
+and exact decimal cost rounding avoid floating-point loss. Cost never changes
+on quantity correction. Dates are stored in UTC, displayed America/Chicago.
+
+Pre-stock bridge DDL rehearsal tests are skipped once testing stock is installed
+to preserve that dataset; their independent 04c00ed evidence remains the recovery
+prerequisite. No-write orphan-ledger regressions continue running. Current tests
+also rebuild only preflight-empty disposable stock tables with the actual forward
+migration and verify the unchanged retained contract, authorization, snapshots,
+no-op/retry/overflow, forced transaction failure and overlapping processes. Tests
+never reset authentication or use real fixture identities. Local-only demo data
+and source checks do not constitute hosted workflow acceptance.
+
+#### Retained Phase 4 stock-compatible bridge
 
 The first Stage 2 candidate changes only read-only schema compatibility. It does
 not install stock tables, expose stock UI or change the Forge gate entry point.

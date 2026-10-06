@@ -15,8 +15,11 @@ try {
         'isolated baseline' => [PHP_BINARY, 'artisan', 'baseline:check'],
         'private provider configuration' => [PHP_BINARY, 'artisan', 'authentication:configuration'],
         'forward authentication migration' => [PHP_BINARY, 'artisan', 'authentication:prepare', '--hosted'],
+        'forward inventory migration' => [PHP_BINARY, 'artisan', 'inventory:prepare', '--hosted'],
+        'synthetic development references' => [PHP_BINARY, 'artisan', 'inventory:demo', '--hosted'],
         'configuration cache' => [PHP_BINARY, 'artisan', 'config:cache'],
         'authentication readiness' => [PHP_BINARY, 'artisan', 'authentication:check'],
+        'inventory readiness' => [PHP_BINARY, 'artisan', 'inventory:check'],
         'views' => [PHP_BINARY, 'artisan', 'view:cache'],
     ];
     foreach ($commands as $stage => $command) {

@@ -1,9 +1,56 @@
 <?php
 
 use App\Support\BaselineProbe;
+use App\Support\InventoryPreparation;
 use App\Support\MicrosoftConfiguration;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+
+Artisan::command('inventory:prepare {--hosted}', function () {
+    try {
+        if (! app(InventoryPreparation::class)->prepare((bool) $this->option('hosted'))) {
+            throw new RuntimeException;
+        }
+        $this->info('Inventory schema verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Inventory preparation failed; retain data for inspection and forward repair. Activation must stop.');
+
+        return 1;
+    }
+})->purpose('Guarded forward correction-slice migration only');
+
+Artisan::command('inventory:check', function () {
+    try {
+        $probe = app(BaselineProbe::class);
+        if (! $probe->inspect()['ready'] || ! $probe->schemaState(DB::connection())['inventoryReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Exact inventory schema and migration record verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Inventory readiness failed; activation must stop.');
+
+        return 1;
+    }
+})->purpose('Read-only exact inventory readiness check');
+
+Artisan::command('inventory:demo {--hosted}', function () {
+    try {
+        if (! app(InventoryPreparation::class)->demo((bool) $this->option('hosted'))) {
+            throw new RuntimeException;
+        }
+        $this->info('Approved synthetic development reference data is present; stock/history unchanged.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Synthetic development preparation failed; inspect before retrying.');
+
+        return 1;
+    }
+})->purpose('Idempotent development-only fictional reference records; no roles or stock writes');
 
 Artisan::command('baseline:check', function () {
     $result = app(BaselineProbe::class)->inspect();
