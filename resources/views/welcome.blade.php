@@ -1,18 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TG Inventory — Development baseline</title>
-    <link rel="stylesheet" href="/baseline.css">
-</head>
-<body>
-    <main>
-        <p class="eyebrow">{{ $baselineLabel }}</p>
-        <h1>Tabletop Gaymers Inventory</h1>
-        <p class="status {{ $ready ? 'success' : 'warning' }}" role="status">{{ $message }}</p>
+<x-app.shell title="Development baseline" :guest="true">
+<x-app.page-heading title="Tabletop Gaymers Inventory" />
+<x-app.panel>
+        <p class="app-eyebrow">{{ $baselineLabel }}</p>
+
+        <p class="{{ $ready ? 'notice' : 'warning' }}" role="status">{{ $message }}</p>
         <p>This development page verifies the application foundation. Inventory workflows are not available yet.</p>
-        <dl>
+        <dl class="item-metadata">
             <dt>Revision</dt><dd>{{ config('baseline.revision') ?? 'Unrecorded working copy' }}</dd>
             <dt>PHP</dt><dd>{{ $phpVersion }}</dd>
             <dt>Laravel</dt><dd>{{ $laravelVersion }}</dd>
@@ -20,6 +13,5 @@
                 <dt>MariaDB</dt><dd>{{ $databaseVersion }}</dd>
             @endif
         </dl>
-    </main>
-</body>
-</html>
+</x-app.panel>
+</x-app.shell>

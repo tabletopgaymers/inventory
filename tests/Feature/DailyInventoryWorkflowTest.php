@@ -9,6 +9,7 @@ use App\Support\InventorySearch;
 use App\Support\LocationCountSearch;
 use App\Support\StockPosting;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -62,6 +63,81 @@ class DailyInventoryWorkflowTest extends TestCase
         parse_str(parse_url($response->headers->get('Location'), PHP_URL_QUERY), $query);
 
         return $query['context'];
+    }
+
+    public function test_location_choices_nonzero_balances_and_unavailable_saved_selections(): void
+    {
+        DB::table('catalog_metadata')->insert(['kind' => 'storage_locations', 'record_id' => $this->location, 'state' => 'inactive']);
+        DB::table('inventory_balances')->where('item_id', $this->item)->update(['quantity' => 5]);
+        $service = app(InventorySearch::class);
+        $this->assertArrayHasKey('storage:'.$this->location, $service->columns(), 'Offsetting non-zero stock remains inspectable.');
+        $criteria = $service->defaults();
+        $criteria['search'] = 'No matches';
+        $criteria['columns'] = ['storage:'.$this->location];
+        $service->remember($this->manager->id, $criteria);
+        DB::table('inventory_balances')->where('storage_location_id', $this->location)->update(['quantity' => 0]);
+        $this->assertArrayNotHasKey('storage:'.$this->location, $service->columns());
+        $this->assertSame($criteria, $service->remembered($this->manager->id));
+        $this->get('/inventory')->assertOk()->assertSee('unavailable — remove this saved selection')->assertSee('No matches');
+        $this->post('/inventory/search', $criteria + ['action' => 'search'])->assertSessionHasErrors('columns.0');
+        $this->assertSame($criteria, $service->remembered($this->manager->id));
+        DB::table('inventory_balances')->where('item_id', $this->other)->where('storage_location_id', $this->location)->update(['quantity' => -1]);
+        $this->assertArrayHasKey('storage:'.$this->location, $service->columns());
+    }
+
+    public function test_count_zero_stock_defaults_overrides_and_legacy_saved_compatibility(): void
+    {
+        $service = app(LocationCountSearch::class);
+        $central = (int) (DB::table('storage_locations')->where('is_central', true)->value('id') ?? DB::table('storage_locations')->insertGetId(['name' => 'Central', 'is_central' => true]));
+        DB::table('inventory_balances')->where('item_id', $this->item)->update(['quantity' => 0]);
+        DB::table('catalog_metadata')->insert(['kind' => 'items', 'record_id' => $this->other, 'state' => 'inactive']);
+        $fresh = $service->criteria(Request::create('/', 'POST', ['location_id' => $this->location]));
+        $this->assertFalse($fresh['include_active_zero']);
+        $this->assertNotContains($this->item, array_column($service->rows($fresh), 'id'));
+        $this->assertContains($this->other, array_column($service->rows($fresh), 'id'));
+        $fresh['include_active_zero'] = true;
+        $this->assertContains($this->item, array_column($service->rows($fresh), 'id'));
+        DB::table('inventory_balances')->where('item_id', $this->other)->update(['quantity' => 0]);
+        $this->assertNotContains($this->other, array_column($service->rows($fresh), 'id'));
+        $centralCriteria = $service->criteria(Request::create('/', 'POST', ['location_id' => $central]));
+        $this->assertTrue($centralCriteria['include_active_zero']);
+        $changed = $service->criteria(Request::create('/', 'POST', ['location_id' => $central, 'zero_stock_location' => $this->location, 'include_active_zero' => '0']));
+        $this->assertTrue($changed['include_active_zero'], 'No-JS location changes apply the destination default.');
+        $override = $service->criteria(Request::create('/', 'POST', ['location_id' => $central, 'zero_stock_location' => $central, 'include_active_zero' => '0']));
+        $this->assertFalse($override['include_active_zero']);
+        $service->save($this->manager->id, 'Central override', $override, false);
+        $page = $this->get('/inventory/location-counts?saved=central%20override')->assertOk();
+        $this->assertFalse($page->viewData('criteria')['include_active_zero']);
+        $legacy = ['location_id' => $this->location, 'search' => 'Pronoun', 'collections' => [], 'include_inactive' => false];
+        $this->assertTrue($service->normalize($legacy)['include_active_zero']);
+        $legacy['include_inactive'] = true;
+        $preferences = ['saved_counts' => ['legacy' => ['name' => 'Legacy', 'criteria' => $legacy]]];
+        DB::table('inventory_preferences')->where('user_id', $this->manager->id)->update(['criteria' => json_encode($preferences)]);
+        $page = $this->get('/inventory/location-counts?saved=legacy')->assertOk()->assertSee('results have not been loaded');
+        $this->assertNull($page->viewData('rows'));
+        $this->assertSame($legacy, $service->saved($this->manager->id)['legacy']['criteria']);
+        $this->assertFalse($service->compatible($legacy));
+    }
+
+    public function test_invalid_count_retains_value_and_identifies_the_exact_input(): void
+    {
+        DB::table('items')->where('id', $this->other)->update(['name' => 'They/Them']);
+        $token = $this->context();
+        $url = '/inventory/location-counts/'.$token.'/enter';
+        $this->get($url)->assertOk();
+        $before = DB::table('inventory_adjustments')->count();
+        $this->from($url)->post('/inventory/location-counts/'.$token.'/review', ['counts' => [$this->item => '-1', $this->other => '']])
+            ->assertRedirect($url)->assertSessionHasErrors('counts.'.$this->item)->assertSessionHasInput('counts.'.$this->item, '-1');
+        $bag = session('errors');
+        $this->assertNotNull($bag);
+        // Explicitly persist flashed state between this harness's HTTP requests.
+        session()->reflash();
+        session()->save();
+        $page = $this->get($url)->assertOk();
+        $this->assertSame(1, app('view')->shared('errors')->count(), json_encode($bag->getBags()));
+        $page->assertSee('href="#count-'.$this->item.'"', false)->assertSee('They/Them · COUNT-A:')
+            ->assertSee('aria-invalid="true"', false)->assertSee('aria-describedby="count-'.$this->item.'-error"', false)->assertSee('value="-1"', false);
+        $this->assertSame($before, DB::table('inventory_adjustments')->count());
     }
 
     public function test_blank_zero_commas_atomic_absolute_current_cost_and_idempotent_save(): void
@@ -128,7 +204,7 @@ class DailyInventoryWorkflowTest extends TestCase
         $service = app(LocationCountSearch::class);
         $service->save($this->manager->id, 'Monthly', $criteria, false);
         $stored = $service->saved($this->manager->id)['monthly'];
-        $this->assertSame(['location_id', 'search', 'collections', 'include_inactive'], array_keys($stored['criteria']));
+        $this->assertSame(['location_id', 'search', 'collections', 'include_active_zero'], array_keys($stored['criteria']));
         try {
             $service->save($this->manager->id, 'MONTHLY', $criteria, false);
             $this->fail('Duplicate needs explicit overwrite.');

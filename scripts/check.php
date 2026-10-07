@@ -34,6 +34,8 @@ try {
     $checks = [
         'local database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--no-ansi'],
         'isolated test database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--env=testing', '--no-ansi'],
+        'local profile preference schema' => [PHP_BINARY, 'artisan', 'profile-preferences:check', '--no-ansi'],
+        'isolated test profile preference schema' => [PHP_BINARY, 'artisan', 'profile-preferences:check', '--env=testing', '--no-ansi'],
         'local inventory schema' => [PHP_BINARY, 'artisan', 'inventory:check', '--no-ansi'],
         'isolated test inventory schema' => [PHP_BINARY, 'artisan', 'inventory:check', '--env=testing', '--no-ansi'],
         'local catalog schema' => [PHP_BINARY, 'artisan', 'catalog:check', '--no-ansi'],
@@ -47,7 +49,7 @@ try {
     ];
     foreach ($checks as $stage => $command) {
         $process = new Process($command, $root);
-        $process->setTimeout($stage === 'database integration and failure handling' ? 900 : 120);
+        $process->setTimeout($stage === 'database integration and failure handling' ? 1080 : 120);
         $process->run();
         if (! $process->isSuccessful()) {
             throw new RuntimeException('Check failed');

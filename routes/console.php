@@ -5,9 +5,25 @@ use App\Support\CatalogPreparation;
 use App\Support\DailyInventoryPreparation;
 use App\Support\InventoryPreparation;
 use App\Support\MicrosoftConfiguration;
+use App\Support\ProfilePreferences;
 use App\Support\RequestPreparation;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+
+Artisan::command('profile-preferences:check', function () {
+    try {
+        if (! app(BaselineProbe::class)->inspect()['ready'] || ! app(BaselineProbe::class)->schemaState(DB::connection())['profilePreferencesReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Profile time-zone column and migration record verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Profile preference readiness failed; activation must stop. Retain data for inspection.');
+
+        return 1;
+    }
+});
 
 Artisan::command('daily-inventory:prepare {--hosted}', function () {
     try {
@@ -197,7 +213,8 @@ Artisan::command('authentication:prepare {--hosted}', function () {
             throw new RuntimeException;
         }
         $status = $this->callSilent('migrate', ['--no-interaction' => true, '--force' => true, '--path' => 'database/migrations/2026_10_05_010000_create_authentication_tables.php']);
-        if ($status !== 0 || ! $probe->schemaState(DB::connection('mariadb'))['authenticationReady']) {
+        if ($status !== 0 || ! $probe->schemaState(DB::connection('mariadb'))['authenticationReady']
+            || ! app(ProfilePreferences::class)->prepare((bool) $this->option('hosted'))) {
             throw new RuntimeException;
         }
         $this->info('Authentication schema verified.');
@@ -214,6 +231,7 @@ Artisan::command('authentication:check', function () {
     try {
         if (! app(BaselineProbe::class)->inspect()['ready']
             || ! app(BaselineProbe::class)->schemaState(DB::connection('mariadb'))['authenticationReady']
+            || ! app(BaselineProbe::class)->schemaState(DB::connection('mariadb'))['profilePreferencesReady']
             || ! app(MicrosoftConfiguration::class)->ready()) {
             throw new RuntimeException;
         }

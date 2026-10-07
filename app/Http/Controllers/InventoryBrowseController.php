@@ -28,8 +28,17 @@ class InventoryBrowseController
 
     private function render(Request $request, array $pending, ?array $result = null, ?string $token = null, int $scroll = 0, ?array $submitted = null)
     {
+        $service = app(InventorySearch::class);
+        $columns = $service->columns();
+        $known = $service->columns(false);
+        foreach (array_unique(array_merge($pending['columns'], $submitted['columns'] ?? [])) as $key) {
+            if (! isset($columns[$key])) {
+                $columns[$key] = ($known[$key] ?? ['name' => $key, 'kind' => 'storage', 'state' => 'unavailable']) + ['unavailable' => true];
+            }
+        }
+
         return view('inventory.browse', ['pending' => $pending, 'submitted' => $submitted, 'result' => $result, 'token' => $token, 'scroll' => $scroll,
-            'collections' => DB::table('collections')->join('categories', 'categories.id', '=', 'collections.category_id')->select('collections.*', 'categories.name as category_name')->orderBy('categories.name')->orderBy('collections.name')->get(), 'allColumns' => app(InventorySearch::class)->columns()]);
+            'collections' => DB::table('collections')->join('categories', 'categories.id', '=', 'collections.category_id')->select('collections.*', 'categories.name as category_name')->orderBy('categories.name')->orderBy('collections.name')->get(), 'allColumns' => $columns]);
     }
 
     public function index(Request $request)

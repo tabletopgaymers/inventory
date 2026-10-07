@@ -55,7 +55,7 @@ class PurchaseRequests
             $manager = RequestValues::manages($actor, 'procurement');
             $owner = (int) $row->owner_id === $actorId;
             abort_unless(match ($action) {
-                'submit' => $manager || ($owner && RequestValues::elevated($actor)),
+                'submit' => $manager || ($owner && RequestValues::submitsOwn($actor)),
                 'return' => $manager,
                 'cancel' => $manager || ($owner && $row->status === 'Draft'),
             }, 403);

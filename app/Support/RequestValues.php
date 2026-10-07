@@ -84,6 +84,14 @@ class RequestValues
         return $user->enabled && $user->validContact() && array_intersect($user->roles(), ['admin', 'manager', 'procurement']) !== [];
     }
 
+    public static function submitsOwn(User $user): bool
+    {
+        $tenant = config('services.microsoft.tenant');
+
+        return $user->enabled && is_string($tenant) && MicrosoftConfiguration::guid($tenant)
+            && DB::table('external_identities')->where('user_id', $user->id)->where('provider', 'microsoft')->where('tenant_id', strtolower($tenant))->exists();
+    }
+
     public static function activity(string $kind, int $id, User $actor, string $action, mixed $before, mixed $after): void
     {
         abort_unless(in_array($kind, ['purchase', 'relocation'], true), 500);

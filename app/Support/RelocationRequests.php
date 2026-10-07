@@ -26,6 +26,9 @@ class RelocationRequests
     {
         $fields = $this->fields($data);
         foreach (['source_location_id', 'destination_location_id'] as $field) {
+            if ($fields[$field] === null) {
+                throw ValidationException::withMessages([$field => 'Choose a storage location before saving or reviewing this request.']);
+            }
             RequestValues::association('storage_locations', $fields[$field], $old?->{$field}, $field, $review);
         }
         $lines = $data['lines'] ?? [];
@@ -60,7 +63,7 @@ class RelocationRequests
                 RequestValues::revision($revision, $row);
             }
             if ($submit) {
-                abort_unless(($row === null || $row->status === 'Draft') && (RequestValues::manages($actor, 'manager') || (($row === null || (int) $row->owner_id === $actorId) && RequestValues::elevated($actor))), 403);
+                abort_unless(($row === null || $row->status === 'Draft') && (RequestValues::manages($actor, 'manager') || (($row === null || (int) $row->owner_id === $actorId) && RequestValues::submitsOwn($actor))), 403);
             }
             $validated = $this->validate($data, $row, $submit || $row?->status === 'Requested');
             $fields = $validated['fields'];

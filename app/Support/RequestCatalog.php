@@ -16,8 +16,8 @@ class RequestCatalog
             if (! in_array($row['id'], $ids, true)) {
                 continue;
             }
-            $row['source'] = $row['values']['storage:'.$source] ?? 0;
-            $row['destination'] = $row['values']['storage:'.$destination] ?? 0;
+            $row['source'] = $source === null ? null : ($row['values']['storage:'.$source] ?? 0);
+            $row['destination'] = $destination === null ? null : ($row['values']['storage:'.$destination] ?? 0);
             $result[] = $row;
         }
 

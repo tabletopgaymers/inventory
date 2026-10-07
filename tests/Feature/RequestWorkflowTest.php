@@ -6,11 +6,16 @@ use App\Models\User;
 use App\Support\BaselineProbe;
 use App\Support\PurchaseRequests;
 use App\Support\RelocationRequests;
+use App\Support\RequestCatalog;
 use App\Support\RequestPreparation;
 use App\Support\RequestValues;
+use Dom\HTMLDocument;
+use Dom\XPath;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class RequestWorkflowTest extends TestCase
@@ -85,6 +90,74 @@ class RequestWorkflowTest extends TestCase
         return $result;
     }
 
+    public function test_admitted_own_submission_without_contact_or_elevated_role_preserves_management_boundaries(): void
+    {
+        config(['services.microsoft.tenant' => '11111111-1111-1111-1111-111111111111']);
+        foreach ([$this->basic, $this->other, $this->manager] as $user) {
+            $user->update(['contact_email' => null, 'contact_attested' => false]);
+            DB::table('external_identities')->insert(['user_id' => $user->id, 'provider' => 'microsoft', 'tenant_id' => config('services.microsoft.tenant'), 'object_id' => (string) Str::uuid()]);
+            $this->signIn($user);
+            $id = $this->purchase($user);
+            $this->get('/purchases/'.$id)->assertOk()->assertSee('Submit Request');
+            $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertRedirect('/purchases/'.$id);
+            $this->assertSame('Request', DB::table('purchase_requests')->where('id', $id)->value('status'));
+            $this->post('/purchases/'.$id.'/transition', ['action' => 'return', 'revision' => 2])->assertForbidden();
+            $this->post('/purchases/'.$id.'/preparation', ['revision' => 2])->assertForbidden();
+            $token = $this->work();
+            $this->post('/relocations/work/'.$token, $this->relocationData() + ['action' => 'review'])->assertRedirect();
+            $this->get('/relocations/work/'.$token.'/review')->assertOk()->assertSee('>Submit request<', false);
+            $this->post('/relocations/work/'.$token.'/submit')->assertRedirect();
+            $relocation = (int) session('relocation_work.'.$token.'.result');
+            $this->assertSame('Requested', DB::table('relocation_requests')->where('id', $relocation)->value('status'));
+            $this->post('/relocations/'.$relocation.'/fulfillment', ['revision' => 1])->assertForbidden();
+        }
+        $id = $this->purchase($this->basic);
+        $this->signIn($this->other);
+        $this->get('/purchases/'.$id)->assertOk()->assertDontSee('Submit Request');
+        $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertForbidden();
+        $this->signIn($this->basic);
+        DB::table('external_identities')->where('user_id', $this->basic->id)->update(['tenant_id' => '22222222-2222-2222-2222-222222222222']);
+        $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertForbidden();
+        $this->basic->update(['enabled' => false]);
+        $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertRedirect('/login');
+        try {
+            app(PurchaseRequests::class)->transition($this->basic->id, $id, 1, 'submit');
+            $this->fail('Disabled direct service submission accepted.');
+        } catch (HttpException $e) {
+            $this->assertSame(403, $e->getStatusCode());
+        }
+        $this->assertSame('Draft', DB::table('purchase_requests')->where('id', $id)->value('status'));
+    }
+
+    public function test_relocation_required_draft_locations_default_central_and_legacy_recovery(): void
+    {
+        $central = DB::table('storage_locations')->where('is_central', true)->value('id') ?? DB::table('storage_locations')->insertGetId(['name' => 'Central', 'is_central' => true]);
+        $token = $this->work();
+        $this->assertSame((int) $central, (int) session('relocation_work.'.$token.'.source_location_id'));
+        $this->post('/relocations/work/'.$token, ['action' => 'search', 'search' => 'Pronoun'])->assertRedirect();
+        foreach (['save', 'review'] as $action) {
+            $this->post('/relocations/work/'.$token, ['action' => $action, 'title' => 'Retained title', 'source_location_id' => $this->source])->assertSessionHasErrors('destination_location_id')->assertSessionHasInput('title', 'Retained title');
+        }
+        $this->assertSame(0, DB::table('relocation_requests')->where('owner_id', $this->basic->id)->count());
+        try {
+            app(RelocationRequests::class)->save($this->basic->id, null, null, ['title' => 'Missing Source', 'destination_location_id' => $this->destination]);
+            $this->fail('Missing Source saved.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('source_location_id', $e->errors());
+        }
+        DB::table('catalog_metadata')->updateOrInsert(['kind' => 'storage_locations', 'record_id' => $central], ['state' => 'inactive']);
+        $token = $this->work();
+        $this->assertNull(session('relocation_work.'.$token.'.source_location_id'));
+        $this->get('/relocations/work/'.$token)->assertOk()->assertSee('Central is missing or ineligible')->assertDontSee('Not selected');
+        $legacy = DB::table('relocation_requests')->insertGetId(['owner_id' => $this->basic->id, 'title' => 'Legacy incomplete', 'status' => 'Draft', 'revision' => 1]);
+        $edit = $this->get('/relocations/'.$legacy.'/edit')->assertRedirect();
+        $token = basename($edit->headers->get('Location'));
+        $this->assertNull(session('relocation_work.'.$token.'.source_location_id'));
+        $this->post('/relocations/work/'.$token, ['action' => 'save', 'title' => 'Legacy incomplete'])->assertSessionHasErrors('source_location_id');
+        $this->assertNull(DB::table('relocation_requests')->where('id', $legacy)->value('source_location_id'));
+        $this->post('/relocations/work/'.$token, $this->relocationData() + ['action' => 'save'])->assertRedirect('/relocations/'.$legacy);
+    }
+
     private function signIn(User $user): void
     {
         $this->actingAs($user)->withSession(['authentication' => ['started' => now()->timestamp, 'activity' => now()->timestamp, 'remember' => false]]);
@@ -105,6 +178,41 @@ class RequestWorkflowTest extends TestCase
     private function relocationData(): array
     {
         return ['title' => 'Approved sample relocation', 'details' => 'Preparation only', 'source_location_id' => $this->source, 'destination_location_id' => $this->destination, 'lines' => [$this->item => '2,000', $this->second => '0']];
+    }
+
+    public function test_relocation_unknown_locations_are_independent_of_known_zero(): void
+    {
+        $catalog = app(RequestCatalog::class);
+        foreach ([[null, null, null, null], [$this->source, null, 17, null], [null, $this->destination, null, -5], [$this->source, $this->destination, 17, -5]] as [$source, $destination, $expectedSource, $expectedDestination]) {
+            $rows = $catalog->rows([$this->item, $this->second], $source, $destination);
+            $item = collect($rows)->firstWhere('id', $this->item);
+            $this->assertSame($expectedSource, $item['source']);
+            $this->assertSame($expectedDestination, $item['destination']);
+            $zero = collect($rows)->firstWhere('id', $this->second);
+            $this->assertSame($source === null ? null : 0, $zero['source']);
+            $this->assertSame($destination === null ? null : 0, $zero['destination']);
+            $html = view('requests.relocation-rows', ['rows' => [$item], 'quantities' => [$this->item => 2]])->render();
+            $this->assertStringContainsString('data-source="'.($expectedSource ?? '').'"', $html);
+            $this->assertStringContainsString('data-destination="'.($expectedDestination ?? '').'"', $html);
+            $this->assertStringContainsString('<span data-source-after>'.($expectedSource === null ? 'Unknown' : $expectedSource - 2).'</span>', $html);
+            $this->assertStringContainsString('<span data-destination-after>'.($expectedDestination === null ? 'Unknown' : $expectedDestination + 2).'</span>', $html);
+        }
+    }
+
+    public function test_saved_preparation_keeps_duplicate_item_names_distinct(): void
+    {
+        DB::table('items')->where('id', $this->second)->update(['name' => 'They/Them']);
+        $id = $this->purchase($this->procurement);
+        app(PurchaseRequests::class)->prepare($this->procurement->id, $id, 1, ['lines' => [
+            $this->item => ['quantity' => '2', 'estimate' => '0.123456789012', 'note' => ''],
+            $this->second => ['quantity' => '0', 'estimate' => '', 'note' => ''],
+        ]]);
+        $this->signIn($this->procurement);
+        $page = $this->get('/purchases/'.$id.'/preparation')->assertOk();
+        foreach (['REQ-A', 'REQ-B'] as $sku) {
+            $page->assertSee('Quantity for They/Them · '.$sku)->assertSee('Remove They/Them · '.$sku);
+        }
+        $page->assertSee('0.123456789012')->assertSee('value="0"', false);
     }
 
     public function test_blank_purchase_permanent_owner_notes_access_and_cancel_paths(): void
@@ -145,24 +253,6 @@ class RequestWorkflowTest extends TestCase
         $this->assertSame(2, DB::table('purchase_request_notes')->where('purchase_request_id', $id)->count());
         $this->assertSame('Cancelled', DB::table('purchase_requests')->where('id', $id)->value('status'));
         $this->assertSame($this->basic->id, (int) DB::table('purchase_requests')->where('id', $id)->value('owner_id'));
-    }
-
-    public function test_elevated_own_submission_contact_and_revoked_role_are_rechecked(): void
-    {
-        foreach ([$this->manager, $this->procurement, $this->admin] as $user) {
-            $id = $this->purchase($user);
-            $this->signIn($user);
-            $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertRedirect();
-        }
-        $id = $this->purchase($this->manager);
-        $this->manager->update(['contact_attested' => false]);
-        $this->signIn($this->manager);
-        $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertForbidden();
-        $this->manager->update(['contact_attested' => true]);
-        DB::table('user_roles')->where('user_id', $this->manager->id)->delete();
-        $this->post('/purchases/'.$id.'/transition', ['action' => 'submit', 'revision' => 1])->assertForbidden();
-        $this->manager->update(['enabled' => false]);
-        $this->get('/purchases/'.$id)->assertRedirect('/login');
     }
 
     public function test_preparation_persists_exact_blank_zero_across_workers_and_conflict_retains_input(): void
@@ -212,7 +302,21 @@ class RequestWorkflowTest extends TestCase
         $this->post('/relocations/'.$id.'/fulfillment', ['revision' => 2, 'fulfillment' => [$this->item => '900', $this->second => '']])->assertRedirect();
         $this->signIn($this->admin);
         $this->get('/relocations/'.$id)->assertOk()->assertSee('value="900"', false);
-        $this->get('/relocations/'.$id.'/worksheet')->assertOk()->assertSee('Sent')->assertDontSee('900');
+        $worksheet = $this->get('/relocations/'.$id.'/worksheet')->assertOk()->assertSee('Sent');
+        $document = HTMLDocument::createFromString($worksheet->getContent());
+        $xpath = new XPath($document);
+        $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
+        $this->assertCount(2, $xpath->query('//html:tbody/html:tr[@data-item-id]'));
+        foreach ([$this->item, $this->second] as $itemId) {
+            $itemRows = $xpath->query('//html:tbody/html:tr[@data-item-id="'.$itemId.'"]');
+            $this->assertCount(1, $itemRows);
+            $this->assertCount(4, $xpath->query('html:td', $itemRows->item(0)));
+            $sentCells = $xpath->query('html:td[last()]', $itemRows->item(0));
+            $this->assertCount(1, $sentCells);
+            $this->assertSame('packing-sent', $sentCells->item(0)->getAttribute('class'));
+            $this->assertSame(0, $sentCells->item(0)->childElementCount);
+            $this->assertSame('', trim(str_replace("\u{00A0}", ' ', $sentCells->item(0)->textContent)));
+        }
         $this->post('/relocations/'.$id.'/transition', ['revision' => 3, 'action' => 'cancel'])->assertStatus(409);
         $this->post('/relocations/'.$id.'/transition', ['revision' => 3, 'action' => 'return'])->assertRedirect();
         $this->signIn($this->basic);
@@ -228,7 +332,7 @@ class RequestWorkflowTest extends TestCase
         $this->assertNull($work['destination_location_id']);
         $this->assertSame('', $work['details']);
         $this->assertNull($work['id']);
-        $copyData = ['title' => 'Independent copied Draft', 'lines' => $work['lines']];
+        $copyData = ['title' => 'Independent copied Draft', 'lines' => $work['lines'], 'source_location_id' => $this->source, 'destination_location_id' => $this->destination];
         $response = $this->post('/relocations/work/'.$copyToken, $copyData + ['action' => 'save'])->assertRedirect();
         $newId = (int) basename($response->headers->get('Location'));
         $this->assertSame($this->other->id, (int) DB::table('relocation_requests')->where('id', $newId)->value('owner_id'));
@@ -261,7 +365,8 @@ class RequestWorkflowTest extends TestCase
     public function test_relocation_validation_other_owner_revocation_and_unavailable_later_actions(): void
     {
         $this->signIn($this->manager);
-        $id = app(RelocationRequests::class)->save($this->basic->id, null, null, ['title' => 'Incomplete Draft']);
+        // Legacy incomplete records remain readable; new saves require locations.
+        $id = DB::table('relocation_requests')->insertGetId(['owner_id' => $this->basic->id, 'title' => 'Incomplete Draft', 'status' => 'Draft', 'revision' => 1, 'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
         $this->signIn($this->other);
         $this->get('/relocations/'.$id.'/edit')->assertForbidden();
         $this->post('/relocations/'.$id.'/title', ['revision' => 1, 'title' => 'Tamper'])->assertForbidden();

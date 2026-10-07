@@ -22,9 +22,9 @@
 
 <p>Ordering and receipt actions are unavailable until their workflows are delivered.</p>
 
-<h2>Permanent notes</h2><form method="post" action="/purchases/{{ $row->id }}/notes">@csrf<input type="hidden" name="_deliberate" value="1"><label>Add a permanent note<textarea name="note" maxlength="5000" required>{{ old('note') }}</textarea></label><div class="actions"><button>Add note</button></div></form>
+<h2>Permanent notes</h2><form method="post" action="/purchases/{{ $row->id }}/notes" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1"><label>Add a permanent note<textarea name="note" maxlength="5000" required>{{ old('note') }}</textarea></label><div class="actions"><button>Add note</button></div></form>
 
-<ol class="request-notes">@forelse($notes as $note)<li><p class="plain-text">{{ $note->body }}</p><small>{{ $note->actor_name }} · {{ $note->occurred_at }} UTC</small></li>@empty<li>No notes yet.</li>@endforelse</ol>
+<ol class="request-notes">@forelse($notes as $note)<li><p class="plain-text">{{ $note->body }}</p><small>{{ $note->actor_name }} · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</small></li>@empty<li>No notes yet.</li>@endforelse</ol>
 
 @include('requests.activity')
 <script src="/requests.js" defer></script>

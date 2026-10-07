@@ -24,6 +24,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/catalog/{kind}/create', [CatalogController::class, 'save']);
     Route::get('/catalog/{kind}/{record}/edit', [CatalogController::class, 'form'])->whereNumber('record');
     Route::post('/catalog/{kind}/{record}/edit', [CatalogController::class, 'save'])->whereNumber('record');
+    Route::get('/catalog/{kind}/{record}/archive', [CatalogController::class, 'archive'])->whereNumber('record');
     Route::post('/catalog/{kind}/{record}/lifecycle', [CatalogController::class, 'lifecycle'])->whereNumber('record');
     Route::get('/inventory', [InventoryBrowseController::class, 'index']);
     Route::post('/inventory/search', [InventoryBrowseController::class, 'submit']);

@@ -6,6 +6,7 @@ use App\Support\BaselineProbe;
 use App\Support\CatalogSchema;
 use App\Support\DailyInventorySchema;
 use App\Support\InventorySchema;
+use App\Support\ProfilePreferences;
 use App\Support\RequestSchema;
 use Illuminate\Support\Facades\DB;
 use Mockery;
@@ -136,6 +137,9 @@ class HostedBaselineTest extends TestCase
             $requestRecord = Mockery::mock();
             $ledger->shouldReceive('where')->with('migration', RequestSchema::MIGRATION)->andReturn($requestRecord);
             $requestRecord->shouldReceive('exists')->andReturn(false);
+            $preferenceRecord = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', ProfilePreferences::MIGRATION)->andReturn($preferenceRecord);
+            $preferenceRecord->shouldReceive('exists')->andReturn(false);
         }
         if (in_array('sessions', $tables)) {
             $schema->shouldReceive('getColumnListing')->with('sessions')->andReturn($columns);

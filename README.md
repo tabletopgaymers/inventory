@@ -475,3 +475,20 @@ References: [Forge deployments](https://laravel.com/forge/docs/sites/deployments
 (custom parameters, shared paths, release macros and retention),
 [PHP setup action](https://github.com/shivammathur/setup-php), and
 [MariaDB container healthcheck](https://mariadb.com/docs/server/server-management/automated-mariadb-deployment-and-administration/docker-and-mariadb/using-healthcheck-sh).
+
+## Profile time-zone migration (Design B follow-up)
+
+`authentication:prepare` now also applies only the additive
+`2026_10_07_000000_add_user_time_zone` migration. It adds nullable
+`users.time_zone` (varchar100); unset preferences use America/Chicago. It never
+rewrites UTC timestamps, stock, history or existing identities. Run the existing
+local/testing preparation commands in their approved environments; hosted
+preparation still requires `--hosted` through the existing pre-activation release
+gate. `authentication:check` requires the column and migration record. A column
+without its record, a record without its column, or an incompatible type stops
+preparation for inspection. Failed DDL is retained for forward repair, never reset.
+Profile saving shows a pending-migration message and remains blocked until ready.
+The prior retained recovery source checks required authentication columns as a
+subset, so this additive nullable column preserves its schema compatibility;
+verify the retained recovery source during final publication preparation. Do not
+roll back the migration or remove saved preferences to recover source.

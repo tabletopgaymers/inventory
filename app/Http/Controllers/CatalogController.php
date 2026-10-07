@@ -20,13 +20,32 @@ class CatalogController
     public function index(Request $request, string $kind = 'categories')
     {
         $this->ready();
-        $records = app(CatalogRecords::class)->records($kind);
-        if ($kind === 'collections' && $request->has('category')) {
+        $service = app(CatalogRecords::class);
+        $records = $service->records($kind);
+        $category = null;
+        $collection = null;
+        if ($kind === 'collections' && $request->filled('category')) {
             $filter = $request->validate(['category' => ['required', 'integer', 'exists:categories,id']]);
+            $category = $service->record('categories', (int) $filter['category']);
             $records = $records->where('category_id', (int) $filter['category'])->values();
         }
+        if ($kind === 'items' && $request->filled('collection')) {
+            $filter = $request->validate(['collection' => ['required', 'integer', 'exists:collections,id']]);
+            $collection = $service->record('collections', (int) $filter['collection']);
+            $category = $service->record('categories', (int) $collection->category_id);
+            $records = $records->where('collection_id', (int) $filter['collection'])->values();
+        }
 
-        return view('catalog.index', ['kind' => $kind, 'kinds' => CatalogRecords::KINDS, 'records' => $records, 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+        return view('catalog.index', ['kind' => $kind, 'kinds' => CatalogRecords::KINDS, 'records' => $records, 'category' => $category, 'collection' => $collection, 'categories' => $service->records('categories'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+    }
+
+    public function archive(Request $request, string $kind, int $record)
+    {
+        $this->ready();
+        abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
+        $row = app(CatalogRecords::class)->record($kind, $record);
+
+        return view('catalog.archive', ['kind' => $kind, 'record' => $row, 'label' => CatalogRecords::KINDS[$kind]]);
     }
 
     public function form(Request $request, string $kind, ?int $record = null)

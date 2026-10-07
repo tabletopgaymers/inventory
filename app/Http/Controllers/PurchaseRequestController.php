@@ -53,7 +53,7 @@ class PurchaseRequestController
         return view('requests.purchase-show', ['row' => $row, 'owner' => DB::table('users')->where('id', $row->owner_id)->first(),
             'editable' => app(PurchaseRequests::class)->editable($request->user(), $row),
             'manager' => RequestValues::manages($request->user(), 'procurement'),
-            'submitter' => RequestValues::manages($request->user(), 'procurement') || ((int) $row->owner_id === (int) $request->user()->id && RequestValues::elevated($request->user())),
+            'submitter' => RequestValues::manages($request->user(), 'procurement') || ((int) $row->owner_id === (int) $request->user()->id && RequestValues::submitsOwn($request->user())),
             'notes' => DB::table('purchase_request_notes')->where('purchase_request_id', $id)->orderByDesc('id')->get(),
             'activity' => DB::table('purchase_request_activity')->where('purchase_request_id', $id)->orderByDesc('id')->get()]);
     }

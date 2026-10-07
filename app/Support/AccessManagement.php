@@ -57,10 +57,17 @@ class AccessManagement
             $bootstrap = DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
             $user = User::findOrFail($userId);
             abort_unless($user->enabled, 403);
+            abort_unless(app(ProfilePreferences::class)->state(DB::connection())['ready'], 503, 'Profile preferences need guarded preparation. Your profile was not changed.');
             $address = $data['contact_email'] ?: null;
             $changed = $address !== $user->contact_email;
             $user->first_name = $data['first_name'];
             $user->last_name = $data['last_name'];
+            if (array_key_exists('time_zone', $data)) {
+                if (! is_string($data['time_zone']) || ! in_array($data['time_zone'], DisplayDates::zones(), true)) {
+                    throw ValidationException::withMessages(['time_zone' => 'Choose a named time zone.']);
+                }
+                $user->time_zone = $data['time_zone'];
+            }
             $user->contact_email = $address;
             $user->contact_attested = ($changed ? false : $user->contact_attested) || $data['contact_attested'];
             if (! $address) {

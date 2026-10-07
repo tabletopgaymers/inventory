@@ -49,12 +49,19 @@ class LocationCountController
         $criteria = null;
         $result = null;
         $token = null;
+        $compatibilityNotice = null;
         if ($request->filled('saved')) {
             $key = $request->query('saved');
             abort_unless(is_string($key) && isset($saved[$key]), 404);
-            $criteria = app(LocationCountSearch::class)->criteria(Request::create('/', 'POST', $saved[$key]['criteria']));
-            $result = app(LocationCountSearch::class)->rows($criteria);
-            $token = $this->newDraft($request, $criteria, $result);
+            $service = app(LocationCountSearch::class);
+            if (! $service->compatible($saved[$key]['criteria'])) {
+                $criteria = $saved[$key]['criteria'];
+                $compatibilityNotice = 'This legacy saved search included inactive zero-stock items. The new count rule excludes them, so results have not been loaded. Choose Include active items with zero stock explicitly, then Search; use Save personal criteria with overwrite to replace the saved search. Its saved criteria are unchanged.';
+            } else {
+                $criteria = $service->criteria(Request::create('/', 'POST', $service->normalize($saved[$key]['criteria'])));
+                $result = $service->rows($criteria);
+                $token = $this->newDraft($request, $criteria, $result);
+            }
         }
         if ($request->filled('context')) {
             $token = $request->query('context');
@@ -64,7 +71,7 @@ class LocationCountController
             $result = app(LocationCountSearch::class)->rows($criteria);
         }
 
-        return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved,
+        return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved, 'compatibilityNotice' => $compatibilityNotice,
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
             'collections' => DB::table('collections')->join('categories', 'categories.id', '=', 'collections.category_id')->select('collections.*', 'categories.name as category_name')->orderBy('categories.name')->orderBy('collections.name')->get(),
             'canCount' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);

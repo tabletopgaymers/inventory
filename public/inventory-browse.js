@@ -19,6 +19,13 @@
     let timer;
     let navigating = false;
     let pendingSave = Promise.resolve();
+    let submitting = false;
+    const searchButton = form.querySelector('[value="search"]');
+    const loading = active => {
+        submitting = active;
+        searchButton.setAttribute('aria-busy', String(active));
+        form.querySelector('[data-search-status]').textContent = active ? 'Searching inventory…' : '';
+    };
     const save = () => {
         const data = new FormData(form);
         data.set('scroll', String(Math.round(table.scrollTop)));
@@ -41,7 +48,9 @@
         update(); clearTimeout(timer); save();
     });
     form.addEventListener('submit', async event => {
-        event.preventDefault(); clearTimeout(timer); navigating = true;
+        event.preventDefault();
+        if (submitting) return;
+        loading(true); clearTimeout(timer); navigating = true;
         const action = document.createElement('input'); action.type = 'hidden'; action.name = 'action'; action.value = event.submitter?.value || 'search';
         form.append(action); await pendingSave.catch(()=>{}); form.submit();
     });
@@ -57,6 +66,6 @@
         const data = new FormData(form); data.set('scroll', String(Math.round(table.scrollTop))); data.set('destination','');
         navigator.sendBeacon('/inventory/preferences', data);
     });
-    window.addEventListener('pageshow', event => { if (event.persisted && state.submitted) window.location.reload(); });
+    window.addEventListener('pageshow', event => { loading(false); if (event.persisted && state.submitted) window.location.reload(); });
     update(); requestAnimationFrame(() => { table.scrollTop = state.scroll || 0; });
 })();

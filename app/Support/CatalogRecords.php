@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 
 class CatalogRecords
 {
-    public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Storage locations', 'suppliers' => 'Suppliers', 'purposes' => 'Purposes', 'programs' => 'Programs'];
+    public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Locations', 'suppliers' => 'Suppliers', 'purposes' => 'Purposes', 'programs' => 'Programs'];
 
     public function records(string $kind)
     {

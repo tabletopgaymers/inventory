@@ -23,6 +23,7 @@ class AuthenticationSchemaTest extends TestCase
         $schema = \Mockery::mock();
         $database->shouldReceive('getSchemaBuilder')->andReturn($schema);
         $schema->shouldReceive('getTableListing')->andReturn(['migrations', 'sessions', 'users']);
+        $schema->shouldReceive('getColumns')->with('users')->andReturn([]);
         $database->shouldReceive('table->where->exists')->andReturn(true);
         $schema->shouldReceive('getColumnListing')->with('sessions')->andReturn(['id', 'user_id', 'ip_address', 'user_agent', 'payload', 'last_activity']);
         $state = app(BaselineProbe::class)->schemaState($database);

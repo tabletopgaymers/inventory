@@ -118,11 +118,13 @@ class BaselineProbe
         $catalog = app(CatalogSchema::class)->state($database, $tables);
         $daily = app(DailyInventorySchema::class)->state($database, $tables);
         $requests = app(RequestSchema::class)->state($database, $tables);
-        $known = $known && $authCompatible && $inventory['compatible'] && $catalog['compatible'] && $daily['compatible'] && $requests['compatible']
+        $preferences = app(ProfilePreferences::class)->state($database, $tables);
+        $known = $known && $authCompatible && $preferences['compatible'] && $inventory['compatible'] && $catalog['compatible'] && $daily['compatible'] && $requests['compatible']
             && (! $inventory['ready'] || $authReady) && (! $catalog['ready'] || $inventory['ready']) && (! $daily['ready'] || $catalog['ready']) && (! $requests['ready'] || $daily['ready']);
 
         return [
             'authenticationReady' => $authReady,
+            'profilePreferencesReady' => $authReady && $preferences['ready'],
             'inventoryReady' => $inventory['ready'],
             'catalogReady' => $catalog['ready'],
             'dailyInventoryReady' => $daily['ready'],

@@ -18,13 +18,24 @@ if (requestIndex) {
     filters.forEach(input => input.addEventListener('change', filter));
     filter();
 }
-let dirty = false;
-document.querySelectorAll('[data-request-form]').forEach(form => {
-    form.addEventListener('input', () => { dirty = true; });
-    form.addEventListener('change', () => { dirty = true; });
-    form.addEventListener('submit', () => { dirty = false; });
+const requestForms = [...document.querySelectorAll('[data-request-form]')];
+const formValues = form => JSON.stringify([...form.elements]
+    .filter(input => input.name && !input.disabled && ['INPUT', 'SELECT', 'TEXTAREA'].includes(input.tagName) && input.type !== 'hidden')
+    .map(input => [input.name, input.type === 'checkbox' || input.type === 'radio' ? input.checked : input.value]));
+const initialValues = new Map(requestForms.map(form => [form, formValues(form)]));
+const submitting = new Set();
+requestForms.forEach(form => {
+    form.addEventListener('input', () => submitting.delete(form));
+    form.addEventListener('change', () => submitting.delete(form));
+    form.addEventListener('submit', event => { if (!event.defaultPrevented) submitting.add(form); });
 });
-window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => {
+    if (requestForms.some(form => !submitting.has(form) && formValues(form) !== initialValues.get(form))) {
+        // The user may cancel departure and keep this document's unsaved forms.
+        submitting.clear();
+        event.preventDefault(); event.returnValue = '';
+    }
+});
 document.querySelectorAll('[data-confirm]').forEach(button => button.addEventListener('click', event => {
     if (!window.confirm(button.dataset.confirm)) event.preventDefault();
 }));
@@ -35,11 +46,11 @@ const project = input => {
     const source = row.querySelector('[data-source]');
     const destination = row.querySelector('[data-destination]');
     const valid = Number.isInteger(quantity) && quantity >= 0 && quantity <= 1000000000;
-    row.querySelector('[data-source-after]').textContent = valid ? (Number(source.dataset.source) - quantity).toLocaleString('en-US') : '—';
-    row.querySelector('[data-destination-after]').textContent = valid ? (Number(destination.dataset.destination) + quantity).toLocaleString('en-US') : '—';
+    row.querySelector('[data-source-after]').textContent = source.dataset.source === '' ? 'Unknown' : valid ? (Number(source.dataset.source) - quantity).toLocaleString('en-US') : '—';
+    row.querySelector('[data-destination-after]').textContent = destination.dataset.destination === '' ? 'Unknown' : valid ? (Number(destination.dataset.destination) + quantity).toLocaleString('en-US') : '—';
 };
 document.querySelectorAll('[data-request-quantity]').forEach(input => input.addEventListener('input', () => project(input)));
-const remove = button => button.addEventListener('click', () => { button.closest('[data-item-id]').remove(); dirty = true; });
+const remove = button => button.addEventListener('click', () => { button.closest('[data-item-id]').remove(); });
 document.querySelectorAll('[data-remove-item]').forEach(remove);
 document.querySelector('[data-add-purchase-item]')?.addEventListener('click', () => {
     const choice = document.querySelector('[data-purchase-item]');
@@ -49,13 +60,19 @@ document.querySelector('[data-add-purchase-item]')?.addEventListener('click', ()
     const row = document.createElement('tr');
     row.dataset.itemId = id;
     const heading = document.createElement('th');
-    heading.textContent = choice.selectedOptions[0].textContent;
+    const option = choice.selectedOptions[0];
+    const identity = option.textContent;
+    heading.textContent = option.dataset.name;
+    const sku = document.createElement('small');
+    sku.className = 'app-item-sku'; sku.textContent = option.dataset.sku;
+    heading.append(sku);
     row.append(heading);
     for (const field of ['quantity', 'estimate', 'note']) {
         const cell = document.createElement('td');
         const input = document.createElement(field === 'note' ? 'textarea' : 'input');
         input.name = `lines[${id}][${field}]`;
-        input.setAttribute('aria-label', `${field} for ${heading.textContent}`);
+        input.setAttribute('aria-label', `${field} for ${identity}${field === 'quantity' ? '' : ' (optional)'}`);
+        input.required = field === 'quantity';
         input.value = field === 'quantity' ? '0' : '';
         if (field === 'note') input.maxLength = 5000;
         else input.inputMode = field === 'estimate' ? 'decimal' : 'numeric';
@@ -63,8 +80,8 @@ document.querySelector('[data-add-purchase-item]')?.addEventListener('click', ()
     }
     const cell = document.createElement('td');
     const button = document.createElement('button');
-    button.type = 'button'; button.textContent = 'Remove'; remove(button);
+    button.type = 'button'; button.textContent = 'Remove'; button.setAttribute('aria-label', `Remove ${identity}`); remove(button);
     cell.append(button); row.append(cell); table.append(row);
-    choice.value = ''; dirty = true;
+    choice.value = '';
 });
 document.querySelector('[data-print]')?.addEventListener('click', () => window.print());

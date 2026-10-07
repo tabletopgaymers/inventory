@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Support\BaselineProbe;
+use App\Support\DisplayDates;
 use App\Support\InventoryPreparation;
 use App\Support\StockNumbers;
 use App\Support\StockPosting;
@@ -91,7 +92,7 @@ class InventoryWorkflowTest extends TestCase
         DB::table('user_roles')->insert(['user_id' => $viewer->id, 'role' => 'basic']);
         $this->signIn($viewer);
         $this->get('/inventory/items/'.$this->item)->assertOk()->assertSee('-5')->assertDontSee('Edit Inventory');
-        $this->get('/inventory/adjustments/'.$group->id)->assertOk()->assertSee('Sample Item')->assertSee('Test Manager')->assertSee('Central')->assertSee('$0.143')->assertSee('America/Chicago')->assertDontSee('>Save<', false);
+        $this->get('/inventory/adjustments/'.$group->id)->assertOk()->assertSee('Sample Item')->assertSee('Test Manager')->assertSee('Central')->assertSee('$0.143')->assertSee(DisplayDates::timestamp($group->posted_at))->assertDontSee('>Save<', false);
         $this->post('/inventory/adjustments/'.$group->id)->assertStatus(405);
         $this->get('/inventory/items/'.$this->item.'?sort=description')->assertOk();
         $this->assertEquals($entries->toArray(), DB::table('inventory_adjustment_entries')->get()->toArray());

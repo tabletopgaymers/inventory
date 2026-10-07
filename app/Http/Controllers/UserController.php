@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Support\AccessManagement;
+use App\Support\DisplayDates;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
@@ -16,7 +18,7 @@ class UserController extends Controller
 
     public function saveProfile(Request $request, AccessManagement $access)
     {
-        $input = $request->only(['first_name', 'last_name', 'contact_email', 'contact_attested']);
+        $input = $request->only(['first_name', 'last_name', 'contact_email', 'contact_attested', 'time_zone']);
         // Reject controls before global normalization could hide invalid input.
         foreach (['first_name', 'last_name'] as $name) {
             if (is_string($input[$name] ?? null) && preg_match('/\p{Cc}/u', $input[$name]) === 1) {
@@ -41,6 +43,7 @@ class UserController extends Controller
                 }
             }],
             'contact_attested' => ['sometimes', 'boolean'],
+            'time_zone' => ['sometimes', 'required', 'string', Rule::in(DisplayDates::zones())],
         ])->validate();
         $data['first_name'] = $data['first_name'] ?? '';
         $data['last_name'] = $data['last_name'] ?? '';

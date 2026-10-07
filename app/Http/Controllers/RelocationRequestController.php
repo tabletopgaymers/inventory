@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CatalogRecords;
 use App\Support\InventorySearch;
 use App\Support\RelocationRequests;
 use App\Support\RequestCatalog;
@@ -52,7 +53,8 @@ class RelocationRequestController
     public function create(Request $request)
     {
         $this->ready();
-        $token = $this->newWork($request, []);
+        $central = app(CatalogRecords::class)->records('storage_locations')->first(fn ($location) => $location->is_central && $location->state === 'active');
+        $token = $this->newWork($request, ['source_location_id' => $central?->id]);
 
         return redirect('/relocations/work/'.$token);
     }
@@ -88,7 +90,7 @@ class RelocationRequestController
 
         return $catalog->choices() + ['draft' => $draft, 'row' => $row, 'rows' => $catalog->rows($ids, $source, $destination),
             'results' => $draft['criteria'] === null ? [] : $catalog->selections($draft['criteria'], $ids, $source, $destination),
-            'submitter' => RequestValues::manages($request->user(), 'manager') || (($row === null || (int) $row->owner_id === (int) $request->user()->id) && RequestValues::elevated($request->user()))];
+            'submitter' => RequestValues::manages($request->user(), 'manager') || (($row === null || (int) $row->owner_id === (int) $request->user()->id) && RequestValues::submitsOwn($request->user()))];
     }
 
     public function work(Request $request, string $token)

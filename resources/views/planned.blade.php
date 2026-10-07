@@ -1,9 +1,6 @@
 @extends('layout')
 @section('title', $title)
-@section('title-status')<span class="status-badge">Planned</span><h2>Workflow preview</h2>
-<p>This is a separate demonstration with sample data. Changes there do not update this application.</p>
-<p><a href="https://tg-inventory.delugeia.com/#{{ ['item-history' => 'item', 'location-counts' => 'counts'][$page] ?? $page }}" target="_blank" rel="noopener noreferrer">View workflow preview (opens in a new tab)</a></p>
-@endsection
+@section('title-status')<x-app.status-badge status="Planned" />@endsection
 @section('content')
 <p class="intro">{{ $purpose }}</p>
 <p>This area is planned for {{ $phase }}. Its actions are not available yet.</p>

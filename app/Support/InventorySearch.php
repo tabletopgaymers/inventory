@@ -13,10 +13,13 @@ class InventorySearch
         return ['search' => '', 'collections' => [], 'columns' => [], 'include_inactive' => false];
     }
 
-    public function columns(): array
+    public function columns(bool $eligibleOnly = true): array
     {
         $columns = [];
         foreach (app(CatalogRecords::class)->records('storage_locations') as $location) {
+            if ($eligibleOnly && $location->state !== 'active' && ! DB::table('inventory_balances')->where('storage_location_id', $location->id)->where('quantity', '<>', 0)->exists()) {
+                continue;
+            }
             $columns['storage:'.$location->id] = ['name' => $location->name, 'kind' => 'storage', 'id' => (int) $location->id, 'state' => $location->state];
         }
         foreach (DB::table('inventory_sources')->where('kind', 'event')->where('active', true)->orderBy('name')->get() as $source) {
@@ -33,7 +36,7 @@ class InventorySearch
         $data = $request->validate(['search' => ['nullable', 'string', 'max:255', 'not_regex:/[\x00-\x1F\x7F]/u'],
             'collections' => ['nullable', 'array'], 'collections.*' => ['integer', 'distinct', Rule::in(DB::table('collections')->pluck('id')->all())],
             'columns' => ['nullable', 'array'], 'columns.*' => ['string', 'distinct', Rule::in(array_keys($this->columns()))],
-            'include_inactive' => ['nullable', 'boolean']]);
+            'include_inactive' => ['nullable', 'boolean']], ['columns.*.in' => 'A selected location or source is unavailable. Your saved criteria are retained; explicitly remove the unavailable selection before searching.']);
         $collections = array_map('intval', $data['collections'] ?? []);
         sort($collections);
         $columns = $data['columns'] ?? [];
@@ -52,7 +55,8 @@ class InventorySearch
 
         return ['search' => is_string($saved['search'] ?? null) ? mb_substr($saved['search'], 0, 255) : '',
             'collections' => array_values(array_intersect(is_array($saved['collections'] ?? null) ? $saved['collections'] : [], $validCollections)),
-            'columns' => array_values(array_intersect(is_array($saved['columns'] ?? null) ? $saved['columns'] : [], array_keys($this->columns()))),
+            // Preserve unavailable selections so the user can explicitly remove them.
+            'columns' => array_values(array_filter(is_array($saved['columns'] ?? null) ? $saved['columns'] : [], 'is_string')),
             'include_inactive' => ($saved['include_inactive'] ?? false) === true];
     }
 
@@ -90,7 +94,7 @@ class InventorySearch
         $sources = DB::table('inventory_source_balances')->join('inventory_sources', 'inventory_sources.id', '=', 'inventory_source_balances.source_id')
             ->whereIn('item_id', $ids)->whereIn('kind', ['event', 'transit', 'ordered'])->where('active', true)
             ->select('inventory_source_balances.*', 'inventory_sources.kind')->get()->groupBy('item_id');
-        $allColumns = $this->columns();
+        $allColumns = $this->columns(false);
         $rows = [];
         foreach ($items as $item) {
             $values = array_fill_keys(array_keys($allColumns), 0);
