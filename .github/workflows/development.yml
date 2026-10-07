@@ -77,12 +77,72 @@ jobs:
           php artisan events:prepare
           php artisan events:prepare --env=testing
       - name: Automated application checks
+        id: application_checks
         env:
           RELEASE_STATUS_FIXTURE: ${{ runner.temp }}/release-storage-fixture
         # Native symlinks exercise Forge's Linux storage substitution in Git.
         run: |
           bash tests/release-storage-fixture.sh "$PWD" "$RELEASE_STATUS_FIXTURE"
           composer check
+      - name: Collect bounded failed Node diagnostics
+        if: failure() && steps.application_checks.conclusion == 'failure'
+        continue-on-error: true
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = process.cwd();
+          const reports = path.join(root, '_private/verification');
+          if (!fs.existsSync(reports)) process.exit(0);
+          const matches = [];
+          for (const entry of fs.readdirSync(reports, {withFileTypes: true})) {
+            if (!entry.isDirectory()) continue;
+            const dir = path.join(reports, entry.name);
+            const file = path.join(dir, 'result.json');
+            if (!fs.existsSync(file) || !fs.lstatSync(file).isFile() || fs.statSync(file).size > 1024 * 1024) continue;
+            const receipt = JSON.parse(fs.readFileSync(file, 'utf8'));
+            const stage = receipt.stages?.[18];
+            if (receipt.mode === 'full' && receipt.required_stages === 19
+                && stage?.name === 'Node presentation and verification tooling'
+                && ['failed', 'timeout', 'interrupted'].includes(stage.status)
+                && Number.isInteger(stage.exit_code) && stage.exit_code !== 0
+                && Number.isFinite(stage.seconds)) {
+              matches.push({dir, receipt, stage});
+            }
+          }
+          matches.sort((a, b) => a.dir.localeCompare(b.dir));
+          const match = matches.at(-1);
+          if (!match) process.exit(0);
+          const log = path.join(match.dir, 'stage-19.log');
+          if (!fs.existsSync(log) || !fs.lstatSync(log).isFile()) process.exit(0);
+          // Node families use synthetic fixtures only; exclude all PHP/config/schema logs.
+          const max = 256 * 1024;
+          const buffer = Buffer.alloc(max);
+          const fd = fs.openSync(log, 'r');
+          const bytes = fs.readSync(fd, buffer, 0, max, 0);
+          fs.closeSync(fd);
+          const output = path.join(process.env.RUNNER_TEMP, 'node-failure-diagnostics');
+          fs.mkdirSync(output, {recursive: true, mode: 0o700});
+          const text = buffer.subarray(0, bytes).toString('utf8')
+            .split(root).join('<checkout>').split(process.env.RUNNER_TEMP).join('<runner-temp>');
+          fs.writeFileSync(path.join(output, 'node-stage.log'), text, {mode: 0o600});
+          // Allowlisted scalar summary only: no identity/environment/candidate snapshots.
+          fs.writeFileSync(path.join(output, 'summary.json'), JSON.stringify({
+            stage: match.stage.name, status: match.stage.status,
+            exit_code: match.stage.exit_code, seconds: match.stage.seconds,
+            node: process.version, log_truncated: fs.statSync(log).size > max
+          }, null, 2), {mode: 0o600});
+          NODE
+      - name: Retain failed Node diagnostics briefly
+        if: failure() && steps.application_checks.conclusion == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-node-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/node-failure-diagnostics/node-stage.log
+            ${{ runner.temp }}/node-failure-diagnostics/summary.json
+          retention-days: 1
+          if-no-files-found: ignore
       - name: Deliberately failing check demonstration
         if: github.event_name == 'workflow_dispatch' && inputs.fail_check
         run: exit 1
