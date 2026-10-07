@@ -9,5 +9,6 @@
 <li><a href="/relocations">Relocations</a> — request supplies from storage and save fulfillment preparation.</li>
 <li><a href="/purchases">Purchases</a> — request supplies to purchase and save pre-order preparation.</li>
 <li><a href="/inventory/location-counts">Location Counts</a> — save personal criteria, print a worksheet and reconcile counted supplies.</li>
+<li><a href="/events">Events</a> — plan supplies, save shared counts and finalize distribution and leftovers once.</li>
 </ul>
 @endsection

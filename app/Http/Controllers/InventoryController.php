@@ -102,6 +102,37 @@ class InventoryController
                 return strcmp($b->posted_at, $a->posted_at) ?: ($b->id <=> $a->id);
             })->values();
         }
+        if ($schema['fulfillmentReady']) {
+            $requestHistory = DB::table('request_stock_entries')->where('item_id', $item)->get()->map(function ($entry) {
+                $entry->request_url = $entry->purchase_request_id !== null ? '/purchases/'.$entry->purchase_request_id : '/relocations/'.$entry->relocation_request_id;
+
+                return $entry;
+            });
+            $history = $history->concat($requestHistory)->sort(function ($a, $b) use ($sort) {
+                if ($sort === 'description' && ($comparison = strnatcasecmp($a->description, $b->description)) !== 0) {
+                    return $comparison;
+                }
+
+                return strcmp($b->posted_at, $a->posted_at) ?: ($b->id <=> $a->id);
+            })->values();
+        }
+
+        if ($schema['eventsReady']) {
+            $eventHistory = DB::table('event_stock_entries')->join('event_operations', 'event_operations.id', '=', 'event_stock_entries.operation_id')
+                ->where('event_stock_entries.item_id', $item)->select('event_stock_entries.*', 'event_operations.posted_at')->get()->map(function ($entry) {
+                    $entry->request_url = '/events/'.$entry->event_id;
+                    $entry->entry_kind = $entry->leg === 'distribution' || $entry->leg === 'external' ? 'event_change' : 'event_transfer';
+
+                    return $entry;
+                });
+            $history = $history->concat($eventHistory)->sort(function ($a, $b) use ($sort) {
+                if ($sort === 'description' && ($comparison = strnatcasecmp($a->description, $b->description)) !== 0) {
+                    return $comparison;
+                }
+
+                return strcmp($b->posted_at, $a->posted_at) ?: ($b->id <=> $a->id);
+            })->values();
+        }
 
         return view('inventory.item', ['item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->hasRole('admin'),
             'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'purpose' => $purpose, 'programs' => $programs, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);

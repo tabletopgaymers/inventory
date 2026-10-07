@@ -28,7 +28,7 @@ Route::get('/signed-out', function (Request $request) {
 });
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home');
-    foreach (['purchases', 'relocations', 'events'] as $page) {
+    foreach (['purchases', 'relocations'] as $page) {
         Route::get('/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
     }
     foreach (['location-counts'] as $page) {
@@ -52,3 +52,5 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/phase-five.php';
 
 require __DIR__.'/phase-six.php';
+
+require __DIR__.'/phase-eight.php';

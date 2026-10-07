@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\BaselineProbe;
 use App\Support\CatalogRecords;
 use App\Support\InventorySearch;
+use App\Support\RelocationFulfillment;
 use App\Support\RelocationRequests;
 use App\Support\RequestCatalog;
 use App\Support\RequestValues;
@@ -204,6 +206,8 @@ class RelocationRequestController
         $lines = DB::table('relocation_request_lines')->where('relocation_request_id', $id)->get()->keyBy('item_id');
 
         return view('requests.relocation-show', app(RequestCatalog::class)->choices() + ['row' => $row, 'lines' => $lines,
+            'fulfillmentReady' => app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'],
+            'shipment' => app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'] ? app(RelocationFulfillment::class)->data($id) : [],
             'rows' => app(RequestCatalog::class)->rows($lines->keys()->map(fn ($id) => (int) $id)->all(), $row->source_location_id, $row->destination_location_id),
             'editable' => app(RelocationRequests::class)->editable($request->user(), $row), 'manager' => RequestValues::manages($request->user(), 'manager'),
             'owner' => DB::table('users')->where('id', $row->owner_id)->first(),

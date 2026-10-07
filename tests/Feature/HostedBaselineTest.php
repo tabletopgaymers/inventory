@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Support\BaselineProbe;
 use App\Support\CatalogSchema;
 use App\Support\DailyInventorySchema;
+use App\Support\EventSchema;
+use App\Support\FulfillmentSchema;
 use App\Support\InventorySchema;
 use App\Support\ProfilePreferences;
 use App\Support\RequestSchema;
@@ -140,6 +142,12 @@ class HostedBaselineTest extends TestCase
             $preferenceRecord = Mockery::mock();
             $ledger->shouldReceive('where')->with('migration', ProfilePreferences::MIGRATION)->andReturn($preferenceRecord);
             $preferenceRecord->shouldReceive('exists')->andReturn(false);
+            $fulfillmentRecord = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', FulfillmentSchema::MIGRATION)->andReturn($fulfillmentRecord);
+            $fulfillmentRecord->shouldReceive('exists')->andReturn(false);
+            $events = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', EventSchema::MIGRATION)->andReturn($events);
+            $events->shouldReceive('exists')->andReturn(false);
         }
         if (in_array('sessions', $tables)) {
             $schema->shouldReceive('getColumnListing')->with('sessions')->andReturn($columns);

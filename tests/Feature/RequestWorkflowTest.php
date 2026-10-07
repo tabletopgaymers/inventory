@@ -20,6 +20,11 @@ use Tests\TestCase;
 
 class RequestWorkflowTest extends TestCase
 {
+    // This class never changes schema and rolls back its data in every teardown.
+    // Keep live readiness below; only the redundant migration preparation is
+    // shared. Schema/recovery/concurrency classes retain independent setup.
+    private static bool $prepared = false;
+
     private User $basic;
 
     private User $other;
@@ -47,7 +52,10 @@ class RequestWorkflowTest extends TestCase
         parent::setUp();
         $this->assertTrue(app()->environment('testing'));
         $this->assertSame('tg_inventory_test', DB::connection()->getDatabaseName());
-        $this->assertTrue(app(RequestPreparation::class)->prepare(false));
+        if (! self::$prepared) {
+            self::$prepared = app(RequestPreparation::class)->prepare(false);
+        }
+        $this->assertTrue(self::$prepared);
         $this->assertTrue(app(BaselineProbe::class)->schemaState(DB::connection())['requestsReady']);
         DB::beginTransaction();
         foreach (['basic', 'other', 'manager', 'procurement', 'admin'] as $name) {
@@ -75,6 +83,12 @@ class RequestWorkflowTest extends TestCase
             DB::rollBack();
         }
         parent::tearDown();
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$prepared = false;
+        parent::tearDownAfterClass();
     }
 
     private function invariants(): array

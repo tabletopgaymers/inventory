@@ -1,12 +1,12 @@
 <?php
 
 use Composer\InstalledVersions;
-use Symfony\Component\Process\Process;
 
 // Run from any directory: php D:\Sites\tg-inventory-app\scripts\check.php
 ini_set('display_errors', '0');
 ini_set('log_errors', '0');
 $stage = 'dependencies';
+require_once __DIR__.'/verification.php';
 try {
     $root = dirname(__DIR__);
     chdir($root);
@@ -31,6 +31,7 @@ try {
         }
     }
     echo 'PASS: static baseline assets'.PHP_EOL;
+    $run = new VerificationRun($root, 'full', 19);
     $checks = [
         'local database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--no-ansi'],
         'isolated test database and configuration' => [PHP_BINARY, 'artisan', 'baseline:check', '--env=testing', '--no-ansi'],
@@ -44,20 +45,28 @@ try {
         'isolated test count and cost schema' => [PHP_BINARY, 'artisan', 'daily-inventory:check', '--env=testing', '--no-ansi'],
         'local request intake schema' => [PHP_BINARY, 'artisan', 'requests:check', '--no-ansi'],
         'isolated test request intake schema' => [PHP_BINARY, 'artisan', 'requests:check', '--env=testing', '--no-ansi'],
+        'local fulfillment schema' => [PHP_BINARY, 'artisan', 'fulfillment:check', '--no-ansi'],
+        'isolated test fulfillment schema' => [PHP_BINARY, 'artisan', 'fulfillment:check', '--env=testing', '--no-ansi'],
+        'local event schema' => [PHP_BINARY, 'artisan', 'events:check', '--no-ansi'],
+        'isolated test event schema' => [PHP_BINARY, 'artisan', 'events:check', '--env=testing', '--no-ansi'],
         'PHP formatting' => [PHP_BINARY, 'vendor/laravel/pint/builds/pint', '--test'],
         'database integration and failure handling' => [PHP_BINARY, 'vendor/phpunit/phpunit/phpunit', '--fail-on-warning', '--fail-on-risky', '--fail-on-deprecation'],
+        'Node presentation and verification tooling' => ['node', '--test', 'tests/inventory-search-feedback.test.cjs', 'tests/request-presentation.test.cjs', 'tests/purchase-invoice.test.cjs', 'tests/verification-tools.test.cjs'],
     ];
     foreach ($checks as $stage => $command) {
-        $process = new Process($command, $root);
-        $process->setTimeout($stage === 'database integration and failure handling' ? 1080 : 120);
-        $process->run();
-        if (! $process->isSuccessful()) {
-            throw new RuntimeException('Check failed');
+        $code = $run->stage($stage, $command, $stage === 'database integration and failure handling' ? 2160 : 120);
+        if ($code !== 0) {
+            $run->finish($code);
+            exit($code);
         }
-        echo 'PASS: '.$stage.PHP_EOL;
+    }
+    $code = $run->finish(0);
+    if ($code !== 0) {
+        exit($code);
     }
     echo 'Local baseline checks passed. Browser HTTPS verification is separate.'.PHP_EOL;
-} catch (Throwable) {
+} catch (Throwable $error) {
+    VerificationRun::blocked($root, $stage, $error);
     fwrite(STDERR, 'FAIL: '.$stage.'. Check the documented local setup; private diagnostics withheld.'.PHP_EOL);
     exit(1);
 }

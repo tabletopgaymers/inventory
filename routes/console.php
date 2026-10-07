@@ -3,6 +3,8 @@
 use App\Support\BaselineProbe;
 use App\Support\CatalogPreparation;
 use App\Support\DailyInventoryPreparation;
+use App\Support\EventPreparation;
+use App\Support\FulfillmentPreparation;
 use App\Support\InventoryPreparation;
 use App\Support\MicrosoftConfiguration;
 use App\Support\ProfilePreferences;
@@ -290,3 +292,63 @@ Artisan::command('requests:prepare {--hosted}', function () {
         return 1;
     }
 });
+
+Artisan::command('fulfillment:check', function () {
+    try {
+        if (! app(BaselineProbe::class)->inspect()['ready'] || ! app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Exact fulfillment schema and baseline verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Fulfillment readiness failed; inspect private setup before posting.');
+
+        return 1;
+    }
+});
+
+Artisan::command('fulfillment:prepare {--hosted : Explicit approved-development preparation opt-in}', function () {
+    try {
+        if (! app(FulfillmentPreparation::class)->prepare((bool) $this->option('hosted'))) {
+            throw new RuntimeException;
+        }
+        $this->info('Additive local/test fulfillment schema verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Fulfillment preparation blocked. Preserve data and inspect any partial schema before forward repair.');
+
+        return 1;
+    }
+})->purpose('Guarded additive fulfillment preparation; development requires explicit hosted opt-in and retained forward recovery');
+
+Artisan::command('events:check', function () {
+    try {
+        if (! app(BaselineProbe::class)->inspect()['ready'] || ! app(BaselineProbe::class)->schemaState(DB::connection())['eventsReady']) {
+            throw new RuntimeException;
+        }
+        $this->info('Exact event schema and baseline verified.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Event readiness failed; activation must stop. Retain data for inspection.');
+
+        return 1;
+    }
+});
+
+Artisan::command('events:prepare {--hosted : Explicit approved-development preparation opt-in}', function () {
+    try {
+        if (! app(EventPreparation::class)->prepare((bool) $this->option('hosted'))) {
+            throw new RuntimeException;
+        }
+        $this->info('Additive event schema verified; existing stock and history retained.');
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('Event preparation blocked. Preserve data and inspect before forward repair.');
+
+        return 1;
+    }
+})->purpose('Guarded additive event preparation; hosted development requires explicit opt-in and retained forward recovery');

@@ -1,0 +1,7 @@
+@media print {
+  .event-report-actions { display: none !important; }
+  .table-wrap { overflow: visible !important; max-height: none !important; }
+  table { width: 100%; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; }
+}

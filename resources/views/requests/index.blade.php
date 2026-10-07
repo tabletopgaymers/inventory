@@ -6,9 +6,9 @@
 
 @php($base = $kind === 'purchase' ? '/purchases' : '/relocations')
 
-@php($statuses = $kind === 'purchase' ? ['Draft','Request','Cancelled'] : ['Draft','Requested','Shipped','Receiving','Complete','Cancelled'])
+@php($statuses = $kind === 'purchase' ? ['Draft','Request','Ordered','Shipped','Received','Cancelled'] : ['Draft','Requested','Shipped','Receiving','Complete','Cancelled'])
 
-@php($defaults = $kind === 'purchase' ? ['Draft','Request'] : ['Draft','Requested','Shipped','Receiving'])
+@php($defaults = $kind === 'purchase' ? ['Draft','Request','Ordered','Shipped'] : ['Draft','Requested','Shipped','Receiving'])
 
 <div class="section-heading"><p>Save requests and preparation. Intake never reserves or moves stock.</p><a class="button primary" href="{{ $base }}/new">New {{ $kind }} request</a></div>
 

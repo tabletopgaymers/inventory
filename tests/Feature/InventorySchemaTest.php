@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Support\BaselineProbe;
 use App\Support\CatalogSchema;
 use App\Support\DailyInventorySchema;
+use App\Support\EventSchema;
+use App\Support\FulfillmentSchema;
 use App\Support\InventorySchema;
 use App\Support\ProfilePreferences;
 use App\Support\RequestSchema;
@@ -115,6 +117,12 @@ class InventorySchemaTest extends TestCase
             $preferences = Mockery::mock();
             $ledger->shouldReceive('where')->with('migration', ProfilePreferences::MIGRATION)->andReturn($preferences);
             $preferences->shouldReceive('exists')->once()->andReturn(false);
+            $fulfillment = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', FulfillmentSchema::MIGRATION)->andReturn($fulfillment);
+            $fulfillment->shouldReceive('exists')->once()->andReturn(false);
+            $events = Mockery::mock();
+            $ledger->shouldReceive('where')->with('migration', EventSchema::MIGRATION)->andReturn($events);
+            $events->shouldReceive('exists')->andReturn(false);
         }
         $state = app(BaselineProbe::class)->schemaState($database);
         $this->assertSame($ready, $state['ready']);

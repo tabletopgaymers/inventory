@@ -87,7 +87,7 @@ class BaselineProbe
             'authentication_bootstraps' => ['key', 'user_id', 'consumed_at'],
             'access_audits' => ['id', 'actor_id', 'target_id', 'action', 'previous', 'current', 'occurred_at'],
         ];
-        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication), InventorySchema::TABLES, CatalogSchema::TABLES, DailyInventorySchema::TABLES, RequestSchema::TABLES)) === [];
+        $known = array_diff($tables, array_merge(['migrations', 'sessions'], array_keys($authentication), InventorySchema::TABLES, CatalogSchema::TABLES, DailyInventorySchema::TABLES, RequestSchema::TABLES, FulfillmentSchema::TABLES, EventSchema::TABLES)) === [];
         $sessions = in_array('sessions', $tables, true);
         $ledger = in_array('migrations', $tables, true);
         $migration = '2026_10_05_000000_create_sessions_table';
@@ -119,7 +119,11 @@ class BaselineProbe
         $daily = app(DailyInventorySchema::class)->state($database, $tables);
         $requests = app(RequestSchema::class)->state($database, $tables);
         $preferences = app(ProfilePreferences::class)->state($database, $tables);
+        $fulfillment = app(FulfillmentSchema::class)->state($database, $tables);
+        $events = app(EventSchema::class)->state($database, $tables);
         $known = $known && $authCompatible && $preferences['compatible'] && $inventory['compatible'] && $catalog['compatible'] && $daily['compatible'] && $requests['compatible']
+            && $fulfillment['compatible'] && (! $fulfillment['ready'] || $requests['ready'])
+            && $events['compatible'] && (! $events['ready'] || $fulfillment['ready'])
             && (! $inventory['ready'] || $authReady) && (! $catalog['ready'] || $inventory['ready']) && (! $daily['ready'] || $catalog['ready']) && (! $requests['ready'] || $daily['ready']);
 
         return [
@@ -129,6 +133,8 @@ class BaselineProbe
             'catalogReady' => $catalog['ready'],
             'dailyInventoryReady' => $daily['ready'],
             'requestsReady' => $known && $recorded && $compatible && $requests['ready'] && $daily['ready'],
+            'fulfillmentReady' => $known && $recorded && $compatible && $requests['ready'] && $fulfillment['ready'],
+            'eventsReady' => $known && $recorded && $compatible && $fulfillment['ready'] && $events['ready'],
             'ready' => $known && $recorded && $compatible,
             'canPrepare' => $known && ((! $sessions && ! $recorded) || ($recorded && $compatible)),
             'message' => $known && $recorded && $compatible

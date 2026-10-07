@@ -78,6 +78,12 @@ class NavigationTest extends TestCase
 
                 continue;
             }
+            if ($path === '/events') {
+                $this->get($path)->assertOk()->assertSee('Planning moves no stock.')->assertDontSee('Create event')->assertDontSee('Workflow preview')->assertDontSee('>Planned<', false);
+                $this->post($path)->assertStatus(405);
+
+                continue;
+            }
             $this->get($path)->assertOk()->assertSee('Planned')->assertSee('Intended actions')
                 ->assertSee('Related destinations')->assertSee('separate demonstration with sample data')
                 ->assertSee('target="_blank"', false)->assertSee('rel="noopener noreferrer"', false)

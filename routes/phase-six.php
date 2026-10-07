@@ -1,10 +1,19 @@
 <?php
 
+use App\Http\Controllers\FulfillmentController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\RelocationRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    foreach (['purchase' => 'purchases', 'relocation' => 'relocations'] as $kind => $path) {
+        Route::get('/'.$path.'/{id}/fulfillment/{mode}', [FulfillmentController::class, 'edit'])->defaults('kind', $kind)->whereNumber('id')->block(120, 10);
+        Route::post('/'.$path.'/{id}/fulfillment/{mode}', [FulfillmentController::class, 'update'])->defaults('kind', $kind)->whereNumber('id')->block(120, 10);
+        Route::get('/'.$path.'/{id}/fulfillment/{mode}/review/{token}', [FulfillmentController::class, 'review'])->defaults('kind', $kind)->whereNumber('id')->block(120, 10);
+        Route::post('/'.$path.'/{id}/fulfillment/{mode}/confirm/{token}', [FulfillmentController::class, 'confirm'])->defaults('kind', $kind)->whereNumber('id')->block(120, 10);
+    }
+    Route::post('/relocations/{id}/tracking', [FulfillmentController::class, 'tracking'])->whereNumber('id')->block(120, 10);
+    Route::post('/purchases/{id}/fulfillment-transition', [FulfillmentController::class, 'purchaseTransition'])->whereNumber('id')->block(120, 10);
     Route::get('/purchases', [PurchaseRequestController::class, 'index'])->block(120, 10);
     Route::get('/purchases/new', [PurchaseRequestController::class, 'create'])->block(120, 10);
     Route::post('/purchases', [PurchaseRequestController::class, 'store'])->block(120, 10);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\BaselineProbe;
 use App\Support\PurchaseRequests;
 use App\Support\RequestCatalog;
 use App\Support\RequestValues;
@@ -51,6 +52,7 @@ class PurchaseRequestController
         $row = DB::table('purchase_requests')->where('id', $id)->firstOrFail();
 
         return view('requests.purchase-show', ['row' => $row, 'owner' => DB::table('users')->where('id', $row->owner_id)->first(),
+            'fulfillmentReady' => app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'],
             'editable' => app(PurchaseRequests::class)->editable($request->user(), $row),
             'manager' => RequestValues::manages($request->user(), 'procurement'),
             'submitter' => RequestValues::manages($request->user(), 'procurement') || ((int) $row->owner_id === (int) $request->user()->id && RequestValues::submitsOwn($request->user())),

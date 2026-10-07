@@ -492,3 +492,77 @@ The prior retained recovery source checks required authentication columns as a
 subset, so this additive nullable column preserves its schema compatibility;
 verify the retained recovery source during final publication preparation. Do not
 roll back the migration or remove saved preferences to recover source.
+
+## Phase 7 local fulfillment and costing
+
+This candidate adds purchase ordering/receipt and relocation shipment/receipt.
+Review keeps entered values without posting; explicit confirmation saves stock,
+immutable request-linked history and catalog cost atomically. Purchase cost uses
+individual units and exact cent allocation. Ordered expectations do not count as
+held stock. Relocation Save counts moves no stock; final receiving is cumulative,
+and permanent discrepancies require Admin/Manager confirmation.
+
+The additive fulfillment migration creates five dedicated tables without changing
+existing inventory/request tables. `fulfillment:check` verifies exact readiness.
+`fulfillment:prepare` is guarded to local/testing or approved development only.
+Development additionally requires explicit `--hosted`; production and unknown
+environments are rejected. The flag supplies no execution authorization by itself.
+Never reset or roll back business data for
+source recovery. The unchanged pre-Phase-7 source rejects these extra tables: a
+retained recovery source must include the independently reviewed strict readiness
+bridge. The actual retained bridge was booted against the additive local schema
+and checked for preservation before feature execution. Before later hosted
+publication, establish and verify a retained forward-compatible bridge/recovery
+source before adding the schema, separately authorize hosted execution, and verify
+the actual release-gate wiring. The prepared authentication release gate now runs
+`fulfillment:prepare --hosted` after request preparation, then `fulfillment:check`
+after request readiness before activation. Every prior check and failure stop is
+preserved. These source changes have not executed in Forge; no hosted bridge
+publication, migration, activation or settings changes have been performed.
+
+The automatic full verification gate has 19 required stages, including local and
+isolated-testing fulfillment/event readiness, all Feature tests and the invoice editing
+test `tests/purchase-invoice.test.cjs` in its existing Node group. Its PHP integration
+stage has a 2,160-second budget under D-260, based on the measured prior full run plus Phase 8
+test timings; other stages retain 120 seconds and all strict failure flags remain.
+The prepared Phase 7 runtime passed its full gate; Phase 8's final gate awaits
+independent feature clearance. Local focused evidence does not assert user acceptance or hosted readiness. Further budget
+increases require a measured cause rather than silently extending a slow run.
+
+## Phase 8 local events and reports
+
+Managers and Admins share Planning, activation, additional known/external supply,
+provisional counts and irreversible finalization. Planning and saved counts move
+no stock. Activation/additional supplies post actual individual units once; dates
+are optional business metadata, separate from immutable posting time. Unknown
+external origin adds event stock at the current cost without acquisition recosting.
+New events never adopt existing legacy event sources or balances.
+
+Planning may omit initial storage/default return and retain partial supplies.
+Activation requires both explicit eligible choices and positive complete supplies.
+Default return remains the original choice through later deliveries. Counts retain
+blank versus zero; unusual counts and incomplete splits may be saved. Finalization
+requires every item counted, remaining no greater than brought and exact destination
+allocations. Distribution includes loss; leftovers move directly once, with no
+In Transit or receipt step. Another active event receives both stock and an incoming
+contribution atomically. One physical event-to-event transfer has one immutable
+common-history movement row, linked to the receiving event and originating
+finalization; both event contexts remain navigable.
+
+Finalized events never reopen. Report-only corrections preserve original counts,
+allocations, stock, cost and history, while recording actor/time/before-after and
+optional explanation. Corrected print/CSV totals contain Category, Collection,
+Item, SKU and Distributed; zero distribution is omitted unless All items is chosen.
+User text is escaped for HTML and encoded safely for CSV formula handling.
+
+`events:prepare` permits only exact local/testing or explicitly opted-in development
+with the verified fulfillment prerequisite; `events:check` is read-only. Four
+additive tables use absent/exact-complete compatibility and refuse partial/orphaned/
+unrecorded/malformed states. CI prepares local and test event schema; release ordering
+prepares after fulfillment and verifies readiness before activation. The saved
+Phase 7 source refuses these tables. Before any future hosted installation, retain
+and verify an actual forward-compatible recovery bridge, separately authorize the
+guarded hosted addition and verify exact readiness. The cleared actual bridge and
+LOCAL additive preservation proof are retained privately. No hosted preparation,
+activation, Phase 7/8 commit or push has occurred; independent feature review and
+the exact final full gate remain prerequisites.
