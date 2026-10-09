@@ -1,6 +1,6 @@
 # Development samples
 
-State: Development reset/update candidate, October 6, 2026, D-199/D-203/D-220/D-221. Local sample checkpoint user accepted. Earlier integration was independently cleared and fully checked; changed reset candidate awaits independent review and final pre-push checks. Source preparation only: no live local/remote reset or hosted changes activated.
+State: Development-only sample data commands. Deployment never invokes these commands.
 
 `DevelopmentSampleSeeder` uses the approved nonprivate D-186 hierarchy copied from the planning workspace's original `sample-data.md`, with deterministic illustrative quantities. The original source is preserved. The fixture contains 9 categories, 21 collections, 61 items and the 5 supplied storage locations; 7 items have zero stock throughout. It creates no identities, roles, events, suppliers, requests or fulfillment activity.
 
@@ -24,17 +24,11 @@ For an explicitly authorized local quantity refresh only:
 php artisan samples:seed --actor=4 --refresh
 ```
 
-This reruns the same scoped identity reconciliation and sets only approved sample items at the five fixture locations. It retains current costs, other location quantities, unrelated records and all previous history, and fails on renamed/conflicting identities rather than silently reparenting them. It does not delete sample records or reset the database. The command prohibits refresh outside `local`; direct testing calls exercise the same transaction in the disposable database.
+This reruns the same scoped identity reconciliation and sets only approved sample items at the five fixture locations. It retains current costs, other location quantities, unrelated records and all previous history, and fails on renamed/conflicting identities rather than silently reparenting them. It does not delete sample records or reset the database. The command prohibits refresh outside `local`;
 
-## Development release integration
+## Deployment separation
 
-The existing `scripts/authentication-release-gate.php` candidate gate adds one step after request-intake readiness and before view caching/activation:
-
-```sh
-php artisan samples:seed --hosted
-```
-
-The existing Forge update script invokes this tracked gate; ordinary Forge script delta is **zero**, subject to publisher verification of actual wiring. The candidate now has17 steps: it removes the old `inventory:demo --hosted` synthetic-reference step and adds approved sample installation. This prevents legacy Sample Category/Item/Storage being recreated after a fresh baseline. The sample command fails the release gate on any guard/actor/conflict/storage failure. Ordinary updates retain all subsequent activity through the installation receipt. **The gate never calls reset.** No credentials, server settings or baseline contract changes are needed.
+Deployment does not install sample data or reset records. Run these commands only as separately authorized operations.
 
 ## Explicit approved development reset — D-220/D-221
 
@@ -50,14 +44,14 @@ The command is repeatable for later approved resets, never a per-deploy step. It
 
 After deletion, the same seeder loads the current approved fixture and audited illustrative stock. A separate empty stock group with a generated operation UUID captures actor/time/first item and identifies this explicit reset without extra quantity-history entries. The CLI reports that UUID. Every later approved reset creates a fresh baseline/receipt; ordinary seeding continues to use its installation UUID and no-ops after installation. Reset does not offer a first-ever-only lock or silently run because fixture revision changed.
 
-Publisher sequence proposal (not activated): after independent candidate review/final full checks/exact clearance, verify actual hosted context/schema/current Admin/approved fixture hash and protected account/access/session/migration fingerprints. Quiesce live development writers and discard old pending business views. Stage the exact candidate with existing shared environment/storage linkage; verify checked source using the existing revision gate before mutation. Execute the separately approved reset command once **before the ordinary candidate authentication-release gate/activation**; run that gate normally (sample seed no-ops), verify final9/21/61/five-location fixture totals/current costn/a/blank metadata/no request records, protected fingerprints, reset actor/UUID/revision rationales and a default no-op rerun. Restore normal access through the existing publication process. Any temporary one-run publisher orchestration must not become a standing reset hook. No live preflight or reset is claimed by this author.
+A hosted reset is a separate explicitly authorized operation. Preserve protected accounts, sessions and business history according to the command contract; no reset runs during normal deployment.
 
-For a reviewed unchanged later reset, reuse this command and run focused context/actor/readiness, protected before/after, current fixture totals/FK/result and default-rerun checks. A new implementation or materially changed dataset needs appropriate review/checks; an unchanged routine reset needs no duplicate development project or full-suite rerun. Old sessions/authentication are preserved; old business contexts can contain stale results and should be discarded/reopened after reset. Monotonic IDs prevent their old item/request references targeting new rows.
+For a later approved reset, follow the same command contract. Discard stale business views afterward; monotonic IDs prevent old item/request references targeting new rows.
 
 ## Fixture revision and growth convention
 
 Keep the original supplied source unchanged and update its converted approved fixture copy through review. `version` identifies the approved dataset revision (current `development-samples-v1`); increment it when approved names, hierarchy, locations or quantities change. Preserve full item SKUs and category/collection-scoped identities for unchanged records; repeated names in different collections are distinct. Keep existing prefixes/suffixes stable. Append reviewed items/collections/categories; location quantity vectors follow the fixture location list exactly, so location changes require reviewing every vector. Generated quantities remain explicitly illustrative; transaction rationales capture the fixture revision.
 
-The simplest current adoption path for a changed reviewed dataset is an **explicit approved reset**: it removes the installation receipt transactionally and installs the then-current fixture, so v1 never strands future additions. Merely changing `version` or publishing a JSON change does not reset or replay installed data. Normal deployment remains no-op on an installed fixture and preserves later edits/history. No additive importer/version-migration platform is implemented. If future additions must be applied without reset, separately review a narrow additive-only path preserving existing identities/quantities/history; do not infer it from this command. A test verifies reviewed fixture growth is installed only after explicit reset.
+The simplest current adoption path for a changed reviewed dataset is an **explicit approved reset**: it removes the installation receipt transactionally and installs the then-current fixture, so v1 never strands future additions. Merely changing `version` or publishing a JSON change does not reset or replay installed data. Normal deployment does not invoke the seeder and preserves later edits/history. No additive importer/version-migration platform is implemented. If future additions must be applied without reset, separately review a narrow additive-only path preserving existing identities/quantities/history; do not infer it from this command.
 
 Future real-production initialization/update from user-supplied actual data is a future scoped goal. This command remains disposable development-only; test quantities are not production opening stock and no production reset/import/history rewrite is authorized.

@@ -34,10 +34,6 @@
     }
   },
   "scripts": {
-    "test": [
-      "@php artisan config:clear --ansi @no_additional_args",
-      "@php artisan test"
-    ],
     "post-autoload-dump": [
       "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
       "@php artisan package:discover --ansi"
@@ -47,8 +43,7 @@
     ],
     "pre-package-uninstall": [
       "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
-    ],
-    "check": "@php scripts/check.php"
+    ]
   },
   "extra": {
     "laravel": {
