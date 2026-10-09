@@ -12,53 +12,31 @@ class BaselineProbe
     {
         $result = [
             'ready' => false,
-            'message' => 'Development configuration needs attention. Run the documented baseline checks.',
-            'baselineLabel' => app()->environment('development') ? 'HOSTED DEVELOPMENT BASELINE' : 'LOCAL DEVELOPMENT BASELINE',
+            'message' => 'Application configuration needs attention. Check the application key, debug and session settings.',
+            'baselineLabel' => app()->environment('local') ? 'LOCAL APPLICATION' : 'APPLICATION',
             'phpVersion' => PHP_VERSION,
             'laravelVersion' => Application::VERSION,
             'databaseVersion' => null,
         ];
-        $environment = app()->environment();
-        $expectedDatabase = match ($environment) {
-            'local' => 'tg_inventory_local',
-            'testing' => 'tg_inventory_test',
-            'development' => 'tg_inventory_dev',
-            default => null,
-        };
-        $connection = config('database.connections.mariadb');
         $key = config('app.key', '');
-        $decodedKey = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : false;
+        $decodedKey = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : $key;
 
-        if ($expectedDatabase === null
-            || config('app.debug') !== false
-            || PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5
-            || ! str_starts_with(Application::VERSION, '13.')
-            || config('database.default') !== 'mariadb'
-            || ($connection['host'] ?? null) !== '127.0.0.1'
-            || (int) ($connection['port'] ?? 0) !== 3306
-            || ! empty($connection['url']) || ! empty($connection['unix_socket'])
-            || ! empty($connection['prefix'])
-            || ($connection['database'] ?? null) !== $expectedDatabase
-            || ($connection['username'] ?? null) !== $expectedDatabase
-            || empty($connection['password'])
-            || $decodedKey === false || strlen($decodedKey) !== 32
+        // Validate security settings, not a particular site's name or server version.
+        if (config('app.debug') !== false
+            || ! is_string($decodedKey)
+            || ! \Illuminate\Encryption\Encrypter::supported($decodedKey, config('app.cipher'))
             || config('session.table') !== 'sessions'
-            || ! in_array(config('session.connection'), [null, 'mariadb'], true)
-            || (in_array($environment, ['local', 'development'], true) && (config('session.driver') !== 'database'
-                || config('session.encrypt') !== true || config('session.secure') !== true))
-            || ($environment === 'development' && (config('app.url') !== 'https://dev-inventory.tabletopgaymers.org'
+            || ! in_array(config('session.connection'), [null, config('database.default')], true)
+            || (! app()->environment('testing') && (config('session.driver') !== 'database'
+                || config('session.encrypt') !== true || config('session.secure') !== true
                 || config('session.http_only') !== true
-                || ! in_array(config('session.same_site'), ['lax', 'strict'], true)
-                || config('session.domain') !== null
-                || config('session.path') !== '/'))) {
+                || ! in_array(config('session.same_site'), ['lax', 'strict'], true)))) {
             return $result;
         }
-
         try {
-            $database = DB::connection('mariadb');
-            $probe = $database->selectOne('SELECT 1 AS probe, DATABASE() AS database_name, VERSION() AS version');
-            if ((int) $probe->probe !== 1 || $probe->database_name !== $expectedDatabase
-                || ! preg_match('/^10\.11\.\d+-MariaDB/', $probe->version)) {
+            $database = DB::connection();
+            $probe = $database->selectOne('SELECT 1 AS probe, VERSION() AS version');
+            if ((int) $probe->probe !== 1) {
                 return $result;
             }
             if ($requireSessions && ! $this->schemaState($database)['ready']) {

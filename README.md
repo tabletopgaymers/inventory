@@ -27,3 +27,18 @@ installation or reset is a separate explicitly authorized operation; see
 
 The optional `APP_REVISION` environment value can label the development footer.
 No generated revision marker is required.
+
+## Additional installations
+
+Each installation uses its own APP_URL, database credentials and APP_KEY.
+Use an HTTPS origin for APP_URL. Microsoft redirect settings must match that
+origin plus /auth/microsoft/callback and /signed-out; register both URLs in
+Entra. The bootstrap tenant must match the sign-in tenant, and the bootstrap
+object identifies the designated initial administrator.
+
+Environment names, hostnames, database names/users and exact server versions
+are not restricted to the original development installation. Composer still
+defines supported PHP/framework dependencies. Set APP_DEBUG=false and use
+database sessions with SESSION_ENCRYPT=true, SESSION_SECURE_COOKIE=true,
+SESSION_HTTP_ONLY=true and SESSION_SAME_SITE=lax. Deploy normally to refresh
+configuration and view caches. No custom baseline command is required.

@@ -11,13 +11,18 @@ class MicrosoftConfiguration
 
     public function ready(): bool
     {
-        $origin = match (app()->environment()) {
-            'local', 'testing' => 'https://tg-inventory-app.test',
-            'development' => 'https://dev-inventory.tabletopgaymers.org',
-            default => null,
-        };
+        $configuredUrl = config('app.url');
+        if (! is_string($configuredUrl)) {
+            return false;
+        }
+        $origin = rtrim($configuredUrl, '/');
+        $parts = parse_url($origin);
 
-        return $origin !== null && config('app.url') === $origin
+        return filter_var($origin, FILTER_VALIDATE_URL) !== false
+            && is_array($parts) && ($parts['scheme'] ?? null) === 'https'
+            && ! isset($parts['user']) && ! isset($parts['pass'])
+            && ! isset($parts['query']) && ! isset($parts['fragment'])
+            && in_array($parts['path'] ?? '', ['', '/'], true)
             && self::guid(config('services.microsoft.tenant'))
             && self::guid(config('services.microsoft.client_id'))
             && is_string(config('services.microsoft.client_secret')) && config('services.microsoft.client_secret') !== ''
