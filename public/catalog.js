@@ -1,8 +1,11 @@
 document.querySelectorAll('[data-unsaved]').forEach(form => {
     let changed = false;
-    form.addEventListener('input', () => { changed = true; });
+    const notice = document.createElement('p'); notice.setAttribute('role', 'status'); notice.hidden = true;
+    notice.textContent = 'Changes not saved. Save before closing or reloading this page; in-app links offer Keep editing or Leave without saving.';
+    form.prepend(notice);
+    form.addEventListener('input', () => { changed = true; notice.hidden = false; });
     form.addEventListener('submit', () => { changed = false; });
-    window.addEventListener('beforeunload', event => { if (changed) { event.preventDefault(); event.returnValue = ''; } });
+    window.appNavigationGuards.push({ shouldWarn: () => changed, message: 'Your changes have not been saved. Keep editing or leave without saving.' });
     const collection = form.querySelector('[name="collection_id"]');
     const suffix = form.querySelector('[name="sku_suffix"]');
     const preview = document.getElementById('sku-preview');

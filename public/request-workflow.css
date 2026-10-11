@@ -1,0 +1,13 @@
+@media (width < 800px) {
+    .app-shell .requested-items .table-wrap { min-width: 0; max-width: 100%; overflow: visible; }
+    .app-shell .requested-items table.stock-editor,
+    .app-shell .requested-items tbody { display: block; width: 100%; min-width: 0; max-width: 100%; }
+    .app-shell .requested-items thead { display: none; }
+    .app-shell .requested-items tr { display: block; width: 100%; min-width: 0; max-width: 100%; margin-bottom: .5rem; border: 1px solid #d1d5db; padding: .375rem .75rem; }
+    .app-shell .requested-items tr.collection-heading { border: 0; padding: 0; }
+    .app-shell .requested-items th,
+    .app-shell .requested-items td,
+    .app-shell .requested-items td.number { display: block; text-align: left; width: auto; min-width: 0; max-width: 100%; border: 0; white-space: normal; overflow-wrap: anywhere; }
+    .app-shell .requested-items td[data-label]::before { content: attr(data-label); display: block; font-weight: 600; }
+    .app-shell .requested-items table.stock-editor input { width: 100%; min-width: 0; max-width: 100%; }
+}

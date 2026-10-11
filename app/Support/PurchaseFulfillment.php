@@ -63,6 +63,7 @@ class PurchaseFulfillment
             }
         }
 
+        unset($header['purchase_progress']);
         $header = array_replace($header, ['title' => $row->title ?? '', 'supplier_id' => $row->supplier_id ?? '', 'receiving_location_id' => $row->receiving_location_id ?? '']);
 
         return $header + ['ordered_date' => $row->planned_date ?? '',
@@ -90,6 +91,85 @@ class PurchaseFulfillment
         }
 
         return $fields + $costing;
+    }
+
+    public function progressDraft(int $actorId, int $id, string $mode): ?array
+    {
+        return RequestStock::header('purchase', $id)['purchase_progress'][$actorId][$mode] ?? null;
+    }
+
+    public function saveProgress(int $actorId, int $id, mixed $revision, array $data, string $mode): array
+    {
+        abort_unless(in_array($mode, ['order', 'receipt'], true), 422);
+
+        return DB::transaction(function () use ($actorId, $id, $revision, $data, $mode) {
+            $actor = RequestValues::actor($actorId);
+            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'], 503);
+            abort_unless(RequestValues::manages($actor, 'procurement'), 403);
+            $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
+            abort_unless($mode === 'receipt' ? in_array($row->status, ['Ordered', 'Shipped'], true) : in_array($row->status, ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
+            RequestValues::revision($revision, $row);
+            $clean = PurchaseProgress::invoice($data);
+            $header = RequestStock::header('purchase', $id);
+            $before = $header['purchase_progress'][$actorId][$mode] ?? null;
+            foreach (['supplier_id' => 'suppliers', 'receiving_location_id' => 'storage_locations'] as $field => $catalog) {
+                $value = RequestValues::id($clean[$field], $field);
+                $retainedValue = RequestValues::id($before['values'][$field] ?? null, $field);
+                RequestValues::association($catalog, $value, $value === $retainedValue ? $retainedValue : $row->$field, $field);
+            }
+            foreach (['ordered_date', 'shipped_date', 'received_date'] as $field) {
+                if ($clean[$field] !== '') {
+                    RequestStock::date($clean[$field], $field);
+                }
+            }
+            $retained = array_unique(array_merge(DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->pluck('item_id')->map(fn ($item) => (int) $item)->all(), DB::table('purchase_request_lines')->where('purchase_request_id', $id)->pluck('item_id')->map(fn ($item) => (int) $item)->all()));
+            $retained = array_unique(array_merge($retained, array_map('intval', array_keys($before['values']['lines'] ?? []))));
+            $completeCosts = $clean['lines'] !== [];
+            foreach ($clean['lines'] as $item => $line) {
+                RequestValues::association('items', $item, in_array($item, $retained, true) ? $item : null, 'lines.'.$item);
+                foreach (['quantity', 'unit', 'cost', 'fee'] as $field) {
+                    if ($line[$field] === '') {
+                        $completeCosts = false;
+                    } elseif ($field === 'quantity') {
+                        if (RequestValues::quantity($line[$field], 'lines.'.$item.'.quantity') === 0) {
+                            throw ValidationException::withMessages(['lines.'.$item.'.quantity' => 'Retained invoice lines need positive individual units. Remove absent lines.']);
+                        }
+                    } elseif ($field === 'unit') {
+                        StockNumbers::cost($line[$field]);
+                    } else {
+                        PurchaseCosting::money($line[$field], 'lines.'.$item.'.'.$field);
+                    }
+                }
+                if ($line['quantity'] !== '' && $line['unit'] !== '' && $line['cost'] !== '') {
+                    $expected = BigDecimal::of($line['unit'])->multipliedBy(RequestValues::quantity($line['quantity'], 'lines.'.$item.'.quantity'))->toScale(2, RoundingMode::HalfUp);
+                    if ((string) $expected !== PurchaseCosting::dollars(PurchaseCosting::money($line['cost'], 'lines.'.$item.'.cost'))) {
+                        throw ValidationException::withMessages(['lines.'.$item.'.cost' => 'Cost does not equal quantity × the retained exact Unit, rounded to cents. Correct or explicitly recalculate this row.']);
+                    }
+                }
+            }
+            foreach (['other_fees', 'discount', 'tax', 'shipping'] as $field) {
+                if ($clean[$field] === '') {
+                    $completeCosts = false;
+                } else {
+                    PurchaseCosting::money($clean[$field], $field);
+                }
+            }
+            if ($completeCosts) {
+                app(PurchaseCosting::class)->calculate($clean);
+            }
+            if ($before && $before['values'] === $clean && (int) $before['revision'] === (int) $row->revision) {
+                return $before;
+            }
+            $saved = ['revision' => (int) $row->revision + 1, 'values' => $clean];
+            $header['purchase_progress'][$actorId][$mode] = $saved;
+            if (strlen(json_encode($header['purchase_progress'], JSON_THROW_ON_ERROR)) > 5000000) {
+                throw ValidationException::withMessages(['lines' => 'Saved invoice drafts exceed the available size for this purchase.']);
+            }
+            RequestStock::saveHeader('purchase', $id, $header);
+            RequestStock::changed('purchase', $row, $actor, 'Saved invoice draft', ['progress_mode' => $mode]);
+
+            return $saved;
+        }, 3);
     }
 
     public function work(int $actorId, int $id, mixed $revision, array $data, string $mode, string $action, ?string $operation = null): array
@@ -160,6 +240,11 @@ class PurchaseFulfillment
             $saved['preparation_baseline'] = $this->preparationLines($id);
             if ($mode === 'receipt') {
                 $saved['final_breakdown'] = $clean;
+            }
+            // Clear only this actor's successfully confirmed mode, under the posting lock.
+            unset($header['purchase_progress'][$actorId][$mode]);
+            if (empty($header['purchase_progress'][$actorId])) {
+                unset($header['purchase_progress'][$actorId]);
             }
             RequestStock::saveHeader('purchase', $id, array_replace($header, $saved));
             DB::table('purchase_requests')->where('id', $id)->update(['title' => $clean['title'], 'supplier_id' => $clean['supplier_id'], 'receiving_location_id' => $clean['receiving_location_id']]);

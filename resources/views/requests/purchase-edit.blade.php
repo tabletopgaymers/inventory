@@ -1,21 +1,20 @@
 @extends('layout')
-
 @section('title', $row ? 'Edit Purchase Request' : 'New Purchase Request')
-
+@section('purchase-progress')
+@include('requests.purchase-progress', ['progressRow' => $row, 'progressActive' => $step, 'progressToken' => $token, 'progressSaveUrl' => '/purchases/work/'.$token, 'progressKey' => 'work:'.$token, 'progressRevision' => $draft['revision'], 'progressVersion' => $draft['version'], 'progressDirty' => \App\Support\PurchaseProgress::workDirty($draft)])
+@endsection
 @section('content')
-
-<p>All request fields are optional. Save a blank Draft first, then add permanent notes separately.</p>
-
-<form method="post" action="{{ $row ? '/purchases/'.$row->id : '/purchases' }}" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1">@if($row)<input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}">@else<input type="hidden" name="token" value="{{ $token }}">@endif
-
-<label>Title (optional)<input name="title" maxlength="255" value="{{ old('title',$row?->title) }}"></label>
-
-<label>Suggested merchant (optional)<input name="suggested_merchant" maxlength="255" value="{{ old('suggested_merchant',$row?->suggested_merchant) }}"></label>
-
-<label>Request details (optional)<textarea name="details" maxlength="5000">{{ old('details',$row?->details) }}</textarea></label>
-
-<div class="actions"><a class="discard" href="{{ $row ? '/purchases/'.$row->id : '/purchases' }}">Discard</a><button class="primary">{{ $row ? 'Save details' : 'Save Draft' }}</button></div></form>
-
-<script src="/requests.js" defer></script>
-
+<link rel="stylesheet" href="/request-workflow.css?v=desktop-800-1">
+@if($row)<p data-purchase-identity>Purchase #{{ $row->id }} · {{ $row->status }}</p>@endif
+<p>Title is required to save or submit. Suggested merchant and Request Details are optional. Catalog items and new-item descriptions use the same request; no order or stock is created.</p>
+<form id="purchase-work" method="post" action="/purchases/work/{{ $token }}" data-request-form data-purchase-form="work">
+@if(!empty($legacyToken))<p data-purchase-legacy-key="{{ auth()->id() }}:intake:{{ $legacyToken }}">This older intake is now a working purchase request. Unsaved intake fields retained in this browser are restored below.</p>@endif
+@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ $draft['revision'] ?? 0 }}"><input type="hidden" name="work_version" value="{{ $draft['version'] }}"><input type="hidden" name="progress_step" value="{{ $step }}">
+<section @if($step !== 'request') hidden @endif><label>Title<input name="title" required maxlength="255" value="{{ $draft['values']['title'] }}"></label><label>Suggested merchant (optional)<input name="suggested_merchant" maxlength="255" value="{{ $draft['values']['suggested_merchant'] }}"></label></section>
+<label>{{ $step === 'items' ? 'If these are new items, describe them with their quantities here.' : 'Request Details (optional)' }}<textarea name="details" maxlength="5000">{{ $draft['values']['details'] }}</textarea></label>
+<section @if($step !== 'items') hidden @endif>
+@include('requests.purchase-catalog', ['planning' => false, 'catalogEditable' => true])
+</section>
+<div class="actions">@if($step === 'items')<button name="action" value="request" formnovalidate>Back: Request</button>@endif<a class="discard" href="{{ $row ? '/purchases/'.$row->id : '/purchases' }}">Leave request</a><button name="action" value="{{ $step === 'request' ? 'items' : 'review' }}" class="primary" formnovalidate>{{ $step === 'request' ? 'Next: Items' : 'Next: Review' }}</button></div>
+</form><script src="/requests.js?v=purchase-wizard-1" defer></script>
 @endsection

@@ -46,8 +46,11 @@ class RelocationRequests
             $clean[$itemId] = RequestValues::quantity($quantity, 'lines.'.$item);
         }
         ksort($clean, SORT_NUMERIC);
-        if ($review && (! $fields['source_location_id'] || ! $fields['destination_location_id'] || $fields['source_location_id'] === $fields['destination_location_id'] || $clean === [])) {
-            throw ValidationException::withMessages(['review' => 'Choose two distinct active storage locations and at least one catalog item before review. Zero requested is allowed.']);
+        if ($review && $fields['source_location_id'] === $fields['destination_location_id']) {
+            throw ValidationException::withMessages(['destination_location_id' => 'Choose a Destination different from Source before review.']);
+        }
+        if ($review && $clean === []) {
+            throw ValidationException::withMessages(['lines' => 'Add at least one catalog item before review. Zero requested is allowed.']);
         }
 
         return ['fields' => $fields, 'lines' => $clean];

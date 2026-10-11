@@ -1,8 +1,18 @@
 @extends('layout')
 @section('title', 'Review '.$mode.' — '.($row->title ?: 'Untitled request'))
+@if($kind === 'relocation')
+@section('relocation-progress')
+@include('requests.relocation-progress', ['progressRow' => $row, 'progressContext' => 'counts-review', 'progressActive' => $mode === 'shipment' ? 'ship' : 'receive', 'progressSaveUrl' => $base.'/fulfillment/'.$mode, 'progressKey' => 'counts:'.$token, 'progressRevision' => $draft['revision'], 'progressVersion' => $draft['version'] ?? 0, 'progressDirty' => \App\Support\RelocationProgress::counts($draft['values'], $mode) !== ($draft['saved_values'] ?? \App\Support\RelocationProgress::counts($draft['values'], $mode))])
+@endsection
+@else
+@section('purchase-progress')
+@include('requests.purchase-progress', ['progressRow' => $row, 'progressActive' => $mode === 'order' ? 'order' : 'receive', 'progressSaveUrl' => $base.'/fulfillment/'.$mode, 'progressKey' => 'invoice:'.$token, 'progressRevision' => $draft['revision'], 'progressVersion' => $draft['version'] ?? 0, 'progressDirty' => (int) $draft['revision'] !== (int) $row->revision || \App\Support\PurchaseProgress::fields($draft['values'], 'invoice') !== ($draft['saved_fields'] ?? \App\Support\PurchaseProgress::fields($draft['values'], 'invoice'))])
+@endsection
+@endif
 @section('content')
 <p>Reviewing {{ $kind }} #{{ $row->id }}. No stock has moved.</p>
 @if($kind==='purchase')
+<p>Save Progress retains this invoice draft without confirming it. Use Confirm order or Confirm receipt only when ready to record the reviewed outcome.</p>
 <p>Supplier: {{ $suppliers->firstWhere('id',$review['supplier_id'])?->name }} · Receiving storage: {{ $locations->firstWhere('id',$review['receiving_location_id'])?->name }}</p>
 <p>Ordered {{ \App\Support\DisplayDates::businessDate($review['ordered_date']) }} · Shipped {{ !empty($review['shipped_date']) ? \App\Support\DisplayDates::businessDate($review['shipped_date']) : '—' }} · Received {{ !empty($review['received_date']) ? \App\Support\DisplayDates::businessDate($review['received_date']) : '—' }} · Shipping: {{ $review['shipping_method']==='quantity' ? 'By quantity' : 'By line total' }}</p>
 <x-app.table-region label="Acquisition cost breakdown" class="table-wrap"><table><thead><tr><th>Item</th><th>Units</th><th>Cost</th><th>Fee</th><th>Other Fees</th><th>Discount</th><th>Tax</th><th>Shipping</th><th>Acquisition</th><th>Acquisition/unit</th></tr></thead><tbody>
@@ -15,6 +25,14 @@
 </tbody></table></x-app.table-region>
 @if($mode==='shipment')<p>Confirmation transfers actual sent units from {{ $locations->firstWhere('id',$row->source_location_id)?->name }} to In Transit. Requested quantities reserve nothing. Held quantity and Unit Cost stay unchanged.</p>@else<p>Confirmation clears all sent units from this request’s In Transit contribution and adds the actual received units at {{ $locations->firstWhere('id',$row->destination_location_id)?->name }}. Unit Cost stays unchanged.</p>@if($review['discrepancy'])<p class="warning">Permanent discrepancy: total held stock changes by received minus sent. This requires a Manager or Admin. Confirm only when this is the final outcome; otherwise go back and Save counts while awaiting more boxes.</p>@endif<p>{{ $review['explanation'] ?: 'No explanation entered.' }}</p>@endif
 @endif
-<form method="post" action="{{ $base }}/fulfillment/{{ $mode }}/confirm/{{ $token }}" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><a href="{{ $base }}/fulfillment/{{ $mode }}?work={{ $token }}">Back to details</a><a class="discard" href="{{ $base }}">Cancel {{ $mode }}</a>
+<form method="post" action="{{ $base }}/fulfillment/{{ $mode }}/confirm/{{ $token }}" class="actions" @if($kind === 'relocation') id="relocation-counts" data-relocation-form="counts" @else id="purchase-invoice" data-purchase-form="invoice-review" @endif>
+@if($kind === 'relocation')<input type="hidden" name="work" value="{{ $token }}"><input type="hidden" name="progress_step" value="review"><input type="hidden" name="{{ $mode === 'shipment' ? 'shipped_date' : 'received_date' }}" value="{{ $draft['values'][$mode === 'shipment' ? 'shipped_date' : 'received_date'] ?? '' }}"><input type="hidden" name="explanation" value="{{ $draft['values']['explanation'] ?? '' }}">@foreach($draft['values']['lines'] as $progressItem => $progressLine)<input type="hidden" name="lines[{{ $progressItem }}][{{ $mode === 'shipment' ? 'sent' : 'received' }}]" value="{{ $progressLine[$mode === 'shipment' ? 'sent' : 'received'] ?? '' }}">@endforeach
+@endif
+@if($kind === 'purchase')
+<input type="hidden" name="work_version" value="{{ $draft['version'] ?? 0 }}"><input type="hidden" name="confirmation_hash" value="{{ hash('sha256', json_encode(\App\Support\PurchaseProgress::fields($draft['values'], 'invoice'), JSON_THROW_ON_ERROR)) }}">
+<input type="hidden" name="work" value="{{ $token }}"><input type="hidden" name="progress_step" value="review"><input type="hidden" name="revision" value="{{ $draft['revision'] }}">
+@foreach(\App\Support\PurchaseProgress::fields($draft['values'], 'invoice') as $progressName => $progressValue)<input type="hidden" data-purchase-field name="{{ $progressName }}" value="{{ $progressValue }}">@endforeach
+@endif
+@csrf<input type="hidden" name="_deliberate" value="1"><a href="{{ $base }}/fulfillment/{{ $mode }}?work={{ $token }}">Back to details</a><a class="discard" href="{{ $base }}">Cancel {{ $mode }}</a>
 @if($kind!=='relocation' || $mode!=='receipt' || !$review['discrepancy'] || \App\Support\RequestValues::manages(auth()->user(),'manager'))<button class="primary">{{ $mode==='order' ? 'Confirm order' : ($mode==='shipment' ? 'Confirm shipment' : ($kind==='purchase' ? 'Confirm receipt' : 'Complete receiving')) }}</button>@endif</form>
 @endsection

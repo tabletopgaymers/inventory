@@ -1,5 +1,8 @@
 @extends('layout')
 @section('title', $collection ? 'Items in '.$collection->name : ($category ? 'Collections in '.$category->name : $kinds[$kind]))
+@section('page-actions')
+@if($canManage)<a class="button app-new-action" href="/catalog/{{ $kind }}/create" title="Create {{ strtolower($kinds[$kind]) }}">+New</a>@endif
+@endsection
 @section('content')
 @if($category)
 <nav class="app-breadcrumb" aria-label="Breadcrumb"><a href="/catalog/categories">Categories</a><span>›</span><a href="/catalog/collections?category={{ $category->id }}">{{ $category->name }}</a>@if($collection)<span>› {{ $collection->name }}</span>@endif</nav>
@@ -11,7 +14,7 @@
     <x-app.action variant="primary" type="submit">Apply</x-app.action>
 </form>
 @endif
-<div class="section-heading"><p>Retained catalog records. Status changes apply only to the selected record.</p>@if($canManage)<x-app.action variant="primary" href="/catalog/{{ $kind }}/create">Create</x-app.action>@endif</div>
+<p>Retained catalog records. Status changes apply only to the selected record.</p>
 <x-app.table-region :label="$kinds[$kind].' records'">
 <table class="catalog-table"><thead><tr><th>Name</th>
 @if($kind === 'categories')<th>Description</th><th class="number">Collection count</th>

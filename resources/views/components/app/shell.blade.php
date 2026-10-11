@@ -5,13 +5,12 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} · TG Inventory</title>
-    <link rel="stylesheet" href="/app.css"><script src="/app-shell.js" defer></script>
+    <link rel="stylesheet" href="/app.css?v=environment-navigation-1"><script src="/app-shell.js?v=desktop-800-1" defer></script>
 </head>
 <body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}">
 <a class="app-skip" href="#app-main">Skip to content</a>
 <header class="app-header">
     <div class="app-brand"><a href="/">TG Inventory</a><span>Tabletop Gaymers</span></div>
-    <span class="app-environment badge badge-outline">{{ app()->environment('local') ? 'Local development' : 'Development' }}</span>
     @if($signedIn)
     <div class="app-header-actions">
         <x-app.action id="app-nav-open" aria-haspopup="dialog" aria-controls="app-nav-dialog" aria-expanded="false" hidden>☰ Menu</x-app.action>

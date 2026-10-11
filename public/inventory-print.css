@@ -3,6 +3,7 @@
 .count-worksheet table { width: 100%; table-layout: fixed; }
 .count-worksheet col.item-name { width: 60%; }
 .count-worksheet col.quantity { width: 20%; }
+.count-worksheet td.app-grouped-item { padding-left: 1.6rem; }
 .count-worksheet .findings { min-width: 6rem; height: 2rem; }
 @media print {
     @page { size: letter portrait; margin: 0.55in; }
@@ -14,4 +15,5 @@
     .count-worksheet .collection-heading { break-after: avoid; }
     .count-worksheet th, .count-worksheet td { padding: 0.12in; border: 1px solid #555; }
     .count-worksheet td:first-child { overflow-wrap: anywhere; }
+    .count-worksheet td.app-grouped-item { padding-left: calc(.12in + .8rem); }
 }

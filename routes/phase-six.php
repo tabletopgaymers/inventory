@@ -13,9 +13,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/'.$path.'/{id}/fulfillment/{mode}/confirm/{token}', [FulfillmentController::class, 'confirm'])->defaults('kind', $kind)->whereNumber('id')->block(120, 10);
     }
     Route::post('/relocations/{id}/tracking', [FulfillmentController::class, 'tracking'])->whereNumber('id')->block(120, 10);
+    Route::post('/relocations/{id}/progress', [RelocationRequestController::class, 'progress'])->whereNumber('id')->block(120, 10);
     Route::post('/purchases/{id}/fulfillment-transition', [FulfillmentController::class, 'purchaseTransition'])->whereNumber('id')->block(120, 10);
     Route::get('/purchases', [PurchaseRequestController::class, 'index'])->block(120, 10);
     Route::get('/purchases/new', [PurchaseRequestController::class, 'create'])->block(120, 10);
+    Route::get('/purchases/work/{token}', [PurchaseRequestController::class, 'work'])->block(120, 10);
+    Route::post('/purchases/work/{token}', [PurchaseRequestController::class, 'updateWork'])->block(120, 10);
+    Route::get('/purchases/work/{token}/review', [PurchaseRequestController::class, 'reviewWork'])->block(120, 10);
+    Route::post('/purchases/work/{token}/submit', [PurchaseRequestController::class, 'finishWork'])->block(120, 10);
     Route::post('/purchases', [PurchaseRequestController::class, 'store'])->block(120, 10);
     Route::get('/purchases/{id}', [PurchaseRequestController::class, 'show'])->whereNumber('id')->block(120, 10);
     Route::get('/purchases/{id}/edit', [PurchaseRequestController::class, 'edit'])->whereNumber('id')->block(120, 10);

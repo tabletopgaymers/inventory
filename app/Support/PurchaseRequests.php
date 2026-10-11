@@ -16,7 +16,7 @@ class PurchaseRequests
 
     public function fields(array $data): array
     {
-        return ['title' => RequestValues::text($data['title'] ?? null, 'title', 255),
+        return ['title' => RequestValues::text($data['title'] ?? null, 'title', 255, true),
             'suggested_merchant' => RequestValues::text($data['suggested_merchant'] ?? null, 'suggested_merchant', 255),
             'details' => RequestValues::text($data['details'] ?? null, 'details')];
     }
@@ -46,6 +46,78 @@ class PurchaseRequests
         }, 3);
     }
 
+    public function submitter(User $actor, ?object $row): bool
+    {
+        return RequestValues::manages($actor, 'procurement') || ($actor->enabled && (! $row || (int) $row->owner_id === (int) $actor->id));
+    }
+
+    public function requestLines(array $data, ?object $row): array
+    {
+        foreach (['supplier_id', 'receiving_location_id', 'planned_date', 'preparation_notes'] as $field) {
+            if (array_key_exists($field, $data)) {
+                throw ValidationException::withMessages([$field => 'Use purchase preparation for procurement fields.']);
+            }
+        }
+        $input = $data['lines'] ?? [];
+        if (! is_array($input) || count($input) > 1000) {
+            throw ValidationException::withMessages(['lines' => 'Use up to 1,000 catalog items.']);
+        }
+        $existing = $row ? DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->get()->keyBy('item_id') : collect();
+        $lines = [];
+        foreach ($input as $id => $line) {
+            $item = RequestValues::id($id, 'lines');
+            if (! $item || ! is_array($line) || array_diff(array_keys($line), ['quantity']) !== []) {
+                throw ValidationException::withMessages(['lines' => 'Request catalog quantities only; estimates and line notes belong to procurement.']);
+            }
+            RequestValues::association('items', $item, $existing->has($item) ? $item : null, 'lines.'.$item);
+            $lines[$item] = ['quantity' => RequestValues::quantity($line['quantity'] ?? null, 'lines.'.$item.'.quantity')];
+        }
+        ksort($lines, SORT_NUMERIC);
+
+        return $lines;
+    }
+
+    public function saveWork(int $actorId, ?int $id, mixed $revision, array $data, bool $submit = false): int
+    {
+        return DB::transaction(function () use ($actorId, $id, $revision, $data, $submit) {
+            $actor = RequestValues::actor($actorId);
+            $row = $id ? DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail() : null;
+            if ($row) {
+                abort_unless($this->editable($actor, $row), 403);
+                RequestValues::revision($revision, $row);
+            }
+            if ($submit) {
+                abort_unless((! $row || $row->status === 'Draft') && $this->submitter($actor, $row), 403);
+            }
+            $fields = $this->fields($data);
+            $lines = $this->requestLines($data, $row);
+            $oldLines = $row ? DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->orderBy('item_id')->pluck('quantity', 'item_id')->map(fn ($value) => (int) $value)->all() : [];
+            $quantities = array_map(fn ($line) => $line['quantity'], $lines);
+            $previous = $row ? array_intersect_key((array) $row, $fields) : null;
+            if (! $row) {
+                $id = DB::table('purchase_requests')->insertGetId($fields + ['owner_id' => $actorId, 'status' => $submit ? 'Request' : 'Draft', 'revision' => 1, 'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
+                RequestValues::activity('purchase', $id, $actor, 'Created Draft', null, $fields + ['lines' => $quantities]);
+            } elseif ($previous === $fields && $oldLines === $quantities && ! $submit) {
+                return $id;
+            } else {
+                DB::table('purchase_requests')->where('id', $id)->update($fields + ['status' => $submit ? 'Request' : $row->status, 'revision' => $row->revision + 1, 'updated_at' => now('UTC')]);
+                if ($previous !== $fields || $oldLines !== $quantities) {
+                    RequestValues::activity('purchase', $id, $actor, 'Saved request', $previous + ['lines' => $oldLines], $fields + ['lines' => $quantities]);
+                }
+            }
+            DB::table('purchase_request_lines')->where('purchase_request_id', $id)->whereNotIn('item_id', array_keys($lines))->delete();
+            foreach ($lines as $item => $line) {
+                // Updating only quantity preserves retained procurement estimates/notes.
+                DB::table('purchase_request_lines')->updateOrInsert(['purchase_request_id' => $id, 'item_id' => $item], array_key_exists($item, $oldLines) ? $line : $line + ['estimate' => null, 'note' => null]);
+            }
+            if ($submit) {
+                RequestValues::activity('purchase', $id, $actor, 'Status changed', ['status' => 'Draft'], ['status' => 'Request']);
+            }
+
+            return $id;
+        }, 3);
+    }
+
     public function transition(int $actorId, int $id, mixed $revision, string $action): void
     {
         abort_unless(in_array($action, ['submit', 'return', 'cancel'], true), 422);
@@ -55,11 +127,14 @@ class PurchaseRequests
             $manager = RequestValues::manages($actor, 'procurement');
             $owner = (int) $row->owner_id === $actorId;
             abort_unless(match ($action) {
-                'submit' => $manager || ($owner && RequestValues::submitsOwn($actor)),
+                'submit' => $manager || ($owner && $actor->enabled),
                 'return' => $manager,
                 'cancel' => $manager || ($owner && $row->status === 'Draft'),
             }, 403);
             RequestValues::revision($revision, $row);
+            if ($action === 'submit') {
+                RequestValues::text($row->title, 'title', 255, true);
+            }
             $next = match ($action) {
                 'submit' => $row->status === 'Draft' ? 'Request' : null,
                 'return' => $row->status === 'Request' ? 'Draft' : null,
@@ -89,6 +164,9 @@ class PurchaseRequests
             $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
             abort_unless(RequestValues::manages($actor, 'procurement') && in_array($row->status, ['Draft', 'Request'], true), 403);
             RequestValues::revision($revision, $row);
+            if ($row->status === 'Draft') {
+                RequestValues::text($row->title, 'title', 255, true);
+            }
             $fields = ['supplier_id' => RequestValues::id($data['supplier_id'] ?? null, 'supplier_id'),
                 'receiving_location_id' => RequestValues::id($data['receiving_location_id'] ?? null, 'receiving_location_id'),
                 'planned_date' => RequestValues::text($data['planned_date'] ?? null, 'planned_date', 255),

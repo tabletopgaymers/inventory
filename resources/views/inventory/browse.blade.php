@@ -17,7 +17,7 @@
 @php($group = null)
 @forelse($result['rows'] ?? [] as $row)
 @if($group !== $row['category'].':'.$row['collection'])@php($group = $row['category'].':'.$row['collection'])<tr class="collection-heading"><th colspan="{{ 2+count($result['columns']) }}">{{ $row['category'] }} : {{ $row['collection'] }}</th></tr>@endif
-<tr><th><a data-browse-link href="/inventory/items/{{ $row['id'] }}">{{ $row['name'] }}</a></th><td class="number">{{ $row['available'] ? number_format($row['available']) : '—' }}</td>@foreach($result['columns'] as $key=>$column)<td class="number">{{ $row['values'][$key] ? number_format($row['values'][$key]) : '—' }}</td>@endforeach</tr>
+<tr><td class="app-grouped-item"><a data-browse-link href="/inventory/items/{{ $row['id'] }}">{{ $row['name'] }}</a></td><td class="number">{{ $row['available'] ? number_format($row['available']) : '—' }}</td>@foreach($result['columns'] as $key=>$column)<td class="number">{{ $row['values'][$key] ? number_format($row['values'][$key]) : '—' }}</td>@endforeach</tr>
 @empty<tr><td colspan="{{ 2+count($result['columns'] ?? []) }}">{{ $result === null ? 'Search inventory or choose Show All.' : 'No items match. Change your search or filters, then select Search, or choose Show All.' }}</td></tr>@endforelse
 </tbody></table></x-app.table-region>
 <div class="actions download-bar">@if(!empty($result['rows']))<a class="button" href="/inventory/results/{{ $token }}/csv">Download CSV</a>@else<button disabled>Download CSV</button>@endif</div>

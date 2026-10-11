@@ -28,6 +28,7 @@ document.querySelectorAll('[data-invoice-line]').forEach(row => {
         } catch { total.textContent = '—'; }
     };
     Object.entries(fields).forEach(([name, input]) => input.addEventListener('change', () => refresh(name)));
+    document.addEventListener('purchase-invoice-restored', () => refresh('initial'));
     refresh('initial');
 });
 document.querySelector('[data-invoice-form]')?.addEventListener('submit', event => {

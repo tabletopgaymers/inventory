@@ -24,8 +24,9 @@ class AppNavigation
                 ['href' => '/inventory', 'label' => 'Browse', 'current' => request()->is('inventory', 'inventory/*') && ! request()->is('inventory/location-counts', 'inventory/location-counts/*')],
                 ['href' => '/inventory/location-counts', 'label' => 'Location Counts', 'current' => request()->is('inventory/location-counts', 'inventory/location-counts/*')],
             ]],
+            ...array_map(fn ($name) => ['href' => '/'.strtolower($name), 'label' => $name, 'active' => request()->is(strtolower($name), strtolower($name).'/*'), 'children' => []], ['Relocations', 'Events', 'Purchases']),
             ['href' => '/catalog', 'label' => 'Catalog', 'active' => request()->is('catalog', 'catalog/*'), 'children' => $catalog],
-            ...array_map(fn ($name) => ['href' => '/'.strtolower($name), 'label' => $name, 'active' => request()->is(strtolower($name), strtolower($name).'/*'), 'children' => []], ['Purchases', 'Relocations', 'Events', 'Users']),
+            ['href' => '/users', 'label' => 'Users', 'active' => request()->is('users', 'users/*'), 'children' => []],
         ];
     }
 }

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Support\BaselineProbe;
 use App\Support\PurchaseCosting;
 use App\Support\PurchaseFulfillment;
+use App\Support\PurchaseProgress;
 use App\Support\RelocationFulfillment;
+use App\Support\RelocationProgress;
 use App\Support\RequestCatalog;
 use App\Support\RequestValues;
 use App\Support\StockNumbers;
@@ -62,6 +64,12 @@ class FulfillmentController
         $readOnly = $request->boolean('view');
         $this->check($request, $kind, $row, $mode, ! $readOnly);
         $token = $request->query('work');
+        if (! $readOnly && ! is_string($token)) {
+            $resume = $request->session()->get($kind.'_fulfillment_resume.'.$id.'.'.$mode);
+            if (is_string($resume) && is_array($request->session()->get('fulfillment_work.'.$resume))) {
+                return redirect($this->base($kind, $id).'/fulfillment/'.$mode.'?work='.$resume);
+            }
+        }
         if (is_string($token)) {
             $draft = $this->draft($request, $token, $kind, $id);
             if (isset($draft['result'])) {
@@ -70,7 +78,31 @@ class FulfillmentController
         } else {
             $token = (string) Str::uuid();
             $draft = ['kind' => $kind, 'id' => $id, 'actor' => (int) $request->user()->id, 'revision' => (int) $row->revision, 'mode' => $mode, 'values' => $service->data($id), 'review' => null];
+            if ($kind === 'purchase' && ! $readOnly) {
+                $saved = $service->progressDraft((int) $request->user()->id, $id, $mode);
+                if ($saved) {
+                    $draft['revision'] = $saved['revision'];
+                    $draft['values'] = $saved['values'];
+                }
+                $draft['saved_fields'] = PurchaseProgress::fields($draft['values'], 'invoice');
+            }
             $request->session()->put('fulfillment_work.'.$token, $draft);
+            if ($kind === 'purchase' && ! $readOnly) {
+                $request->session()->put('purchase_fulfillment_resume.'.$id.'.'.$mode, $token);
+
+                return redirect($this->base($kind, $id).'/fulfillment/'.$mode.'?work='.$token);
+            }
+        }
+        abort_unless($draft['mode'] === $mode, 404);
+        if ($kind === 'purchase' && ! $readOnly) {
+            $draft['saved_fields'] ??= PurchaseProgress::fields($service->data($id), 'invoice');
+            $request->session()->put('fulfillment_work.'.$token, $draft);
+            $request->session()->put('purchase_fulfillment_resume.'.$id.'.'.$mode, $token);
+        }
+        if ($kind === 'relocation' && ! $readOnly) {
+            $draft['saved_values'] ??= RelocationProgress::counts($service->data($id), $mode);
+            $request->session()->put('fulfillment_work.'.$token, $draft);
+            $request->session()->put('relocation_fulfillment_resume.'.$id.'.'.$mode, $token);
         }
 
         $choices = app(RequestCatalog::class)->choices();
@@ -95,7 +127,7 @@ class FulfillmentController
             if (! $request->filled('action')) {
                 $request->merge(['action' => $request->filled('recalculate_item') ? 'recalculate' : ($request->filled('remove_item') ? 'remove' : null)]);
             }
-            $request->validate(['work' => ['required', 'uuid'], 'action' => ['required', 'in:save,review,add,remove,recalculate,refresh'],
+            $request->validate(['work' => ['required', 'uuid'], 'action' => ['required', 'in:save,progress,review,add,remove,recalculate,refresh'],
                 'lines' => ['nullable', 'array', 'max:1000'], 'lines.*' => ['array'],
                 'lines.*.quantity' => ['nullable', 'string', 'max:255'], 'lines.*.unit' => ['nullable', 'string', 'max:255'],
                 'lines.*.cost' => ['nullable', 'string', 'max:255'], 'lines.*.fee' => ['nullable', 'string', 'max:255'],
@@ -108,13 +140,22 @@ class FulfillmentController
             $draft = $this->draft($request, $token, $kind, $id);
             abort_if(isset($draft['result']), 409);
             abort_unless($draft['mode'] === $mode, 404);
+            if ($kind === 'purchase') {
+                abort_unless((string) $request->input('work_version') === (string) ($draft['version'] ?? 0), 409, 'This invoice working page changed. Reload the current details and review again; entered values remain retained.');
+            }
             $row = DB::table($kind.'_requests')->where('id', $id)->firstOrFail();
             $this->check($request, $kind, $row, $mode);
-            $values = $request->except(['_token', '_deliberate', 'work', 'action']);
+            $values = $request->except(['_token', '_deliberate', 'work', 'action', 'progress_step']);
             $values['lines'] = $request->input('lines', []);
             abort_unless(is_array($values['lines']) && count($values['lines']) <= 1000, 422);
             $draft['values'] = $values;
-            $draft['review'] = null;
+            $hadReview = is_array($draft['review']);
+            $draft['version'] = ($draft['version'] ?? 0) + 1;
+            $draft['review'] = $kind === 'relocation' && $request->input('action') === 'progress' && $request->input('progress_step') === 'review' ? $draft['review'] : null;
+            if ($kind === 'relocation') {
+                $draft['saved_values'] ??= RelocationProgress::counts($this->service($kind)->data($id), $mode);
+                $draft['dirty'] = RelocationProgress::counts($values, $mode) !== $draft['saved_values'];
+            }
             // Persist entered values before validation; Back/retry retains the complete work.
             $request->session()->put('fulfillment_work.'.$token, $draft);
             $action = $request->input('action');
@@ -153,6 +194,54 @@ class FulfillmentController
 
                 return redirect($this->base($kind, $id))->with('success', 'Counts saved. No stock was moved.');
             }
+            if ($action === 'progress' && $kind === 'purchase') {
+                $step = $request->input('progress_step');
+                abort_unless(in_array($step, ['edit', 'review'], true) && ($step !== 'review' || $hadReview), 409);
+                $draft = DB::transaction(function () use ($request, $id, $draft, $mode, $step) {
+                    RequestValues::actor((int) $request->user()->id);
+                    $locked = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
+                    // Both the client cache and session snapshot must match the locked row.
+                    RequestValues::revision($request->input('revision'), $locked);
+                    $saved = app(PurchaseFulfillment::class)->saveProgress((int) $request->user()->id, $id, $draft['revision'], $draft['values'], $mode);
+                    $draft['revision'] = $saved['revision'];
+                    $draft['values'] = $saved['values'];
+                    $draft['saved_fields'] = PurchaseProgress::fields($saved['values'], 'invoice');
+                    if ($step === 'review') {
+                        $draft['review'] = app(PurchaseFulfillment::class)->work((int) $request->user()->id, $id, $draft['revision'], $draft['values'], $mode, 'review');
+                    }
+
+                    return $draft;
+                }, 3);
+                $request->session()->put('fulfillment_work.'.$token, $draft);
+                $url = $this->base($kind, $id).'/fulfillment/'.$mode.($step === 'review' ? '/review/'.$token : '?work='.$token);
+
+                return $request->expectsJson() ? response()->json(['saved' => true, 'version' => $draft['version'], 'revision' => $draft['revision'], 'fields' => $draft['saved_fields'], 'confirmation_hash' => hash('sha256', json_encode($draft['saved_fields'], JSON_THROW_ON_ERROR)), 'message' => 'Invoice draft saved. Order expectations, stock and costs are unchanged.']) : redirect($url)->with('success', 'Invoice draft saved.');
+            }
+            if ($action === 'progress') {
+                abort_unless($kind === 'relocation', 422);
+                $step = $request->input('progress_step');
+                abort_unless(in_array($step, ['edit', 'review'], true) && ($step !== 'review' || $hadReview), 409);
+                $draft = DB::transaction(function () use ($request, $kind, $id, $draft, $mode, $step) {
+                    RequestValues::actor((int) $request->user()->id);
+                    $locked = DB::table('relocation_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
+                    RequestValues::revision($request->input('revision'), $locked);
+                    $this->service($kind)->work((int) $request->user()->id, $id, $draft['revision'], $draft['values'], $mode, 'save');
+                    $saved = DB::table('relocation_requests')->where('id', $id)->firstOrFail();
+                    $draft['revision'] = (int) $saved->revision;
+                    $draft['values'] = $this->service($kind)->data($id);
+                    $draft['saved_values'] = RelocationProgress::counts($draft['values'], $mode);
+                    $draft['dirty'] = false;
+                    if ($step === 'review') {
+                        $draft['review'] = $this->service($kind)->work((int) $request->user()->id, $id, $draft['revision'], $draft['values'], $mode, 'review');
+                    }
+
+                    return $draft;
+                }, 3);
+                $request->session()->put('fulfillment_work.'.$token, $draft);
+                $url = $this->base($kind, $id).'/fulfillment/'.$mode.($step === 'review' ? '/review/'.$token : '?work='.$token);
+
+                return $request->expectsJson() ? response()->json(['saved' => true, 'version' => $draft['version'], 'revision' => $draft['revision'], 'counts' => $draft['saved_values'], 'message' => 'Progress saved. No stock was moved.']) : redirect($url)->with('success', 'Progress saved.');
+            }
             $draft['review'] = $this->service($kind)->work((int) $request->user()->id, $id, $draft['revision'], $draft['values'], $mode, 'review');
             $request->session()->put('fulfillment_work.'.$token, $draft);
 
@@ -177,6 +266,12 @@ class FulfillmentController
             $draft = $this->draft($request, $token, $kind, $id);
             if (! isset($draft['result'])) {
                 abort_unless($draft['mode'] === $mode && is_array($draft['review']), 409);
+                if ($kind === 'purchase') {
+                    abort_unless((string) $request->input('work_version') === (string) ($draft['version'] ?? 0), 409, 'The invoice review changed. Review the current working details before confirming.');
+                    $snapshot = hash('sha256', json_encode(PurchaseProgress::fields($draft['values'], 'invoice'), JSON_THROW_ON_ERROR));
+                    abort_unless(is_string($request->input('confirmation_hash')) && hash_equals($snapshot, $request->input('confirmation_hash')), 409, 'The reviewed invoice differs from this page. Review the current working details before confirming.');
+                    RequestValues::revision($request->input('revision'), (object) ['revision' => $draft['revision']]);
+                }
                 $this->service($kind)->work((int) $request->user()->id, $id, $draft['revision'], $draft['values'], $mode, 'confirm', $token);
                 $draft['result'] = $id;
                 $request->session()->put('fulfillment_work.'.$token, $draft);

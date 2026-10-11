@@ -41,5 +41,5 @@
 @endif
 </x-app.panel>
 @endif
-<script src="/catalog.js" defer></script>
+<script src="/catalog.js?v=inline-decisions-1" defer></script>
 @endsection

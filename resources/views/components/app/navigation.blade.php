@@ -1,6 +1,19 @@
 @props(['label', 'presentation' => 'desktop'])
-@php($destinations = \App\Support\AppNavigation::destinations(auth()->user()))
-<nav class="{{ $presentation === 'section' ? 'app-section-nav' : 'app-navigation' }}" aria-label="{{ $label }}">
+@php
+    $destinations = \App\Support\AppNavigation::destinations(auth()->user());
+    $environmentBox = match (config('app.env')) {
+        'local' => ['tone' => 'local', 'lines' => ['LOCAL', 'DEVELOPMENT']],
+        'development' => ['tone' => 'development', 'lines' => ['REMOTE', 'ENVIRONMENT']],
+        'testing' => ['tone' => 'testing', 'lines' => ['TESTING', 'ENVIRONMENT']],
+        'staging' => ['tone' => 'staging', 'lines' => ['STAGE', 'ENVIRONMENT']],
+        'production' => null,
+        default => null,
+    };
+@endphp
+<nav class="{{ $presentation === 'section' ? 'app-section-nav' : 'app-navigation' }}{{ $environmentBox && $presentation !== 'section' ? ' app-navigation-with-environment' : '' }}" aria-label="{{ $label }}">
+    @if($environmentBox && $presentation !== 'section')
+        <div class="app-environment-box app-environment-{{ $environmentBox['tone'] }}">@foreach($environmentBox['lines'] as $environmentLine)<span>{{ $environmentLine }}</span> @endforeach</div>
+    @endif
     @foreach($destinations as $destination)
         @if($presentation === 'section')
             @if($destination['active'])

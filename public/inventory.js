@@ -28,19 +28,17 @@
     const initial = new URLSearchParams(new FormData(form)).toString();
     let leaving = false;
     const dirty = () => form.hasAttribute('data-review-warning') || form.hasAttribute('data-pending-draft') || new URLSearchParams(new FormData(form)).toString() !== initial;
+    const notice = document.createElement('p'); notice.setAttribute('role', 'status');
+    notice.textContent = 'Correction not saved. Save before closing or reloading this page; in-app links offer Keep editing or Leave without saving.';
+    const updateNotice = () => { notice.hidden = !dirty(); };
+    form.prepend(notice); form.addEventListener('input', updateNotice); updateNotice();
     form.addEventListener('submit', () => { leaving = true; });
-    document.querySelectorAll('a').forEach(link => link.addEventListener('click', event => {
-      if (leaving || !dirty()) return;
-      if (form.hasAttribute('data-review-warning') && !link.hasAttribute('data-discard')) {
-        // Edit retains the draft. History links still warn before leaving review.
-        if (link.getAttribute('href')?.includes('/edit?operation=')) { leaving = true; return; }
-      }
-      if (!window.confirm('Discard your unsaved correction? Choose Cancel to keep editing.')) event.preventDefault();
-      else leaving = true;
-    }));
-    window.addEventListener('beforeunload', event => { if (!leaving && dirty()) { event.preventDefault(); event.returnValue = ''; } });
+    window.appNavigationGuards.push({
+      shouldWarn: link => !leaving && dirty() && !(form.hasAttribute('data-review-warning') && !link?.hasAttribute('data-discard') && link?.getAttribute('href')?.includes('/edit?operation=')),
+      message: 'Your correction has not been saved. Keep editing, or leave without saving the correction.'
+    });
   }
   document.querySelectorAll('[data-history-url]').forEach(row => row.addEventListener('click', event => {
-    if (!event.target.closest('a')) window.location.href = row.dataset.historyUrl;
+    if (!event.target.closest('a')) window.appNavigate(row.dataset.historyUrl, row);
   }));
 })();
