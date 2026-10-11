@@ -18,6 +18,9 @@
         <a href="/design/phase-a/elements" class="btn btn-sm {{ request()->is('design/phase-a/elements') ? 'btn-primary' : 'btn-ghost' }}" @if(request()->is('design/phase-a/elements')) aria-current="page" @endif>General elements</a>
         <a href="/design/phase-a/examples" class="btn btn-sm {{ request()->is('design/phase-a/examples') ? 'btn-primary' : 'btn-ghost' }}" @if(request()->is('design/phase-a/examples')) aria-current="page" @endif>Example uses</a>
     </nav>
+    @if(request()->getHost() === 'tg-inventory-app.test')
+    <div class="guide-width pb-4"><a class="link link-primary" href="/design/phase-a/wrapper">Standalone application wrapper · local candidate</a></div>
+    @endif
 </header>
 <main id="main" class="guide-width space-y-8 py-10" tabindex="-1">
     <div class="max-w-3xl space-y-3">
