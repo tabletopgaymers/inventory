@@ -4,7 +4,7 @@
     <a href="/design/phase-a/overview" @if(request()->is('design/phase-a/overview')) aria-current="page" @endif>Overview</a>
     <a href="/design/phase-a/elements" @if(request()->is('design/phase-a/elements')) aria-current="page" @endif>General elements</a>
     <a href="/design/phase-a/examples" @if(request()->is('design/phase-a/examples')) aria-current="page" @endif>Example uses</a>
-    @if(request()->getHost() === 'tg-inventory-app.test')
+    @if(app()->environment('local'))
     <a href="/design/phase-a/wrapper" @if(request()->is('design/phase-a/wrapper')) aria-current="page" @endif>Application frame</a>
     @endif
 </nav>

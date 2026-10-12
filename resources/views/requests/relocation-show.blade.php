@@ -26,5 +26,5 @@
 @endif @else<p>Shipment and receipt posting need guarded fulfillment preparation.</p>@endif
 <h2>Other request actions</h2><a class="button" href="/relocations/{{ $row->id }}/worksheet" target="_blank" rel="noopener">Packing worksheet</a><form method="post" action="/relocations/{{ $row->id }}/transition" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}">@if($manager && $row->status==='Requested')<button name="action" value="return">Return to Draft</button>@endif @if($row->status==='Draft' && ($manager || (int)$row->owner_id===(int)auth()->id()))<button class="discard" name="action" value="cancel" data-confirm="Cancel this Draft? All saved details and activity will be retained.">Cancel request</button>@endif</form>
 <form method="post" action="/relocations/{{ $row->id }}/copy" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><button>Copy items to new Draft</button></form>
-@include('requests.activity')<script src="/requests.js?v=relocation-progress-1-sentence-case-1" defer></script>
+@include('requests.activity')<script src="/requests.js?v=relocation-progress-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

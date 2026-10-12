@@ -45,5 +45,5 @@
 @endif
 @if($mode==='correction')<label>Explanation (optional)<textarea name="explanation" maxlength="5000">{{ $values['explanation'] ?? '' }}</textarea></label>@endif
 <div class="actions"><a class="discard" href="{{ $row ? '/events/'.$row->id : '/events' }}">Discard changes</a>@if($mode==='plan')<button class="primary" name="action" value="save" formnovalidate>Save planning</button>@else @if($mode==='counts')<button name="action" value="save" formnovalidate>Save progress</button>@endif<button class="primary" name="action" value="review">{{ $mode==='counts' ? 'Review irreversible finalization' : 'Review '.$mode }}</button>@endif</div>
-</form><script src="/requests.js?v=inline-decisions-1-sentence-case-1" defer></script>
+</form><script src="/requests.js?v=inline-decisions-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

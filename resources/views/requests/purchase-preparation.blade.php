@@ -18,5 +18,5 @@
 @include('requests.purchase-catalog', ['planning' => true, 'catalogEditable' => $canPrepare])
 </fieldset>
 <div class="actions"><a href="/purchases/{{ $row->id }}">Back to request</a>@if(\App\Support\RequestValues::manages(auth()->user(), 'procurement') && in_array($row->status, ['Draft','Request'], true) && app(\App\Support\BaselineProbe::class)->schemaState(\Illuminate\Support\Facades\DB::connection())['fulfillmentReady'])<a class="button primary" href="/purchases/{{ $row->id }}/fulfillment/order">Record order</a>@endif</div>
-</form><script src="/requests.js?v=purchase-wizard-1-sentence-case-1" defer></script>
+</form><script src="/requests.js?v=purchase-wizard-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

@@ -138,6 +138,7 @@ document.querySelector('[data-print]')?.addEventListener('click', () => window.p
                 form.append(notice);
             }
             notice.textContent = 'There are item quantities waiting in search results. Use Add selected or clear those entries before changing search results, saving or reviewing.';
+            notice.hidden = false;
             form.querySelector('[data-selection-count]').closest('section[hidden]')?.removeAttribute('hidden');
             notice.focus();
         }

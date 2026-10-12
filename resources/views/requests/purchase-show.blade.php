@@ -47,6 +47,6 @@
 <ol class="request-notes">@forelse($notes as $note)<li><p class="plain-text">{{ $note->body }}</p><small>{{ $note->actor_name }} · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</small></li>@empty<li>No notes yet.</li>@endforelse</ol>
 
 @include('requests.activity')
-<script src="/requests.js?v=purchase-progress-2-sentence-case-1" defer></script>
+<script src="/requests.js?v=purchase-progress-2-sentence-case-1-pending-notice-1" defer></script>
 
 @endsection

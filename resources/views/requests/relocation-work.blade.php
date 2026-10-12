@@ -34,5 +34,5 @@
 
 @if($step === 'locations')<button name="action" value="items" class="primary" formnovalidate>Next: items</button>@elseif(!$row || $row->status === 'Draft')<button name="action" value="review" class="primary" formnovalidate>Next: review</button>@endif
 </div>
-</form><script src="/requests.js?v=relocation-progress-1-sentence-case-1" defer></script>
+</form><script src="/requests.js?v=relocation-progress-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

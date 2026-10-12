@@ -16,5 +16,5 @@
 @include('requests.purchase-catalog', ['planning' => false, 'catalogEditable' => true])
 </section>
 <div class="actions">@if($step === 'items')<button name="action" value="request" formnovalidate>Back: request</button>@endif<a class="discard" href="{{ $row ? '/purchases/'.$row->id : '/purchases' }}">Leave request</a><button name="action" value="{{ $step === 'request' ? 'items' : 'review' }}" class="primary" formnovalidate>{{ $step === 'request' ? 'Next: items' : 'Next: review' }}</button></div>
-</form><script src="/requests.js?v=purchase-wizard-1-sentence-case-1" defer></script>
+</form><script src="/requests.js?v=purchase-wizard-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

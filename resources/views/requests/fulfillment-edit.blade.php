@@ -45,5 +45,5 @@
 @if(!$readOnly)
 @if($kind==='purchase' && (auth()->user()->hasRole('manager') || auth()->user()->hasRole('admin')))<p><a href="/catalog/items/create" target="_blank" rel="noopener">Create catalog item</a> · <a href="/catalog/suppliers/create" target="_blank" rel="noopener">Create supplier</a>. After creating a record, return here and refresh the choices.</p><button name="action" value="refresh" formnovalidate>Refresh catalog choices</button>@endif
 <div class="actions"><a class="discard" href="{{ $base }}">{{ $mode==='receipt' ? 'Cancel receiving' : 'Discard changes' }}</a><button class="primary" name="action" value="review">Review {{ $mode }}</button></div>@endif
-</form><script src="/requests.js?v={{ $kind === 'relocation' ? 'relocation-progress-1' : 'purchase-progress-2' }}-sentence-case-1" defer></script>@if($kind==='purchase')<script src="/purchase-invoice.js?v=purchase-progress-1" defer></script>@endif
+</form><script src="/requests.js?v={{ $kind === 'relocation' ? 'relocation-progress-1' : 'purchase-progress-2' }}-sentence-case-1-pending-notice-1" defer></script>@if($kind==='purchase')<script src="/purchase-invoice.js?v=purchase-progress-1" defer></script>@endif
 @endsection
