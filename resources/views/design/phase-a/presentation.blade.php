@@ -29,7 +29,7 @@
     <div class="app-page-heading"><div class="app-title-row"><h3>Inventory</h3></div></div>
     <h3>Titles with status and actions</h3>
     <p>Place record status immediately after the title and key actions on the right. Show only actions available to the user; keep the primary action last. Section examples below use lower-level headings to preserve the page hierarchy.</p>
-    <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><a class="button" href="/design/phase-a/forms">Edit</a></div></div>
+    <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><a class="button" href="/style-guide/forms">Edit</a></div></div>
     <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><button type="button">Cancel</button><button type="button" class="primary">Save</button></div></div>
 </section>
 <x-app.guide-divider />
@@ -38,7 +38,7 @@
     <div class="app-content">
         <h3>Preparing a collection</h3>
         <p>Give the collection a clear name and description. Its category determines where it appears in the catalog.</p>
-        <p>Choose a SKU prefix before adding items. <a href="/design/phase-a/forms">See the form-field examples</a> for input and validation guidance.</p>
+        <p>Choose a SKU prefix before adding items. <a href="/style-guide/forms">See the form-field examples</a> for input and validation guidance.</p>
     </div>
 </section>
 <x-app.guide-divider />

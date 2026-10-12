@@ -6,7 +6,7 @@
 <section id="notices" aria-labelledby="notices-title">
 <div class="app-content">
     <h2 id="notices-title">Notices</h2>
-    <p class="notice" role="status">Changes saved. Sample success notice.<br>This multiline message reserves room beside the dismiss control. <a href="/design/phase-a/forms">View the form examples</a>.</p>
+    <p class="notice" role="status">Changes saved. Sample success notice.<br>This multiline message reserves room beside the dismiss control. <a href="/style-guide/forms">View the form examples</a>.</p>
     <p class="warning" role="status">Working changes have not been saved. Sample warning notice.</p>
     <p class="error" role="alert">The record could not be saved. Your entered values have been retained.</p>
     <p>Use success, warning and error notices for feedback. Success and warning notices can be dismissed for the current page using ×; error notices remain visible. New feedback may appear after an earlier notice is dismissed.</p>

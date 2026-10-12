@@ -4,11 +4,9 @@ use Illuminate\Support\Facades\Route;
 
 if (app()->environment(['local', 'development'])) {
     $scope = app()->environment('local') ? 'local' : 'hosted';
-    Route::prefix('design/phase-a')
+    Route::prefix('style-guide')
         ->name('design.phase-a.'.$scope.'.')->middleware('auth')->group(function () use ($scope) {
-            Route::view('/overview', 'design.phase-a.index')->name('index');
-            Route::redirect('/elements', '/design/phase-a/presentation')->name('elements');
-            Route::redirect('/tables', '/design/phase-a/presentation#table-panel')->name('tables');
+            Route::view('/', 'design.phase-a.index')->name('index');
             Route::view('/presentation', 'design.phase-a.presentation')->name('presentation');
             Route::view('/table-sections', 'design.phase-a.table-sections')->name('table-sections');
             Route::view('/forms', 'design.phase-a.forms')->name('forms');

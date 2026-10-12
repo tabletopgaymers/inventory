@@ -36,6 +36,6 @@
         @endif
     @endforeach
     @if($presentation !== 'section' && app()->environment(['local', 'development']))
-        <a class="app-navigation-footer" href="/design/phase-a/overview" @if(request()->is('design/phase-a/*'))aria-current="page"@endif>Style guide</a>
+        <a class="app-navigation-footer" href="/style-guide" @if(request()->is('style-guide', 'style-guide/*'))aria-current="page"@endif>Style guide</a>
     @endif
 </nav>

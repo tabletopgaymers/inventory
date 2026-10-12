@@ -50,6 +50,6 @@
         <li>On narrow screens, text and actions wrap into separate rows. Only the table scrolls horizontally; its header and footer stay within the panel width.</li>
     </ul>
     <p class="app-field-help">This is a style-guide mockup with fictional records and inactive sample actions. The header and footer use shared component styles; sample content remains local to this guide.</p>
-    <p><a href="/design/phase-a/presentation#table-panel">Compare with the standard table panel</a>.</p>
+    <p><a href="/style-guide/presentation#table-panel">Compare with the standard table panel</a>.</p>
 </div>
 @endsection

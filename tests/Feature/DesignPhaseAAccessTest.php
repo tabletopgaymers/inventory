@@ -17,14 +17,14 @@ class DesignPhaseAAccessTest extends TestCase
         Route::clearResolvedInstance('router');
         require base_path('routes/design-phase-a.php');
 
-        $route = $router->getRoutes()->match(Request::create('https://tg-inventory-app.test/design/phase-a/wrapper'));
+        $route = $router->getRoutes()->match(Request::create('https://tg-inventory-app.test/style-guide/wrapper'));
         $this->assertContains('auth', $route->gatherMiddleware());
         $this->assertSame(['GET', 'HEAD'], $route->methods());
         $this->assertSame('design.phase-a.local.wrapper', $route->getName());
         foreach (['dev-inventory.tabletopgaymers.org', 'unrelated.example'] as $host) {
-            $this->assertCount(0, array_filter($router->getRoutes()->getRoutes(), fn ($candidate) => $candidate->uri() === 'design/phase-a/wrapper' && $candidate->getDomain() === $host));
+            $this->assertCount(0, array_filter($router->getRoutes()->getRoutes(), fn ($candidate) => $candidate->uri() === 'style-guide/wrapper' && $candidate->getDomain() === $host));
         }
-        $this->assertSame('design.phase-a.hosted.examples', $router->getRoutes()->match(Request::create('https://dev-inventory.tabletopgaymers.org/design/phase-a/examples'))->getName());
+        $this->assertSame('design.phase-a.hosted.examples', $router->getRoutes()->match(Request::create('https://dev-inventory.tabletopgaymers.org/style-guide/examples'))->getName());
     }
 
     public function test_production_has_no_design_routes(): void

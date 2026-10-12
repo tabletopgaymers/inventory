@@ -98,7 +98,7 @@
 <x-app.guide-divider />
 <div class="app-content" id="wrapper">
     <h2>Current application frame</h2><p>This page already uses the actual header, account menu, navigation, environment box and footer. Desktop navigation begins at 800px; smaller widths use Menu.</p>
-    @if(request()->getHost() === 'tg-inventory-app.test')<p><a href="/design/phase-a/wrapper">Open the focused application-frame example</a>.</p>@endif
+    @if(request()->getHost() === 'tg-inventory-app.test')<p><a href="/style-guide/wrapper">Open the focused application-frame example</a>.</p>@endif
 </div>
 @include('design.phase-a.disable-preview')
 @endsection

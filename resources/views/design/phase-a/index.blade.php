@@ -30,13 +30,13 @@
 <x-app.guide-divider />
 <div class="app-content">
     <h2>Explore the guide</h2>
-    <p><a href="/design/phase-a/presentation">Presentation</a> covers display density, titles, information panels, table panels, responsive columns and status indicators.</p>
-    <p><a href="/design/phase-a/forms">Forms</a> covers input types, numeric values, buttons, save-progress states and validation errors.</p>
-    <p><a href="/design/phase-a/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
-    <p><a href="/design/phase-a/orphaned">Orphaned examples</a> temporarily retains environment indicators, record details, permanent notes, loading states, account feedback, role actions and the legacy table layout.</p>
-    <p><a href="/design/phase-a/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
+    <p><a href="/style-guide/presentation">Presentation</a> covers display density, titles, information panels, table panels, responsive columns and status indicators.</p>
+    <p><a href="/style-guide/forms">Forms</a> covers input types, numeric values, buttons, save-progress states and validation errors.</p>
+    <p><a href="/style-guide/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
+    <p><a href="/style-guide/orphaned">Orphaned examples</a> temporarily retains environment indicators, record details, permanent notes, loading states, account feedback, role actions and the legacy table layout.</p>
+    <p><a href="/style-guide/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
     @if(request()->getHost() === 'tg-inventory-app.test')
-    <p><a href="/design/phase-a/wrapper">Application frame</a> shows the current shared header, navigation and a two-panel user example.</p>
+    <p><a href="/style-guide/wrapper">Application frame</a> shows the current shared header, navigation and a two-panel user example.</p>
     @endif
     <p>Sample data is illustrative. Account permissions and business rules still govern the actual application.</p>
 </div>
