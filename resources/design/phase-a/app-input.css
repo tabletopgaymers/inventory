@@ -247,6 +247,18 @@
 .app-shell .app-list-table-panel th.number { white-space: normal; }
 .app-shell .app-list-table-panel + .download-bar { position: static; background: transparent; }
 .app-shell .app-list-table-panel + .app-content { margin-top: .75rem; }
+/* Optional table sections leave the plain table-region branch unchanged. */
+.app-shell .app-table-panel-sections { border: 1px solid var(--app-border); border-radius: var(--app-radius); overflow: hidden; }
+.app-table-panel-header, .app-table-panel-footer { padding: var(--app-density-panel-y) .8rem; }
+.app-table-panel-header > :first-child, .app-table-panel-footer > :first-child { margin-top: 0; }
+.app-table-panel-header > :last-child, .app-table-panel-footer > :last-child { margin-bottom: 0; }
+.app-table-panel-footer { border-top: 1px solid var(--app-border); }
+.app-table-panel-body { min-width: 0; overflow-x: auto; }
+.app-table-panel-body:focus-visible { outline: 2px solid var(--app-primary); outline-offset: -2px; }
+.app-shell .app-table-panel-sections thead th { border-radius: 0; }
+.app-table-panel-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; }
+.app-table-panel-copy { flex: 1 1 18rem; min-width: 0; }
+.app-table-panel-toolbar .app-actions { margin: 0; }
 /* Optional review sections do not leave a blank text panel between tables. */
 .app-record-content:not(:has(> :not(script, style, input[type="hidden"]))) { display: none; }
 .app-shell fieldset.app-entry-fieldset { border: 0; padding: 0; margin: 0; }

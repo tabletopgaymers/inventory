@@ -10,6 +10,7 @@ if (app()->environment(['local', 'development'])) {
             Route::redirect('/elements', '/design/phase-a/presentation')->name('elements');
             Route::redirect('/tables', '/design/phase-a/presentation#table-panel')->name('tables');
             Route::view('/presentation', 'design.phase-a.presentation')->name('presentation');
+            Route::view('/table-sections', 'design.phase-a.table-sections')->name('table-sections');
             Route::view('/forms', 'design.phase-a.forms')->name('forms');
             Route::view('/notifications', 'design.phase-a.notifications')->name('notifications');
             Route::view('/orphaned', 'design.phase-a.orphaned')->name('orphaned');

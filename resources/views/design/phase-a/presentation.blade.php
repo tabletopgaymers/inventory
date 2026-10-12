@@ -44,7 +44,13 @@
 <x-app.guide-divider />
 <section id="table-panel" aria-labelledby="table-panel-title">
     <h2 id="table-panel-title">Table panel</h2>
-    <p>The table is the entire panel, without outer padding. Put search and filters in their own padded panel above it. Put related actions above the table and helper text below it, directly on the page.</p>
+    <p>A table panel presents tabular information without outer padding. Search, filters and surrounding page actions are separate components. Optional header and footer slots can contain brief context or actions specifically associated with the table.</p>
+    <h3>Plain table panel</h3>
+    @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Plain grouped inventory table'])
+    <h3>Table panel with optional header and footer</h3>
+    <p>Use a header, a footer, both or neither. Their content is unrestricted: headings, descriptions and buttons are examples, not requirements. Omitted slots create no empty sections. Header and footer padding aligns with table cells; the table keeps square internal corners within the rounded outer panel.</p>
+    @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Grouped inventory table with optional sections', 'tableSections' => true])
+    <h3>Table conventions</h3>
     <ul>
         <li>Use linked record names for navigation. Keep action buttons and disclosure controls outside table rows.</li>
         <li>Keep each cell to a single line of information; put secondary details on the record view. Allow natural wrapping on narrow screens rather than clipping content.</li>
@@ -52,11 +58,6 @@
         <li>Use the normal dark text color for group headings; purple indicates a link.</li>
         <li>Indent record names beneath group headers with the shared <code>app-grouped-item</code> style. Its padding comes from <code>--app-grouped-item-padding</code>, so changes apply globally.</li>
     </ul>
-    <div class="app-content"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:1rem 2rem"><label>Search<input type="search" placeholder="Find an item"></label><label>Location<select><option>All storage</option><option>Central</option><option>Sample storage</option></select></label></div></div>
-    <div class="app-actions"><button type="button" class="app-new-action">+ New</button></div>
-    @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Grouped inventory table'])
-    <p class="app-field-help">Fictional quantities. All retained items are shown, including inactive and archived records.</p>
-    <div class="app-actions"><button type="button">Download sample</button></div>
 </section>
 <x-app.guide-divider />
 <section id="columns" aria-labelledby="columns-title">
