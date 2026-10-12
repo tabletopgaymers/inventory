@@ -1,6 +1,7 @@
 @extends('layout')
 @section('title', 'Location counts')
-@section('content')
+@section('content-sections')
+<div class="app-content app-record-content">
 <p>Choose one location and criteria. Saved searches contain criteria only; each opening uses current inventory.</p>
 @if($saved)<nav aria-label="Personal saved searches">@foreach($saved as $key => $entry)<a href="/inventory/location-counts?saved={{ urlencode($key) }}">{{ $entry['name'] }}</a> @endforeach</nav>@endif
 @if($compatibilityNotice)<p class="warning" role="status">{{ $compatibilityNotice }}</p>@endif
@@ -14,7 +15,8 @@
 </form>
 @if($rows !== null)
 <div class="actions"><a href="/inventory/location-counts/{{ $token }}/worksheet" target="_blank" rel="noopener">Print inventory worksheet</a>@if($canCount)<a class="button" href="/inventory/location-counts/{{ $token }}/enter">Reconcile inventory</a>@endif</div>
-<x-app.table-region label="Count search" class="table-wrap"><table><thead><tr><th>Name</th><th class="number">Recorded at selected location</th></tr></thead><tbody>@php($group = null)@forelse($rows as $row)@if($group !== $row['category'].' : '.$row['collection'])@php($group = $row['category'].' : '.$row['collection'])<tr><th colspan="2">{{ $group }}</th></tr>@endif<tr><td class="app-grouped-item">{{ $row['name'] }}</td><td class="number">{{ number_format($row['values']['storage:'.$criteria['location_id']]) }}</td></tr>@empty<tr><td colspan="2">No matching items. Change your criteria and select Search.</td></tr>@endforelse</tbody></table></x-app.table-region>
+</div><x-app.table-region label="Count search" class="app-list-table-panel"><table><thead><tr><th>Name</th><th class="number">Recorded at selected location</th></tr></thead><tbody>@php($group = null)@forelse($rows as $row)@if($group !== $row['category'].' : '.$row['collection'])@php($group = $row['category'].' : '.$row['collection'])<tr class="collection-heading"><th colspan="2">{{ $group }}</th></tr>@endif<tr><td class="app-grouped-item">{{ $row['name'] }}</td><td class="number">{{ number_format($row['values']['storage:'.$criteria['location_id']]) }}</td></tr>@empty<tr><td colspan="2">No matching items. Change your criteria and select Search.</td></tr>@endforelse</tbody></table></x-app.table-region><div class="app-content app-record-content">
 @else<p>Choose a location and select Search or Show all.</p>@endif
 <script src="/location-counts.js" defer></script>
+</div>
 @endsection

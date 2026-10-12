@@ -1,6 +1,7 @@
 @extends('layout')
 @section('title', 'Inventory')
-@section('content')
+@section('content-sections')
+<div class="app-content">
 <form method="post" action="/inventory/search" id="inventory-search">@csrf
 <input type="hidden" name="context" value="{{ $token }}"><input type="hidden" name="scroll" value="{{ $scroll }}"><input type="hidden" name="destination" value="">
 <div class="search-actions"><label>Search inventory<input name="search" maxlength="255" value="{{ old('search', $pending['search']) }}"></label><button name="action" value="search" class="primary" aria-busy="false">Search<span class="app-search-spinner" aria-hidden="true"></span></button><span class="sr-only" role="status" data-search-status></span><button name="action" value="show_all">Show all</button><button name="action" value="reset">Reset</button></div>
@@ -13,7 +14,8 @@
 @if(collect($allColumns)->contains(fn ($column) => $column['unavailable'] ?? false))<p class="warning" role="status">A saved location selection is unavailable. Your saved criteria are retained; remove the unavailable selection explicitly before searching. Existing results retain their submitted columns.</p>@endif
 <p id="pending-notice" class="warning" hidden>Search settings changed — select Search to update results.</p><p id="preference-error" class="error" role="alert" hidden></p>
 <p>Available includes every storage location. Event, In Transit and Ordered balances are separate read-only sources; future transaction links are unavailable.</p>
-<x-app.table-region label="Inventory results" class="table-wrap inventory-results" id="inventory-results"><table><thead><tr><th>Name</th><th class="number">Available</th>@foreach($result['columns'] ?? [] as $key=>$column)<th class="number">@if($column['kind']==='storage')<a data-browse-link href="/inventory/locations/{{ $column['id'] }}">{{ $column['name'] }}</a>@else{{ $column['name'] }}@endif</th>@endforeach</tr></thead><tbody>
+</div>
+<x-app.table-region label="Inventory results" class="inventory-results app-list-table-panel" id="inventory-results"><table><thead><tr><th>Name</th><th class="number">Available</th>@foreach($result['columns'] ?? [] as $key=>$column)<th class="number">@if($column['kind']==='storage')<a data-browse-link href="/inventory/locations/{{ $column['id'] }}">{{ $column['name'] }}</a>@else{{ $column['name'] }}@endif</th>@endforeach</tr></thead><tbody>
 @php($group = null)
 @forelse($result['rows'] ?? [] as $row)
 @if($group !== $row['category'].':'.$row['collection'])@php($group = $row['category'].':'.$row['collection'])<tr class="collection-heading"><th colspan="{{ 2+count($result['columns']) }}">{{ $row['category'] }} : {{ $row['collection'] }}</th></tr>@endif
@@ -21,5 +23,5 @@
 @empty<tr><td colspan="{{ 2+count($result['columns'] ?? []) }}">{{ $result === null ? 'Search inventory or choose Show all.' : 'No items match. Change your search or filters, then select Search, or choose Show all.' }}</td></tr>@endforelse
 </tbody></table></x-app.table-region>
 <div class="actions download-bar">@if(!empty($result['rows']))<a class="button" href="/inventory/results/{{ $token }}/csv">Download CSV</a>@else<button disabled>Download CSV</button>@endif</div>
-<script type="application/json" id="browse-state">@json(['submitted'=>$submitted,'scroll'=>$scroll])</script><script src="/inventory-browse.js" defer></script>
+<script type="application/json" id="browse-state">@json(['submitted'=>$submitted,'scroll'=>$scroll])</script><script src="/inventory-browse.js?v={{ substr(hash_file('sha256', public_path('inventory-browse.js')), 0, 12) }}" defer></script>
 @endsection

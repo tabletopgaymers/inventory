@@ -32,7 +32,11 @@
 <label>Mobile number (optional)<input type="text" name="mobile_number" maxlength="100" autocomplete="tel" placeholder="555-555-1234" value="{{ old('mobile_number', $profileUser->mobile_number) }}"></label>
 <label>Mailing address (optional)<textarea name="mailing_address" rows="4" maxlength="4000" autocomplete="street-address" placeholder="Provide your mailing address, including your name, in a format appropriate to your location.">{{ old('mailing_address', $profileUser->mailing_address) }}</textarea></label>
 <label>Time zone<select name="time_zone" required>@if(is_string(old('time_zone')) && !in_array(old('time_zone'), \App\Support\DisplayDates::zones(), true))<option value="{{ old('time_zone') }}" disabled selected>{{ old('time_zone') }} — choose a valid time zone</option>@endif @foreach(\App\Support\DisplayDates::zones() as $zone)<option value="{{ $zone }}" @selected(old('time_zone', $profileZone) === $zone)>{{ $zone }}</option>@endforeach</select></label>
-<label>Display density<select name="display_density" required>@foreach(\App\Models\User::DISPLAY_DENSITIES as $value => $label)<option value="{{ $value }}" @selected(old('display_density', $profileUser->display_density ?? 'standard') === $value)>{{ $label }}</option>@endforeach</select></label>
+<label>Display density<select name="display_density" required
+@if($ownProfile)
+data-density-preview
+@endif
+>@foreach(\App\Models\User::DISPLAY_DENSITIES as $value => $label)<option value="{{ $value }}" @selected(old('display_density', $profileUser->display_density ?? 'standard') === $value)>{{ $label }}</option>@endforeach</select></label>
 </div>
 </div>
 </form>

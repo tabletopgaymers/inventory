@@ -1,4 +1,4 @@
-<x-app.table-region label="Item history" class="table-wrap"><table class="history"><thead><tr><th>Date</th><th>Description</th><th class="number">Quantity</th><th class="number">Unit cost</th></tr></thead><tbody>
+<x-app.table-region label="Item history" class="app-list-table-panel"><table class="history"><thead><tr><th>Date</th><th>Description</th><th class="number">Quantity</th><th class="number">Unit cost</th></tr></thead><tbody>
 
 @forelse($entries as $entry)
 @php($sourceUrl = $entry->request_url ?? (isset($entry->cost_entry_id) ? '/inventory/cost-adjustments/'.$entry->cost_entry_id : '/inventory/adjustments/'.($entry->inventory_adjustment_id ?? '')))

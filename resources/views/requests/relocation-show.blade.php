@@ -4,7 +4,9 @@
 @section('relocation-progress')
 @include('requests.relocation-progress', ['progressRow' => $row, 'progressContext' => 'show', 'progressSaveUrl' => $manager || (int)$row->owner_id === (int)auth()->id() ? '/relocations/'.$row->id.'/progress' : null, 'progressKey' => 'request:'.$row->id])
 @endsection
-@section('content')
+@section('content-sections')
+<div class="app-content">
+@yield('relocation-progress')
 <p>Relocation #{{ $row->id }} · Owner: {{ trim($owner->first_name.' '.$owner->last_name) ?: 'Account '.$owner->id }}</p>
 <section id="relocation-review"><h2>Next action</h2><p>{{ match($row->status) { 'Draft' => 'Unsubmitted Draft. Continue through Locations, Items and Review when ready.', 'Requested' => 'Submitted request. A manager can prepare quantities and record the shipment.', 'Shipped', 'Receiving' => 'Record cumulative receipt counts, then review before completing receiving.', 'Complete' => 'Receiving is complete. Saved item quantities and movement history are retained.', default => 'Cancelled request. Saved details and history are retained.' } }}</p>@if(!$editable && !$manager)<p>Viewing saved request. Available actions follow the existing owner and management permissions.</p>@endif
 @if($fulfillmentReady && $manager && $row->status==='Requested')<a class="button primary" href="/relocations/{{ $row->id }}/fulfillment/shipment">Record shipment</a>@endif
@@ -13,7 +15,9 @@
 <p id="relocation-locations">{{ $locations->firstWhere('id',$row->source_location_id)?->name ?: 'Source not selected' }} → {{ $locations->firstWhere('id',$row->destination_location_id)?->name ?: 'Destination not selected' }}</p><p class="plain-text">{{ $row->details }}</p>
 @if($manager || (int)$row->owner_id === (int)auth()->id())<details><summary>Edit title</summary><form method="post" id="relocation-title" action="/relocations/{{ $row->id }}/title" data-request-form data-relocation-form="title">@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}"><label>Title<input name="title" maxlength="255" value="{{ old('title',$row->title) }}" required></label></form></details>@endif
 <h2 id="relocation-items">Requested items</h2><p>Projections use current inventory and reserve nothing. Saved counts move no stock.</p>
-<form method="post" id="relocation-preparation" action="/relocations/{{ $row->id }}/fulfillment" data-request-form @if($manager && $row->status === 'Requested') data-relocation-form="fulfillment" @endif>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}"><x-app.table-region label="Requested items and fulfillment" class="table-wrap"><table class="stock-editor"><thead><tr><th>Item</th><th>Source: current → projected</th><th>Destination: current → projected</th><th>Requested</th>@if($row->status!=='Draft')<th>Fulfillment preparation (optional)</th>@endif</tr></thead><tbody>@include('requests.relocation-rows',['quantities'=>$lines->map(fn($line)=>$line->quantity)->all(),'fulfillment'=>$row->status!=='Draft','columns'=>$row->status==='Draft'?4:5])</tbody></table></x-app.table-region></form>
+</div>
+<form method="post" id="relocation-preparation" action="/relocations/{{ $row->id }}/fulfillment" data-request-form @if($manager && $row->status === 'Requested') data-relocation-form="fulfillment" @endif>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}"><x-app.table-region label="Requested items and fulfillment" class="app-list-table-panel"><table class="stock-editor"><thead><tr><th>Item</th><th>Source: current → projected</th><th>Destination: current → projected</th><th>Requested</th>@if($row->status!=='Draft')<th>Fulfillment preparation (optional)</th>@endif</tr></thead><tbody>@include('requests.relocation-rows',['quantities'=>$lines->map(fn($line)=>$line->quantity)->all(),'fulfillment'=>$row->status!=='Draft','columns'=>$row->status==='Draft'?4:5])</tbody></table></x-app.table-region></form>
+<div class="app-content">
 @if($row->status!=='Draft')<h2 id="relocation-fulfillment">Fulfillment</h2>@endif
 @if($fulfillmentReady)
 <div class="actions">
@@ -27,4 +31,5 @@
 <h2>Other request actions</h2><a class="button" href="/relocations/{{ $row->id }}/worksheet" target="_blank" rel="noopener">Packing worksheet</a><form method="post" action="/relocations/{{ $row->id }}/transition" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}">@if($manager && $row->status==='Requested')<button name="action" value="return">Return to Draft</button>@endif @if($row->status==='Draft' && ($manager || (int)$row->owner_id===(int)auth()->id()))<button class="discard" name="action" value="cancel" data-confirm="Cancel this Draft? All saved details and activity will be retained.">Cancel request</button>@endif</form>
 <form method="post" action="/relocations/{{ $row->id }}/copy" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><button>Copy items to new Draft</button></form>
 @include('requests.activity')<script src="/requests.js?v=relocation-progress-1-sentence-case-1-pending-notice-1" defer></script>
+</div>
 @endsection

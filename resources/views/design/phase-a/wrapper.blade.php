@@ -3,6 +3,7 @@
 @section('intro', 'The current shared application frame, with a sample two-panel user page.')
 @section('guide-content')
 @include('design.phase-a.user-example')
+<x-app.guide-divider />
 <div class="app-content" id="profile-example">
     <h2>Shared frame and panels</h2>
     <p>Header, menu, account controls, environment label and footer come from the application layout. Information and action panels share padding; buttons retain their own internal padding.</p>

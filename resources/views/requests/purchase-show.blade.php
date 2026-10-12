@@ -7,7 +7,9 @@
 @section('purchase-progress')
 @include('requests.purchase-progress', ['progressRow' => $row, 'progressActive' => match ($row->status) { 'Draft' => 'review', 'Request' => 'preparation', 'Ordered', 'Shipped' => 'receive', 'Received' => 'complete', default => '' }, 'progressKey' => 'show:'.$row->id])
 @endsection
-@section('content')
+@section('content-sections')
+<div class="app-content">
+@yield('purchase-progress')
 
 <p>Purchase request #{{ $row->id }} · Owner: {{ trim($owner->first_name.' '.$owner->last_name) ?: 'Account '.$owner->id }}</p>
 
@@ -19,7 +21,9 @@
 </section>
 
 <dl class="item-metadata" id="purchase-request"><dt>Suggested merchant</dt><dd>{{ $row->suggested_merchant ?: 'Not provided' }}</dd><dt>Request details</dt><dd>{{ $row->details ?: 'Not provided' }}</dd></dl>
-<div id="purchase-items">@include('requests.purchase-catalog', ['rows' => $requestRows, 'draft' => ['values' => ['lines' => array_map(fn ($quantity) => ['quantity' => $quantity], $requestLines)]], 'planning' => false, 'catalogEditable' => false])</div>
+</div>
+<div id="purchase-items">@include('requests.purchase-catalog', ['rows' => $requestRows, 'draft' => ['values' => ['lines' => array_map(fn ($quantity) => ['quantity' => $quantity], $requestLines)]], 'planning' => false, 'catalogEditable' => false, 'tablePanel' => true])</div>
+<div class="app-content">
 
 <form method="post" action="/purchases/{{ $row->id }}/transition" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}">
 
@@ -49,4 +53,5 @@
 @include('requests.activity')
 <script src="/requests.js?v=purchase-progress-2-sentence-case-1-pending-notice-1" defer></script>
 
+</div>
 @endsection

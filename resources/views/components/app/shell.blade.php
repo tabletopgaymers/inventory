@@ -1,13 +1,14 @@
 @props(['title', 'guest' => false])
 @php($signedIn = ! $guest && auth()->check())
+@php($displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard')
 <!doctype html>
 <html lang="en" data-theme="tg-app">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} · TG Inventory</title>
-    <link rel="stylesheet" href="/app.css?v=role-confirmations-1"><script src="/app-shell.js?v=dismissible-notices-1" defer></script>
+    <link rel="stylesheet" href="/app.css?v={{ substr(hash_file('sha256', public_path('app.css')), 0, 12) }}"><script src="/app-shell.js?v={{ substr(hash_file('sha256', public_path('app-shell.js')), 0, 12) }}" defer></script>
 </head>
-<body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}">
+<body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}" data-density="{{ array_key_exists($displayDensity, \App\Models\User::DISPLAY_DENSITIES) ? $displayDensity : 'standard' }}">
 <a class="app-skip" href="#app-main">Skip to content</a>
 <header class="app-header">
     <div class="app-brand"><a href="/">TG Inventory</a><span>Tabletop Gaymers</span></div>

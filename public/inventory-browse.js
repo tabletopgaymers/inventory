@@ -1,6 +1,5 @@
 (() => {
     const form = document.getElementById('inventory-search');
-    const table = document.getElementById('inventory-results');
     const state = JSON.parse(document.getElementById('browse-state').textContent);
     const notice = document.getElementById('pending-notice');
     const error = document.getElementById('preference-error');
@@ -28,7 +27,7 @@
     };
     const save = () => {
         const data = new FormData(form);
-        data.set('scroll', String(Math.round(table.scrollTop)));
+        data.set('scroll', String(Math.round(window.scrollY)));
         pendingSave = pendingSave.catch(()=>{}).then(async () => {
             try {
                 const response = await fetch('/inventory/preferences', {method:'POST', body:data, headers:{'Accept':'application/json'}});
@@ -57,15 +56,15 @@
     document.querySelectorAll('[data-browse-link]').forEach(link => link.addEventListener('click', async event => {
         event.preventDefault(); clearTimeout(timer); navigating = true; await pendingSave.catch(()=>{});
         form.elements.destination.value = new URL(link.href).pathname;
-        form.elements.scroll.value = String(Math.round(table.scrollTop));
+        form.elements.scroll.value = String(Math.round(window.scrollY));
         form.action = '/inventory/preferences'; form.submit();
     }));
     window.addEventListener('pagehide', () => {
         if (navigating) return;
         clearTimeout(timer);
-        const data = new FormData(form); data.set('scroll', String(Math.round(table.scrollTop))); data.set('destination','');
+        const data = new FormData(form); data.set('scroll', String(Math.round(window.scrollY))); data.set('destination','');
         navigator.sendBeacon('/inventory/preferences', data);
     });
     window.addEventListener('pageshow', event => { loading(false); if (event.persisted && state.submitted) window.location.reload(); });
-    update(); requestAnimationFrame(() => { table.scrollTop = state.scroll || 0; });
+    update(); requestAnimationFrame(() => { window.scrollTo(0, state.scroll || 0); });
 })();

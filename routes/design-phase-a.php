@@ -8,6 +8,7 @@ if (app()->environment(['local', 'development'])) {
         ->name('design.phase-a.'.$scope.'.')->middleware('auth')->group(function () use ($scope) {
             Route::view('/overview', 'design.phase-a.index')->name('index');
             Route::view('/elements', 'design.phase-a.elements')->name('elements');
+            Route::view('/tables', 'design.phase-a.tables')->name('tables');
             Route::view('/examples', 'design.phase-a.examples')->name('examples');
             if ($scope === 'local') {
                 Route::view('/wrapper', 'design.phase-a.wrapper')->name('wrapper');

@@ -29,20 +29,35 @@
             });
         });
     });
+    const outputs = [...document.querySelectorAll('[data-guide-density][data-guide-measure]')];
+    const samples = new Map();
+    if (outputs.length) {
+        for (const density of ['compact', 'standard', 'spacious']) {
+            const sample = document.createElement('div');
+            sample.className = 'app-shell'; sample.dataset.density = density;
+            sample.setAttribute('aria-hidden', 'true'); sample.inert = true;
+            sample.style.cssText = 'position:fixed;left:-10000px;visibility:hidden;pointer-events:none;min-height:0;';
+            const panel = document.createElement('div'); panel.className = 'app-panel';
+            const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Sample';
+            panel.append(button); sample.append(panel); document.body.append(sample);
+            samples.set(density, { sample, panel, button });
+        }
+    }
     const updateMeasurements = () => {
-        const panel = document.querySelector('.app-main > .app-content');
-        const button = document.getElementById('guide-padding-button');
-        const values = {
-            panel: panel ? getComputedStyle(panel).padding : '',
-            button: button ? getComputedStyle(button).padding : '',
-            body: getComputedStyle(document.body).fontSize + ' / line height ' + getComputedStyle(document.body).lineHeight,
-            primary: getComputedStyle(document.body).getPropertyValue('--app-primary').trim(),
-            page: getComputedStyle(document.body).backgroundColor,
-            surface: panel ? getComputedStyle(panel).backgroundColor : '',
-        };
-        document.querySelectorAll('[data-guide-measure]').forEach(output => {
-            output.textContent = values[output.dataset.guideMeasure] || 'See the shared component';
-        });
+        for (const output of outputs) {
+            const { sample, panel, button } = samples.get(output.dataset.guideDensity);
+            const style = getComputedStyle(sample);
+            const key = output.dataset.guideMeasure;
+            const values = {
+                panel: getComputedStyle(panel).padding,
+                button: getComputedStyle(button).padding,
+                body: style.fontSize + ' / line height ' + style.lineHeight,
+                primary: style.getPropertyValue('--app-primary').trim(),
+                page: style.backgroundColor,
+                surface: getComputedStyle(panel).backgroundColor,
+            };
+            output.textContent = key.startsWith('--') ? style.getPropertyValue(key).trim() : values[key];
+        }
     };
     updateMeasurements();
     window.addEventListener('resize', updateMeasurements);

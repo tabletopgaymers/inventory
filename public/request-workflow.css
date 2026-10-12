@@ -3,7 +3,7 @@
     .app-shell .requested-items table.stock-editor,
     .app-shell .requested-items tbody { display: block; width: 100%; min-width: 0; max-width: 100%; }
     .app-shell .requested-items thead { display: none; }
-    .app-shell .requested-items tr { display: block; width: 100%; min-width: 0; max-width: 100%; margin-bottom: .5rem; border: 1px solid #d1d5db; padding: .375rem .75rem; }
+    .app-shell .requested-items tr { display: block; width: 100%; min-width: 0; max-width: 100%; margin-bottom: var(--app-density-field-y); border: 1px solid #d1d5db; padding: var(--app-density-paragraph-y) .75rem; }
     .app-shell .requested-items tr.collection-heading { border: 0; padding: 0; }
     .app-shell .requested-items th,
     .app-shell .requested-items td,

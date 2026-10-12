@@ -22,6 +22,30 @@ class CatalogController
         $this->ready();
         $service = app(CatalogRecords::class);
         $records = $service->records($kind);
+        if ($kind === 'collections') {
+            $records = $records->sort(fn ($left, $right) =>
+                strcasecmp($left->category_name, $right->category_name)
+                ?: strcasecmp($left->name, $right->name)
+                ?: ($left->id <=> $right->id)
+            )->values();
+        }
+        if ($kind === 'items') {
+            $classifications = DB::table('collections')
+                ->join('categories', 'categories.id', '=', 'collections.category_id')
+                ->select('collections.id', 'collections.name as collection_name', 'categories.name as category_name')
+                ->get()->keyBy('id');
+            foreach ($records as $record) {
+                $classification = $classifications[$record->collection_id];
+                $record->category_name = $classification->category_name;
+                $record->collection_name = $classification->collection_name;
+            }
+            $records = $records->sort(fn ($left, $right) =>
+                strcasecmp($left->category_name, $right->category_name)
+                ?: strcasecmp($left->collection_name, $right->collection_name)
+                ?: strcasecmp($left->name, $right->name)
+                ?: ($left->id <=> $right->id)
+            )->values();
+        }
         $category = null;
         $collection = null;
         if ($kind === 'collections' && $request->filled('category')) {

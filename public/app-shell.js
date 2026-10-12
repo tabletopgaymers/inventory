@@ -1,4 +1,13 @@
 (() => {
+    const categoryFilter = document.querySelector('[data-catalog-category-filter]');
+    categoryFilter?.addEventListener('change', () => categoryFilter.form.requestSubmit());
+    // Preview only a committed selection in the viewer's own profile; Save persists it.
+    const density = document.querySelector('#profile-form select[data-density-preview]');
+    density?.addEventListener('change', () => {
+        if (['compact', 'standard', 'spacious'].includes(density.value)) {
+            document.body.dataset.density = density.value;
+        }
+    });
     // Keep server error keys and connect summaries to their actual visible controls.
     const fields = [...document.querySelectorAll('form input:not([type="hidden"]), form select, form textarea')];
     fields.forEach((input, index) => {

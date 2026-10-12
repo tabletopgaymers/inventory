@@ -1,12 +1,13 @@
 @extends('layout')
 @section('title', ($row?->name ?: 'New event').' — '.(['plan'=>'Planning','activate'=>'Activation','delivery'=>'Delivery','counts'=>'Counts','correction'=>'Report correction'][$mode]))
-@section('content')
+@section('content-sections')
+<div class="app-content">
 @php($values=$draft['values'])
 <p><a href="{{ $row ? '/events/'.$row->id : '/events' }}">Back to {{ $row ? 'event' : 'events' }}</a></p>
 @if($mode==='counts')<p>Counts are shared. Blank remains uncounted; zero is an explicit count. Saving progress permits incomplete allocations and unusual counts. Finalization requires every count, remaining no greater than brought and exact leftover allocations.</p>@endif
 @if($mode==='correction')<p class="warning">This changes the report only. Stock, cost, contributions and original posting stay unchanged. Use a separate inventory adjustment for an actual stock correction.</p>@endif
 @if($mode==='activate')<p>Activation moves the saved planned supplies once. Review the quantities below before confirming.</p>@endif
-<form method="post" action="{{ $base }}" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="work" value="{{ $token }}">
+</div><form method="post" action="{{ $base }}" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="work" value="{{ $token }}"><div class="app-content">
 @if($mode==='plan')
 <label>Event name<input name="name" required maxlength="255" value="{{ $values['name'] ?? '' }}"></label>
 <label>Venue (optional)<input name="venue" maxlength="255" value="{{ $values['venue'] ?? '' }}"></label>
@@ -26,7 +27,7 @@
 <input type="hidden" name="remove_index" value=""><button name="action" value="add" formnovalidate>Add supply</button>
 @endif
 @if(in_array($mode,['activate','delivery']))<label>Actual movement date (optional; unknown stays unknown)<input type="date" name="actual_date" value="{{ $values['actual_date'] ?? '' }}"></label>@endif
-@if($mode==='activate')<x-app.table-region label="Activation supplies" class="table-wrap"><table><thead><tr><th>Item</th><th>Source</th><th>Units</th></tr></thead><tbody>@foreach($values['supplies'] ?? [] as $supply)@php($item=$items->firstWhere('id',$supply['item_id']))<tr><th>{{ $item?->name }}<small class="app-item-sku">{{ $item?->sku }}</small></th><td>{{ $supply['source']==='external' ? 'External / unknown origin' : ($destinations[$supply['source']] ?? 'Unavailable source') }}</td><td>{{ $supply['quantity']===null ? 'Not entered' : number_format($supply['quantity']) }}</td></tr>@endforeach</tbody></table></x-app.table-region>@endif
+@if($mode==='activate')</div><x-app.table-region label="Activation supplies" class="app-list-table-panel"><table><thead><tr><th>Item</th><th>Source</th><th>Units</th></tr></thead><tbody>@foreach($values['supplies'] ?? [] as $supply)@php($item=$items->firstWhere('id',$supply['item_id']))<tr><th>{{ $item?->name }}<small class="app-item-sku">{{ $item?->sku }}</small></th><td>{{ $supply['source']==='external' ? 'External / unknown origin' : ($destinations[$supply['source']] ?? 'Unavailable source') }}</td><td>{{ $supply['quantity']===null ? 'Not entered' : number_format($supply['quantity']) }}</td></tr>@endforeach</tbody></table></x-app.table-region><div class="app-content">@endif
 @if(in_array($mode,['counts','correction']))
 @foreach($values['lines'] ?? [] as $itemId=>$line)@php($item=$items->firstWhere('id',(int)$itemId))
 <fieldset><legend>{{ $item?->name ?: ($line['item'] ?? 'Unavailable item') }} · {{ $item?->sku ?: ($line['sku'] ?? '#'.$itemId) }}</legend>
@@ -45,5 +46,5 @@
 @endif
 @if($mode==='correction')<label>Explanation (optional)<textarea name="explanation" maxlength="5000">{{ $values['explanation'] ?? '' }}</textarea></label>@endif
 <div class="actions"><a class="discard" href="{{ $row ? '/events/'.$row->id : '/events' }}">Discard changes</a>@if($mode==='plan')<button class="primary" name="action" value="save" formnovalidate>Save planning</button>@else @if($mode==='counts')<button name="action" value="save" formnovalidate>Save progress</button>@endif<button class="primary" name="action" value="review">{{ $mode==='counts' ? 'Review irreversible finalization' : 'Review '.$mode }}</button>@endif</div>
-</form><script src="/requests.js?v=inline-decisions-1-sentence-case-1-pending-notice-1" defer></script>
+</div></form><script src="/requests.js?v=inline-decisions-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

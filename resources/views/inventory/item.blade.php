@@ -1,6 +1,8 @@
 @extends('layout')
 @section('title', $item->name)
-@section('content')
+@section('content-sections')
+<div class="app-content app-record-content">
+@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
 @php($historyContext = is_string($browse) && \Illuminate\Support\Str::isUuid($browse) ? ['browse' => $browse] : [])
 <p>{{ $item->sku }} · @if($catalogReady)<a href="/inventory/classification/category/{{ $item->category_id }}">{{ $item->category_name }}</a> · <a href="/inventory/classification/collection/{{ $item->collection_id }}">{{ $item->collection_name }}</a> · <span class="status-badge {{ $state }}">{{ ucfirst($state) }}</span>@else{{ $item->category_name }} · {{ $item->collection_name }}@endif</p>
 <p>Unit cost: {{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}</p>
@@ -13,15 +15,22 @@
 <div class="section-heading"><h2>Locations</h2>
 @if($canCorrect)<a class="button" href="/inventory/items/{{ $item->id }}/edit">Edit inventory</a>
 @endif</div>
-<x-app.table-region label="Item quantities" class="table-wrap"><table><thead><tr><th>Location</th><th class="number">Available</th></tr></thead><tbody>
+</div>
+<x-app.table-region label="Item quantities" class="app-list-table-panel"><table><thead><tr><th>Location</th><th class="number">Available</th></tr></thead><tbody>
 
 @foreach($locations as $location)<tr><td>@if($catalogReady)<a href="/inventory/locations/{{ $location->id }}@if(is_string($browse) && \Illuminate\Support\Str::isUuid($browse))?browse={{ $browse }}@endif">{{ $location->name }}</a>@else{{ $location->name }}@endif</td><td class="number">{{ number_format($location->quantity) }}</td></tr>
 @endforeach
 </tbody><tfoot><tr><th>Total available</th><td class="number">{{ number_format($locations->sum('quantity')) }}</td></tr></tfoot></table></x-app.table-region>
-@if($catalogReady)<h2>Events and pending inventory</h2><p>These read-only balances are excluded from Available. Purchase and relocation history links open their source requests.</p><x-app.table-region label="Events and pending inventory" class="table-wrap"><table><thead><tr><th>Source</th><th class="number">Quantity</th></tr></thead><tbody>@foreach($extraBalances as $balance)<tr><td>{{ $balance['name'] }}</td><td class="number">{{ number_format($balance['quantity']) }}</td></tr>@endforeach</tbody></table></x-app.table-region>@endif
+<div class="app-content app-record-content">
+@if($catalogReady)<h2>Events and pending inventory</h2><p>These read-only balances are excluded from Available. Purchase and relocation history links open their source requests.</p></div>
+<x-app.table-region label="Events and pending inventory" class="app-list-table-panel"><table><thead><tr><th>Source</th><th class="number">Quantity</th></tr></thead><tbody>@foreach($extraBalances as $balance)<tr><td>{{ $balance['name'] }}</td><td class="number">{{ number_format($balance['quantity']) }}</td></tr>@endforeach</tbody></table></x-app.table-region>
+<div class="app-content app-record-content">@endif
 <h2 id="history">History</h2><p>Sort by <a href="?{{ http_build_query($historyContext + ['sort' => 'date']) }}#history">date</a> or <a href="?{{ http_build_query($historyContext + ['sort' => 'description']) }}#history">description</a>.</p>
 
+</div>
 @include('inventory.history', ['entries' => $history, 'preview' => false])
+<div class="app-content app-record-content">
 @if($catalogReady && is_string($browse) && \Illuminate\Support\Str::isUuid($browse))<p><a href="/inventory/results/{{ $browse }}">Back to results</a></p>@else<p><a href="/inventory/item-history">Items</a></p>@endif
 
+</div>
 @endsection
