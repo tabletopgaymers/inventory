@@ -5,7 +5,7 @@
     <dl class="app-user-details">
         <dt>First name</dt><dd>Sample</dd>
         <dt>Last name</dt><dd>Administrator</dd>
-        <dt>Extended roles</dt><dd>admin, manager, procurement</dd>
+        <dt>Elevated roles</dt><dd>admin, manager, procurement</dd>
         <dt>Microsoft account</dt><dd>sample@tabletopgaymers.org</dd>
         <dt>TG email</dt><dd>sample@tabletopgaymers.org</dd>
         <dt>TG email confirmation</dt><dd><strong class="app-confirmation-status">Confirmed</strong></dd>

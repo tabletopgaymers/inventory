@@ -141,7 +141,7 @@ class InventoryBrowseController
         $criteria['include_inactive'] = true;
         $criteria['columns'] = ['storage:'.$location];
 
-        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->results($criteria), 'browse' => $request->query('browse')]);
+        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->results($criteria), 'browse' => $request->query('browse'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
     }
 
     public function classification(Request $request, string $kind, int $record)

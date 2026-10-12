@@ -1,4 +1,5 @@
-document.querySelectorAll('[data-unsaved]').forEach(form => {
+document.querySelectorAll('[data-unsaved], [data-catalog-progress]').forEach(form => {
+    if (form.hasAttribute('data-unsaved')) {
     let changed = false;
     const notice = document.createElement('p'); notice.setAttribute('role', 'status'); notice.hidden = true;
     notice.textContent = 'Changes not saved. Save before closing or reloading this page; in-app links offer Keep editing or Leave without saving.';
@@ -10,6 +11,7 @@ document.querySelectorAll('[data-unsaved]').forEach(form => {
         if (archiveNotice) archiveNotice.hidden = false;
     });
     window.appNavigationGuards.push({ shouldWarn: () => changed, message: 'Your changes have not been saved. Keep editing or leave without saving.' });
+    }
     const collection = form.querySelector('[name="collection_id"]');
     const suffix = form.querySelector('[name="sku_suffix"]');
     const preview = document.getElementById('sku-preview');
@@ -44,6 +46,7 @@ document.querySelectorAll('[data-unsaved]').forEach(form => {
     window.addEventListener('click', event => {
         if (!event.target.closest('[data-catalog-archive-trigger]') || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
+        if (document.querySelector('[data-catalog-progress][data-save-busy="true"]')) return;
         if (!submitting && !dialog.open) dialog.showModal();
     }, true);
     cancel.addEventListener('click', () => dialog.close());

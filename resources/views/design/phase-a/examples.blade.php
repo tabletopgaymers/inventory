@@ -5,9 +5,9 @@
 <nav class="app-section-nav" aria-label="On this page"><a href="#users">Users</a><a href="#search">Inventory</a><a href="#item">Item details</a><a href="#requests">Requests</a><a href="#counts">Counts & print</a><a href="#supporting">Catalog & events</a><a href="#wrapper">Application frame</a></nav>
 <div class="app-content" id="users">
     <h2>Informative user directory</h2>
-    <p>List information here; put permitted actions on the linked record page. Basic is omitted from Extended roles.</p>
+    <p>List information here; put permitted actions on the linked record page. Basic is omitted from Elevated roles.</p>
     </div>
-<x-app.table-region class="app-list-table-panel" label="Sample user directory"><table><thead><tr><th>Name</th><th>Email</th><th>Extended roles</th></tr></thead><tbody>
+<x-app.table-region class="app-list-table-panel" label="Sample user directory"><table><thead><tr><th>Name</th><th>Email</th><th>Elevated roles</th></tr></thead><tbody>
         <tr><td><a href="#guide-user">Sample Administrator</a></td><td>sample@example.test</td><td>admin, manager, procurement</td></tr>
         <tr><td><a href="#profile-example">Sample Volunteer</a></td><td>volunteer@example.test</td><td></td></tr>
     </tbody></table></x-app.table-region>
@@ -21,7 +21,7 @@
     <div class="app-profile-columns">
     <div>
     <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
-    <label>Extended roles<input readonly value="admin, manager, procurement"></label>
+    <label>Elevated roles<input readonly value="admin, manager, procurement"></label>
     <label>Microsoft account<input readonly value="sample@tabletopgaymers.org"></label>
     <label>TG email<input data-optional type="email" value="sample@tabletopgaymers.org" placeholder="youremail@tabletopgaymers.org"></label>
     <div class="app-profile-confirmation">TG email confirmation</div>

@@ -1,8 +1,8 @@
 @extends('design.phase-a.layout')
 @section('title', 'Forms')
-@section('intro', 'Field types, value semantics, buttons and validation feedback.')
+@section('intro', 'Field types, value semantics, buttons, saving workflows and validation feedback.')
 @section('guide-content')
-<nav class="app-section-nav" aria-label="On this page"><a href="#fields">Form fields</a><a href="#buttons">Buttons</a><a href="#errors">Error handling</a></nav>
+<nav class="app-section-nav" aria-label="On this page"><a href="#fields">Form fields</a><a href="#buttons">Buttons</a><a href="#saving-workflows">Saving workflows</a><a href="#errors">Error handling</a></nav>
 <section id="fields" aria-labelledby="fields-title">
 <div class="app-content">
     <h2 id="fields-title">Form fields</h2>
@@ -35,8 +35,42 @@
 <div class="app-content">
     <h2 id="buttons-title">Buttons</h2>
     <div class="actions app-user-actions"><button type="button" class="primary">Save</button><a class="button" href="#fields">Edit</a><button type="button" class="app-new-action">+ New</button><button type="button" class="discard">Discard</button><button type="button" disabled>Unavailable</button></div>
-    <p>Use a primary button for Save, a neutral action for Edit and a green action for creation. Give destructive actions explicit labels. One disabled example is sufficient to show the shared unavailable appearance.</p>
+    <p>Use primary buttons for Create and Save, a neutral action for Edit and a green + New action to open a creation form. Give destructive actions explicit labels. One disabled example is sufficient to show the shared unavailable appearance.</p>
+</div>
+</section>
+<x-app.guide-divider />
+<section id="saving-workflows" aria-labelledby="saving-workflows-title">
+<div class="app-content">
+    <h2 id="saving-workflows-title">Saving workflows</h2>
+    <p>Choose the saving process according to the task: completing one record or preserving work within a longer process. These names identify the interaction patterns; use the button labels below on the actual forms.</p>
+    <h3>Record save</h3>
+    <p>Use for a single-record form, such as a Category, Collection or Supplier. Creating or editing the record is the complete task, so a successful save opens its view page.</p>
+    <ul>
+        <li>Place Cancel and the primary action in the title area. Label the action Create for a new record and Save for an existing record.</li>
+        <li>While submitting, show Creating… or Saving… with a spinner, disable duplicate submission and lock the fields.</li>
+        <li>On success, keep the spinner and fields locked until the record view loads. Show the creation or save confirmation at the top of that view.</li>
+        <li>Cancel returns to the index for a new record or the record view when editing. If there are unsaved changes, show the Keep editing / Leave without saving modal first.</li>
+    </ul>
+    <p class="app-field-help">Catalog New and Edit forms use this process for Categories, Collections, Items, Locations, Suppliers, Purposes and Programs.</p>
+    <div class="actions app-user-actions">
+        <button type="button">Cancel</button>
+        <button type="button" class="primary app-save-progress">Create</button>
+        <button type="button" class="primary app-save-progress app-save-dirty" aria-label="Create with unsaved changes">Create</button>
+        <button type="button" class="primary app-save-progress" disabled aria-busy="true">Creating… <span class="app-search-spinner" aria-hidden="true"></span></button>
+        <button type="button" class="primary app-save-progress">Save</button>
+        <button type="button" class="primary app-save-progress app-save-dirty" aria-label="Save with unsaved changes">Save</button>
+        <button type="button" class="primary app-save-progress" disabled aria-busy="true">Saving… <span class="app-search-spinner" aria-hidden="true"></span></button>
+    </div>
+    <p class="app-field-help">Create and Save retain their labels when edits are unsaved; the changed appearance identifies pending work. Busy examples stay disabled until the record view loads. These are visual examples only.</p>
     <h3>Save progress</h3>
+    <p>Use for a multi-step workflow, such as a Purchase or Relocation, where users work across several pages and may need to pause and resume.</p>
+    <ul>
+        <li>Place Save progress in the title area and indicate when there are unsaved changes.</li>
+        <li>While saving, show Saving… with a spinner and disable duplicate submission.</li>
+        <li>On success, stay on the current step, restore the Save progress button to its saved appearance and show confirmation at the top of the working page.</li>
+        <li>Keep Next, Review, Submit and final confirmation actions separate. Saving progress does not itself complete the workflow or perform its final inventory action.</li>
+        <li>Use the unsaved-changes modal before leaving unsaved work. Longer confirmations belong on a Review page.</li>
+    </ul>
     <div class="actions app-user-actions">
         <button type="button" class="primary app-save-progress">Save progress</button>
         <button type="button" class="primary app-save-progress app-save-dirty">Save progress — unsaved</button>
@@ -44,8 +78,8 @@
         <button type="button" class="primary app-save-progress" disabled>Save progress — unavailable</button>
         <button type="button" class="primary app-save-progress app-save-dirty" disabled>Save progress — unsaved and unavailable</button>
     </div>
-    <p>These states are used by Purchase and Relocation progress controls: no pending edits, unsaved edits, a save in progress, no editable save destination or locked work, and unsaved work that is currently unavailable to save. Saving disables the control and shows a spinner. A successful save clears the unsaved appearance; feedback appears separately.</p>
-    <p class="app-field-help">Save progress keeps the current step. Submission and workflow confirmation remain separate actions. These examples do not run a save.</p>
+    <p class="app-field-help">Purchase and Relocation use these states for saved work, unsaved edits, a save in progress, unavailable saving and unsaved work that cannot currently be saved. These examples do not run a save.</p>
+    <p>For both processes, validation failures retain entered values, restore the available controls and show an error summary above the form with field-specific feedback. A save is successful only after the server confirms it.</p>
 </div>
 </section>
 <x-app.guide-divider />

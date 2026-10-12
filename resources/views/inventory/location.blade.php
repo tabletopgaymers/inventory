@@ -1,13 +1,14 @@
 @extends('layout')
 @section('title', $location->name.' inventory')
 @section('title-status')<x-app.status-badge :status="ucfirst($location->state)" />@endsection
+@section('page-actions')
+@if($canManage)<a class="button" href="/catalog/storage_locations/{{ $location->id }}/edit">Edit</a>@endif
+@endsection
 @section('content-sections')
-@if($location->description || $location->notes)
 <div class="app-content">
-    @if($location->description)<p>{{ $location->description }}</p>@endif
-    @if($location->notes)<p class="plain-text">{{ $location->notes }}</p>@endif
+    <dl class="app-user-details"><dt>Description</dt><dd>{{ $location->description ?: '—' }}</dd><dt>Notes</dt><dd class="plain-text">{{ $location->notes ?: '—' }}</dd></dl>
 </div>
-@endif
+<h2>Inventory</h2>
 <x-app.table-region label="Location inventory" class="app-list-table-panel">
 <table><thead><tr><th>Item</th><th class="number">At this location</th><th class="number">Available (all storage)</th></tr></thead><tbody>
 @php

@@ -1,21 +1,17 @@
 @extends('layout')
-@section('title', $kind === 'collections' && $record ? 'Edit collection - '.$record->name : ($record ? 'Edit ' : 'Create ').$label)
-@if($kind === 'collections' && $record)
+@php($singular = \App\Support\CatalogRecords::SINGULAR[$kind])
+@section('title', $record ? 'Edit '.$singular.' - '.$record->name : 'New '.$singular)
 @section('page-actions')
-<x-app.action variant="discard" href="/catalog/{{ $kind }}">Cancel</x-app.action>
-<x-app.action type="submit" variant="primary" form="catalog-form">Save</x-app.action>
+<x-app.action variant="discard" href="{{ $record ? \App\Support\CatalogRecords::viewUrl($kind, $record->id) : '/catalog/'.$kind }}">Cancel</x-app.action>
+<button type="submit" class="primary app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></button>
 @endsection
-@endif
 @section('title-status')
 @if($record)<x-app.status-badge :status="ucfirst($record->state)" />@endif
 @endsection
-@section('content')
-@if($kind === 'collections' && $record)
+@section('content-sections')
+<div data-catalog-save-feedback role="status" hidden></div>
 <div class="app-content">
-@else
-<nav class="app-breadcrumb" aria-label="Breadcrumb"><a href="/catalog/{{ $kind }}">{{ $label }}</a>@if($record)<span>› {{ $record->name }}</span>@endif</nav>
-@endif
-<form id="catalog-form" method="post" data-unsaved>@csrf
+<form id="catalog-form" method="post" data-catalog-progress data-record-base="{{ \App\Support\CatalogRecords::viewBase($kind) }}" data-save-mode="{{ $record ? 'edit' : 'create' }}" data-save-dirty="{{ $errors->any() || session('error') ? 'true' : 'false' }}">@csrf
 <label>Name<input name="name" required maxlength="255" value="{{ old('name', $record?->name) }}"></label>
 @if($kind === 'collections')
 <label>Category<select name="category_id" required>@if(!$record && $selectedCategory && $selectedCategory->state !== 'active' && !old('category_id'))<option value="" disabled selected>{{ $selectedCategory->name }} ({{ $selectedCategory->state }}) — choose an active Category</option>@endif @foreach($categories as $category)@if($category->state === 'active' || $record?->category_id === $category->id)<option value="{{ $category->id }}" @selected(old('category_id', $record?->category_id ?? $selectedCategory?->id) == $category->id)>{{ $category->name }} ({{ $category->state }})</option>@endif @endforeach</select></label>
@@ -37,35 +33,28 @@
 @if(in_array($kind, ['categories','collections','storage_locations']))<label>Description<textarea data-optional name="description" maxlength="5000">{{ old('description', $record?->description) }}</textarea></label>@endif
 @if($kind === 'suppliers')@foreach(['contact_name'=>'Contact name','email'=>'Email','phone'=>'Phone','website'=>'Website'] as $field=>$label)<label>{{ $label }}<input data-optional name="{{ $field }}" maxlength="255" value="{{ old($field, $record?->$field) }}"></label>@endforeach<label>Address<textarea data-optional name="address" maxlength="5000">{{ old('address', $record?->address) }}</textarea></label>@endif
 @if(in_array($kind,['items','storage_locations','suppliers','purposes','programs']))<label>Notes<textarea data-optional name="notes" maxlength="5000">{{ old('notes', $kind === 'items' ? $metadata?->notes : $record?->notes) }}</textarea></label>@endif
-@unless($kind === 'collections' && $record)
-<div class="actions"><a class="discard" href="/catalog/{{ $kind }}">Cancel</a><button class="primary">{{ $record ? 'Save' : 'Create' }}</button></div>
-@endunless
 </form>
-@if($kind === 'collections' && $record)</div>@endif
+</div>
 @if($record)
-@unless($kind === 'collections')
-<section class="app-panel"><h2>Record status</h2>
-@endunless
 <p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>
-@if($kind === 'storage_locations' && $record->is_central)<p>Central must remain the distinguished active storage location.</p>
+@if($kind === 'storage_locations' && $record->is_central)
+<p>Central must remain the distinguished active storage location.</p>
 @else
 <form method="post" action="/catalog/{{ $kind }}/{{ $record->id }}/lifecycle">@csrf
 <div class="actions">
-@if($record->state === 'archived')<x-app.action type="submit" name="action" value="restore">{{ $kind === 'collections' ? 'Restore' : 'Restore to Inactive' }}</x-app.action>
-@else<x-app.action variant="danger" href="/catalog/{{ $kind }}/{{ $record->id }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="catalog-archive-dialog">{{ $kind === 'collections' ? 'Archive' : 'Archive…' }}</x-app.action><x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? ($kind === 'collections' ? 'Deactivate' : 'Set inactive') : 'Activate' }}</x-app.action>@endif
-</div></form>
+@if($record->state === 'archived')
+<x-app.action type="submit" name="action" value="restore">Restore</x-app.action>
+@else
+<x-app.action variant="danger" href="/catalog/{{ $kind }}/{{ $record->id }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="catalog-archive-dialog">Archive</x-app.action>
+<x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? 'Deactivate' : 'Activate' }}</x-app.action>
 @endif
-@unless($kind === 'collections')
-</section>
-@endunless
+</div>
+</form>
+@endif
 @if($record->state !== 'archived' && !($kind === 'storage_locations' && $record->is_central))
 @include('catalog.archive-dialog')
 @endif
 @endif
 <script src="/catalog.js?v={{ filemtime(public_path('catalog.js')) }}" defer></script>
+<script src="/catalog-progress.js?v={{ filemtime(public_path('catalog-progress.js')) }}" defer></script>
 @endsection
-@if($kind === 'collections' && $record)
-@section('content-sections')
-@yield('content')
-@endsection
-@endif

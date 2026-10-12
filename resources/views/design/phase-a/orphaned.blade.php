@@ -19,7 +19,7 @@
 <tr><td>Staging</td><td><div class="app-environment-box app-environment-staging"><span>STAGE</span><span>ENVIRONMENT</span></div></td></tr>
 </tbody></table></x-app.table-region></section>
 <x-app.guide-divider />
-<div class="app-content"><h2>Record details</h2><dl class="app-user-details"><dt>Name</dt><dd>Sample Administrator</dd><dt>TG email</dt><dd>sample@tabletopgaymers.org (confirmed)</dd><dt>MS account</dt><dd>sample@example.test</dd><dt>Extended roles</dt><dd>admin, manager, procurement</dd><dt>Time zone</dt><dd>America/Chicago</dd></dl><p>Use a definition list for labeled values. See the complete <a href="/design/phase-a/examples#users">user example</a>.</p></div>
+<div class="app-content"><h2>Record details</h2><dl class="app-user-details"><dt>Name</dt><dd>Sample Administrator</dd><dt>TG email</dt><dd>sample@tabletopgaymers.org (confirmed)</dd><dt>MS account</dt><dd>sample@example.test</dd><dt>Elevated roles</dt><dd>admin, manager, procurement</dd><dt>Time zone</dt><dd>America/Chicago</dd></dl><p>Use a definition list for labeled values. See the complete <a href="/design/phase-a/examples#users">user example</a>.</p></div>
 <x-app.guide-divider />
 <div class="app-content"><h2>Permanent notes</h2><p>Sample note: checked the convention kit.</p><p class="app-field-help">Sample author · 11 Oct 2026. Permanent notes retain attribution and cannot be edited or deleted.</p></div>
 <x-app.guide-divider />

@@ -21,7 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/catalog', [CatalogController::class, 'index']);
     Route::get('/catalog/{kind}', [CatalogController::class, 'index']);
     Route::get('/catalog/{kind}/create', [CatalogController::class, 'form']);
-    Route::get('/catalog/{kind}/{record}', [CatalogController::class, 'show'])->whereIn('kind', ['categories', 'collections'])->whereNumber('record');
+    Route::get('/catalog/{kind}/{record}', [CatalogController::class, 'show'])->whereIn('kind', array_keys(\App\Support\CatalogRecords::KINDS))->whereNumber('record');
     Route::post('/catalog/{kind}/create', [CatalogController::class, 'save']);
     Route::get('/catalog/{kind}/{record}/edit', [CatalogController::class, 'form'])->whereNumber('record');
     Route::post('/catalog/{kind}/{record}/edit', [CatalogController::class, 'save'])->whereNumber('record');

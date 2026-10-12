@@ -8,6 +8,20 @@ use Illuminate\Validation\ValidationException;
 class CatalogRecords
 {
     public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Locations', 'suppliers' => 'Suppliers', 'purposes' => 'Purposes', 'programs' => 'Programs'];
+    public const SINGULAR = ['categories' => 'category', 'collections' => 'collection', 'items' => 'item', 'storage_locations' => 'location', 'suppliers' => 'supplier', 'purposes' => 'purpose', 'programs' => 'program'];
+
+    public static function viewBase(string $kind): string
+    {
+        return match ($kind) {
+            'items' => '/inventory/items/', 'storage_locations' => '/inventory/locations/',
+            default => '/catalog/'.$kind.'/',
+        };
+    }
+
+    public static function viewUrl(string $kind, int $id): string
+    {
+        return self::viewBase($kind).$id;
+    }
 
     public static function itemSku(string $prefix, string $suffix): string
     {

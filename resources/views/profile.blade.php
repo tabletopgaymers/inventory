@@ -16,7 +16,7 @@
 <div>
 <label>First name<input name="first_name" required maxlength="100" autocomplete="given-name" value="{{ old('first_name', $profileUser->first_name) }}"></label>
 <label>Last name<input name="last_name" required maxlength="100" autocomplete="family-name" value="{{ old('last_name', $profileUser->last_name) }}"></label>
-<label>Extended roles<input readonly value="{{ implode(', ', array_diff($profileUser->roles(), ['basic'])) ?: 'None' }}"></label>
+<label>Elevated roles<input readonly value="{{ implode(', ', array_diff($profileUser->roles(), ['basic'])) ?: 'None' }}"></label>
 <label>Microsoft account<input readonly value="{{ $profileUser->provider_email ?: 'Not supplied' }}"></label>
 <label>TG email<input data-optional type="email" name="contact_email" maxlength="255" placeholder="youremail@tabletopgaymers.org" value="{{ old('contact_email', $profileUser->contact_email) }}"></label>
 <div class="app-profile-confirmation" id="tg-email-confirmation">TG email confirmation</div>

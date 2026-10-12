@@ -32,11 +32,12 @@ class CatalogController
         if ($kind === 'items') {
             $classifications = DB::table('collections')
                 ->join('categories', 'categories.id', '=', 'collections.category_id')
-                ->select('collections.id', 'collections.name as collection_name', 'categories.name as category_name')
+                ->select('collections.id', 'collections.name as collection_name', 'categories.id as category_id', 'categories.name as category_name')
                 ->get()->keyBy('id');
             foreach ($records as $record) {
                 $classification = $classifications[$record->collection_id];
                 $record->category_name = $classification->category_name;
+                $record->category_id = $classification->category_id;
                 $record->collection_name = $classification->collection_name;
             }
             $records = $records->sort(fn ($left, $right) =>
@@ -65,13 +66,17 @@ class CatalogController
     public function show(Request $request, string $kind, int $record)
     {
         $this->ready();
-        abort_unless(in_array($kind, ['categories', 'collections'], true), 404);
+        abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
+        if (in_array($kind, ['items', 'storage_locations'], true)) {
+            app(CatalogRecords::class)->record($kind, $record);
+            return redirect(CatalogRecords::viewUrl($kind, $record));
+        }
         $service = app(CatalogRecords::class);
         $row = $service->record($kind, $record);
         $category = $kind === 'collections' ? $service->record('categories', (int) $row->category_id) : null;
         $children = $kind === 'categories'
             ? $service->records('collections')->where('category_id', $record)->values()
-            : $service->records('items')->where('collection_id', $record)->values();
+            : ($kind === 'collections' ? $service->records('items')->where('collection_id', $record)->values() : collect());
 
         return view('catalog.show', [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
@@ -233,10 +238,19 @@ class CatalogController
         } catch (QueryException $exception) {
             $message = (int) ($exception->errorInfo[1] ?? 0) === 1062 ? 'That name or SKU already exists. Choose a unique value.' : 'The record could not be saved. Your inputs are retained; try again.';
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
             return back()->withInput()->with('error', $message);
         }
 
-        return redirect($kind === 'items' ? '/inventory/items/'.$id : '/catalog/'.$kind)->with('success', 'Record saved.');
+        $message = ucfirst(CatalogRecords::SINGULAR[$kind]).($record ? ' saved.' : ' created.');
+        if ($request->expectsJson()) {
+            $request->session()->flash('success', $message);
+            return response()->json(['id' => (int) $id]);
+        }
+        return redirect(CatalogRecords::viewUrl($kind, (int) $id))->with('success', $message);
     }
 
     public function lifecycle(Request $request, string $kind, int $record)

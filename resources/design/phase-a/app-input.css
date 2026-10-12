@@ -146,6 +146,10 @@
   border: 1px solid var(--app-border); border-radius: .375rem; background: white; color: var(--app-text); cursor: pointer;
   font: inherit; font-size: .9375rem; font-weight: 600; text-decoration: none; line-height: 1.2; text-align: center;
 }
+.app-shell .app-action.btn:not(.btn-sm) {
+  min-height: 2rem; height: auto; padding: .225rem .9rem; border-width: 1px; border-radius: .375rem;
+  font: inherit; font-size: .9375rem; font-weight: 600; line-height: 1.2;
+}
 .app-shell button:not(.btn):hover, .app-shell .button:hover { background: var(--app-page); }
 .app-shell button.primary, .app-shell .button.primary { background: var(--app-primary); color: white; border-color: var(--app-primary); }
 .app-shell button.primary:hover, .app-shell .button.primary:hover { background: #4c1d95; }
@@ -319,7 +323,8 @@
   .app-shell .item-metadata, .app-shell .app-record-details .item-metadata { grid-template-columns: minmax(0,1fr); gap: calc(var(--app-density-detail-gap) - .2rem) .25rem; }
   .app-shell .item-metadata dd { margin-bottom: var(--app-density-paragraph-y); }
   .app-shell .stock-total { grid-template-columns: minmax(0,1fr) 5rem 5rem; gap: 0.25rem .5rem; }
-  .app-shell button:not(.btn), .app-shell .button, .app-shell .btn, .app-shell .app-account-trigger { min-height: 2.25rem; }
+  .app-shell button:not(.btn), .app-shell .button, .app-shell .btn, .app-shell .app-account-trigger,
+  .app-shell .app-action.btn:not(.btn-sm) { min-height: 2.25rem; }
 }
 @media(prefers-reduced-motion: reduce) { .app-shell *, .app-shell *::before, .app-shell *::after { animation: none !important; transition: none !important; } }
 @media print {

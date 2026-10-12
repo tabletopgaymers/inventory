@@ -98,37 +98,40 @@
     const inFlight = new WeakSet();
     let panel;
     window.appNavigationGuards = guards;
-    window.appRequestDecision = (message, proceed, origin, actionLabel = 'Confirm action') => {
+    window.appRequestDecision = (message, proceed, origin, actionLabel = 'Confirm action', modal = false) => {
         const drawer = document.getElementById('app-nav-dialog');
         if (drawer?.open) {
-            drawer.addEventListener('close', () => window.appRequestDecision(message, proceed, document.getElementById('app-nav-open'), actionLabel), { once: true });
+            drawer.addEventListener('close', () => window.appRequestDecision(message, proceed, document.getElementById('app-nav-open'), actionLabel, modal), { once: true });
             drawer.close();
             return;
         }
         if (panel) { panel.focus(); return; }
         const restore = origin || document.activeElement;
-        panel = document.createElement('section');
-        panel.className = 'warning'; panel.tabIndex = -1;
+        panel = document.createElement(modal ? 'dialog' : 'section');
+        panel.className = modal ? 'app-user-disable-dialog' : 'warning'; panel.tabIndex = -1;
         panel.dataset.noticeDismissible = 'false';
-        panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', 'Confirm action');
-        const heading = document.createElement('h2'); heading.textContent = 'Confirm action';
+        if (!modal) panel.setAttribute('role', 'region');
+        panel.setAttribute('aria-label', modal ? 'Unsaved changes' : 'Confirm action');
+        const heading = document.createElement('h2'); heading.textContent = modal ? 'Unsaved changes' : 'Confirm action';
         const text = document.createElement('p'); text.textContent = message;
         const actions = document.createElement('div'); actions.className = 'actions';
-        const stay = document.createElement('button'); stay.type = 'button'; stay.textContent = 'Keep editing / cancel action';
-        const accept = document.createElement('button'); accept.type = 'button'; accept.textContent = actionLabel; accept.className = 'discard';
-        const close = () => { panel.remove(); panel = undefined; };
+        const stay = document.createElement('button'); stay.type = 'button'; stay.textContent = modal ? 'Keep editing' : 'Keep editing / cancel action';
+        const accept = document.createElement('button'); accept.type = 'button'; accept.textContent = actionLabel; accept.className = modal ? 'app-user-disable-confirm' : 'discard';
+        const close = () => { if (modal) panel.close(); panel.remove(); panel = undefined; };
         const cancel = () => { close(); if (restore?.isConnected) restore.focus(); };
         stay.addEventListener('click', cancel);
         accept.addEventListener('click', () => { close(); proceed(); });
         panel.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); cancel(); } });
+        if (modal) panel.addEventListener('cancel', event => { event.preventDefault(); cancel(); });
         actions.append(stay, accept); panel.append(heading, text, actions);
-        (origin?.closest('form') || document.querySelector('.app-content') || document.querySelector('main')).append(panel);
-        panel.focus();
+        (modal ? document.body : (origin?.closest('form') || document.querySelector('.app-content') || document.querySelector('main'))).append(panel);
+        if (modal) { panel.showModal(); stay.focus(); }
+        else panel.focus();
     };
     window.appNavigate = (href, origin) => {
         const guard = guards.find(candidate => candidate.shouldWarn(origin));
         const leave = () => { window.location.assign(href); };
-        if (guard) window.appRequestDecision(guard.message, leave, origin, 'Leave without saving');
+        if (guard) window.appRequestDecision(guard.message, leave, origin, 'Leave without saving', guard.modal);
         else leave();
     };
     document.addEventListener('submit', event => {
@@ -154,7 +157,7 @@
         const guard = guards.find(candidate => candidate.shouldWarn(link));
         if (!guard) return;
         event.preventDefault();
-        window.appRequestDecision(guard.message, () => { window.location.assign(link.href); }, link, 'Leave without saving');
+        window.appRequestDecision(guard.message, () => { window.location.assign(link.href); }, link, 'Leave without saving', guard.modal);
     }, true);
 })();
 
