@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} · TG Inventory</title>
-    <link rel="stylesheet" href="/app.css?v=user-action-padding-2"><script src="/app-shell.js?v=desktop-800-1" defer></script>
+    <link rel="stylesheet" href="/app.css?v=full-height-navigation-1"><script src="/app-shell.js?v=desktop-800-1" defer></script>
 </head>
 <body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}">
 <a class="app-skip" href="#app-main">Skip to content</a>
