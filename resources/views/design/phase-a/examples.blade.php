@@ -5,26 +5,37 @@
 <nav class="app-section-nav" aria-label="On this page"><a href="#users">Users</a><a href="#search">Inventory</a><a href="#item">Item details</a><a href="#requests">Requests</a><a href="#counts">Counts & print</a><a href="#supporting">Catalog & events</a><a href="#wrapper">Application frame</a></nav>
 <div class="app-content" id="users">
     <h2>Informative user directory</h2>
-    <p>List information here; put permitted actions on the linked record page. Basic is omitted from Extended Roles.</p>
-    <x-app.table-region label="Sample user directory"><table><thead><tr><th>Name</th><th>Email</th><th>Extended Roles</th></tr></thead><tbody>
+    <p>List information here; put permitted actions on the linked record page. Basic is omitted from Extended roles.</p>
+    <x-app.table-region label="Sample user directory"><table><thead><tr><th>Name</th><th>Email</th><th>Extended roles</th></tr></thead><tbody>
         <tr><td><a href="#guide-user">Sample Administrator</a></td><td>sample@example.test</td><td>admin, manager, procurement</td></tr>
         <tr><td><a href="#profile-example">Sample Volunteer</a></td><td>volunteer@example.test</td><td></td></tr>
     </tbody></table></x-app.table-region>
 </div>
 @include('design.phase-a.user-example')
-<div class="app-content" id="profile-example">
-    <h2>Profile editing</h2>
-    <p>Edit belongs beside the user heading for Admin or the account owner. Admins may edit another profile without changing roles, Microsoft identity or enabled state.</p>
-    <label>First name (optional)<input value="Sample"></label><label>Last name (optional)<input value="Administrator"></label>
-    <p>MS Account: sample@example.test</p>
+<div class="section-heading" id="profile-example"><h2>Profile editing</h2><div class="app-actions"><button type="button" class="discard">Discard</button><button type="button" class="primary">Save</button></div></div>
+<div class="app-content">
+    <div class="app-profile-columns">
+    <div>
+    <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
+    <label>Extended roles<input disabled value="admin, manager, procurement"></label>
+    <label>Microsoft account<input disabled value="sample@tabletopgaymers.org"></label>
+    <label>TG email (optional)<input type="email" value="sample@tabletopgaymers.org" placeholder="youremail@tabletopgaymers.org"></label>
+    <div class="app-profile-confirmation">TG email confirmation</div>
+    <label class="app-choice"><input type="checkbox"><span>Confirm my TG email address. Current status: <strong class="app-confirmation-status">Confirmed</strong></span></label>
+    <p class="app-field-help">Changing TG email clears its previous confirmation. Each user confirms their own address.</p>
+    </div>
+    <div>
+    <label>Personal email (optional)<input type="email" placeholder="youremail@yourprovider.com"></label>
+    <label>Mobile number (optional)<input placeholder="555-555-1234"></label>
+    <label>Mailing address (optional)<textarea rows="4" placeholder="Provide your mailing address, including your name, in a format appropriate to your location."></textarea></label>
     <label>Time zone<select><option>America/Chicago</option><option>America/New_York</option></select></label>
-    <label>TG Email (optional)<input type="email" value="sample@tabletopgaymers.org"></label>
-    <p class="app-field-help">Changing contact email clears its previous confirmation. Each user confirms their own address.</p>
-    <div class="actions"><button type="button" class="discard">Discard</button><button type="button" class="primary">Save</button></div>
+    <label>Display density<select><option>Compact</option><option selected>Standard</option><option>Spacious</option></select></label>
+    </div>
+    </div>
 </div>
 <div class="app-content" id="search">
     <div class="section-heading"><h2>Inventory search</h2><a class="button app-new-action" href="#supporting">+New</a></div>
-    <div class="search-actions"><label>Search inventory<input type="search" placeholder="Item or collection"></label><button type="button">Search</button><button type="button">Show All</button><button type="button">Reset</button></div>
+    <div class="search-actions"><label>Search inventory<input type="search" placeholder="Item or collection"></label><button type="button">Search</button><button type="button">Show all</button><button type="button">Reset</button></div>
     <x-app.table-region label="Sample inventory results"><table><thead><tr><th>Item</th><th class="number">Units</th><th class="number">Unit cost</th></tr></thead><tbody>
         <tr class="collection-heading"><th colspan="3">Ribbon : Pronoun</th></tr>
         <tr><td class="app-grouped-item"><a href="#item">They/Them</a></td><td class="number">250</td><td class="number">$0.125</td></tr>
@@ -41,10 +52,10 @@
 </div>
 <div class="app-content" id="requests">
     <nav class="app-relocation-progress" aria-label="Sample purchase progress"><ol class="app-relocation-steps"><li><a href="#requests">Request</a></li><li><strong aria-current="step">ITEMS</strong></li><li>Review</li></ol></nav>
-    <div class="section-heading"><div class="app-title-row"><h2>Sample purchase</h2><span class="status-badge draft">Draft</span></div><button type="button" class="primary app-save-progress">Save Progress</button></div>
+    <div class="section-heading"><div class="app-title-row"><h2>Sample purchase</h2><span class="status-badge draft">Draft</span></div><button type="button" class="primary app-save-progress">Save progress</button></div>
     <label>If these are new items, describe them with their quantities here.<textarea rows="2">New display stands, quantity 2.</textarea></label>
     <p>Request → Items → plain Review. Title is required; description-only requests need no catalog lines. Requester and preparation use the same requested items.</p>
-    <p class="app-field-help">Review has plain values with Cancel Request / Submit Request at the bottom, without Notes or preparation/invoice actions. Saving does not submit or post stock.</p>
+    <p class="app-field-help">Review has plain values with Cancel request / Submit request at the bottom, without Notes or preparation/invoice actions. Saving does not submit or post stock.</p>
     <div class="actions"><button type="button">Back: Request</button><button type="button" class="primary">Next: Review</button></div>
     <h3>Relocation progress</h3><nav aria-label="Sample relocation progress"><ol class="app-relocation-steps"><li><a href="#requests">Locations</a></li><li><strong aria-current="step">ITEMS</strong></li><li>Review</li></ol></nav>
     <p>Show the active step in bold capitals, prior reachable steps as links and future steps as plain text. Submitted workflows add their existing fulfillment stages.</p>

@@ -17,7 +17,7 @@ Artisan::command('profile-preferences:check', function () {
         if (! app(BaselineProbe::class)->inspect()['ready'] || ! app(BaselineProbe::class)->schemaState(DB::connection())['profilePreferencesReady']) {
             throw new RuntimeException;
         }
-        $this->info('Profile time-zone column and migration record verified.');
+        $this->info('Profile contact/preference columns and migration records verified.');
 
         return 0;
     } catch (Throwable) {

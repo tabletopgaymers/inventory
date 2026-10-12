@@ -34,7 +34,7 @@
             button.classList.toggle('app-save-dirty', dirty);
             button.disabled = busy || locked || !toolbar.dataset.saveUrl;
             button.setAttribute('aria-busy', busy ? 'true' : 'false');
-            label.textContent = busy ? 'Saving…' : 'Save Progress';
+            label.textContent = busy ? 'Saving…' : 'Save progress';
         };
         const showRetained = savedForms => {
             if (!savedForms || feedback.querySelector('[data-retained-input]')) return;
@@ -52,7 +52,7 @@
             if (!dirty || !forms.length || locked) return;
             const cached = { revision, version: toolbar.dataset.saveVersion, actionNonce, forms: Object.fromEntries(forms.map(form => [form.id, values(form)])) };
             try { sessionStorage.setItem(key, JSON.stringify(cached)); }
-            catch { show('This browser cannot retain unsaved input. Save Progress before leaving.', true); }
+            catch { show('This browser cannot retain unsaved input. Save progress before leaving.', true); }
         };
         const restore = (form, saved) => {
             if (!Array.isArray(saved)) return;
@@ -116,7 +116,7 @@
             form.addEventListener('input', changed);
             form.addEventListener('change', changed);
         });
-        // Notes and Mark Shipped keep their separate actions and generic navigation guards.
+        // Notes and Mark shipped keep their separate actions and generic navigation guards.
         document.querySelectorAll('[data-purchase-retain-form]').forEach(form => {
             const auxKey = key + ':' + form.id;
             const originalAux = JSON.stringify(values(form));
@@ -196,7 +196,7 @@
                     if (!identity && form.dataset.purchaseForm.startsWith('work')) { identity = document.createElement('p'); identity.dataset.purchaseIdentity = ''; form.before(identity); }
                     if (identity) identity.textContent = 'Purchase #' + result.id + ' · ' + result.status;
                     const state = document.querySelector('[data-working-state]');
-                    if (state) state.textContent = 'Purchase #' + result.id + ' · ' + result.status + '. Save Progress keeps this page open; review and submission are separate.';
+                    if (state) state.textContent = 'Purchase #' + result.id + ' · ' + result.status + '. Save progress keeps this page open; review and submission are separate.';
                 }
             } catch { dirty = true; show('Progress could not be saved. Your entered values are retained; check the connection and retry.', true); }
             finally { busy = false; if (dirty) retain(); render(); }
@@ -230,7 +230,7 @@
             if (form.dataset.purchaseForm === 'work-review') control.formAction = toolbar.dataset.saveUrl;
             form.append(control); form.requestSubmit(control); control.remove();
         }));
-        window.appNavigationGuards?.push({ shouldWarn: origin => !busy && dirty && !origin?.hasAttribute('data-purchase-work-action'), message: 'Progress has not been saved. Save Progress makes it durable; working values are retained in this browser or session.' });
+        window.appNavigationGuards?.push({ shouldWarn: origin => !busy && dirty && !origin?.hasAttribute('data-purchase-work-action'), message: 'Progress has not been saved. Save progress makes it durable; working values are retained in this browser or session.' });
         document.addEventListener('click', event => {
             if (busy && event.target.closest('a[href]')) { event.preventDefault(); show('Wait for Saving… to finish before leaving.'); }
         }, true);

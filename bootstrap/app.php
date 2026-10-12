@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(CheckBaseline::class);
-        $middleware->trimStrings(except: ['first_name', 'last_name']);
+        $middleware->trimStrings(except: ['first_name', 'last_name', 'mobile_number', 'mailing_address']);
         $middleware->web(append: [CheckApplicationSession::class]);
         $middleware->prependToPriorityList(AuthenticatesRequests::class, CheckApplicationSession::class);
     })

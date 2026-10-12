@@ -20,6 +20,7 @@ class AccessManagement
             $target = User::findOrFail($targetId);
             abort_unless($actor->enabled && ($actor->hasRole('admin')
                 || (in_array($role, ['manager', 'procurement'], true) && $actor->hasRole($role))), 403);
+            abort_if($actorId === $targetId && $role === 'admin' && ! $grant, 403, 'Another admin must remove your admin role.');
             $previous = $target->roles();
             if ($grant && ! $target->enabled) {
                 throw ValidationException::withMessages(['role' => 'Enable this account before granting roles.']);
@@ -55,6 +56,7 @@ class AccessManagement
             DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
             $actor = User::findOrFail($actorId);
             abort_unless($actor->enabled && $actor->hasRole('admin'), 403);
+            abort_if(! $enabled && $actorId === $targetId, 403, 'Another admin must disable your account.');
             $target = User::findOrFail($targetId);
             if ($enabled && $target->enabled) {
                 return;
@@ -95,6 +97,11 @@ class AccessManagement
                 $user->time_zone = $data['time_zone'];
             }
             $user->contact_email = $address;
+            foreach (['personal_email', 'mobile_number', 'mailing_address', 'display_density'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $user->{$field} = $data[$field];
+                }
+            }
             $user->contact_attested = ($changed ? false : $user->contact_attested) || ($ownProfile && $data['contact_attested']);
             if (! $address) {
                 $user->contact_attested = false;

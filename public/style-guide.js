@@ -5,6 +5,12 @@
         if (!dialog) return;
         trigger.addEventListener('click', () => {
             origins.set(dialog, trigger);
+            if (trigger.dataset.guideRoleLabel) {
+                dialog.querySelector('#guide-role-description').textContent = trigger.dataset.guideRoleMessage;
+                const confirm = dialog.querySelector('#guide-role-confirm');
+                confirm.textContent = trigger.dataset.guideRoleLabel;
+                confirm.className = trigger.dataset.guideRoleLabel.startsWith('Remove ') ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
+            }
             dialog.showModal();
         });
     });

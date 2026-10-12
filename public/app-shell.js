@@ -102,6 +102,7 @@
         const restore = origin || document.activeElement;
         panel = document.createElement('section');
         panel.className = 'warning'; panel.tabIndex = -1;
+        panel.dataset.noticeDismissible = 'false';
         panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', 'Confirm action');
         const heading = document.createElement('h2'); heading.textContent = 'Confirm action';
         const text = document.createElement('p'); text.textContent = message;
@@ -148,4 +149,58 @@
         event.preventDefault();
         window.appRequestDecision(guard.message, () => { window.location.assign(link.href); }, link, 'Leave without saving');
     }, true);
+})();
+
+// Dismiss informational banners for this page without losing references used by
+// live feedback. A later message may reuse and show the same banner again.
+(() => {
+    const selector = '.notice, .warning, .error, .app-notice-dismissible';
+    const update = banner => {
+        const existing = banner.querySelector(':scope > button.app-notice-dismiss');
+        const eligible = banner.matches('.notice, .warning') && !banner.closest('.error')
+            && banner.dataset.noticeDismissible !== 'false';
+        const hasContent = [...banner.childNodes].some(node => node !== existing && node.textContent.trim());
+        if (!eligible || !hasContent) {
+            existing?.remove();
+            if (banner.classList.contains('app-notice-dismissible')) banner.classList.remove('app-notice-dismissible');
+            return;
+        }
+        if (!banner.classList.contains('app-notice-dismissible')) banner.classList.add('app-notice-dismissible');
+        if (existing) return;
+        const dismiss = document.createElement('button');
+        dismiss.type = 'button';
+        dismiss.className = 'app-notice-dismiss';
+        dismiss.textContent = '✕';
+        dismiss.setAttribute('aria-label', 'Dismiss notification');
+        dismiss.title = 'Dismiss notification';
+        dismiss.addEventListener('click', () => {
+            const controls = [...document.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), summary, [tabindex]')]
+                .filter(control => control.tabIndex >= 0 && control.getClientRects().length);
+            const index = controls.indexOf(dismiss);
+            const next = controls.slice(index + 1).find(control => !banner.contains(control))
+                || controls.slice(0, index).reverse().find(control => !banner.contains(control))
+                || document.getElementById('app-main');
+            const restoreFocus = banner.contains(document.activeElement);
+            banner.hidden = true;
+            if (restoreFocus) next?.focus();
+        });
+        banner.append(dismiss);
+    };
+    const inspect = node => {
+        if (!(node instanceof Element)) return;
+        const banner = node.closest(selector);
+        if (banner) update(banner);
+        node.querySelectorAll(selector).forEach(update);
+    };
+    document.querySelectorAll(selector).forEach(update);
+    new MutationObserver(records => {
+        records.forEach(record => {
+            if (record.type === 'attributes') inspect(record.target);
+            else {
+                const banner = record.target instanceof Element ? record.target.closest(selector) : null;
+                if (banner) update(banner);
+                record.addedNodes.forEach(inspect);
+            }
+        });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
 })();

@@ -1,11 +1,11 @@
-<x-app.table-region label="Item history" class="table-wrap"><table class="history"><thead><tr><th>Date</th><th>Description</th><th class="number">Quantity</th><th class="number">Unit Cost</th></tr></thead><tbody>
+<x-app.table-region label="Item history" class="table-wrap"><table class="history"><thead><tr><th>Date</th><th>Description</th><th class="number">Quantity</th><th class="number">Unit cost</th></tr></thead><tbody>
 
 @forelse($entries as $entry)
 @php($sourceUrl = $entry->request_url ?? (isset($entry->cost_entry_id) ? '/inventory/cost-adjustments/'.$entry->cost_entry_id : '/inventory/adjustments/'.($entry->inventory_adjustment_id ?? '')))
 <tr 
 @if(!$preview)data-history-url="{{ $sourceUrl }}"
 @endif>
-<td>{{ $preview ? 'On Save' : \App\Support\DisplayDates::timestamp($entry->posted_at) }}</td>
+<td>{{ $preview ? 'On save' : \App\Support\DisplayDates::timestamp($entry->posted_at) }}</td>
 <td>
 @if(!$preview)<a href="{{ $sourceUrl }}">{{ $entry->description }}</a>
 @else{{ $entry->description }}

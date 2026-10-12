@@ -1,6 +1,6 @@
 <section id="requested-items" tabindex="-1"><h2>Catalog lines</h2>
 <p>Request individual units to purchase. These requests do not reserve stock.</p>
-@if(!$rows)<p>No catalog items added. Describe new items with quantities in Request Details, or search existing catalog items below.</p>@endif
+@if(!$rows)<p>No catalog items added. Describe new items with quantities in Request details, or search existing catalog items below.</p>@endif
 <x-app.table-region label="Purchase catalog lines" class="table-wrap"><table class="stock-editor"><thead><tr><th>Item</th><th>Requested units</th>@if($planning)<th>Estimated line amount (USD) (optional)</th><th>Line note (optional)</th>@endif @if($catalogEditable)<th></th>@endif</tr></thead><tbody>
 @php($group=null)
 @foreach($rows as $item)
@@ -12,7 +12,7 @@
 </tbody></table></x-app.table-region>
 </section>
 @if($catalogEditable)
-<h2>Add items</h2><div class="search-actions"><label>Search inventory<input name="search" maxlength="255" value="{{ $draft['search_fields']['search'] ?? '' }}"></label><button name="action" value="search" formnovalidate>Search</button><button name="action" value="show_all" formnovalidate>Show All</button><button name="action" value="reset" formnovalidate>Reset</button></div>
+<h2>Add items</h2><div class="search-actions"><label>Search inventory<input name="search" maxlength="255" value="{{ $draft['search_fields']['search'] ?? '' }}"></label><button name="action" value="search" formnovalidate>Search</button><button name="action" value="show_all" formnovalidate>Show all</button><button name="action" value="reset" formnovalidate>Reset</button></div>
 <details><summary>Collection filters</summary><div class="collection-checklist">@foreach($collections as $collection)<label class="app-choice"><input type="checkbox" name="collections[]" value="{{ $collection->id }}" @checked(in_array($collection->id, $draft['search_fields']['collections'] ?? []))>{{ $collection->category_name }} : {{ $collection->name }}</label>@endforeach</div></details>
 @if($draft['criteria'] !== null)
 <p>Added items are excluded. Enter whole individual units; blank entries are not selected and explicit zero stays zero.</p>

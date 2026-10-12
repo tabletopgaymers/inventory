@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Models\User;
 use App\Support\AccessManagement;
 use App\Support\MicrosoftConfiguration;
+use App\Support\MicrosoftIdentity;
 use App\Support\ProfilePreferences;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\TestCase;
@@ -50,6 +51,7 @@ class UserAccountAccessTest extends TestCase
         $migration = require base_path('database/migrations/2026_10_05_010000_create_authentication_tables.php');
         $migration->up();
         Schema::table('users', fn ($table) => $table->string('time_zone')->nullable());
+        (require base_path('database/migrations/2026_10_11_000000_add_user_contact_preferences.php'))->up();
     }
 
     private function account(array $roles, bool $enabled = true): User
@@ -132,6 +134,97 @@ class UserAccountAccessTest extends TestCase
             $this->assertSame(['Enable this account before granting roles.'], $exception->errors()['role']);
         }
         $this->assertSame([], $target->roles());
+    }
+
+    public function test_admin_self_demotion_and_self_disablement_are_always_denied(): void
+    {
+        $admin = $this->account(['admin', 'basic', 'manager', 'procurement']);
+        foreach ([false, true] as $anotherAdminExists) {
+            if ($anotherAdminExists) $this->account(['admin']);
+            foreach (['remove_admin', 'disable'] as $action) {
+                try {
+                    $access = new AccessManagement;
+                    if ($action === 'remove_admin') $access->changeRole($admin->id, $admin->id, 'admin', false);
+                    else $access->disable($admin->id, $admin->id);
+                    $this->fail('Protected self action succeeded.');
+                } catch (HttpException $exception) {
+                    $this->assertSame(403, $exception->getStatusCode());
+                }
+            }
+        }
+        $this->assertTrue($admin->fresh()->enabled);
+        $this->assertSame(['admin', 'basic', 'manager', 'procurement'], $admin->roles());
+        $this->assertSame(0, DB::table('access_audits')->count());
+    }
+
+    public function test_users_can_remove_their_own_manager_and_procurement_roles(): void
+    {
+        foreach ([false, true] as $isAdmin) {
+            $user = $this->account(array_merge(['basic', 'manager', 'procurement'], $isAdmin ? ['admin'] : []));
+            $access = new AccessManagement;
+            $access->changeRole($user->id, $user->id, 'manager', false);
+            $this->assertSame($isAdmin ? ['admin', 'basic', 'procurement'] : ['basic', 'procurement'], $user->roles());
+            $access->changeRole($user->id, $user->id, 'procurement', false);
+            $this->assertSame($isAdmin ? ['admin', 'basic'] : ['basic'], $user->roles());
+            $this->assertTrue($user->fresh()->enabled);
+        }
+        $this->assertSame(4, DB::table('access_audits')->where('action', 'roles')->count());
+    }
+
+    public function test_another_admin_can_act_but_a_stale_actor_cannot_remove_the_remaining_admin(): void
+    {
+        foreach (['remove_admin', 'disable'] as $action) {
+            $first = $this->account(['admin']);
+            $second = $this->account(['admin', 'manager']);
+            $access = new AccessManagement;
+            if ($action === 'remove_admin') $access->changeRole($first->id, $second->id, 'admin', false);
+            else $access->disable($first->id, $second->id);
+            $this->assertSame($action === 'remove_admin' ? ['manager'] : [], $second->roles());
+            $this->assertSame($action === 'remove_admin', $second->fresh()->enabled);
+            foreach (['remove_admin', 'disable'] as $staleAction) {
+                try {
+                    if ($staleAction === 'remove_admin') $access->changeRole($second->id, $first->id, 'admin', false);
+                    else $access->disable($second->id, $first->id);
+                    $this->fail('Stale actor changed the remaining admin.');
+                } catch (HttpException $exception) {
+                    $this->assertSame(403, $exception->getStatusCode());
+                }
+            }
+            $this->assertTrue($first->fresh()->enabled);
+            $this->assertSame(['admin'], $first->roles());
+        }
+    }
+
+    public function test_self_controls_are_disabled_and_permitted_role_buttons_target_the_dialog(): void
+    {
+        $admin = $this->account(['admin', 'manager', 'procurement']);
+        Auth::setUser($admin);
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+        $html = view('user-show', ['user' => $admin])->render();
+        $dom = new \DOMDocument;
+        $dom->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame(1, $xpath->query('//form[@id="user-role-admin-form"]/button[@disabled]')->length);
+        $this->assertSame(1, $xpath->query('//button[@id="user-disable-trigger" and @disabled]')->length);
+        foreach (['manager', 'procurement'] as $role) {
+            $this->assertSame(1, $xpath->query('//form[@id="user-role-'.$role.'-form"]/button[@type="button" and @aria-controls="user-role-dialog" and not(@disabled)]')->length);
+        }
+        $this->assertSame(1, $xpath->query('//dialog[@id="user-role-dialog"]')->length);
+        $this->assertSame(0, $xpath->query('//dialog[@id="user-disable-dialog"]')->length);
+        $target = $this->account(['manager']);
+        $other = view('user-show', ['user' => $target])->render();
+        $this->assertStringContainsString('data-role-label="Grant admin"', $other);
+        $this->assertStringContainsString('data-role-label="Remove manager"', $other);
+        $this->assertStringContainsString('id="user-disable-dialog"', $other);
+        foreach (['manager', 'procurement'] as $role) {
+            $owner = $this->account([$role]);
+            Auth::setUser($owner);
+            $dom->loadHTML(view('user-show', ['user' => $owner])->render(), LIBXML_NOERROR | LIBXML_NOWARNING);
+            $xpath = new \DOMXPath($dom);
+            $this->assertSame(1, $xpath->query('//form[@id="user-role-'.$role.'-form"]/button[@type="button" and not(@disabled)]')->length);
+            $this->assertSame(1, $xpath->query('//dialog[@id="user-role-dialog"]')->length);
+            $this->assertSame(0, $xpath->query('//button[@id="user-disable-trigger"]')->length);
+        }
     }
 
     public function test_audit_failure_rolls_back_roles_and_disablement(): void
@@ -228,11 +321,11 @@ class UserAccountAccessTest extends TestCase
         view()->share('errors', new \Illuminate\Support\ViewErrorBag);
         Auth::setUser($this->account(['admin']));
         $html = view('user-show', ['user' => $target])->render();
-        $this->assertStringContainsString('Enable Account', $html);
+        $this->assertStringContainsString('Enable account', $html);
         $this->assertStringContainsString('/users/'.$target->id.'/enable', $html);
         $this->assertStringNotContainsString('/users/'.$target->id.'/roles', $html);
         Auth::setUser($this->account(['manager']));
-        $this->assertStringNotContainsString('Enable Account', view('user-show', ['user' => $target])->render());
+        $this->assertStringNotContainsString('Enable account', view('user-show', ['user' => $target])->render());
     }
 
     private function readyProfile(): void
@@ -247,7 +340,9 @@ class UserAccountAccessTest extends TestCase
     {
         return ['first_name' => 'Updated', 'last_name' => 'Person',
             'contact_email' => 'changed@tabletopgaymers.org', 'contact_attested' => true,
-            'time_zone' => 'America/New_York'];
+            'time_zone' => 'America/New_York', 'personal_email' => 'person@example.test',
+            'mobile_number' => '+44 20 1234 5678', 'mailing_address' => "Updated Person\nSynthetic address",
+            'display_density' => 'spacious'];
     }
 
     public function test_admin_can_edit_another_profile_without_attesting_or_bootstrapping_roles(): void
@@ -270,6 +365,8 @@ class UserAccountAccessTest extends TestCase
         $this->assertNull(DB::table('authentication_bootstraps')->value('consumed_at'));
         $this->assertSame('Synthetic', $admin->fresh()->first_name);
         $this->assertNull($target->provider_email);
+        $this->assertSame('person@example.test', $target->personal_email);
+        $this->assertSame('spacious', $target->display_density);
     }
 
     public function test_admin_can_edit_disabled_profile_without_enabling_it(): void
@@ -337,5 +434,107 @@ class UserAccountAccessTest extends TestCase
         $this->assertStringContainsString('href="/profile">Edit', view('user-show', ['user' => $target])->render());
         Auth::setUser($this->account(['manager']));
         $this->assertStringNotContainsString('>Edit</a>', view('user-show', ['user' => $target])->render());
+    }
+    private function profileRequest(User $actor, array $data): Request
+    {
+        $request = Request::create('/profile', 'POST', $data);
+        $request->setLaravelSession($this->app['session']->driver());
+        $this->app->instance('request', $request);
+        $request->setUserResolver(fn () => $actor);
+
+        return $request;
+    }
+
+    public function test_new_account_defaults_and_subsequent_sign_in_preserve_user_edits(): void
+    {
+        foreach (['member@tabletopgaymers.org' => 'member@tabletopgaymers.org',
+            'delugeia_gmail.com#EXT#@tabletopgaymers.onmicrosoft.com' => null,
+            'outsider@example.test' => null, 'fake#EXT#@tabletopgaymers.org' => null] as $account => $expected) {
+            $object = sprintf('22222222-2222-2222-2222-%012d', User::count() + 1);
+            $external = new class($object, $account) {
+                public array $user = ['givenName' => 'Synthetic', 'surname' => 'Member'];
+                public function __construct(private string $object, private string $account) {}
+                public function getId() { return $this->object; }
+                public function getEmail() { return $this->account; }
+            };
+            $claims = (object) ['tid' => config('services.microsoft.tenant'), 'oid' => $object];
+            $user = (new MicrosoftIdentity)->resolve($external, $claims)->fresh();
+            $this->assertSame($expected, $user->contact_email);
+            $this->assertFalse($user->contact_attested);
+            $this->assertSame('America/Chicago', $user->time_zone);
+            $this->assertSame('standard', $user->display_density);
+            $user->update(['contact_email' => 'edited@tabletopgaymers.org', 'first_name' => 'Edited',
+                'time_zone' => 'Europe/London', 'display_density' => 'compact']);
+            $again = (new MicrosoftIdentity)->resolve($external, $claims);
+            $this->assertSame($user->id, $again->id);
+            $this->assertSame('edited@tabletopgaymers.org', $again->contact_email);
+            $this->assertSame('Edited', $again->first_name);
+            $this->assertSame('Europe/London', $again->time_zone);
+            $this->assertSame('compact', $again->display_density);
+        }
+    }
+
+    public function test_profile_save_formats_ten_digits_and_shares_escaped_multiline_contact_data(): void
+    {
+        $this->readyProfile();
+        $owner = $this->account(['manager']);
+        $data = array_replace($this->profileData(), ['mobile_number' => '1234567890',
+            'mailing_address' => "  Synthetic Person\n<script>example</script>\nFourth line  ",
+            'roles' => ['admin'], 'enabled' => false, 'provider_email' => 'forged@example.test']);
+        $response = (new UserController)->saveProfile($this->profileRequest($owner, $data), new AccessManagement);
+        $this->assertSame(url('/profile'), $response->getTargetUrl());
+        $saved = $owner->fresh();
+        $this->assertSame('123-456-7890', $saved->mobile_number);
+        $this->assertSame($data['mailing_address'], $saved->mailing_address);
+        $this->assertSame('person@example.test', $saved->personal_email);
+        $this->assertSame('spacious', $saved->display_density);
+        $this->assertTrue($saved->validContact());
+        $this->assertTrue($saved->enabled);
+        $this->assertSame(['manager'], $saved->roles());
+        $this->assertNull($saved->provider_email);
+        Auth::setUser($this->account(['basic']));
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+        $html = view('user-show', ['user' => $saved])->render();
+        $this->assertStringContainsString('123-456-7890', $html);
+        $this->assertStringContainsString('person@example.test', $html);
+        $this->assertStringContainsString('&lt;script&gt;example&lt;/script&gt;', $html);
+        $this->assertStringNotContainsString('<script>example</script>', $html);
+        $this->assertStringNotContainsString('coming later', $html);
+    }
+
+    public function test_other_phone_formats_are_preserved_and_optional_contacts_can_be_cleared(): void
+    {
+        $this->readyProfile();
+        $owner = $this->account([]);
+        foreach (['123456789', '12345678901', '123-456-7890', '+44 20 1234 5678', ' 1234567890 ', '0'] as $number) {
+            $data = array_replace($this->profileData(), ['mobile_number' => $number]);
+            (new UserController)->saveProfile($this->profileRequest($owner, $data), new AccessManagement);
+            $this->assertSame($number, $owner->fresh()->mobile_number);
+        }
+        $data = array_replace($this->profileData(), ['personal_email' => '', 'mobile_number' => '', 'mailing_address' => '']);
+        (new UserController)->saveProfile($this->profileRequest($owner, $data), new AccessManagement);
+        $saved = $owner->fresh();
+        $this->assertNull($saved->personal_email);
+        $this->assertNull($saved->mobile_number);
+        $this->assertNull($saved->mailing_address);
+    }
+
+    public function test_profile_validation_rejects_missing_names_bad_email_and_unknown_preferences_before_saving(): void
+    {
+        $this->readyProfile();
+        $owner = $this->account([]);
+        foreach (['first_name' => '  ', 'last_name' => '', 'personal_email' => 'not an email',
+            'display_density' => 'huge', 'time_zone' => 'Unknown/Zone'] as $field => $invalid) {
+            $data = array_replace($this->profileData(), [$field => $invalid]);
+            try {
+                (new UserController)->saveProfile($this->profileRequest($owner, $data), new AccessManagement);
+                $this->fail('Invalid profile was saved.');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey($field, $exception->errors());
+            }
+        }
+        $this->assertSame('Synthetic', $owner->fresh()->first_name);
+        $this->assertSame('fixture@tabletopgaymers.org', $owner->fresh()->contact_email);
+        $this->assertSame('standard', $owner->fresh()->display_density);
     }
 }

@@ -23,7 +23,7 @@
 
 <form method="post" action="/purchases/{{ $row->id }}/transition" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ old('revision',$row->revision) }}">
 
-@if($row->status === 'Draft' && $submitter)<button name="action" value="submit" class="primary">Submit Request</button>@endif
+@if($row->status === 'Draft' && $submitter)<button name="action" value="submit" class="primary">Submit request</button>@endif
 
 @if($row->status === 'Request' && $manager)<button name="action" value="return">Return to Draft</button>@endif
 
@@ -37,7 +37,7 @@
 @if($manager && in_array($row->status,['Draft','Request','Ordered','Shipped']))<a class="button" href="/purchases/{{ $row->id }}/fulfillment/order">{{ in_array($row->status,['Ordered','Shipped']) ? 'Edit order' : 'Record order' }}</a>@endif
 @if($manager && in_array($row->status,['Ordered','Shipped']))<a class="button primary" href="/purchases/{{ $row->id }}/fulfillment/receipt">Receive purchase</a>@endif</div>
 @if($manager && in_array($row->status,['Ordered','Shipped']))<form method="post" action="/purchases/{{ $row->id }}/fulfillment-transition" class="actions" id="purchase-shipping" data-request-form data-purchase-retain-form>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ $row->revision }}">
-@if($row->status==='Ordered')<label>Shipped date<input type="date" name="shipped_date" value="{{ old('shipped_date') }}"></label><button name="action" value="shipped">Mark Shipped</button>@endif
+@if($row->status==='Ordered')<label>Shipped date<input type="date" name="shipped_date" value="{{ old('shipped_date') }}"></label><button name="action" value="shipped">Mark shipped</button>@endif
 <button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>
 @if(in_array($row->status,['Ordered','Shipped']))</form><form method="post" action="/purchases/{{ $row->id }}/fulfillment-transition" class="actions">@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ $row->revision }}"><button name="action" value="cancel" class="discard" data-confirm="Cancel this order and clear only its pending expectation? Held stock and costs stay unchanged.">Cancel order</button>@endif</form>@endif
 @else<p>Ordering and receipt actions need guarded fulfillment preparation.</p>@endif
@@ -47,6 +47,6 @@
 <ol class="request-notes">@forelse($notes as $note)<li><p class="plain-text">{{ $note->body }}</p><small>{{ $note->actor_name }} · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</small></li>@empty<li>No notes yet.</li>@endforelse</ol>
 
 @include('requests.activity')
-<script src="/requests.js?v=purchase-progress-2" defer></script>
+<script src="/requests.js?v=purchase-progress-2-sentence-case-1" defer></script>
 
 @endsection

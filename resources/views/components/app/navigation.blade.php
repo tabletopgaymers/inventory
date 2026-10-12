@@ -35,4 +35,7 @@
             <a href="{{ $destination['href'] }}" @class(['app-navigation-current' => $destination['active']]) @if(request()->is(ltrim($destination['href'], '/')))aria-current="page"@endif>{{ $destination['label'] }}</a>
         @endif
     @endforeach
+    @if($presentation !== 'section' && app()->environment(['local', 'development']))
+        <a class="app-navigation-footer" href="/design/phase-a/overview" @if(request()->is('design/phase-a/*'))aria-current="page"@endif>Style guide</a>
+    @endif
 </nav>

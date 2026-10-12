@@ -10,5 +10,5 @@
 </nav>
 <p class="app-field-help">@yield('intro') Sample controls use fictional data and do not save records. The surrounding app navigation works normally.</p>
 @yield('guide-content')
-<script src="/style-guide.js?v=current-design-2" defer></script>
+<script src="/style-guide.js?v=role-confirmations-1" defer></script>
 @endsection

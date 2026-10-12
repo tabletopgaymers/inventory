@@ -8,19 +8,31 @@ use Illuminate\Support\Facades\DB;
 class ProfilePreferences
 {
     public const MIGRATION = '2026_10_07_000000_add_user_time_zone';
+    public const CONTACT_MIGRATION = '2026_10_11_000000_add_user_contact_preferences';
 
     public function state($database, ?array $tables = null): array
     {
         $schema = $database->getSchemaBuilder();
         $tables ??= $schema->getTableListing(null, false);
         $recorded = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::MIGRATION)->exists();
-        $column = in_array('users', $tables, true) ? collect($schema->getColumns('users'))->firstWhere('name', 'time_zone') : null;
-        if (! $recorded && $column === null) {
-            return ['compatible' => true, 'ready' => false];
+        $columns = in_array('users', $tables, true) ? collect($schema->getColumns('users'))->keyBy('name') : collect();
+        $column = $columns->get('time_zone');
+        $timeReady = $recorded && $column !== null && strtolower($column['type']) === 'varchar(100)' && $column['nullable'] && ! $column['auto_increment'] && in_array($column['default'], [null, 'NULL'], true) && $column['generation'] === null;
+        $timeCompatible = (! $recorded && $column === null) || $timeReady;
+        $contactRecorded = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::CONTACT_MIGRATION)->exists();
+        $expected = ['personal_email' => 'varchar(255)', 'mobile_number' => 'varchar(100)', 'mailing_address' => 'text', 'display_density' => 'varchar(16)'];
+        $contactPresent = $columns->only(array_keys($expected));
+        $contactReady = $contactRecorded && $contactPresent->count() === count($expected);
+        foreach ($expected as $name => $type) {
+            $field = $columns->get($name);
+            $default = $name === 'display_density' ? ['standard', "'standard'"] : [null, 'NULL'];
+            $contactReady = $contactReady && $field !== null && strtolower($field['type']) === $type
+                && $field['nullable'] === ($name !== 'display_density') && ! $field['auto_increment']
+                && in_array($field['default'], $default, true) && $field['generation'] === null;
         }
-        $ready = $recorded && $column !== null && strtolower($column['type']) === 'varchar(100)' && $column['nullable'] && ! $column['auto_increment'] && in_array($column['default'], [null, 'NULL'], true) && $column['generation'] === null;
 
-        return ['compatible' => $ready, 'ready' => $ready];
+        return ['compatible' => $timeCompatible && ((! $contactRecorded && $contactPresent->isEmpty()) || ($timeReady && $contactReady)),
+            'ready' => $timeReady && $contactReady];
     }
 
     public function prepare(bool $hosted): bool
@@ -32,7 +44,12 @@ class ProfilePreferences
             return false;
         }
 
-        return Artisan::call('migrate', ['--force' => true, '--no-interaction' => true, '--path' => 'database/migrations/'.self::MIGRATION.'.php']) === 0
-            && $this->state($database)['ready'];
+        foreach ([self::MIGRATION, self::CONTACT_MIGRATION] as $migration) {
+            if (Artisan::call('migrate', ['--force' => true, '--no-interaction' => true, '--path' => 'database/migrations/'.$migration.'.php']) !== 0) {
+                return false;
+            }
+        }
+
+        return $this->state($database)['ready'];
     }
 }

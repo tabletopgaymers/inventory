@@ -113,7 +113,7 @@ document.querySelector('[data-print]')?.addEventListener('click', () => window.p
         if (form.hasAttribute('data-relocation-form') || form.hasAttribute('data-purchase-form')) return;
         state.hidden = false;
         if (form.hasAttribute('data-purchase-retain-form')) {
-            state.textContent = 'Changes not saved. Entered values are retained in this browser; use this form’s separate action to save them. Save Progress does not add notes or change shipment status.';
+            state.textContent = 'Changes not saved. Entered values are retained in this browser; use this form’s separate action to save them. Save progress does not add notes or change shipment status.';
             return;
         }
         state.textContent = (form.getAttribute('action') || '').includes('/relocations/work/')
@@ -137,7 +137,7 @@ document.querySelector('[data-print]')?.addEventListener('click', () => window.p
                 notice = document.createElement('p'); notice.dataset.pendingSelectionNotice = ''; notice.className = 'warning'; notice.setAttribute('role', 'alert'); notice.tabIndex = -1;
                 form.append(notice);
             }
-            notice.textContent = 'There are item quantities waiting in search results. Use Add Selected or clear those entries before changing search results, saving or reviewing.';
+            notice.textContent = 'There are item quantities waiting in search results. Use Add selected or clear those entries before changing search results, saving or reviewing.';
             form.querySelector('[data-selection-count]').closest('section[hidden]')?.removeAttribute('hidden');
             notice.focus();
         }

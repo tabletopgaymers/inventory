@@ -15,7 +15,7 @@
 <label>Default leftover destination (required for activation)<select name="default_destination"><option value="">Choose default destination</option>@foreach($destinations as $key=>$label)<option value="{{ $key }}" @selected($key===($values['default_destination']??''))>{{ $label }}</option>@endforeach</select></label>
 @endif
 @if(in_array($mode,['plan','delivery']))
-<h2>{{ $mode==='plan' ? 'Planned supplies' : 'Actual additional supplies' }}</h2><p>Choose known storage to move stock directly. External / unknown origin adds event stock without changing Unit Cost. Supplies already in this event are not another contribution.</p>
+<h2>{{ $mode==='plan' ? 'Planned supplies' : 'Actual additional supplies' }}</h2><p>Choose known storage to move stock directly. External / unknown origin adds event stock without changing Unit cost. Supplies already in this event are not another contribution.</p>
 @foreach($values['supplies'] ?? [] as $index=>$supply)
 <fieldset><legend>Supply {{ $index+1 }}</legend>
 <label>Item<select name="supplies[{{ $index }}][item_id]"><option value="">Choose item</option>@foreach($items->where('state','active') as $item)<option value="{{ $item->id }}" @selected((string)$item->id===(string)($supply['item_id']??''))>{{ $item->name }} · {{ $item->sku }}</option>@endforeach</select></label>
@@ -45,5 +45,5 @@
 @endif
 @if($mode==='correction')<label>Explanation (optional)<textarea name="explanation" maxlength="5000">{{ $values['explanation'] ?? '' }}</textarea></label>@endif
 <div class="actions"><a class="discard" href="{{ $row ? '/events/'.$row->id : '/events' }}">Discard changes</a>@if($mode==='plan')<button class="primary" name="action" value="save" formnovalidate>Save planning</button>@else @if($mode==='counts')<button name="action" value="save" formnovalidate>Save progress</button>@endif<button class="primary" name="action" value="review">{{ $mode==='counts' ? 'Review irreversible finalization' : 'Review '.$mode }}</button>@endif</div>
-</form><script src="/requests.js?v=inline-decisions-1" defer></script>
+</form><script src="/requests.js?v=inline-decisions-1-sentence-case-1" defer></script>
 @endsection

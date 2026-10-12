@@ -28,13 +28,13 @@
             button.classList.toggle('app-save-dirty', dirty);
             button.disabled = busy || locked || !toolbar.dataset.saveUrl;
             button.setAttribute('aria-busy', busy ? 'true' : 'false');
-            label.textContent = busy ? 'Saving…' : 'Save Progress';
+            label.textContent = busy ? 'Saving…' : 'Save progress';
         };
         const retain = () => {
             if (!dirty) return;
             const cached = { revision, version: toolbar.dataset.saveVersion, forms: Object.fromEntries(forms.map(form => [form.id, values(form)])) };
             try { sessionStorage.setItem(key, JSON.stringify(cached)); }
-            catch { show('This browser cannot retain unsaved input. Save Progress before leaving this page.', true); }
+            catch { show('This browser cannot retain unsaved input. Save progress before leaving this page.', true); }
         };
         const restore = (form, saved) => {
             if (!Array.isArray(saved)) return;
@@ -174,7 +174,7 @@
             const control = document.createElement('button'); control.type = 'submit'; control.name = 'action'; control.value = link.dataset.relocationWorkAction; control.formNoValidate = true; control.hidden = true;
             form.append(control); form.requestSubmit(control); control.remove();
         }));
-        window.appNavigationGuards?.push({ shouldWarn: origin => !busy && dirty && !origin?.hasAttribute('data-relocation-work-action'), message: 'Progress has not been saved. Save Progress makes it durable; working values are retained in this browser or session.' });
+        window.appNavigationGuards?.push({ shouldWarn: origin => !busy && dirty && !origin?.hasAttribute('data-relocation-work-action'), message: 'Progress has not been saved. Save progress makes it durable; working values are retained in this browser or session.' });
         document.addEventListener('click', event => {
             if (busy && event.target.closest('a[href]')) { event.preventDefault(); show('Wait for Saving… to finish before leaving.'); }
         }, true);

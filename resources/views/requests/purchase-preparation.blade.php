@@ -1,5 +1,5 @@
 @extends('layout')
-@section('title', 'Prepare Purchase')
+@section('title', 'Prepare purchase')
 @section('purchase-progress')
 @include('requests.purchase-progress', ['progressRow' => $row, 'progressActive' => 'preparation', 'progressSaveUrl' => $canPrepare ? '/purchases/work/'.$token : null, 'progressKey' => $token ? 'work:'.$token : 'preparation:'.$row->id, 'progressRevision' => $draft['revision'], 'progressVersion' => $draft['version'], 'progressDirty' => $canPrepare && \App\Support\PurchaseProgress::workDirty($draft)])
 @endsection
@@ -11,12 +11,12 @@
 @csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ $draft['revision'] }}"><input type="hidden" name="work_version" value="{{ $draft['version'] }}"><input type="hidden" name="progress_step" value="preparation">
 <input type="hidden" name="title" value="{{ $draft['values']['title'] ?? '' }}" data-purchase-field><input type="hidden" name="suggested_merchant" value="{{ $draft['values']['suggested_merchant'] ?? '' }}" data-purchase-field>
 <fieldset @disabled(!$canPrepare)><legend>Pre-order preparation</legend>
-<label>Request Details (optional)<textarea name="details" maxlength="5000">{{ $draft['values']['details'] ?? '' }}</textarea></label>
+<label>Request details (optional)<textarea name="details" maxlength="5000">{{ $draft['values']['details'] ?? '' }}</textarea></label>
 <label>Supplier (optional)<select name="supplier_id"><option value="">Not selected</option>@foreach($suppliers as $supplier)@if($supplier->state==='active' || (string)$supplier->id===(string)($draft['values']['supplier_id']??''))<option value="{{ $supplier->id }}" @selected((string)$supplier->id===(string)($draft['values']['supplier_id']??''))>{{ $supplier->name }} ({{ $supplier->state }})</option>@endif @endforeach</select></label>
 <label>Receiving storage (optional)<select name="receiving_location_id"><option value="">Not selected</option>@foreach($locations as $location)@if($location->state==='active' || (string)$location->id===(string)($draft['values']['receiving_location_id']??''))<option value="{{ $location->id }}" @selected((string)$location->id===(string)($draft['values']['receiving_location_id']??''))>{{ $location->name }} ({{ $location->state }})</option>@endif @endforeach</select></label>
 <label>Planned date (optional)<input type="date" name="planned_date" value="{{ $draft['values']['planned_date'] ?? '' }}"></label><label>Preparation notes (optional)<textarea name="preparation_notes" maxlength="5000">{{ $draft['values']['preparation_notes'] ?? '' }}</textarea></label>
 @include('requests.purchase-catalog', ['planning' => true, 'catalogEditable' => $canPrepare])
 </fieldset>
 <div class="actions"><a href="/purchases/{{ $row->id }}">Back to request</a>@if(\App\Support\RequestValues::manages(auth()->user(), 'procurement') && in_array($row->status, ['Draft','Request'], true) && app(\App\Support\BaselineProbe::class)->schemaState(\Illuminate\Support\Facades\DB::connection())['fulfillmentReady'])<a class="button primary" href="/purchases/{{ $row->id }}/fulfillment/order">Record order</a>@endif</div>
-</form><script src="/requests.js?v=purchase-wizard-1" defer></script>
+</form><script src="/requests.js?v=purchase-wizard-1-sentence-case-1" defer></script>
 @endsection

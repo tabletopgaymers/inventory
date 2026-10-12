@@ -20,10 +20,10 @@
 </div>
 <div class="app-content">
     <div class="actions app-user-actions">
-        <div class="inline"><button type="button" id="guide-padding-button">Grant Admin</button></div>
-        <div class="inline"><button type="button">Remove Manager</button></div>
-        <div class="inline"><button type="button">Grant Procurement</button></div>
-        <div class="inline app-user-disable-action"><button type="button" class="discard" data-guide-open="guide-disable-dialog" aria-haspopup="dialog" aria-controls="guide-disable-dialog">Disable Account</button></div>
+        <div class="inline"><button type="button" id="guide-padding-button" data-guide-open="guide-role-dialog" data-guide-role-label="Grant admin" data-guide-role-message="Grant the admin role to Sample Administrator?">Grant admin</button></div>
+        <div class="inline"><button type="button" data-guide-open="guide-role-dialog" data-guide-role-label="Remove manager" data-guide-role-message="Remove the manager role from Sample Administrator?">Remove manager</button></div>
+        <div class="inline"><button type="button" data-guide-open="guide-role-dialog" data-guide-role-label="Grant procurement" data-guide-role-message="Grant the procurement role to Sample Administrator?">Grant procurement</button></div>
+        <div class="inline app-user-disable-action"><button type="button" class="discard" data-guide-open="guide-disable-dialog" aria-haspopup="dialog" aria-controls="guide-disable-dialog">Disable account</button></div>
     </div>
 </div>
 <div class="app-content" id="headers">
@@ -46,30 +46,38 @@
     <h2>Buttons and status</h2>
     <div class="actions app-user-actions">
         <button type="button" class="primary">Save</button><a class="button" href="#fields">Edit</a><a class="button app-new-action" href="#data">+New</a><button type="button" class="discard">Discard</button><button type="button" disabled>Unavailable</button>
+        <button type="button" class="primary" disabled>Unavailable primary action</button><button type="button" class="discard" disabled>Unavailable destructive action</button><x-app.action variant="primary" :disabled="true">Unavailable component action</x-app.action>
     </div>
-    <h3>Save Progress states</h3>
+    <p class="app-field-help">Disabled fields and buttons use a light grey background with black text at full opacity. Save progress buttons keep their existing state colors and disabled appearance.</p>
+    <h3>Save progress states</h3>
     <div class="actions app-user-actions">
-        <button type="button" class="primary app-save-progress">Save Progress</button>
-        <button type="button" class="primary app-save-progress app-save-dirty">Save Progress — unsaved</button>
+        <button type="button" class="primary app-save-progress">Save progress</button>
+        <button type="button" class="primary app-save-progress app-save-dirty">Save progress — unsaved</button>
         <button type="button" class="primary app-save-progress" aria-busy="true">Saving… <span class="app-search-spinner" aria-hidden="true"></span></button>
+        <button type="button" class="primary app-save-progress" disabled>Save progress — unavailable</button>
+        <button type="button" class="primary app-save-progress app-save-dirty" disabled>Save progress — unsaved and unavailable</button>
     </div>
-    <p class="app-field-help">Displayed states only; no save is running. Actual Save Progress stays on the current step, and submission/confirmation remains a separate action.</p>
+    <p class="app-field-help">Displayed states only; no save is running. Actual Save progress stays on the current step, and submission/confirmation remains a separate action.</p>
     <h3>Business status</h3>
     <p>@foreach(['Draft','Request','Requested','Active','Ordered','Shipped','Receiving','Received','Finalized','Complete','Cancelled','Inactive','Archived'] as $status)<span class="status-badge {{ strtolower($status) }}">{{ $status }}</span> @endforeach</p>
     <p>Text always accompanies color. These labels belong to their existing workflows; editing steps do not create new business states.</p>
 </div>
 <div class="app-content" id="fields">
     <h2>Fields and validation</h2>
+    <p>Email confirmation status: <strong class="app-confirmation-status">Confirmed</strong> or <strong class="app-confirmation-status app-confirmation-unconfirmed">Not confirmed</strong>. Profile editing and viewing use bold status text, with unconfirmed status also red.</p>
     <label>Title<input name="guide_title" value="Sample supply request" required></label>
     <label>Details (optional)<textarea name="guide_details" rows="2">New display stands, quantity 2.</textarea></label>
     <label>Storage location<select name="guide_location"><option>Central</option><option>Sample storage</option></select></label>
     <label>Requested units — blank<input name="guide_blank_quantity" inputmode="numeric" aria-describedby="guide-blank-help"></label>
     <p id="guide-blank-help" class="app-field-help">No quantity entered; blank is not zero.</p>
     <label>Requested units — explicit zero<input name="guide_zero_quantity" inputmode="numeric" value="0"></label>
-    <label>MS Account<input value="sample@example.test" readonly></label>
+    <label>MS account<input value="sample@example.test" readonly></label>
     <label>Recorded date<input type="date" value="2026-10-11"></label>
     <label>Unit cost (USD)<input value="0.125" readonly></label>
     <label>Unavailable input<input value="Unavailable" disabled></label>
+    <label>Unavailable selection<select disabled><option>Sample storage</option></select></label>
+    <label>Unavailable details<textarea rows="2" disabled>Saved details cannot be edited here.</textarea></label>
+    <fieldset disabled><legend>Unavailable field group</legend><label>Grouped input<input value="Unavailable through its group"></label><label class="app-choice"><input type="checkbox" checked> Unavailable checkbox</label><label class="app-choice"><input type="radio" checked> Unavailable radio</label></fieldset>
     <div class="error"><a href="#guide-quantity">Quantity: enter a whole number.</a></div>
     <label>Quantity — error example<input id="guide-quantity" value="two" aria-invalid="true" aria-describedby="guide-quantity-error"></label>
     <p class="app-field-error" id="guide-quantity-error">Enter a whole quantity.</p>
@@ -88,7 +96,7 @@
         </tbody></table>
     </x-app.table-region>
     <h3>Borderless record details</h3>
-    <dl class="app-user-details"><dt>Name</dt><dd>Sample Administrator</dd><dt>TG Email</dt><dd>sample@tabletopgaymers.org (confirmed)</dd><dt>MS Account</dt><dd>sample@example.test</dd><dt>Ext Roles</dt><dd>admin, manager, procurement</dd><dt>Time Zone</dt><dd>America/Chicago</dd></dl>
+    <dl class="app-user-details"><dt>Name</dt><dd>Sample Administrator</dd><dt>TG email</dt><dd>sample@tabletopgaymers.org (confirmed)</dd><dt>MS account</dt><dd>sample@example.test</dd><dt>Ext roles</dt><dd>admin, manager, procurement</dd><dt>Time zone</dt><dd>America/Chicago</dd></dl>
     <p>Use a definition list for field/value information, with bold labels and wrapping values. See the complete <a href="/design/phase-a/examples#users">two-panel user example</a>.</p>
     <h3>Permanent notes</h3><p>Sample note: checked the convention kit.</p><p class="app-field-help">Sample author · 11 Oct 2026. Actual permanent notes retain attribution and cannot be edited or deleted.</p>
     <h3>Empty and loading states</h3><p>No items match these filters. Try another collection or location.</p>
@@ -96,13 +104,14 @@
 </div>
 <div class="app-content" id="feedback">
     <h2>Notices and modal confirmation</h2>
-    <p class="notice">Changes saved. Sample success notice.</p>
+    <p class="notice">Changes saved. Sample success notice.<br>This multiline message reserves room beside the dismiss control, keeping text and links readable. <a href="#fields">View the field examples</a>.</p>
     <p class="warning">Working changes have not been saved. Sample warning notice.</p>
     <p class="error">This account has been disabled. Contact your administrator.</p>
     <p class="error">Sign-in could not be completed. Please start again.</p>
     <p class="app-field-help">Disabled accounts have their specific message. Other failed sign-ins keep the generic restart message.</p>
-    <p>Disable Account opens an in-page modal titled “Are you sure?”. Cancel is dark grey on white; confirmation is white on red. Cancel and Escape return focus to the trigger.</p>
-    <button type="button" class="discard" data-guide-open="guide-disable-dialog" aria-haspopup="dialog" aria-controls="guide-disable-dialog">Preview Disable Account</button>
+    <p class="app-field-help">Use ✕ to dismiss a non-error notification for this page. The control matches the message's text color; errors remain visible. A new message can appear again after dismissal.</p>
+    <p>Disable account opens an in-page modal titled “Are you sure?”. Cancel is dark grey on white; confirmation is white on red. Cancel and Escape return focus to the trigger.</p>
+    <button type="button" class="discard" data-guide-open="guide-disable-dialog" aria-haspopup="dialog" aria-controls="guide-disable-dialog">Preview disable account</button>
     <p id="guide-disable-result" class="notice" role="status" hidden></p>
 </div>
 @include('design.phase-a.disable-preview')

@@ -33,6 +33,17 @@ class MicrosoftIdentity
                 $user = new User;
                 $user->first_name = $this->seedName($external->user['givenName'] ?? '');
                 $user->last_name = $this->seedName($external->user['surname'] ?? '');
+                // Seed only at creation; sign-in never replaces an edited contact address.
+                $account = $external->getEmail();
+                if (is_string($account) && mb_strlen($account) <= 255
+                    && filter_var($account, FILTER_VALIDATE_EMAIL)
+                    && ! str_contains(strtoupper($account), '#EXT#')
+                    && strtolower(substr(strrchr($account, '@'), 1)) === 'tabletopgaymers.org') {
+                    $user->contact_email = substr($account, 0, strrpos($account, '@')).'@tabletopgaymers.org';
+                }
+                if (DB::connection()->getSchemaBuilder()->hasColumn('users', 'time_zone')) {
+                    $user->time_zone = DisplayDates::DEFAULT_ZONE;
+                }
                 $user->save();
                 DB::table('external_identities')->insert([
                     'user_id' => $user->id, 'provider' => 'microsoft', 'tenant_id' => $tenant,

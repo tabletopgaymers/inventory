@@ -1,5 +1,5 @@
 @extends('layout')
-@section('title', 'Review Inventory — '.$item->name)
+@section('title', 'Review inventory — '.$item->name)
 @section('content')
 <p>Review the proposed History entries. Only Save records the correction.</p>
 

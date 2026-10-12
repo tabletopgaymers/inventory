@@ -19,9 +19,9 @@
 <fieldset><legend>Programs (optional)</legend>@foreach($programs as $program)@if($program->state === 'active' || in_array($program->id, $selectedPrograms))<label class="app-choice"><input type="checkbox" name="programs[]" value="{{ $program->id }}" @checked(in_array($program->id, old('programs', $errors->any() ? [] : $selectedPrograms)))>{{ $program->name }} ({{ $program->state }})</label>@endif @endforeach</fieldset>
 <label>Request bundle type<span data-bundle-optional @if(old('bundle_quantity', $metadata?->bundle_quantity) !== null && old('bundle_quantity', $metadata?->bundle_quantity) !== '')hidden @endif> (optional unless quantity supplied)</span><input name="bundle_type" @required(old('bundle_quantity', $metadata?->bundle_quantity) !== null && old('bundle_quantity', $metadata?->bundle_quantity) !== '') maxlength="255" value="{{ old('bundle_type', $metadata?->bundle_type) }}"></label><label>Bundle quantity (individual units) (optional)<input name="bundle_quantity" inputmode="numeric" value="{{ old('bundle_quantity', $metadata?->bundle_quantity) }}"></label>
 <p>Bundle values are hints; they do not enforce multiples or create kits.</p>
-@foreach(['irs_fmv'=>'IRS FMV','in_person_ask'=>'In-Person Ask','online_ask'=>'Online Ask'] as $field=>$label)<label>{{ $label }} (optional)<input name="{{ $field }}" inputmode="decimal" value="{{ old($field, $metadata?->$field) }}"></label>@endforeach
-<p>Optional monetary fields preserve blank and explicit zero. New items start with zero stock and unknown Unit Cost.</p>
-@if($record)<label>Current Unit Cost<input disabled value="{{ \App\Support\StockNumbers::displayCost($record->unit_cost) }}"></label>@if(auth()->user()->hasRole('admin'))<p><a href="/inventory/items/{{ $record->id }}/cost">Adjust Unit Cost with immutable history</a></p>@endif @endif
+@foreach(['irs_fmv'=>'IRS FMV','in_person_ask'=>'In-person ask','online_ask'=>'Online ask'] as $field=>$label)<label>{{ $label }} (optional)<input name="{{ $field }}" inputmode="decimal" value="{{ old($field, $metadata?->$field) }}"></label>@endforeach
+<p>Optional monetary fields preserve blank and explicit zero. New items start with zero stock and unknown Unit cost.</p>
+@if($record)<label>Current unit cost<input disabled value="{{ \App\Support\StockNumbers::displayCost($record->unit_cost) }}"></label>@if(auth()->user()->hasRole('admin'))<p><a href="/inventory/items/{{ $record->id }}/cost">Adjust unit cost with immutable history</a></p>@endif @endif
 @endif
 @if(in_array($kind, ['categories','collections','storage_locations']))<label>Description (optional)<textarea name="description" maxlength="5000">{{ old('description', $record?->description) }}</textarea></label>@endif
 @if($kind === 'suppliers')@foreach(['contact_name'=>'Contact name','email'=>'Email','phone'=>'Phone','website'=>'Website'] as $field=>$label)<label>{{ $label }} (optional)<input name="{{ $field }}" maxlength="255" value="{{ old($field, $record?->$field) }}"></label>@endforeach<label>Address (optional)<textarea name="address" maxlength="5000">{{ old('address', $record?->address) }}</textarea></label>@endif
@@ -36,7 +36,7 @@
 <form method="post" action="/catalog/{{ $kind }}/{{ $record->id }}/lifecycle">@csrf
 <div class="actions">
 @if($record->state === 'archived')<x-app.action type="submit" name="action" value="restore">Restore to Inactive</x-app.action>
-@else<x-app.action variant="danger" href="/catalog/{{ $kind }}/{{ $record->id }}/archive">Archive…</x-app.action><x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? 'Set Inactive' : 'Activate' }}</x-app.action>@endif
+@else<x-app.action variant="danger" href="/catalog/{{ $kind }}/{{ $record->id }}/archive">Archive…</x-app.action><x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? 'Set inactive' : 'Activate' }}</x-app.action>@endif
 </div></form>
 @endif
 </x-app.panel>

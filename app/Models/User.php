@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
+    public const DISPLAY_DENSITIES = ['compact' => 'Compact', 'standard' => 'Standard', 'spacious' => 'Spacious'];
+
     protected $guarded = ['id'];
 
     protected $attributes = ['first_name' => '', 'last_name' => '', 'enabled' => true, 'contact_attested' => false];
