@@ -40,6 +40,7 @@
   --app-border: var(--color-base-300); --app-text: var(--color-base-content);
   --app-primary: var(--color-primary); --app-muted: #595965; --app-danger: #991b1b;
   --app-space: .25rem; --app-radius: .75rem;
+  --app-grouped-item-padding: 1.6rem;
   margin: 0; background: var(--app-page); color: var(--app-text);
   font-family: "Segoe UI", system-ui, sans-serif; font-size: 1rem; line-height: var(--app-density-line-height);
   min-height: 100dvh;
@@ -198,7 +199,7 @@
 .app-shell table.stock-editor { min-width: 42rem; }
 .app-shell th, .app-shell td { text-align: left; padding: var(--app-density-table-y) .8rem; border-bottom: 1px solid var(--app-border); vertical-align: top; }
 .app-shell th { font-weight: 600; overflow-wrap: normal; }
-.app-shell td.app-grouped-item { padding-left: 1.6rem; }
+.app-shell td.app-grouped-item, .app-shell .catalog-table td.app-grouped-item { padding-left: var(--app-grouped-item-padding); }
 .app-shell thead, .app-shell tfoot { background: var(--app-page); }
 .app-shell tbody tr:last-child > * { border-bottom: 0; }
 .app-shell .number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }

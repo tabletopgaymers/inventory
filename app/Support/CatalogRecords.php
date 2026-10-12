@@ -9,6 +9,11 @@ class CatalogRecords
 {
     public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Locations', 'suppliers' => 'Suppliers', 'purposes' => 'Purposes', 'programs' => 'Programs'];
 
+    public static function itemSku(string $prefix, string $suffix): string
+    {
+        return rtrim($prefix, '-').'-'.$suffix;
+    }
+
     public function records(string $kind)
     {
         abort_unless(isset(self::KINDS[$kind]), 404);

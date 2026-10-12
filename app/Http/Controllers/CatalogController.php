@@ -50,8 +50,7 @@ class CatalogController
         $collection = null;
         if ($kind === 'collections' && $request->filled('category')) {
             $filter = $request->validate(['category' => ['required', 'integer', 'exists:categories,id']]);
-            $category = $service->record('categories', (int) $filter['category']);
-            $records = $records->where('category_id', (int) $filter['category'])->values();
+            return redirect('/catalog/categories/'.$filter['category']);
         }
         if ($kind === 'items' && $request->filled('collection')) {
             $filter = $request->validate(['collection' => ['required', 'integer', 'exists:collections,id']]);
@@ -61,6 +60,23 @@ class CatalogController
         }
 
         return view('catalog.index', ['kind' => $kind, 'kinds' => CatalogRecords::KINDS, 'records' => $records, 'category' => $category, 'collection' => $collection, 'categories' => $service->records('categories'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+    }
+
+    public function show(Request $request, string $kind, int $record)
+    {
+        $this->ready();
+        abort_unless(in_array($kind, ['categories', 'collections'], true), 404);
+        $service = app(CatalogRecords::class);
+        $row = $service->record($kind, $record);
+        $category = $kind === 'collections' ? $service->record('categories', (int) $row->category_id) : null;
+        $children = $kind === 'categories'
+            ? $service->records('collections')->where('category_id', $record)->values()
+            : $service->records('items')->where('collection_id', $record)->values();
+
+        return view('catalog.show', [
+            'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
+            'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'),
+        ]);
     }
 
     public function archive(Request $request, string $kind, int $record)
@@ -79,9 +95,14 @@ class CatalogController
         abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
         $service = app(CatalogRecords::class);
         $row = $record ? $service->record($kind, $record) : null;
+        $selectedCategory = null;
+        if ($kind === 'collections' && ! $record && $request->filled('category')) {
+            $filter = $request->validate(['category' => ['required', 'integer', 'exists:categories,id']]);
+            $selectedCategory = $service->record('categories', (int) $filter['category']);
+        }
         $metadata = $kind === 'items' && $record ? DB::table('item_metadata')->where('item_id', $record)->first() : null;
 
-        return view('catalog.form', ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
+        return view('catalog.form', ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
     }
 
     private function text(bool $required = false, int $max = 255): array
@@ -96,6 +117,9 @@ class CatalogController
         abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
         $rules = ['name' => $this->text(true), 'description' => $this->text(false, 5000), 'notes' => $this->text(false, 5000)];
         if ($kind === 'collections') {
+            if (is_string($request->input('sku_prefix'))) {
+                $request->merge(['sku_prefix' => rtrim($request->input('sku_prefix'), '-')]);
+            }
             $rules += ['category_id' => ['required', 'integer', 'min:1'], 'sku_prefix' => ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D']];
         }
         if ($kind === 'items') {
@@ -126,15 +150,21 @@ class CatalogController
                 if ($kind === 'collections') {
                     DB::table('categories')->where('id', $data['category_id'])->lockForUpdate()->firstOrFail();
                     $service->activeAssociation('categories', (int) $data['category_id'], $old ? (int) $old->category_id : null);
-                    if ($old && $old->sku_prefix !== $data['sku_prefix'] && DB::table('items')->where('collection_id', $old->id)->exists()) {
-                        throw ValidationException::withMessages(['sku_prefix' => 'A populated collection prefix cannot change.']);
+                    if ($old && $old->sku_prefix !== $data['sku_prefix']) {
+                        $items = DB::table('items')->where('collection_id', $old->id)->orderBy('id')->lockForUpdate()->get(['id', 'sku_suffix']);
+                        foreach ($items as $item) {
+                            DB::table('items')->where('id', $item->id)->update([
+                                'sku' => CatalogRecords::itemSku($data['sku_prefix'], $item->sku_suffix),
+                                'updated_at' => now('UTC'),
+                            ]);
+                        }
                     }
                     $values += ['category_id' => $data['category_id'], 'sku_prefix' => $data['sku_prefix']];
                 }
                 if ($kind === 'items') {
                     $collection = DB::table('collections')->where('id', $data['collection_id'])->lockForUpdate()->firstOrFail();
                     $service->activeAssociation('collections', (int) $collection->id, $old ? (int) $old->collection_id : null);
-                    $values += ['collection_id' => $collection->id, 'sku_suffix' => $data['sku_suffix'], 'sku' => $collection->sku_prefix.$data['sku_suffix']];
+                    $values += ['collection_id' => $collection->id, 'sku_suffix' => $data['sku_suffix'], 'sku' => CatalogRecords::itemSku($collection->sku_prefix, $data['sku_suffix'])];
                     if (! $old) {
                         $values['unit_cost'] = '0';
                     }

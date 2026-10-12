@@ -1,6 +1,4 @@
 (() => {
-    const categoryFilter = document.querySelector('[data-catalog-category-filter]');
-    categoryFilter?.addEventListener('change', () => categoryFilter.form.requestSubmit());
     // Preview only a committed selection in the viewer's own profile; Save persists it.
     const density = document.querySelector('#profile-form select[data-density-preview]');
     density?.addEventListener('change', () => {

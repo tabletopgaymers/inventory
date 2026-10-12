@@ -20,7 +20,7 @@
             <div class="app-account-panel">
                 <p class="app-account-label">{{ auth()->user()->displayName() }}</p>
                 <nav aria-label="Account">
-                    <a href="/profile" @if(request()->is('profile'))aria-current="page"@endif>My profile</a>
+                    <a href="/users/{{ auth()->id() }}" @if(request()->is('users/'.auth()->id())) aria-current="page" @endif>My profile</a>
                     <form method="post" action="/logout">@csrf<x-app.action variant="danger" type="submit">Sign out</x-app.action></form>
                 </nav>
             </div>

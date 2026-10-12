@@ -1,15 +1,26 @@
 @extends('layout')
-@section('title', ($record ? 'Edit ' : 'Create ').$label)
+@section('title', $kind === 'collections' && $record ? 'Edit collection - '.$record->name : ($record ? 'Edit ' : 'Create ').$label)
+@if($kind === 'collections' && $record)
+@section('page-actions')
+<x-app.action variant="discard" href="/catalog/{{ $kind }}">Cancel</x-app.action>
+<x-app.action type="submit" variant="primary" form="catalog-form">Save</x-app.action>
+@endsection
+@endif
 @section('title-status')
 @if($record)<x-app.status-badge :status="ucfirst($record->state)" />@endif
 @endsection
 @section('content')
+@if($kind === 'collections' && $record)
+<div class="app-content">
+@else
 <nav class="app-breadcrumb" aria-label="Breadcrumb"><a href="/catalog/{{ $kind }}">{{ $label }}</a>@if($record)<span>› {{ $record->name }}</span>@endif</nav>
-<form method="post" data-unsaved>@csrf
+@endif
+<form id="catalog-form" method="post" data-unsaved>@csrf
 <label>Name<input name="name" required maxlength="255" value="{{ old('name', $record?->name) }}"></label>
 @if($kind === 'collections')
-<label>Category<select name="category_id" required>@foreach($categories as $category)@if($category->state === 'active' || $record?->category_id === $category->id)<option value="{{ $category->id }}" @selected(old('category_id', $record?->category_id) == $category->id)>{{ $category->name }} ({{ $category->state }})</option>@endif @endforeach</select></label>
-<label>SKU prefix<input name="sku_prefix" required maxlength="50" pattern="[A-Za-z0-9_-]+" value="{{ old('sku_prefix', $record?->sku_prefix) }}" @if($record && $record->child_count)readonly @endif></label>
+<label>Category<select name="category_id" required>@if(!$record && $selectedCategory && $selectedCategory->state !== 'active' && !old('category_id'))<option value="" disabled selected>{{ $selectedCategory->name }} ({{ $selectedCategory->state }}) — choose an active Category</option>@endif @foreach($categories as $category)@if($category->state === 'active' || $record?->category_id === $category->id)<option value="{{ $category->id }}" @selected(old('category_id', $record?->category_id ?? $selectedCategory?->id) == $category->id)>{{ $category->name }} ({{ $category->state }})</option>@endif @endforeach</select></label>
+<label>SKU prefix<input name="sku_prefix" required maxlength="50" pattern="[A-Za-z0-9_-]+" value="{{ old('sku_prefix', $record ? rtrim($record->sku_prefix, '-') : null) }}"></label>
+@if($record)<p>Changing the prefix updates existing item SKUs. The separator hyphen is added automatically; historical records retain their recorded SKUs.</p>@endif
 @endif
 @if($kind === 'items')
 <label>Collection<select name="collection_id" required>@foreach($collections as $collection)@if($collection->state === 'active' || $record?->collection_id === $collection->id)<option value="{{ $collection->id }}" data-prefix="{{ $collection->sku_prefix }}" @selected(old('collection_id', $record?->collection_id) == $collection->id)>{{ $collection->category_name }} : {{ $collection->name }} ({{ $collection->state }})</option>@endif @endforeach</select></label>
@@ -26,20 +37,35 @@
 @if(in_array($kind, ['categories','collections','storage_locations']))<label>Description (optional)<textarea name="description" maxlength="5000">{{ old('description', $record?->description) }}</textarea></label>@endif
 @if($kind === 'suppliers')@foreach(['contact_name'=>'Contact name','email'=>'Email','phone'=>'Phone','website'=>'Website'] as $field=>$label)<label>{{ $label }} (optional)<input name="{{ $field }}" maxlength="255" value="{{ old($field, $record?->$field) }}"></label>@endforeach<label>Address (optional)<textarea name="address" maxlength="5000">{{ old('address', $record?->address) }}</textarea></label>@endif
 @if(in_array($kind,['items','storage_locations','suppliers','purposes','programs']))<label>Notes (optional)<textarea name="notes" maxlength="5000">{{ old('notes', $kind === 'items' ? $metadata?->notes : $record?->notes) }}</textarea></label>@endif
+@unless($kind === 'collections' && $record)
 <div class="actions"><a class="discard" href="/catalog/{{ $kind }}">Cancel</a><button class="primary">{{ $record ? 'Save' : 'Create' }}</button></div>
+@endunless
 </form>
+@if($kind === 'collections' && $record)</div>@endif
 @if($record)
-<x-app.panel heading="Record status">
+@unless($kind === 'collections')
+<section class="app-panel"><h2>Record status</h2>
+@endunless
 <p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>
 @if($kind === 'storage_locations' && $record->is_central)<p>Central must remain the distinguished active storage location.</p>
 @else
 <form method="post" action="/catalog/{{ $kind }}/{{ $record->id }}/lifecycle">@csrf
 <div class="actions">
-@if($record->state === 'archived')<x-app.action type="submit" name="action" value="restore">Restore to Inactive</x-app.action>
-@else<x-app.action variant="danger" href="/catalog/{{ $kind }}/{{ $record->id }}/archive">Archive…</x-app.action><x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? 'Set inactive' : 'Activate' }}</x-app.action>@endif
+@if($record->state === 'archived')<x-app.action type="submit" name="action" value="restore">{{ $kind === 'collections' ? 'Restore' : 'Restore to Inactive' }}</x-app.action>
+@else<x-app.action variant="danger" href="/catalog/{{ $kind }}/{{ $record->id }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="catalog-archive-dialog">{{ $kind === 'collections' ? 'Archive' : 'Archive…' }}</x-app.action><x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? ($kind === 'collections' ? 'Deactivate' : 'Set inactive') : 'Activate' }}</x-app.action>@endif
 </div></form>
 @endif
-</x-app.panel>
+@unless($kind === 'collections')
+</section>
+@endunless
+@if($record->state !== 'archived' && !($kind === 'storage_locations' && $record->is_central))
+@include('catalog.archive-dialog')
 @endif
-<script src="/catalog.js?v=inline-decisions-1" defer></script>
+@endif
+<script src="/catalog.js?v={{ filemtime(public_path('catalog.js')) }}" defer></script>
 @endsection
+@if($kind === 'collections' && $record)
+@section('content-sections')
+@yield('content')
+@endsection
+@endif

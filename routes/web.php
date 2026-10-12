@@ -56,3 +56,6 @@ require __DIR__.'/phase-five.php';
 require __DIR__.'/phase-six.php';
 
 require __DIR__.'/phase-eight.php';
+
+// Unknown page links follow the same sign-in flow before displaying the safe 404.
+Route::fallback(fn () => abort(404))->middleware('auth');

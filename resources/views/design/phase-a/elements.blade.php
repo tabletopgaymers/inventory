@@ -23,6 +23,7 @@
     '--app-density-table-y' => 'Table-cell vertical padding',
     '--app-density-catalog-y' => 'Catalog-cell vertical padding',
     '--app-density-detail-gap' => 'Detail-list vertical gap',
+    '--app-grouped-item-padding' => 'Grouped name left padding',
     'button' => 'Button padding',
     'primary' => 'Primary color',
     'page' => 'Page background',

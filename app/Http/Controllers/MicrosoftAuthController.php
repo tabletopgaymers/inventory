@@ -25,7 +25,7 @@ class MicrosoftAuthController extends Controller
     public function redirect(Request $request)
     {
         if (Auth::check()) {
-            return redirect('/');
+            return redirect($this->landingDestination($request));
         }
         try {
             $request->session()->put('microsoft_attempt', ['started' => now()->timestamp, 'remember' => $request->boolean('remember')]);
@@ -65,7 +65,7 @@ class MicrosoftAuthController extends Controller
             ]);
             config(['session.expire_on_close' => ! (($attempt['remember'] ?? false) === true)]);
 
-            return redirect('/');
+            return redirect($this->landingDestination($request));
         } catch (DisabledAccountException) {
             return $this->failure($request, 'This account has been disabled. Contact your administrator.');
         } catch (Throwable) {
@@ -73,6 +73,30 @@ class MicrosoftAuthController extends Controller
 
             return $this->failure($request);
         }
+    }
+
+    private function landingDestination(Request $request): string
+    {
+        $destination = $request->session()->pull('url.intended');
+        if (! is_string($destination)) {
+            return '/profile';
+        }
+        // Laravel remembers a full URL. Keep sign-in redirects on this application.
+        $origin = $request->getSchemeAndHttpHost();
+        if (str_starts_with($destination, $origin.'/')) {
+            $destination = substr($destination, strlen($origin));
+        }
+        if (! str_starts_with($destination, '/') || str_starts_with($destination, '//')
+            || str_contains($destination, '\\') || preg_match('/[\x00-\x20]/', $destination)) {
+            return '/profile';
+        }
+        $path = parse_url($destination, PHP_URL_PATH);
+        if (! is_string($path) || $path === '/' || $path === '/login' || $path === '/signed-out'
+            || str_starts_with($path, '/auth/')) {
+            return '/profile';
+        }
+
+        return $destination;
     }
 
     private function failure(Request $request, string $message = 'Sign-in could not be completed. Please start again.')
