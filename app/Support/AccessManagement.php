@@ -21,6 +21,9 @@ class AccessManagement
             abort_unless($actor->enabled && ($actor->hasRole('admin')
                 || (in_array($role, ['manager', 'procurement'], true) && $actor->hasRole($role))), 403);
             $previous = $target->roles();
+            if ($grant && ! $target->enabled) {
+                throw ValidationException::withMessages(['role' => 'Enable this account before granting roles.']);
+            }
             if (in_array($role, $previous, true) === $grant) {
                 return;
             }
@@ -38,25 +41,48 @@ class AccessManagement
 
     public function disable(int $actorId, int $targetId): void
     {
-        DB::transaction(function () use ($actorId, $targetId) {
+        $this->setEnabled($actorId, $targetId, false);
+    }
+
+    public function enable(int $actorId, int $targetId): void
+    {
+        $this->setEnabled($actorId, $targetId, true);
+    }
+
+    private function setEnabled(int $actorId, int $targetId, bool $enabled): void
+    {
+        DB::transaction(function () use ($actorId, $targetId, $enabled) {
             DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
             $actor = User::findOrFail($actorId);
             abort_unless($actor->enabled && $actor->hasRole('admin'), 403);
             $target = User::findOrFail($targetId);
-            if ($target->enabled) {
-                $target->enabled = false;
+            if ($enabled && $target->enabled) {
+                return;
+            }
+            // Re-enabling legacy disabled accounts must not reactivate retained roles.
+            $previousRoles = $target->roles();
+            if ($previousRoles !== []) {
+                DB::table('user_roles')->where('user_id', $targetId)->delete();
+                $this->audit($actorId, $targetId, 'roles', $previousRoles, []);
+            }
+            if ($target->enabled !== $enabled) {
+                $previousEnabled = $target->enabled;
+                $target->enabled = $enabled;
                 $target->save();
-                $this->audit($actorId, $targetId, 'disablement', ['enabled' => true], ['enabled' => false]);
+                $this->audit($actorId, $targetId, $enabled ? 'enablement' : 'disablement', ['enabled' => $previousEnabled], ['enabled' => $enabled]);
             }
         }, 3);
     }
 
-    public function saveProfile(int $userId, array $data): void
+    public function saveProfile(int $userId, array $data, ?int $actorId = null): void
     {
-        DB::transaction(function () use ($userId, $data) {
+        $actorId ??= $userId;
+        DB::transaction(function () use ($userId, $data, $actorId) {
             $bootstrap = DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
+            $actor = User::findOrFail($actorId);
             $user = User::findOrFail($userId);
-            abort_unless($user->enabled, 403);
+            $ownProfile = (int) $actor->id === (int) $user->id;
+            abort_unless($actor->enabled && ($ownProfile || $actor->hasRole('admin')), 403);
             abort_unless(app(ProfilePreferences::class)->state(DB::connection())['ready'], 503, 'Profile preferences need guarded preparation. Your profile was not changed.');
             $address = $data['contact_email'] ?: null;
             $changed = $address !== $user->contact_email;
@@ -69,14 +95,14 @@ class AccessManagement
                 $user->time_zone = $data['time_zone'];
             }
             $user->contact_email = $address;
-            $user->contact_attested = ($changed ? false : $user->contact_attested) || $data['contact_attested'];
+            $user->contact_attested = ($changed ? false : $user->contact_attested) || ($ownProfile && $data['contact_attested']);
             if (! $address) {
                 $user->contact_attested = false;
             }
             $user->save();
             $tenant = config('microsoft_auth.bootstrap_tenant');
             $object = config('microsoft_auth.bootstrap_object');
-            if ($bootstrap->consumed_at === null && $user->validContact()
+            if ($ownProfile && $bootstrap->consumed_at === null && $user->validContact()
                 && is_string($tenant) && is_string($object) && $tenant !== '' && $object !== ''
                 && DB::table('external_identities')->where('user_id', $userId)->where('provider', 'microsoft')
                     ->where('tenant_id', $tenant)->where('object_id', $object)->exists()) {

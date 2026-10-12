@@ -29,7 +29,11 @@
             <p class="warning">Add your organizational contact address and confirm it in <a href="/profile">My profile</a>. Your current roles are retained.</p>
         @endif
     @endauth
-    <div class="app-content">@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
-        @yield('content')
-    </div>
+    @hasSection('content-sections')
+        @yield('content-sections')
+    @else
+        <div class="app-content">@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
+            @yield('content')
+        </div>
+    @endif
 </x-app.shell>

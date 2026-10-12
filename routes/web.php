@@ -42,11 +42,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/inventory/items/{item}/review/{operation}', [InventoryController::class, 'save'])->whereNumber('item');
     Route::get('/inventory/adjustments/{adjustment}', [InventoryController::class, 'adjustment'])->whereNumber('adjustment');
     Route::get('/inventory/adjustments/{adjustment}/result', [InventoryController::class, 'result'])->whereNumber('adjustment');
-    Route::view('/profile', 'profile');
+    Route::get('/profile', [UserController::class, 'profile']);
     Route::post('/profile', [UserController::class, 'saveProfile']);
     Route::get('/users', [UserController::class, 'directory']);
+    Route::get('/users/{user}', [UserController::class, 'show'])->whereNumber('user');
     Route::post('/users/{user}/roles', [UserController::class, 'role']);
     Route::post('/users/{user}/disable', [UserController::class, 'disable']);
+    Route::post('/users/{user}/enable', [UserController::class, 'enable']);
 });
 
 require __DIR__.'/phase-five.php';

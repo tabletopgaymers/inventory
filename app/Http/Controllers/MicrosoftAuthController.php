@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DisabledAccountException;
 use App\Support\MicrosoftConfiguration;
 use App\Support\MicrosoftIdentity;
 use Illuminate\Http\Request;
@@ -65,6 +66,8 @@ class MicrosoftAuthController extends Controller
             config(['session.expire_on_close' => ! (($attempt['remember'] ?? false) === true)]);
 
             return redirect('/');
+        } catch (DisabledAccountException) {
+            return $this->failure($request, 'This account has been disabled. Contact your administrator.');
         } catch (Throwable) {
             Log::warning('Microsoft sign-in failed.', ['stage' => $stage]);
 
@@ -72,11 +75,11 @@ class MicrosoftAuthController extends Controller
         }
     }
 
-    private function failure(Request $request)
+    private function failure(Request $request, string $message = 'Sign-in could not be completed. Please start again.')
     {
         $request->session()->forget(['microsoft_attempt', 'state', 'code_verifier']);
 
-        return redirect('/login')->with('error', 'Sign-in could not be completed. Please start again.');
+        return redirect('/login')->with('error', $message);
     }
 
     public function logout(Request $request)

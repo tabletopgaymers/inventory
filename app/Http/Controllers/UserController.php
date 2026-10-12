@@ -16,8 +16,32 @@ class UserController extends Controller
         return view('users', ['users' => User::orderBy('last_name')->orderBy('first_name')->orderBy('id')->get()]);
     }
 
+    public function show(User $user)
+    {
+        return view('user-show', ['user' => $user]);
+    }
+
+    private function profileUser(Request $request): User
+    {
+        $target = $request->query('user');
+        $user = $request->user();
+        if ($target !== null) {
+            $data = validator(['user' => $target], ['user' => ['required', 'integer', 'min:1']])->validate();
+            $user = User::findOrFail($data['user']);
+        }
+        abort_unless($request->user()->enabled && ((int) $request->user()->id === (int) $user->id || $request->user()->hasRole('admin')), 403);
+
+        return $user;
+    }
+
+    public function profile(Request $request)
+    {
+        return view('profile', ['profileUser' => $this->profileUser($request)]);
+    }
+
     public function saveProfile(Request $request, AccessManagement $access)
     {
+        $profileUser = $this->profileUser($request);
         $input = $request->only(['first_name', 'last_name', 'contact_email', 'contact_attested', 'time_zone']);
         // Reject controls before global normalization could hide invalid input.
         foreach (['first_name', 'last_name'] as $name) {
@@ -49,9 +73,9 @@ class UserController extends Controller
         $data['last_name'] = $data['last_name'] ?? '';
         $data['contact_email'] = $data['contact_email'] ?? '';
         $data['contact_attested'] = $request->boolean('contact_attested');
-        $access->saveProfile($request->user()->id, $data);
+        $access->saveProfile($profileUser->id, $data, $request->user()->id);
 
-        return redirect('/profile')->with('success', 'Profile saved.');
+        return redirect('/profile'.((int) $profileUser->id === (int) $request->user()->id ? '' : '?user='.$profileUser->id))->with('success', 'Profile saved.');
     }
 
     public function role(Request $request, User $user, AccessManagement $access)
@@ -59,13 +83,20 @@ class UserController extends Controller
         $data = $request->validate(['role' => ['required', 'string'], 'grant' => ['required', 'boolean']]);
         $access->changeRole($request->user()->id, $user->id, $data['role'], $request->boolean('grant'));
 
-        return redirect('/users')->with('success', 'Role saved.');
+        return redirect('/users/'.$user->id)->with('success', 'Role saved.');
     }
 
     public function disable(Request $request, User $user, AccessManagement $access)
     {
         $access->disable($request->user()->id, $user->id);
 
-        return redirect('/users')->with('success', 'Account disabled.');
+        return redirect('/users/'.$user->id)->with('success', 'Account disabled.');
+    }
+
+    public function enable(Request $request, User $user, AccessManagement $access)
+    {
+        $access->enable($request->user()->id, $user->id);
+
+        return redirect('/users/'.$user->id)->with('success', 'Account enabled.');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Exceptions\DisabledAccountException;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -40,7 +41,7 @@ class MicrosoftIdentity
                 DB::table('user_roles')->insert(['user_id' => $user->id, 'role' => 'basic']);
             }
             if (! $user->enabled) {
-                throw new \RuntimeException('Application access denied.');
+                throw new DisabledAccountException('Application access denied.');
             }
             $email = $external->getEmail();
             $user->provider_email = is_string($email) && mb_strlen($email) <= 255

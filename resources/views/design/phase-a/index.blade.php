@@ -1,13 +1,33 @@
 @extends('design.phase-a.layout')
-@section('title', 'A fresh style guide')
-@section('intro', 'Reusable elements and practical examples for clear, comfortable inventory work.')
-@section('content')
-<div class="max-w-3xl space-y-3"><p>The functional mockups identify the components we need. Their original styling is a rough draft, not the visual baseline. This guide develops a fresh presentation using Tailwind + daisyUI (Td).</p><p class="text-sm text-base-content/75">The guide is static: no simulated permissions, workflow calculations, saved records or submission code. Ordinary links navigate the guide and native fields illustrate their appearance.</p></div>
-<div class="grid gap-6 lg:grid-cols-2">
-<section class="specimen space-y-5" aria-labelledby="general-title"><p class="eyebrow">Component reference</p><h2 id="general-title">General elements</h2><p>The shared vocabulary for typography, layout and controls.</p><ul class="list-disc space-y-2 pl-5"><li>Typography, surfaces, spacing and page headers</li><li>Buttons, links, navigation and status badges</li><li>Fields, choices, help text and validation states</li><li>Tables, record details, notices and dialog presentation</li></ul><a class="btn btn-primary" href="/design/phase-a/elements">Explore general elements →</a></section>
-<section class="specimen space-y-5" aria-labelledby="examples-title"><p class="eyebrow">Patterns in context</p><h2 id="examples-title">Example uses</h2><p>Realistic compositions made from the same shared components.</p><ul class="list-disc space-y-2 pl-5"><li>Search and grouped inventory results</li><li>Item details and recorded activity</li><li>Request editing and review summaries</li><li>Count entry and printable information</li><li>Catalog, user directory and event variants</li></ul><a class="btn btn-primary" href="/design/phase-a/examples">Explore example uses →</a></section>
+@section('title', 'Style guide')
+@section('intro', 'A reference for the current application design.')
+@section('guide-content')
+<div class="app-content">
+    <h2>Current application styles</h2>
+    <p>This guide uses the same layout, stylesheet and shared components as the application. Changes to shared typography, panels, controls and navigation appear here too.</p>
+    <p>It replaces the earlier standalone design proposal. Examples describe current decisions; they do not add roles, lifecycle states or business actions.</p>
 </div>
-<section class="specimen space-y-4" aria-labelledby="progress-title"><h2 id="progress-title">Visible progress</h2><ol class="list-decimal space-y-3 pl-5"><li><strong>Guide entry point</strong> — complete; this address stays stable.</li><li><strong>General elements</strong> — complete draft component reference.</li><li><strong>Example uses</strong> — complete draft static compositions.</li><li><strong>Refinement</strong> — complete draft; desktop, narrow-screen, keyboard and print-media checks passed.</li></ol><p class="text-sm text-base-content/75">Content completion is separate from your acceptance of the design. Nothing here adopts Td across the working app.</p></section>
-<section class="specimen space-y-4" aria-labelledby="choices-title"><h2 id="choices-title">Design proposals for review</h2><p>A neutral page background, white surfaces, readable system typography and a deep purple primary action. Data stays compact; form controls have room to breathe. These are proposed defaults for discussion.</p><p>Two choices remain visible in the component page: ordinary Cancel styling and the Cancelled badge. Current guidance and alternatives are labeled separately.</p><p class="text-sm">Built with Tailwind 4.3.3 and daisyUI 5.7.47. No paid templates or MCP service used.</p></section>
+<div class="app-content">
+    <h2>Design decisions</h2>
+    <ul>
+        <li><strong>Panels:</strong> white surfaces with consistent padding, regardless of content. Related information and actions may occupy separate panels.</li>
+        <li><strong>Action panels:</strong> controls align left with no extra row or form margins. Buttons keep normal internal padding. Destructive account actions align right.</li>
+        <li><strong>Tables:</strong> informative lists with linked names; record pages own their actions. The Users table shows Name, Email and Extended Roles, excluding basic.</li>
+        <li><strong>User details:</strong> bold labels and aligned values in a borderless definition list. Contact confirmation, Microsoft account, extended roles and time zone are distinct.</li>
+        <li><strong>Buttons:</strong> purple Save, green +New, neutral Edit and a clearly separated destructive action. Disabled controls and saved/unsaved states are explicit.</li>
+        <li><strong>Account confirmation:</strong> an in-page modal with safe Cancel, a red confirmation button and focus returned to the trigger.</li>
+        <li><strong>Navigation:</strong> Inventory, Relocations, Events, Purchases, Catalog, Users. Desktop begins at 800px; smaller screens use Menu.</li>
+        <li><strong>Environment:</strong> local magenta, remote development red, testing orange and staging green. Production and unmapped environments show no box.</li>
+        <li><strong>Requests:</strong> editing progress stays separate from business status. Save Progress is beside the heading and preserves the current step.</li>
+    </ul>
+</div>
+<div class="app-content">
+    <h2>Explore the guide</h2>
+    <p><a href="/design/phase-a/elements">General elements</a> shows panels, buttons, status badges, fields, tables, notices and a working modal preview.</p>
+    <p><a href="/design/phase-a/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
+    @if(request()->getHost() === 'tg-inventory-app.test')
+    <p><a href="/design/phase-a/wrapper">Application frame</a> shows the current shared header, navigation and a two-panel user example.</p>
+    @endif
+    <p>Sample data is illustrative. Account permissions and business rules still govern the actual application.</p>
+</div>
 @endsection
-
