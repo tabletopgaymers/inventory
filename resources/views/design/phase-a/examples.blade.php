@@ -21,17 +21,17 @@
     <div class="app-profile-columns">
     <div>
     <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
-    <label>Extended roles<input disabled value="admin, manager, procurement"></label>
-    <label>Microsoft account<input disabled value="sample@tabletopgaymers.org"></label>
-    <label>TG email (optional)<input type="email" value="sample@tabletopgaymers.org" placeholder="youremail@tabletopgaymers.org"></label>
+    <label>Extended roles<input readonly value="admin, manager, procurement"></label>
+    <label>Microsoft account<input readonly value="sample@tabletopgaymers.org"></label>
+    <label>TG email<input data-optional type="email" value="sample@tabletopgaymers.org" placeholder="youremail@tabletopgaymers.org"></label>
     <div class="app-profile-confirmation">TG email confirmation</div>
     <label class="app-choice"><input type="checkbox"><span>Confirm my TG email address. Current status: <strong class="app-confirmation-status">Confirmed</strong></span></label>
     <p class="app-field-help">Changing TG email clears its previous confirmation. Each user confirms their own address.</p>
     </div>
     <div>
-    <label>Personal email (optional)<input type="email" placeholder="youremail@yourprovider.com"></label>
-    <label>Mobile number (optional)<input placeholder="555-555-1234"></label>
-    <label>Mailing address (optional)<textarea rows="4" placeholder="Provide your mailing address, including your name, in a format appropriate to your location."></textarea></label>
+    <label>Personal email<input data-optional type="email" placeholder="youremail@yourprovider.com"></label>
+    <label>Mobile number<input data-optional placeholder="555-555-1234"></label>
+    <label>Mailing address<textarea data-optional rows="4" placeholder="Provide your mailing address, including your name, in a format appropriate to your location."></textarea></label>
     <label>Time zone<select><option>America/Chicago</option><option>America/New_York</option></select></label>
     <label>Display density<select><option>Compact</option><option selected>Standard</option><option>Spacious</option></select></label>
     </div>
@@ -92,7 +92,7 @@
     </div>
 <x-app.table-region class="app-list-table-panel" label="Sample catalog collection"><table><thead><tr><th>Collection</th><th>Category</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun</td><td>Ribbon</td><td><span class="status-badge active">Active</span></td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">
-    <h3>Sample event</h3><p><span class="status-badge active">Active</span> Convention kit</p><label>Event name<input value="Sample convention"></label><label>Notes (optional)<textarea rows="2">Check the sample kit.</textarea></label>
+    <h3>Sample event</h3><p><span class="status-badge active">Active</span> Convention kit</p><label>Event name<input value="Sample convention"></label><label>Notes<textarea data-optional rows="2">Check the sample kit.</textarea></label>
     <p class="app-field-help">Editable fields, feedback and explicit workflow verbs share the application styles. Sample inputs do not save a catalog item or event.</p>
 </div>
 <x-app.guide-divider />

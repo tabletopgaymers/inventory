@@ -12,11 +12,11 @@
     <h2>Design decisions</h2>
     <ul>
         <li><strong>Sentence case:</strong> capitalize the first word of labels, table headers, buttons, links and headings. Keep proper names and acronyms capitalized: Microsoft account, TG email, SKU and IRS FMV. Write First name, Display density, Extended roles, Grant admin and Disable account. Role names are ordinary words. Preserve the original case of names, user-entered content and stored identifiers.</li>
-        <li><strong>Panels:</strong> white surfaces with consistent padding, regardless of content. Related information and actions may occupy separate panels.</li>
+        <li><strong>Panels:</strong> white surfaces with shared padding for information and form controls. Tables form their own panels without outer padding; related helper text and actions can sit directly on the page.</li>
         <li><strong>Index/list tables:</strong> Catalog, Inventory browse, Users, Events, Purchases and Relocations use the table itself as the panel, without outer padding. Search/filter controls occupy separate padded panels. Column headers use bold (700) text on #e5dfef; grouped sub-headings use semibold (600), near-black text on #f4f2f8. Results grow with the page rather than scrolling inside a fixed-height region.</li>
         <li><strong>Display density:</strong> My profile saves Compact, Standard (the default) or Spacious for the viewer across devices. These adjust text line height, panel padding, field and paragraph spacing, input padding, table rows and detail-list gaps. Compact retains the previous appearance. Font sizes, horizontal spacing, buttons and navigation retain their sizing. Printed content keeps consistent compact spacing.</li>
         <li><strong>Action panels:</strong> controls align left with no extra row or form margins. Buttons keep normal internal padding. Destructive account actions align right.</li>
-        <li><strong>Tables:</strong> informative lists with linked names; record pages own their actions. The Users table shows Name, Email and Extended roles, excluding basic.</li>
+        <li><strong>Tables:</strong> informative lists with linked names; record pages own their actions. Keep action buttons, disclosure controls and secondary detail lines outside rows. Search and filters belong above the table in a separate panel.</li>
         <li><strong>User details:</strong> bold labels and aligned values in a borderless definition list. Contact confirmation, Microsoft account, extended roles and time zone are distinct.</li>
         <li><strong>Buttons:</strong> purple Save, green +New, neutral Edit and a clearly separated destructive action. Disabled controls and saved/unsaved states are explicit.</li>
         <li><strong>Disabled controls:</strong> form fields and buttons use a light grey background with black text at full opacity. Save progress buttons retain their existing state styling.</li>
@@ -30,8 +30,10 @@
 <x-app.guide-divider />
 <div class="app-content">
     <h2>Explore the guide</h2>
-    <p><a href="/design/phase-a/elements">General elements</a> shows panels, buttons, status badges, fields, tables, notices and a working modal preview.</p>
-    <p><a href="/design/phase-a/tables">Tables</a> compares a table within a padded panel with the table-as-panel index layout.</p>
+    <p><a href="/design/phase-a/presentation">Presentation</a> covers display density, titles, information panels, table panels, responsive columns and status indicators.</p>
+    <p><a href="/design/phase-a/forms">Forms</a> covers input types, numeric values, buttons, save-progress states and validation errors.</p>
+    <p><a href="/design/phase-a/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
+    <p><a href="/design/phase-a/orphaned">Orphaned examples</a> temporarily retains environment indicators, record details, permanent notes, loading states, account feedback, role actions and the legacy table layout.</p>
     <p><a href="/design/phase-a/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
     @if(request()->getHost() === 'tg-inventory-app.test')
     <p><a href="/design/phase-a/wrapper">Application frame</a> shows the current shared header, navigation and a two-panel user example.</p>

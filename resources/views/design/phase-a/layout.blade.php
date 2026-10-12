@@ -2,8 +2,10 @@
 @section('content-sections')
 <nav class="app-section-nav" aria-label="Style guide">
     <a href="/design/phase-a/overview" @if(request()->is('design/phase-a/overview')) aria-current="page" @endif>Overview</a>
-    <a href="/design/phase-a/elements" @if(request()->is('design/phase-a/elements')) aria-current="page" @endif>General elements</a>
-    <a href="/design/phase-a/tables" @if(request()->is('design/phase-a/tables')) aria-current="page" @endif>Tables</a>
+    <a href="/design/phase-a/presentation" @if(request()->is('design/phase-a/presentation')) aria-current="page" @endif>Presentation</a>
+    <a href="/design/phase-a/forms" @if(request()->is('design/phase-a/forms')) aria-current="page" @endif>Forms</a>
+    <a href="/design/phase-a/notifications" @if(request()->is('design/phase-a/notifications')) aria-current="page" @endif>Notifications</a>
+    <a href="/design/phase-a/orphaned" @if(request()->is('design/phase-a/orphaned')) aria-current="page" @endif>Orphaned</a>
     <a href="/design/phase-a/examples" @if(request()->is('design/phase-a/examples')) aria-current="page" @endif>Example uses</a>
     @if(app()->environment('local'))
     <a href="/design/phase-a/wrapper" @if(request()->is('design/phase-a/wrapper')) aria-current="page" @endif>Application frame</a>

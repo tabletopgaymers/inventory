@@ -152,9 +152,25 @@ class CatalogController
                     $service->activeAssociation('categories', (int) $data['category_id'], $old ? (int) $old->category_id : null);
                     if ($old && $old->sku_prefix !== $data['sku_prefix']) {
                         $items = DB::table('items')->where('collection_id', $old->id)->orderBy('id')->lockForUpdate()->get(['id', 'sku_suffix']);
+                        $finalSkus = $items->mapWithKeys(fn ($item) => [$item->id => CatalogRecords::itemSku($data['sku_prefix'], $item->sku_suffix)]);
+                        if ($finalSkus->map(fn ($sku) => strtolower($sku))->unique()->count() !== $finalSkus->count()
+                            || DB::table('items')->where('collection_id', '!=', $old->id)->whereIn('sku', $finalSkus->values()->all())->exists()) {
+                            throw ValidationException::withMessages(['sku_prefix' => 'This prefix would create duplicate item SKUs. Choose a unique prefix.']);
+                        }
+                        // Vacate every old SKU before assigning the final set: a final
+                        // SKU may legitimately equal a sibling's current SKU.
+                        if ($items->isNotEmpty()) {
+                            do {
+                                $temporaryPrefix = ':prefix-change:'.bin2hex(random_bytes(16)).':';
+                                $temporarySkus = $items->mapWithKeys(fn ($item) => [$item->id => $temporaryPrefix.$item->id]);
+                            } while (DB::table('items')->whereIn('sku', $temporarySkus->values()->all())->exists());
+                            foreach ($temporarySkus as $itemId => $sku) {
+                                DB::table('items')->where('id', $itemId)->update(['sku' => $sku]);
+                            }
+                        }
                         foreach ($items as $item) {
                             DB::table('items')->where('id', $item->id)->update([
-                                'sku' => CatalogRecords::itemSku($data['sku_prefix'], $item->sku_suffix),
+                                'sku' => $finalSkus[$item->id],
                                 'updated_at' => now('UTC'),
                             ]);
                         }

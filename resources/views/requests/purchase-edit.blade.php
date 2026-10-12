@@ -12,8 +12,8 @@
 </div><form id="purchase-work" method="post" action="/purchases/work/{{ $token }}" data-request-form data-purchase-form="work">
 <div class="app-content">@if(!empty($legacyToken))<p data-purchase-legacy-key="{{ auth()->id() }}:intake:{{ $legacyToken }}">This older intake is now a working purchase request. Unsaved intake fields retained in this browser are restored below.</p>@endif
 @csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="revision" value="{{ $draft['revision'] ?? 0 }}"><input type="hidden" name="work_version" value="{{ $draft['version'] }}"><input type="hidden" name="progress_step" value="{{ $step }}">
-<section @if($step !== 'request') hidden @endif><label>Title<input name="title" required maxlength="255" value="{{ $draft['values']['title'] }}"></label><label>Suggested merchant (optional)<input name="suggested_merchant" maxlength="255" value="{{ $draft['values']['suggested_merchant'] }}"></label></section>
-<label>{{ $step === 'items' ? 'If these are new items, describe them with their quantities here.' : 'Request details (optional)' }}<textarea name="details" maxlength="5000">{{ $draft['values']['details'] }}</textarea></label>
+<section @if($step !== 'request') hidden @endif><label>Title<input name="title" required maxlength="255" value="{{ $draft['values']['title'] }}"></label><label>Suggested merchant<input data-optional name="suggested_merchant" maxlength="255" value="{{ $draft['values']['suggested_merchant'] }}"></label></section>
+<label>{{ $step === 'items' ? 'If these are new items, describe them with their quantities here.' : 'Request details' }}<textarea @if($step !== 'items') data-optional @endif name="details" maxlength="5000">{{ $draft['values']['details'] }}</textarea></label>
 </div><section @if($step !== 'items') hidden @endif>
 @include('requests.purchase-catalog', ['planning' => false, 'catalogEditable' => true, 'tablePanel' => true])
 </section>

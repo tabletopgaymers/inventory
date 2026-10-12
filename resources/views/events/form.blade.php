@@ -10,8 +10,8 @@
 </div><form method="post" action="{{ $base }}" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="work" value="{{ $token }}"><div class="app-content">
 @if($mode==='plan')
 <label>Event name<input name="name" required maxlength="255" value="{{ $values['name'] ?? '' }}"></label>
-<label>Venue (optional)<input name="venue" maxlength="255" value="{{ $values['venue'] ?? '' }}"></label>
-<label>Notes (optional)<textarea name="notes" maxlength="5000">{{ $values['notes'] ?? '' }}</textarea></label>
+<label>Venue<input data-optional name="venue" maxlength="255" value="{{ $values['venue'] ?? '' }}"></label>
+<label>Notes<textarea data-optional name="notes" maxlength="5000">{{ $values['notes'] ?? '' }}</textarea></label>
 <label>Initial storage source (required for activation)<select name="initial_source_id"><option value="">Choose initial source</option>@foreach($locations->where('state','active') as $location)<option value="{{ $location->id }}" @selected((string)$location->id===(string)($values['initial_source_id']??''))>{{ $location->name }}</option>@endforeach</select></label>
 <label>Default leftover destination (required for activation)<select name="default_destination"><option value="">Choose default destination</option>@foreach($destinations as $key=>$label)<option value="{{ $key }}" @selected($key===($values['default_destination']??''))>{{ $label }}</option>@endforeach</select></label>
 @endif
@@ -44,7 +44,7 @@
 </fieldset>@endforeach
 <input type="hidden" name="split_item" value=""><input type="hidden" name="remove_split" value="">
 @endif
-@if($mode==='correction')<label>Explanation (optional)<textarea name="explanation" maxlength="5000">{{ $values['explanation'] ?? '' }}</textarea></label>@endif
+@if($mode==='correction')<label>Explanation<textarea data-optional name="explanation" maxlength="5000">{{ $values['explanation'] ?? '' }}</textarea></label>@endif
 <div class="actions"><a class="discard" href="{{ $row ? '/events/'.$row->id : '/events' }}">Discard changes</a>@if($mode==='plan')<button class="primary" name="action" value="save" formnovalidate>Save planning</button>@else @if($mode==='counts')<button name="action" value="save" formnovalidate>Save progress</button>@endif<button class="primary" name="action" value="review">{{ $mode==='counts' ? 'Review irreversible finalization' : 'Review '.$mode }}</button>@endif</div>
 </div></form><script src="/requests.js?v=inline-decisions-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

@@ -159,7 +159,8 @@
 }
 .app-shell label:not(.app-choice) input, .app-shell label select, .app-shell label textarea { display: block; width: 100%; max-width: 36rem; margin-top: 0.175rem; }
 .app-shell label textarea { min-height: 6rem; max-width: 48rem; }
-.app-shell input[readonly] { background: var(--app-page); }
+.app-shell input[readonly]:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled),
+.app-shell textarea[readonly]:not(:disabled) { background: #f4f2f8; }
 /* Keep disabled controls readable across field and button variants. */
 .app-shell :is(input, select, textarea, button):disabled:not(.app-save-progress) {
   background-color: #e5e7eb !important; color: #000 !important; -webkit-text-fill-color: #000 !important;

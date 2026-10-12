@@ -158,6 +158,51 @@
     }, true);
 })();
 
+// Keep field-label qualifiers tied to explicit metadata and native field state.
+(() => {
+    const supportedTypes = new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'date', 'month', 'week', 'time', 'datetime-local', 'number']);
+    const ariaLabels = new WeakMap();
+    const qualify = (label, field, text) => {
+        label = label.querySelector('[data-field-label]') || label;
+        const existing = label.querySelector(':scope > [data-field-qualifier]');
+        if (!text) { existing?.remove(); return; }
+        if (existing) { if (existing.textContent !== text) existing.textContent = text; return; }
+        const suffix = document.createElement('span');
+        suffix.dataset.fieldQualifier = '';
+        suffix.textContent = text;
+        let anchor = field;
+        if (label.contains(field) && !['checkbox', 'radio'].includes(field.type)) {
+            while (anchor.parentElement !== label) anchor = anchor.parentElement;
+            label.insertBefore(suffix, anchor);
+        } else label.append(suffix);
+    };
+    const update = () => {
+        document.querySelectorAll('label').forEach(label => {
+            const field = label.control;
+            const readOnly = field && (field instanceof HTMLTextAreaElement || (field instanceof HTMLInputElement && supportedTypes.has(field.type)))
+                && field.readOnly && !field.matches(':disabled');
+            const optional = field?.hasAttribute('data-optional') && !field.required && !field.readOnly;
+            qualify(label, field, readOnly ? ' (read only)' : (optional ? ' (optional)' : ''));
+        });
+        document.querySelectorAll('fieldset > legend').forEach(legend => {
+            const group = legend.parentElement;
+            qualify(legend, group, group.hasAttribute('data-optional') ? ' (optional)' : '');
+        });
+        document.querySelectorAll('[data-optional][aria-label]').forEach(field => {
+            if (!ariaLabels.has(field)) ariaLabels.set(field, field.getAttribute('aria-label'));
+            const label = ariaLabels.get(field) + (!field.required && !field.readOnly ? ' (optional)' : '');
+            if (field.getAttribute('aria-label') !== label) field.setAttribute('aria-label', label);
+        });
+    };
+    update();
+    new MutationObserver(records => {
+        const relevant = records.some(record => record.type === 'attributes'
+            || [...record.addedNodes, ...record.removedNodes].some(node => node instanceof Element
+                && (node.matches('label, input, textarea, select, fieldset, legend') || node.querySelector('label, input, textarea, select, fieldset, legend'))));
+        if (relevant) update();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['readonly', 'disabled', 'required', 'data-optional', 'for', 'id'] });
+})();
+
 // Dismiss informational banners for this page without losing references used by
 // live feedback. A later message may reuse and show the same banner again.
 (() => {

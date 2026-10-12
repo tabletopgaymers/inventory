@@ -1,5 +1,34 @@
 (() => {
     const origins = new WeakMap();
+    const decisionDialog = document.getElementById('guide-decision-dialog');
+    document.querySelectorAll('[data-guide-decision]').forEach(trigger => {
+        if (!decisionDialog) return;
+        trigger.addEventListener('click', () => {
+            origins.set(decisionDialog, trigger);
+            const action = trigger.dataset.guideDecisionLabel;
+            const unsaved = action === 'Leave without saving';
+            decisionDialog.querySelector('#guide-decision-title').textContent = unsaved ? 'Unsaved changes' : 'Confirm action';
+            decisionDialog.querySelector('#guide-decision-description').textContent = trigger.dataset.guideDecision;
+            decisionDialog.querySelector('#guide-decision-cancel').textContent = unsaved ? 'Keep editing' : 'Cancel';
+            const confirm = decisionDialog.querySelector('#guide-decision-confirm');
+            confirm.textContent = action;
+            confirm.className = unsaved ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
+            decisionDialog.showModal();
+        });
+    });
+    document.querySelector('[data-guide-decision-confirm]')?.addEventListener('click', () => {
+        const result = document.getElementById('guide-decision-result');
+        result.textContent = 'Preview confirmed. No records were changed and no navigation occurred.';
+        result.hidden = false;
+    });
+    const widthToggle = document.querySelector('[data-guide-width-toggle]');
+    const columnPanel = document.getElementById('guide-column-panel');
+    widthToggle?.addEventListener('click', () => {
+        const narrow = widthToggle.getAttribute('aria-pressed') !== 'true';
+        columnPanel.style.maxWidth = narrow ? '24rem' : '';
+        widthToggle.setAttribute('aria-pressed', String(narrow));
+        widthToggle.textContent = narrow ? 'Show full-width panel' : 'Show narrow panel';
+    });
     document.querySelectorAll('[data-guide-open]').forEach(trigger => {
         const dialog = document.getElementById(trigger.dataset.guideOpen);
         if (!dialog) return;
