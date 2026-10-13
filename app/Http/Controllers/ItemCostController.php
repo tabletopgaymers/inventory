@@ -27,6 +27,15 @@ class ItemCostController
         return ($request->is('catalog/*') ? '/catalog/items/' : '/inventory/items/').$item;
     }
 
+    private function saved(Request $request, int $item, string $message)
+    {
+        if ($request->expectsJson()) {
+            $request->session()->flash('success', $message);
+            return response()->json(['id' => $item]);
+        }
+        return redirect($this->itemUrl($request, $item))->with('success', $message);
+    }
+
     public function edit(Request $request, int $item)
     {
         $this->access($request);
@@ -51,18 +60,21 @@ class ItemCostController
         $draft = $request->session()->get('cost_drafts.'.$data['operation']);
         abort_unless(is_array($draft) && $draft['actor'] === (int) $request->user()->id && $draft['item'] === $item, 404);
         if (isset($draft['done'])) {
-            return redirect($this->itemUrl($request, $item))->with('success', 'Cost already saved.');
+            return $this->saved($request, $item, 'Cost already saved.');
         }
         try {
             $id = app(DailyInventoryPosting::class)->cost((int) $request->user()->id, $item, $data['operation'], $data['unit_cost'], $data['rationale'] ?? null);
         } catch (QueryException) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Cost was not saved. Your inputs are retained; try again.'], 422);
+            }
             return back()->withInput()->with('error', 'Cost was not saved. Your inputs are retained; try again.');
         }
         $draft['done'] = true;
         $draft['result'] = $id;
         $request->session()->put('cost_drafts.'.$data['operation'], $draft);
 
-        return redirect($this->itemUrl($request, $item))->with('success', $id ? 'Cost adjusted; quantities are unchanged.' : 'Cost unchanged; no history entry created.');
+        return $this->saved($request, $item, $id ? 'Cost adjusted; quantities are unchanged.' : 'Cost unchanged; no history entry created.');
     }
 
     public function show(int $entry)

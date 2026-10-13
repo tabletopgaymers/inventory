@@ -20,7 +20,7 @@
             }
         });
         errorAttributes.clear();
-        const errors = [...form.querySelectorAll('.app-field-error')];
+        const errors = [...new Set([...form.querySelectorAll('.app-field-error'), ...document.querySelectorAll('[data-record-save-error]')])];
         const errorIds = new Set(errors.map(error => error.id).filter(Boolean));
         for (const field of form.elements) {
             const described = (field.getAttribute('aria-describedby') || '').split(' ').filter(Boolean);
@@ -83,9 +83,12 @@
                     const inline = document.createElement('p');
                     inline.id = 'catalog-field-error-' + errorIndex + '-' + index;
                     inline.className = 'app-field-error';
+                    inline.dataset.recordSaveError = '';
                     inline.textContent = message;
                     (field.closest('label') || field).insertAdjacentElement('afterend', inline);
                     field.setAttribute('aria-invalid', 'true');
+                    const disclosure = field.closest('details');
+                    if (disclosure) disclosure.open = true;
                     field.setAttribute('aria-describedby', [field.getAttribute('aria-describedby'), inline.id].filter(Boolean).join(' '));
                 });
                 errorIndex++;
@@ -104,6 +107,10 @@
     window.appNavigationGuards.push({ modal: true, shouldWarn: () => dirty(), message: 'Your changes have not been saved. Keep editing or leave without saving.' });
     form.addEventListener('input', render);
     form.addEventListener('change', render);
+    [...form.elements].filter(field => !form.contains(field)).forEach(field => {
+        field.addEventListener('input', render);
+        field.addEventListener('change', render);
+    });
     form.addEventListener('submit', async event => {
         event.preventDefault();
         if (busy) return;

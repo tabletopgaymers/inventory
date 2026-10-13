@@ -1,4 +1,13 @@
-<x-app.table-region label="Item history" class="app-list-table-panel"><table class="history"><thead><tr><th>Date</th><th>Description</th><th class="number">Quantity</th><th class="number">Unit cost</th></tr></thead><tbody>
+<x-app.table-region label="Item history" class="app-list-table-panel">
+@if($historyHeader ?? false)
+<x-slot:header>
+<div class="app-table-panel-toolbar">
+<h2 id="history" style="margin:0">History</h2>
+<span>Sort by <a href="?{{ http_build_query($historyContext + ['sort' => 'date']) }}#history">date</a> or <a href="?{{ http_build_query($historyContext + ['sort' => 'description']) }}#history">description</a>.</span>
+</div>
+</x-slot:header>
+@endif
+<table class="history"><thead><tr><th>Date</th><th>Description</th><th class="number">Quantity</th><th class="number">Unit cost</th></tr></thead><tbody>
 
 @forelse($entries as $entry)
 @php($sourceUrl = $entry->request_url ?? (isset($entry->cost_entry_id) ? '/inventory/cost-adjustments/'.$entry->cost_entry_id : '/inventory/adjustments/'.($entry->inventory_adjustment_id ?? '')))

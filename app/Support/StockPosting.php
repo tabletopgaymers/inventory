@@ -9,11 +9,11 @@ use Illuminate\Validation\ValidationException;
 
 class StockPosting
 {
-    public function post(int $actorId, int $itemId, string $operation, array $rows): int
+    public function post(int $actorId, int $itemId, string $operation, array $rows, bool $starting = false): int
     {
         abort_unless(Str::isUuid($operation), 422);
 
-        return DB::transaction(function () use ($actorId, $itemId, $operation, $rows) {
+        return DB::transaction(function () use ($actorId, $itemId, $operation, $rows, $starting) {
             // Match access-management serialization so roles/disablement cannot race Save.
             DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
             $actor = User::findOrFail($actorId);
@@ -30,18 +30,27 @@ class StockPosting
             $received = array_map('strval', array_keys($rows));
             sort($ids);
             sort($received);
-            abort_unless($ids === $received, 422);
+            if ($starting) {
+                if (array_diff($received, $ids)) {
+                    throw ValidationException::withMessages(['starting_inventory' => 'Choose existing active locations for starting inventory.']);
+                }
+            } else {
+                abort_unless($ids === $received, 422);
+            }
             $balances = DB::table('inventory_balances')->where('item_id', $itemId)->orderBy('storage_location_id')->lockForUpdate()->get()->keyBy('storage_location_id');
             $changes = [];
+            if ($starting) abort_unless($balances->isEmpty(), 422);
             foreach ($locations as $location) {
+                if ($starting && !array_key_exists($location->id, $rows)) continue;
+                if ($starting) app(CatalogRecords::class)->activeAssociation('storage_locations', (int) $location->id);
                 $row = $rows[$location->id];
                 $after = StockNumbers::finalQuantity($row['set'] ?? null, $row['adjust'] ?? null, 'rows.'.$location->id);
-                $rationale = $row['rationale'] ?? null;
+                $rationale = $starting ? 'starting inventory' : ($row['rationale'] ?? null);
                 if ($rationale !== null && (! is_string($rationale) || mb_strlen($rationale) > 1000)) {
                     throw ValidationException::withMessages(['rows' => 'Rationale must be text up to 1,000 characters.']);
                 }
                 $before = StockNumbers::quantity((int) ($balances->get($location->id)->quantity ?? 0), 'current_quantity');
-                if ($before !== $after) {
+                if ($before !== $after || $starting) {
                     $changes[] = [$location, $before, $after, $rationale];
                 }
             }
@@ -55,7 +64,7 @@ class StockPosting
                 DB::table('inventory_balances')->updateOrInsert(['item_id' => $itemId, 'storage_location_id' => $location->id], ['quantity' => $after, 'created_at' => $balances->get($location->id)->created_at ?? $now, 'updated_at' => $now]);
                 DB::table('inventory_adjustment_entries')->insert([
                     'inventory_adjustment_id' => $group, 'storage_location_id' => $location->id,
-                    'location_name' => $location->name, 'description' => 'Adjustment: '.$location->name,
+                    'location_name' => $location->name, 'description' => ($starting ? 'Starting inventory: ' : 'Adjustment: ').$location->name,
                     'before_quantity' => $before, 'after_quantity' => $after, 'quantity_change' => $after - $before,
                     'unit_cost' => $cost, 'rationale' => $rationale === '' ? null : $rationale,
                 ]);

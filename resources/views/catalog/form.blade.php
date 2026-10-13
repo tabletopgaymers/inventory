@@ -25,6 +25,16 @@
 @if(in_array($kind,['suppliers','purposes','programs']))<label>Notes<textarea data-optional name="notes" maxlength="5000">{{ old('notes', $kind === 'items' ? $metadata?->notes : $record?->notes) }}</textarea></label>@endif
 </form>
 </div>
+@if($kind === 'items' && !$record)
+<details class="app-collapsible-panel app-starting-inventory">
+<summary><h2>Set starting inventory</h2></summary>
+<div class="app-collapsible-panel-body">
+<div class="app-catalog-item-columns">
+@foreach($startingLocations as $location)<label>{{ $location->name }}<input type="text" inputmode="numeric" form="catalog-form" name="starting_inventory[{{ $location->id }}]" aria-label="Starting quantity at {{ $location->name }}" value="{{ old('starting_inventory.'.$location->id) }}"></label>@endforeach
+</div>
+</div>
+</details>
+@endif
 @if($record)
 <p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>
 @if($kind === 'storage_locations' && $record->is_central)

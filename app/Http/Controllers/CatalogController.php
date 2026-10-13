@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Support\BaselineProbe;
 use App\Support\CatalogRecords;
 use App\Support\StockNumbers;
+use App\Support\StockPosting;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CatalogController
@@ -126,6 +128,7 @@ class CatalogController
         $inventoryContext = $kind === 'items' && $request->is('inventory/*');
         $recordBase = $inventoryContext ? '/inventory/items/' : CatalogRecords::viewBase($kind);
         $context = ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
+        $context['startingLocations'] = $kind === 'items' && !$record ? $service->records('storage_locations')->where('state', 'active')->values() : collect();
         return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
     }
 
@@ -185,15 +188,25 @@ class CatalogController
             $rules['bundle_type'][] = 'required_with:bundle_quantity';
             $rules['notes'] = $this->multilineText();
             foreach (['irs_fmv', 'in_person_ask', 'online_ask'] as $field) {
+                if (is_string($request->input($field)) && preg_match('/\A\.\d{1,12}\z/D', $request->input($field))) {
+                    $request->merge([$field => '0'.$request->input($field)]);
+                }
                 $rules[$field] = ['nullable', 'string', 'regex:/\A\d{1,12}(?:\.\d{1,12})?\z/D'];
             }
             $rules['unit_cost'] = $record ? ['prohibited'] : ['nullable', 'string', 'regex:/\A\d{1,12}(?:\.\d{1,12})?\z/D'];
+            $rules['starting_inventory'] = $record ? ['prohibited'] : ['nullable', 'array'];
+            if (!$record) {
+                $rules['starting_inventory.*'] = ['nullable', 'integer', 'between:-1000000000,1000000000'];
+            }
         }
         if ($kind === 'suppliers') {
             $rules += ['contact_name' => $this->text(), 'email' => ['nullable', 'string', 'max:255', 'email'], 'phone' => $this->text(), 'website' => ['nullable', 'string', 'max:255', 'url:http,https'], 'address' => $this->multilineText()];
             $rules['notes'] = $this->multilineText();
         }
-        $data = $request->validate($rules);
+        $data = $request->validate($rules, [
+            'starting_inventory.*.integer' => 'Enter a whole-number starting quantity.',
+            'starting_inventory.*.between' => 'Enter a starting quantity between −1,000,000,000 and 1,000,000,000.',
+        ]);
         try {
             $id = DB::transaction(function () use ($request, $kind, $record, $data) {
                 $service = app(CatalogRecords::class);
@@ -289,6 +302,17 @@ class CatalogController
                     DB::table('item_programs')->where('item_id', $id)->delete();
                     foreach ($data['programs'] ?? [] as $program) {
                         DB::table('item_programs')->insert(['item_id' => $id, 'program_id' => $program]);
+                    }
+                    if (!$old) {
+                        $startingRows = [];
+                        foreach ($data['starting_inventory'] ?? [] as $locationId => $quantity) {
+                            if ($quantity !== null && $quantity !== '') {
+                                $startingRows[$locationId] = ['set' => (string) $quantity];
+                            }
+                        }
+                        if ($startingRows !== []) {
+                            app(StockPosting::class)->post((int) $request->user()->id, $id, (string) Str::uuid(), $startingRows, true);
+                        }
                     }
                 }
 

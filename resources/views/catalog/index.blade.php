@@ -1,6 +1,6 @@
 @extends('layout')
 @php
-    $columnCount = $kind === 'categories' ? 4 : ($kind === 'collections' ? 5 : ($kind === 'suppliers' ? 4 : 3));
+    $columnCount = $kind === 'categories' ? 4 : ($kind === 'collections' ? 5 : ($kind === 'suppliers' ? 5 : 3));
 @endphp
 @section('title', $collection ? 'Items in '.$collection->name : ($category ? 'Collections in '.$category->name : $kinds[$kind]))
 @if($canManage)
@@ -19,7 +19,7 @@
 @elseif($kind === 'collections')<th>Description</th><th>SKU Prefix</th><th class="number">Entries</th>
 @elseif($kind === 'items')<th>SKU</th>
 @elseif($kind === 'storage_locations')<th>Description</th>
-@elseif($kind === 'suppliers')<th>Contact</th><th>Email</th>
+@elseif($kind === 'suppliers')<th>Contact</th><th>Email</th><th>Website</th>
 @else<th>Notes</th>@endif
 @include('catalog.status-filter')
 </tr></thead><tbody>
@@ -43,7 +43,13 @@
 @elseif($kind === 'collections')<td>{{ $record->description ?: '—' }}</td><td>{{ $record->sku_prefix }}</td><td class="number"><a href="/catalog/items?collection={{ $record->id }}">{{ $record->child_count }}<span class="sr-only"> items in {{ $record->name }}</span></a></td>
 @elseif($kind === 'items')<td>{{ $record->sku }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>
 @elseif($kind === 'storage_locations')<td>{{ $record->description ?: '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>
-@elseif($kind === 'suppliers')<td>{{ $record->contact_name ?: '—' }}</td><td>{{ $record->email ?: '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>
+@elseif($kind === 'suppliers')<td>{{ $record->contact_name ?: '—' }}</td><td>{{ $record->email ?: '—' }}</td>
+@php
+    $websiteHost = parse_url($record->website ?? '', PHP_URL_HOST);
+    $websiteScheme = strtolower(parse_url($record->website ?? '', PHP_URL_SCHEME) ?? '');
+@endphp
+<td>@if($websiteHost && in_array($websiteScheme, ['http', 'https'], true))<a href="{{ $record->website }}" target="_blank" rel="noopener noreferrer">{{ preg_replace('/\Awww\./i', '', $websiteHost) }}</a>@else—@endif</td>
+<td><x-app.status-badge :status="ucfirst($record->state)" /></td>
 @else<td>{{ $record->notes ?: '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>@endif
 @if(in_array($kind, ['categories', 'collections']))
 <td><x-app.status-badge :status="ucfirst($record->state)" /></td>

@@ -8,8 +8,27 @@
 <div class="app-content">
     <dl class="app-user-details">
         @if($kind === 'suppliers')
+        @php
+            $emailHref = $record->contact_name
+                ? 'mailto:%22'.rawurlencode($record->contact_name).'%22<'.$record->email.'>'
+                : 'mailto:'.$record->email;
+            $websiteText = preg_replace('/\Ahttps?:\/\//i', '', $record->website ?? '');
+            $websiteText = preg_replace('/\Awww\./i', '', $websiteText);
+            if (mb_strlen($websiteText) > 30) $websiteText = mb_substr($websiteText, 0, 30).'…';
+            $websiteScheme = strtolower(parse_url($record->website ?? '', PHP_URL_SCHEME) ?? '');
+        @endphp
         @foreach(['contact_name' => 'Contact name', 'email' => 'Email', 'phone' => 'Phone', 'website' => 'Website', 'address' => 'Address'] as $field => $fieldLabel)
-        <dt>{{ $fieldLabel }}</dt><dd class="plain-text">{{ $record->$field ?: '—' }}</dd>
+        <dt>{{ $fieldLabel }}</dt>
+        @if($field === 'address')<dd class="plain-text">{{ $record->address ?: '—' }}</dd>
+        @else<dd>
+        @if(!$record->$field) —
+        @elseif($field === 'email')<a href="{{ $emailHref }}">{{ $record->email }}</a>
+        @elseif($field === 'phone')<a href="tel:{{ preg_replace('/\s+/u', '', $record->phone) }}">{{ $record->phone }}</a>
+        @elseif($field === 'website' && in_array($websiteScheme, ['http', 'https'], true))<a href="{{ $record->website }}" title="{{ $record->website }}" target="_blank" rel="noopener noreferrer">{{ $websiteText }}</a>
+        @else{{ $record->$field }}
+        @endif
+        </dd>
+        @endif
         @endforeach
         @endif
         @if($category)<dt>Category</dt><dd><a href="/catalog/categories/{{ $category->id }}">{{ $category->name }}</a></dd><dt>SKU prefix</dt><dd>{{ $record->sku_prefix }}</dd>@endif

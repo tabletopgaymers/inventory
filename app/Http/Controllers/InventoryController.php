@@ -231,7 +231,7 @@ class InventoryController
         // Historical name determines central ordering; do not rewrite snapshots from current names.
         $entries = $entries->sortBy(fn ($entry) => [$entry->location_name === 'Central' ? 0 : 1, $entry->location_name])->values();
 
-        return view($result ? 'inventory.result' : 'inventory.adjustment', ['group' => $group, 'entries' => $entries]);
+        return view($result ? 'inventory.result' : 'inventory.adjustment', ['group' => $group, 'entries' => $entries, 'classification' => $this->item((int) $group->item_id)]);
     }
 
     public function result(int $adjustment)

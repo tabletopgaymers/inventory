@@ -180,6 +180,15 @@
 .app-shell details:not(.app-account) > summary { padding: 0.375rem 1rem; font-weight: 600; cursor: pointer; }
 .app-shell details:not(.app-account) > :not(summary) { margin-left: 1rem; margin-right: 1rem; }
 .app-shell .active-filter > summary { background: #5b21b612; }
+.app-shell details.app-collapsible-panel { background: var(--app-surface); border-radius: var(--app-radius); margin: .75rem 0; }
+.app-shell details.app-collapsible-panel > summary { padding: var(--app-density-panel-y) 1.5rem; }
+.app-shell details.app-collapsible-panel > summary > h2 { display: inline; margin: 0; }
+.app-shell details.app-starting-inventory { width: 100%; }
+.app-shell .app-starting-inventory .app-catalog-item-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--app-density-field-y) 2rem; }
+.app-shell .app-starting-inventory .app-catalog-item-columns > label { margin: 0; min-width: 0; }
+@media (max-width: 64rem) { .app-shell .app-starting-inventory .app-catalog-item-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 40rem) { .app-shell .app-starting-inventory .app-catalog-item-columns { grid-template-columns: minmax(0, 1fr); } }
+.app-shell details.app-collapsible-panel > .app-collapsible-panel-body { margin: 0; padding: 0 1.5rem var(--app-density-panel-y); }
 .app-field-help { font-size: .875rem; color: var(--app-muted); }
 .app-field-error { color: var(--app-danger); }
 .app-shell .notice, .app-shell .warning, .app-shell .error { border: 1px solid; border-radius: .5rem; padding: 0.4rem 1rem; margin: 0.5rem 0; }
@@ -255,7 +264,9 @@
 .app-table-panel-footer { border-top: 1px solid var(--app-border); }
 .app-table-panel-body { min-width: 0; overflow-x: auto; }
 .app-table-panel-body:focus-visible { outline: 2px solid var(--app-primary); outline-offset: -2px; }
-.app-shell .app-table-panel-sections thead th { border-radius: 0; }
+.app-shell .app-table-panel-sections thead th,
+.app-shell .app-table-panel-sections thead th:first-child,
+.app-shell .app-table-panel-sections thead th:last-child { border-radius: 0; }
 .app-table-panel-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; }
 .app-table-panel-copy { flex: 1 1 18rem; min-width: 0; }
 .app-table-panel-toolbar .app-actions { margin: 0; }
