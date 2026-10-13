@@ -6,7 +6,7 @@
 @endsection
 @section('content-sections')
 <div class="app-content">
-    <dl class="app-user-details"><dt>Description</dt><dd>{{ $location->description ?: '—' }}</dd><dt>Notes</dt><dd class="plain-text">{{ $location->notes ?: '—' }}</dd></dl>
+    <dl class="app-user-details"><dt>Description</dt><dd>{{ $location->description ?: '—' }}</dd><dt>Mailing address</dt><dd class="plain-text">{{ $location->mailing_address ?: '—' }}</dd></dl>
 </div>
 <h2>Inventory</h2>
 <x-app.table-region label="Location inventory" class="app-list-table-panel">

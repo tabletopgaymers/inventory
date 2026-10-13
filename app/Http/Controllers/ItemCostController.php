@@ -22,6 +22,11 @@ class ItemCostController
         abort_unless($request->user()->hasRole('admin'), 403);
     }
 
+    private function itemUrl(Request $request, int $item): string
+    {
+        return ($request->is('catalog/*') ? '/catalog/items/' : '/inventory/items/').$item;
+    }
+
     public function edit(Request $request, int $item)
     {
         $this->access($request);
@@ -33,17 +38,20 @@ class ItemCostController
             $request->session()->put('cost_drafts', [$token => ['actor' => (int) $request->user()->id, 'item' => $item]]);
         }
 
-        return view('inventory.cost-edit', ['item' => $row, 'token' => $token]);
+        return view('inventory.cost-edit', ['item' => $row, 'token' => $token, 'itemUrl' => $this->itemUrl($request, $item)]);
     }
 
     public function save(Request $request, int $item)
     {
         $this->access($request);
+        if (is_string($request->input('unit_cost')) && preg_match('/\A\.\d{1,12}\z/D', $request->input('unit_cost'))) {
+            $request->merge(['unit_cost' => '0'.$request->input('unit_cost')]);
+        }
         $data = $request->validate(['operation' => ['required', 'uuid'], 'unit_cost' => ['required', 'string', 'regex:/\A\d{1,12}(?:\.\d{1,12})?\z/D'], 'rationale' => ['nullable', 'string', 'max:1000', 'not_regex:/[\x00-\x1F\x7F]/u']]);
         $draft = $request->session()->get('cost_drafts.'.$data['operation']);
         abort_unless(is_array($draft) && $draft['actor'] === (int) $request->user()->id && $draft['item'] === $item, 404);
         if (isset($draft['done'])) {
-            return redirect($draft['result'] ? '/inventory/cost-adjustments/'.$draft['result'] : '/inventory/items/'.$item)->with('success', 'Cost already saved.');
+            return redirect($this->itemUrl($request, $item))->with('success', 'Cost already saved.');
         }
         try {
             $id = app(DailyInventoryPosting::class)->cost((int) $request->user()->id, $item, $data['operation'], $data['unit_cost'], $data['rationale'] ?? null);
@@ -54,7 +62,7 @@ class ItemCostController
         $draft['result'] = $id;
         $request->session()->put('cost_drafts.'.$data['operation'], $draft);
 
-        return redirect($id ? '/inventory/cost-adjustments/'.$id : '/inventory/items/'.$item)->with('success', $id ? 'Cost adjusted; quantities are unchanged.' : 'Cost unchanged; no history entry created.');
+        return redirect($this->itemUrl($request, $item))->with('success', $id ? 'Cost adjusted; quantities are unchanged.' : 'Cost unchanged; no history entry created.');
     }
 
     public function show(int $entry)

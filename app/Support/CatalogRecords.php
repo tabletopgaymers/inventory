@@ -13,7 +13,7 @@ class CatalogRecords
     public static function viewBase(string $kind): string
     {
         return match ($kind) {
-            'items' => '/inventory/items/', 'storage_locations' => '/inventory/locations/',
+            'items' => '/catalog/items/', 'storage_locations' => '/inventory/locations/',
             default => '/catalog/'.$kind.'/',
         };
     }
@@ -36,7 +36,7 @@ class CatalogRecords
         }
         $query = DB::table($kind.' as record')->leftJoin('catalog_metadata as metadata', function ($join) use ($kind) {
             $join->on('metadata.record_id', '=', 'record.id')->where('metadata.kind', $kind);
-        })->select('record.*', DB::raw("COALESCE(metadata.state, 'active') as state"), 'metadata.description', 'metadata.notes');
+        })->select('record.*', DB::raw("COALESCE(metadata.state, 'active') as state"), 'metadata.description', 'metadata.notes', 'metadata.mailing_address');
         if ($kind === 'storage_locations') {
             $query->orderByDesc('record.is_central');
         }

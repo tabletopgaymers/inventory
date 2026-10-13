@@ -22,6 +22,17 @@ class CatalogController
         $this->ready();
         $service = app(CatalogRecords::class);
         $records = $service->records($kind);
+        $statusOptions = ['active', 'inactive', 'archived'];
+        $selectedStatuses = $statusOptions;
+        if ($request->has('status_filter')) {
+            $filter = $request->validate([
+                'status_filter' => ['required', 'in:1'],
+                'statuses' => ['nullable', 'array'],
+                'statuses.*' => ['string', 'in:active,inactive,archived'],
+            ]);
+            $selectedStatuses = array_values(array_unique($filter['statuses'] ?? []));
+            $records = $records->whereIn('state', $selectedStatuses)->values();
+        }
         if ($kind === 'collections') {
             $records = $records->sort(fn ($left, $right) =>
                 strcasecmp($left->category_name, $right->category_name)
@@ -60,14 +71,17 @@ class CatalogController
             $records = $records->where('collection_id', (int) $filter['collection'])->values();
         }
 
-        return view('catalog.index', ['kind' => $kind, 'kinds' => CatalogRecords::KINDS, 'records' => $records, 'category' => $category, 'collection' => $collection, 'categories' => $service->records('categories'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+        return view('catalog.index', ['kind' => $kind, 'kinds' => CatalogRecords::KINDS, 'records' => $records, 'category' => $category, 'collection' => $collection, 'categories' => $service->records('categories'), 'statusOptions' => $statusOptions, 'selectedStatuses' => $selectedStatuses, 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
     }
 
     public function show(Request $request, string $kind, int $record)
     {
         $this->ready();
         abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
-        if (in_array($kind, ['items', 'storage_locations'], true)) {
+        if ($kind === 'items') {
+            return app(InventoryController::class)->show($request, $record);
+        }
+        if ($kind === 'storage_locations') {
             app(CatalogRecords::class)->record($kind, $record);
             return redirect(CatalogRecords::viewUrl($kind, $record));
         }
@@ -90,7 +104,9 @@ class CatalogController
         abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
         $row = app(CatalogRecords::class)->record($kind, $record);
 
-        return view('catalog.archive', ['kind' => $kind, 'record' => $row, 'label' => CatalogRecords::KINDS[$kind]]);
+        $inventoryContext = $kind === 'items' && $request->is('inventory/*');
+        $actionBase = $inventoryContext ? '/inventory/items/'.$record.'/details' : '/catalog/'.$kind.'/'.$record;
+        return view('catalog.archive', ['kind' => $kind, 'record' => $row, 'label' => CatalogRecords::KINDS[$kind], 'actionBase' => $actionBase, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind]);
     }
 
     public function form(Request $request, string $kind, ?int $record = null)
@@ -107,12 +123,40 @@ class CatalogController
         }
         $metadata = $kind === 'items' && $record ? DB::table('item_metadata')->where('item_id', $record)->first() : null;
 
-        return view('catalog.form', ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
+        $inventoryContext = $kind === 'items' && $request->is('inventory/*');
+        $recordBase = $inventoryContext ? '/inventory/items/' : CatalogRecords::viewBase($kind);
+        $context = ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
+        return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
+    }
+
+    public function itemForm(Request $request, ?int $record = null)
+    {
+        return $this->form($request, 'items', $record);
+    }
+
+    public function itemSave(Request $request, ?int $record = null)
+    {
+        return $this->save($request, 'items', $record);
+    }
+
+    public function itemLifecycle(Request $request, int $record)
+    {
+        return $this->lifecycle($request, 'items', $record);
+    }
+
+    public function itemArchive(Request $request, int $record)
+    {
+        return $this->archive($request, 'items', $record);
     }
 
     private function text(bool $required = false, int $max = 255): array
     {
         return [$required ? 'required' : 'nullable', 'string', 'max:'.$max, 'not_regex:/[\x00-\x1F\x7F]/u'];
+    }
+
+    private function multilineText(): array
+    {
+        return ['nullable', 'string', 'max:5000', 'not_regex:/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u'];
     }
 
     public function save(Request $request, string $kind, ?int $record = null)
@@ -121,6 +165,12 @@ class CatalogController
         abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
         abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
         $rules = ['name' => $this->text(true), 'description' => $this->text(false, 5000), 'notes' => $this->text(false, 5000)];
+        if ($kind === 'storage_locations') {
+            $rules['mailing_address'] = $this->multilineText();
+        }
+        if (in_array($kind, ['purposes', 'programs'], true)) {
+            $rules['notes'] = $this->multilineText();
+        }
         if ($kind === 'collections') {
             if (is_string($request->input('sku_prefix'))) {
                 $request->merge(['sku_prefix' => rtrim($request->input('sku_prefix'), '-')]);
@@ -129,13 +179,19 @@ class CatalogController
         }
         if ($kind === 'items') {
             $rules += ['collection_id' => ['required', 'integer', 'min:1'], 'sku_suffix' => ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D'], 'variety' => $this->text(), 'purpose_id' => ['nullable', 'integer', 'min:1'], 'programs' => ['nullable', 'array'], 'programs.*' => ['integer', 'distinct', 'min:1'], 'bundle_type' => $this->text(), 'bundle_quantity' => ['nullable', 'integer', 'min:1', 'max:1000000000']];
+            if (!$record && is_string($request->input('unit_cost')) && preg_match('/\A\.\d{1,12}\z/D', $request->input('unit_cost'))) {
+                $request->merge(['unit_cost' => '0'.$request->input('unit_cost')]);
+            }
             $rules['bundle_type'][] = 'required_with:bundle_quantity';
+            $rules['notes'] = $this->multilineText();
             foreach (['irs_fmv', 'in_person_ask', 'online_ask'] as $field) {
                 $rules[$field] = ['nullable', 'string', 'regex:/\A\d{1,12}(?:\.\d{1,12})?\z/D'];
             }
+            $rules['unit_cost'] = $record ? ['prohibited'] : ['nullable', 'string', 'regex:/\A\d{1,12}(?:\.\d{1,12})?\z/D'];
         }
         if ($kind === 'suppliers') {
-            $rules += ['contact_name' => $this->text(), 'email' => ['nullable', 'string', 'max:255', 'email'], 'phone' => $this->text(), 'website' => ['nullable', 'string', 'max:255', 'url:http,https'], 'address' => $this->text(false, 5000)];
+            $rules += ['contact_name' => $this->text(), 'email' => ['nullable', 'string', 'max:255', 'email'], 'phone' => $this->text(), 'website' => ['nullable', 'string', 'max:255', 'url:http,https'], 'address' => $this->multilineText()];
+            $rules['notes'] = $this->multilineText();
         }
         $data = $request->validate($rules);
         try {
@@ -187,7 +243,7 @@ class CatalogController
                     $service->activeAssociation('collections', (int) $collection->id, $old ? (int) $old->collection_id : null);
                     $values += ['collection_id' => $collection->id, 'sku_suffix' => $data['sku_suffix'], 'sku' => CatalogRecords::itemSku($collection->sku_prefix, $data['sku_suffix'])];
                     if (! $old) {
-                        $values['unit_cost'] = '0';
+                        $values['unit_cost'] = isset($data['unit_cost']) ? StockNumbers::cost($data['unit_cost']) : '0';
                     }
                 }
                 if ($reference) {
@@ -205,7 +261,11 @@ class CatalogController
                 }
                 if (! $reference) {
                     $existing = DB::table('catalog_metadata')->where(['kind' => $kind, 'record_id' => $id])->first();
-                    DB::table('catalog_metadata')->updateOrInsert(['kind' => $kind, 'record_id' => $id], ['state' => $existing->state ?? 'active', 'description' => $data['description'] ?? null, 'notes' => $data['notes'] ?? null, 'updated_at' => now('UTC')]);
+                    $catalogMetadata = ['state' => $existing->state ?? 'active', 'description' => $data['description'] ?? null, 'notes' => $data['notes'] ?? null, 'updated_at' => now('UTC')];
+                    if ($kind === 'storage_locations') {
+                        $catalogMetadata['mailing_address'] = $data['mailing_address'] ?? null;
+                    }
+                    DB::table('catalog_metadata')->updateOrInsert(['kind' => $kind, 'record_id' => $id], $catalogMetadata);
                     if ($kind !== 'items') {
                         DB::table('catalog_names')->updateOrInsert(['kind' => $kind, 'record_id' => $id], ['parent_id' => $kind === 'collections' ? $values['category_id'] : 0, 'name' => $values['name']]);
                     }
@@ -215,9 +275,8 @@ class CatalogController
                     if (! empty($data['purpose_id'])) {
                         $service->activeAssociation('purposes', (int) $data['purpose_id'], $oldMeta?->purpose_id);
                     }
-                    $existingPrograms = DB::table('item_programs')->where('item_id', $id)->pluck('program_id')->all();
                     foreach ($data['programs'] ?? [] as $program) {
-                        $service->activeAssociation('programs', (int) $program, in_array((int) $program, $existingPrograms) ? (int) $program : null);
+                        $service->activeAssociation('programs', (int) $program);
                     }
                     $meta = ['updated_at' => now('UTC')];
                     foreach (['variety', 'purpose_id', 'bundle_type', 'bundle_quantity', 'notes', 'irs_fmv', 'in_person_ask', 'online_ask'] as $field) {
@@ -250,7 +309,8 @@ class CatalogController
             $request->session()->flash('success', $message);
             return response()->json(['id' => (int) $id]);
         }
-        return redirect(CatalogRecords::viewUrl($kind, (int) $id))->with('success', $message);
+        $destination = $kind === 'items' && $request->is('inventory/*') ? '/inventory/items/'.$id : CatalogRecords::viewUrl($kind, (int) $id);
+        return redirect($destination)->with('success', $message);
     }
 
     public function lifecycle(Request $request, string $kind, int $record)

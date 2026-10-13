@@ -259,6 +259,16 @@
 .app-table-panel-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1.5rem; }
 .app-table-panel-copy { flex: 1 1 18rem; min-width: 0; }
 .app-table-panel-toolbar .app-actions { margin: 0; }
+.app-shell .app-list-table-panel thead th.catalog-status-heading { position: relative; }
+.catalog-status-heading-row { position: relative; display: inline-block; padding-right: 1.9rem; }
+.app-shell button.catalog-status-trigger, .app-shell button.catalog-status-apply { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; }
+.app-shell button.catalog-status-trigger { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 1.5rem; height: 1.5rem; min-height: 0; background: transparent; border-color: transparent; }
+.app-shell button.catalog-status-trigger[data-filter-active] { color: var(--app-primary); background: #5b21b612; border-color: var(--app-primary); }
+.catalog-status-menu { position: fixed; z-index: 20; width: 13rem; max-width: calc(100vw - 2rem); padding: .75rem; border: 1px solid var(--app-border); border-radius: var(--app-radius); background: var(--app-surface); color: var(--app-text); box-shadow: 0 4px 16px #20212b26; font-weight: 400; text-align: left; }
+.catalog-status-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .5rem; font-weight: 600; }
+.app-shell .catalog-status-menu label { display: flex; align-items: center; gap: .5rem; margin: .5rem 0; }
+.app-shell table .catalog-status-menu input[type="checkbox"] { width: 1.1rem; }
+.catalog-status-menu .app-field-help { margin: .5rem 0 0; }
 /* Optional review sections do not leave a blank text panel between tables. */
 .app-record-content:not(:has(> :not(script, style, input[type="hidden"]))) { display: none; }
 .app-shell fieldset.app-entry-fieldset { border: 0; padding: 0; margin: 0; }
@@ -301,6 +311,13 @@
 .app-shell .history [data-history-url] { cursor: pointer; }
 .app-shell .history [data-history-url]:hover { background: var(--app-page); }
 .app-shell .plain-text { white-space: pre-wrap; }
+.app-catalog-item-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: .75rem 2rem; }
+.app-catalog-item-columns > div { min-width: 0; }
+.app-shell .app-catalog-item-columns > div > label:first-child { margin-top: 0; }
+.app-sku-field { display: flex; align-items: center; border: 1px solid #9393a3; border-radius: .375rem; background: white; margin-top: .175rem; max-width: 36rem; overflow: hidden; }
+.app-sku-field [data-sku-prefix]:not([hidden]) { display: flex; align-items: center; align-self: stretch; padding: 0 .65rem; background: #e5dfef; color: var(--app-text); font-weight: 400; flex-shrink: 0; }
+.app-shell label .app-sku-field input[name="sku_suffix"]:not([type="hidden"]) { min-width: 0; margin-top: 0; border: 0; border-radius: 0; outline: none; box-shadow: none; flex: 1; }
+.app-sku-field:focus-within { outline: 2px solid var(--app-primary); outline-offset: 1px; }
 .app-shell .requested-items { border: 2px solid #b8a6e6; border-radius: .5rem; padding: 0.5rem 1rem; margin: 0.625rem 0; min-width: 0; }
 .app-shell .requested-items input { max-width: 10rem; }
 .app-shell .request-notes li, .app-shell .request-activity li { margin: 0.5rem 0; }

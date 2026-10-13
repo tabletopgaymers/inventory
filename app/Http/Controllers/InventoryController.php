@@ -134,7 +134,9 @@ class InventoryController
             })->values();
         }
 
-        return view('inventory.item', ['item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->hasRole('admin'),
+        $itemBase = $request->is('catalog/*') ? '/catalog/items/' : '/inventory/items/';
+        $itemEditUrl = $itemBase.$item.($request->is('catalog/*') ? '/edit' : '/details/edit');
+        return view('inventory.item', ['itemBase' => $itemBase, 'itemEditUrl' => $itemEditUrl, 'item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->hasRole('admin'),
             'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'purpose' => $purpose, 'programs' => $programs, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);
     }
 

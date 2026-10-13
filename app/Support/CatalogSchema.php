@@ -83,7 +83,9 @@ class CatalogSchema
         $timestamps = ['created_at' => ['timestamp', true], 'updated_at' => ['timestamp', true]];
 
         return [
-            'catalog_metadata' => ['id' => $id, 'kind' => ['varchar(30)', false], 'record_id' => $id, 'state' => ['varchar(10)', false], 'description' => ['text', true], 'notes' => ['text', true]] + $timestamps,
+            // TODO: Retire unused Notes for category, collection and location records.
+            // Description is validated as single-line text; mailing_address allows line breaks.
+            'catalog_metadata' => ['id' => $id, 'kind' => ['varchar(30)', false], 'record_id' => $id, 'state' => ['varchar(10)', false], 'description' => ['text', true], 'notes' => ['text', true], 'mailing_address' => ['text', true]] + $timestamps,
             'catalog_names' => ['id' => $id, 'kind' => ['varchar(30)', false], 'parent_id' => $id, 'name' => ['varchar(255)', false], 'record_id' => $id],
             'catalog_references' => ['id' => $id, 'kind' => ['varchar(30)', false], 'name' => ['varchar(255)', false], 'state' => ['varchar(10)', false], 'contact_name' => $text, 'email' => $text, 'phone' => $text, 'website' => $text, 'address' => ['text', true], 'notes' => ['text', true]] + $timestamps,
             'item_metadata' => ['item_id' => $id, 'variety' => $text, 'purpose_id' => ['bigint unsigned', true], 'bundle_type' => $text, 'bundle_quantity' => ['int unsigned', true], 'irs_fmv' => ['decimal(24,12)', true], 'in_person_ask' => ['decimal(24,12)', true], 'online_ask' => ['decimal(24,12)', true], 'notes' => ['text', true]] + $timestamps,

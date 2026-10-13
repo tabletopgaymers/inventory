@@ -15,6 +15,8 @@ document.querySelectorAll('[data-unsaved], [data-catalog-progress]').forEach(for
     const collection = form.querySelector('[name="collection_id"]');
     const suffix = form.querySelector('[name="sku_suffix"]');
     const preview = document.getElementById('sku-preview');
+    const prefixLabel = form.querySelector('[data-sku-prefix]');
+    const categoryLabel = form.querySelector('[data-collection-category]');
     const bundle = form.querySelector('[name="bundle_type"]');
     const quantity = form.querySelector('[name="bundle_quantity"]');
     const updateBundle = () => {
@@ -24,9 +26,14 @@ document.querySelectorAll('[data-unsaved], [data-catalog-progress]').forEach(for
     form.addEventListener('input', updateBundle);
     updateBundle();
     const update = () => {
-        if (preview && collection && suffix) {
+        if (collection && suffix) {
+            if (categoryLabel) categoryLabel.value = collection.selectedOptions[0]?.dataset.category || '';
             const prefix = (collection.selectedOptions[0]?.dataset.prefix || '').replace(/-+$/, '');
-            preview.textContent = prefix ? prefix + '-' + suffix.value : suffix.value;
+            if (preview) preview.textContent = prefix ? prefix + '-' + suffix.value : suffix.value;
+            if (prefixLabel) {
+                prefixLabel.textContent = prefix ? prefix + '-' : '';
+                prefixLabel.hidden = !prefix;
+            }
         }
     };
     form.addEventListener('input', update);

@@ -16,6 +16,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/inventory/location-counts/{token}/review', [LocationCountController::class, 'reviewed']);
     Route::post('/inventory/location-counts/{token}/save', [LocationCountController::class, 'save']);
     Route::get('/inventory/items/{item}/cost', [ItemCostController::class, 'edit'])->whereNumber('item');
+    Route::get('/inventory/items/create', [CatalogController::class, 'itemForm']);
+    Route::post('/inventory/items/create', [CatalogController::class, 'itemSave']);
+    Route::get('/inventory/items/{record}/details/edit', [CatalogController::class, 'itemForm'])->whereNumber('record');
+    Route::post('/inventory/items/{record}/details/edit', [CatalogController::class, 'itemSave'])->whereNumber('record');
+    Route::post('/inventory/items/{record}/details/lifecycle', [CatalogController::class, 'itemLifecycle'])->whereNumber('record');
+    Route::get('/inventory/items/{record}/details/archive', [CatalogController::class, 'itemArchive'])->whereNumber('record');
+    Route::get('/catalog/items/{item}/cost', [ItemCostController::class, 'edit'])->whereNumber('item');
+    Route::post('/catalog/items/{item}/cost', [ItemCostController::class, 'save'])->whereNumber('item');
     Route::post('/inventory/items/{item}/cost', [ItemCostController::class, 'save'])->whereNumber('item');
     Route::get('/inventory/cost-adjustments/{entry}', [ItemCostController::class, 'show'])->whereNumber('entry');
     Route::get('/catalog', [CatalogController::class, 'index']);
