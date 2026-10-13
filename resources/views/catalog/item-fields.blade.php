@@ -1,5 +1,5 @@
 @php
-    $itemCollections = $collections->filter(fn ($entry) => $entry->state === 'active')
+    $itemCollections = $collections->filter(fn ($entry) => $entry->state === 'active' || $record?->collection_id === $entry->id)
         ->sort(fn ($a, $b) => strcasecmp($a->category_name, $b->category_name) ?: strcasecmp($a->name, $b->name) ?: ($a->id <=> $b->id));
 @endphp
 <div class="app-catalog-item-columns">
@@ -16,8 +16,8 @@
 </select></label>
 <label>SKU suffix<span class="app-sku-field"><span data-sku-prefix aria-hidden="true" hidden></span><input name="sku_suffix" required maxlength="50" pattern="[A-Za-z0-9_-]+" value="{{ old('sku_suffix', $record?->sku_suffix) }}"></span></label>
 <label>Variety<input data-optional name="variety" maxlength="255" value="{{ old('variety', $metadata?->variety) }}"></label>
-<label>Purpose<select data-optional name="purpose_id"><option value="">None</option>@foreach($purposes as $purpose)@if($purpose->state === 'active')<option value="{{ $purpose->id }}" @selected(old('purpose_id', $metadata?->purpose_id) == $purpose->id)>{{ $purpose->name }}</option>@endif @endforeach</select></label>
-<fieldset data-optional><legend>Programs</legend>@foreach($programs as $program)@if($program->state === 'active')<label class="app-choice"><input type="checkbox" name="programs[]" value="{{ $program->id }}" @checked(in_array($program->id, old('programs', $errors->any() ? [] : $selectedPrograms)))>{{ $program->name }}</label>@endif @endforeach</fieldset>
+<label>Purpose<select data-optional name="purpose_id"><option value="">None</option>@foreach($purposes as $purpose)@if($purpose->state === 'active' || ($record && $metadata?->purpose_id === $purpose->id))<option value="{{ $purpose->id }}" @selected(old('purpose_id', $metadata?->purpose_id) == $purpose->id)>{{ $purpose->name }}</option>@endif @endforeach</select></label>
+<fieldset data-optional><legend>Programs</legend>@foreach($programs as $program)@if($program->state === 'active' || ($record && in_array($program->id, $selectedPrograms)))<label class="app-choice"><input type="checkbox" name="programs[]" value="{{ $program->id }}" @checked(in_array($program->id, old('programs', $errors->any() ? [] : $selectedPrograms)))>{{ $program->name }}</label>@endif @endforeach</fieldset>
 </div>
 <div>
 @if($record)<label>Unit cost<input readonly value="{{ \App\Support\StockNumbers::displayCost($record->unit_cost) }}"></label>

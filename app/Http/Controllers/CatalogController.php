@@ -288,8 +288,9 @@ class CatalogController
                     if (! empty($data['purpose_id'])) {
                         $service->activeAssociation('purposes', (int) $data['purpose_id'], $oldMeta?->purpose_id);
                     }
+                    $existingPrograms = DB::table('item_programs')->where('item_id', $id)->pluck('program_id')->all();
                     foreach ($data['programs'] ?? [] as $program) {
-                        $service->activeAssociation('programs', (int) $program);
+                        $service->activeAssociation('programs', (int) $program, in_array((int) $program, $existingPrograms) ? (int) $program : null);
                     }
                     $meta = ['updated_at' => now('UTC')];
                     foreach (['variety', 'purpose_id', 'bundle_type', 'bundle_quantity', 'notes', 'irs_fmv', 'in_person_ask', 'online_ask'] as $field) {
