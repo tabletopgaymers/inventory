@@ -1,0 +1,18 @@
+    <table><thead><tr><th>Item</th><th data-stock-heading="source_location_id">{{ $sourceName }} stock</th><th data-stock-heading="destination_location_id">{{ $destinationName }} stock</th><th>Request</th></tr></thead>
+        <tbody>
+            @php($group = null)
+            @forelse($results as $item)
+                @if($group !== $item['category'].' : '.$item['collection'])
+                @php($group = $item['category'].' : '.$item['collection'])
+                <tr class="group-row" data-search-group><th colspan="4">{{ $group }}</th></tr>
+                @endif
+                <tr data-search-item="{{ $item['id'] }}" data-item-name="{{ $item['name'] }}" data-item-sku="{{ $item['sku'] }}" data-item-group="{{ $group }}" data-item-label="{{ $item['name'] }} · {{ $item['sku'] }}" data-source-balance="{{ $item['source'] }}" data-destination-balance="{{ $item['destination'] }}">
+                    <td class="app-grouped-item">{{ $item['name'] }}</td>
+                    <td data-stock-count>{{ number_format($item['source']) }}</td><td data-stock-count>{{ number_format($item['destination']) }}</td>
+                    <td><label><span class="sr-only">Request {{ $item['name'] }} · {{ $item['sku'] }}</span><input data-search-quantity aria-label="Request {{ $item['name'] }} · {{ $item['sku'] }}"></label></td>
+                </tr>
+            @empty
+            <tr><td colspan="4">{{ ($searched ?? true) ? 'No matching active items to add.' : 'Use Search or Show all to find items.' }}</td></tr>
+            @endforelse
+        </tbody>
+    </table>
