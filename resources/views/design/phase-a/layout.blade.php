@@ -4,6 +4,7 @@
     <a href="/style-guide" @if(request()->is('style-guide')) aria-current="page" @endif>Overview</a>
     <a href="/style-guide/presentation" @if(request()->is('style-guide/presentation')) aria-current="page" @endif>Presentation</a>
     <a href="/style-guide/forms" @if(request()->is('style-guide/forms')) aria-current="page" @endif>Forms</a>
+    <a href="/style-guide/tab-form" @if(request()->is('style-guide/tab-form')) aria-current="page" @endif>Tab form</a>
     <a href="/style-guide/notifications" @if(request()->is('style-guide/notifications')) aria-current="page" @endif>Notifications</a>
     <a href="/style-guide/orphaned" @if(request()->is('style-guide/orphaned')) aria-current="page" @endif>Orphaned</a>
     <a href="/style-guide/examples" @if(request()->is('style-guide/examples')) aria-current="page" @endif>Example uses</a>
