@@ -105,7 +105,7 @@ class FulfillmentController
             $request->session()->put('relocation_fulfillment_resume.'.$id.'.'.$mode, $token);
         }
 
-        $choices = app(RequestCatalog::class)->choices();
+        $choices = app(RequestCatalog::class)->choices(naturalNames: $kind === 'purchase');
         $relocationLines = collect($draft['values']['lines']);
         $requestedQuantities = [];
         if ($kind === 'relocation') {
@@ -148,6 +148,10 @@ class FulfillmentController
             $values = $request->except(['_token', '_deliberate', 'work', 'action', 'progress_step']);
             $values['lines'] = $request->input('lines', []);
             abort_unless(is_array($values['lines']) && count($values['lines']) <= 1000, 422);
+            if ($kind === 'purchase') {
+                // Display order must not change invoice baselines or allocation tie order.
+                $values['lines'] = array_replace(array_intersect_key($draft['values']['lines'], $values['lines']), $values['lines']);
+            }
             $draft['values'] = $values;
             $hadReview = is_array($draft['review']);
             $draft['version'] = ($draft['version'] ?? 0) + 1;
@@ -257,7 +261,12 @@ class FulfillmentController
         $row = DB::table($kind.'_requests')->where('id', $id)->firstOrFail();
         $this->check($request, $kind, $row, $mode);
 
-        return view('requests.fulfillment-review', app(RequestCatalog::class)->choices() + ['kind' => $kind, 'mode' => $mode, 'row' => $row, 'draft' => $draft, 'review' => $draft['review'], 'token' => $token, 'base' => $this->base($kind, $id)]);
+        if ($kind === 'purchase') {
+            $draft['review']['lines'] = app(RequestCatalog::class)->sortItemLines($draft['review']['lines']);
+            if (isset($draft['review']['projection'])) $draft['review']['projection'] = app(RequestCatalog::class)->sortItemLines($draft['review']['projection']);
+        }
+
+        return view('requests.fulfillment-review', app(RequestCatalog::class)->choices(naturalNames: $kind === 'purchase') + ['kind' => $kind, 'mode' => $mode, 'row' => $row, 'draft' => $draft, 'review' => $draft['review'], 'token' => $token, 'base' => $this->base($kind, $id)]);
     }
 
     public function confirm(Request $request, int $id, string $mode, string $token, string $kind)

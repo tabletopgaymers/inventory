@@ -26,7 +26,7 @@ class EventController
 
     private function choices(?int $self): array
     {
-        $choices = app(RequestCatalog::class)->choices();
+        $choices = app(RequestCatalog::class)->choices(naturalNames: true);
         $choices['destinations'] = [];
         foreach ($choices['locations']->where('state', 'active') as $location) {
             $choices['destinations']['storage:'.$location->id] = $location->name;
@@ -64,6 +64,7 @@ class EventController
         $this->ready($request);
         $row = DB::table('event_workflows')->where('id', $id)->firstOrFail();
         $data = app(EventWorkflow::class)->data($id);
+        $data['lines'] = app(RequestCatalog::class)->sortItemLines($data['lines']);
         $history = DB::table('event_operations')->where('event_id', $id)->orderByDesc('id')->get();
         $incoming = DB::table('event_stock_entries')->join('event_operations', 'event_operations.id', '=', 'event_stock_entries.operation_id')
             ->where('event_stock_entries.event_id', $id)->where('event_operations.event_id', '<>', $id)->select('event_stock_entries.*', 'event_operations.posted_at', 'event_operations.actor_name', 'event_operations.event_id as contributor_event_id')->orderByDesc('event_stock_entries.id')->get();
@@ -184,6 +185,15 @@ class EventController
         $draft = $this->draft($request, $token, $id, $mode);
         abort_unless(is_array($draft['review']), 422);
 
+        if (isset($draft['review']['report'])) {
+            $draft['review']['report'] = collect($draft['review']['report'])->sort(fn ($left, $right) =>
+                strcasecmp($left['category'], $right['category'])
+                ?: strcasecmp($left['collection'], $right['collection'])
+                ?: strnatcasecmp($left['item'], $right['item'])
+                ?: strcmp($left['sku'], $right['sku'])
+            )->all();
+        }
+
         return view('events.review', $this->choices($id) + ['row' => DB::table('event_workflows')->where('id', $id)->firstOrFail(), 'mode' => $mode, 'token' => $token, 'draft' => $draft, 'base' => $this->base($id, $mode)]);
     }
 
@@ -211,7 +221,12 @@ class EventController
         $row = DB::table('event_workflows')->where('id', $id)->firstOrFail();
         abort_unless($row->status === 'Finalized', 409, 'Provisional counts are not a final report.');
         $data = app(EventWorkflow::class)->data($id);
-        $report = collect($data['report'])->sortBy(fn ($line) => [$line['category'], $line['collection'], $line['item'], $line['sku']]);
+        $report = collect($data['report'])->sort(fn ($left, $right) =>
+            strcasecmp($left['category'], $right['category'])
+            ?: strcasecmp($left['collection'], $right['collection'])
+            ?: strnatcasecmp($left['item'], $right['item'])
+            ?: strcmp($left['sku'], $right['sku'])
+        );
         $all = $request->boolean('all');
         if (! $all) {
             $report = $report->filter(fn ($line) => $line['distributed'] !== 0);

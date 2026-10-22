@@ -61,17 +61,23 @@ class RelocationController
             $status = $row->status;
         }
         $tab = $request->query('tab', $request->query('step', 'basic'));
-        if (! in_array($tab, ['basic', 'material', 'review', 'fulfillment', 'tracking', 'ship', 'reconcile'], true)) {
+        if (! in_array($tab, ['basic', 'material', 'review', 'fulfillment', 'tracking', 'ship', 'reconcile', 'confirmation'], true)) {
             $tab = 'basic';
         }
 
+        $shipment = $work['id'] ? json_decode(DB::table('relocation_fulfillment')->where('relocation_request_id', $work['id'])->value('data') ?? '{}', true) : [];
+
         return view('relocation.work', ['work' => $work, 'token' => $token, 'editable' => $editable, 'status' => $status, 'submitter' => $submitter, 'manager' => RequestValues::manages($request->user(), 'manager'),
+            'requesterName' => $work['id'] ? (\App\Models\User::find($row->owner_id)?->displayName() ?? 'Unknown') : $request->user()->displayName(),
+            'requestedDate' => $work['id'] ? $this->requestedDate((int) $work['id']) : null,
+            'fulfillerName' => isset($shipment['shipment_actor']) ? ($shipment['shipment_actor_name'] ?? \App\Models\User::find($shipment['shipment_actor'])?->displayName() ?? 'Unknown') : (RequestValues::manages($request->user(), 'manager') ? $request->user()->displayName() : '—'),
+            'shippingDate' => $shipment['shipped_date'] ?? now()->toDateString(),
             'items' => app(CatalogRecords::class)->records('items'),
-            'materialItems' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($work['lines'] ?? [])), $work['source_location_id'] ? (int) $work['source_location_id'] : null, $work['destination_location_id'] ? (int) $work['destination_location_id'] : null),
+            'materialItems' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($work['lines'] ?? [])), $work['source_location_id'] ? (int) $work['source_location_id'] : null, $work['destination_location_id'] ? (int) $work['destination_location_id'] : null, naturalNames: true),
             'fulfilled' => $work['id'] ? DB::table('relocation_request_lines')->where('relocation_request_id', $work['id'])->pluck('fulfillment_quantity', 'item_id')->all() : [],
             'addedStages' => $work['id'] ? DB::table('relocation_request_lines')->where('relocation_request_id', $work['id'])->pluck('added_stage', 'item_id')->all() : [],
             'received' => $work['id'] ? DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $work['id'])->pluck('received', 'item_id')->all() : [],
-            'tracking' => $work['id'] ? (json_decode(DB::table('relocation_fulfillment')->where('relocation_request_id', $work['id'])->value('data') ?? '{}', true)['tracking'] ?? []) : [],
+            'tracking' => $shipment['tracking'] ?? [],
             'collections' => app(RequestCatalog::class)->choices()['collections'],
             'locations' => app(CatalogRecords::class)->records('storage_locations')->filter(fn ($location) => $location->state === 'active' || in_array((int) $location->id, [(int) $work['source_location_id'], (int) $work['destination_location_id']], true)),
             'step' => $tab]);
@@ -86,11 +92,21 @@ class RelocationController
 
         return view('relocation.print', [
             'row' => $row, 'lines' => $lines,
-            'items' => app(RequestCatalog::class)->rows($lines->keys()->map(fn ($id) => (int) $id)->all(), (int) $row->source_location_id, (int) $row->destination_location_id),
+            'requestedDate' => $this->requestedDate((int) $row->id),
+            'items' => app(RequestCatalog::class)->rows($lines->keys()->map(fn ($id) => (int) $id)->all(), (int) $row->source_location_id, (int) $row->destination_location_id, naturalNames: true),
             'sourceName' => DB::table('storage_locations')->where('id', $row->source_location_id)->value('name'),
             'destinationName' => DB::table('storage_locations')->where('id', $row->destination_location_id)->value('name'),
             'requesterName' => \App\Models\User::find($row->owner_id)?->displayName() ?? 'Unknown',
         ]);
+    }
+
+    private function requestedDate(int $id): ?string
+    {
+        $activity = DB::table('relocation_request_activity')->where('relocation_request_id', $id)
+            ->where('action', 'Status changed')->orderByDesc('id')->get(['current', 'occurred_at'])
+            ->first(fn ($activity) => (json_decode($activity->current ?? '{}', true)['status'] ?? null) === 'Requested');
+
+        return $activity ? \Illuminate\Support\Carbon::parse($activity->occurred_at, 'UTC')->timezone(config('app.timezone'))->format('d M Y') : null;
     }
 
     public function save(Request $request, string $token)
@@ -173,7 +189,8 @@ class RelocationController
         $work = array_replace($work, $fields, ['id' => (int) $saved->id, 'revision' => (int) $saved->revision, 'lines' => $lines]);
         $request->session()->put('relocation_workspace.'.$token, $work);
         if ($request->expectsJson()) {
-            return response()->json(['saved' => true, 'id' => $work['id'], 'revision' => $work['revision'], 'status' => $saved->status, 'values' => $fields, 'lines' => $lines]);
+            return response()->json(['saved' => true, 'id' => $work['id'], 'revision' => $work['revision'], 'status' => $saved->status, 'values' => $fields, 'lines' => $lines,
+                'requestedDate' => $this->requestedDate((int) $work['id'])]);
         }
 
         return redirect('/relocation/work/'.$token.($submitting ? '?tab=review' : ($data['action'] === 'next' ? '?tab=material' : '')))->with('success', $submitting ? 'Request submitted.' : 'Progress saved.');
@@ -184,14 +201,14 @@ class RelocationController
         $work = $this->workspace($request, $token);
         abort_unless($work['id'], 409, 'Save Basic info first.');
         $row = DB::table('relocation_requests')->where('id', $work['id'])->firstOrFail();
-        abort_unless(($row->status === 'Draft' && ((int) $row->owner_id === (int) $request->user()->id || RequestValues::manages($request->user(), 'manager'))) || ($row->status === 'Accepted' && RequestValues::manages($request->user(), 'manager')), 403);
+        abort_unless(($row->status === 'Draft' && ((int) $row->owner_id === (int) $request->user()->id || RequestValues::manages($request->user(), 'manager'))) || (in_array($row->status, ['Accepted', 'Received'], true) && RequestValues::manages($request->user(), 'manager')), 403);
         $data = $request->validate([
             'source_location_id' => ['required', 'integer', 'exists:storage_locations,id'],
             'destination_location_id' => ['required', 'integer', 'exists:storage_locations,id'],
             'excluded' => ['nullable', 'array', 'max:1000'], 'excluded.*' => ['integer'],
         ]);
         $criteria = app(InventorySearch::class)->criteria($request);
-        $results = app(RequestCatalog::class)->selections($criteria, array_map('intval', $data['excluded'] ?? []), (int) $data['source_location_id'], (int) $data['destination_location_id']);
+        $results = app(RequestCatalog::class)->selections($criteria, array_map('intval', $data['excluded'] ?? []), (int) $data['source_location_id'], (int) $data['destination_location_id'], naturalNames: true);
 
         $sourceName = DB::table('storage_locations')->where('id', $data['source_location_id'])->value('name');
         $destinationName = DB::table('storage_locations')->where('id', $data['destination_location_id'])->value('name');
@@ -216,6 +233,32 @@ class RelocationController
         });
 
         return $this->fulfillmentResponse($request, $token, $work, $row);
+    }
+
+    public function saveAcceptedBasic(Request $request, string $token)
+    {
+        $work = $this->workspace($request, $token);
+        abort_unless($work['id'], 409);
+        $data = $request->validate(['title' => ['required', 'string', 'max:255'], 'details' => ['nullable', 'string', 'max:5000']]);
+        $fields = ['title' => RequestValues::text($data['title'], 'title', 255, true), 'details' => RequestValues::text($data['details'] ?? null, 'details')];
+        $row = DB::transaction(function () use ($request, $work, $fields) {
+            $actor = RequestValues::actor((int) $request->user()->id);
+            abort_unless(RequestValues::manages($actor, 'manager'), 403);
+            $row = DB::table('relocation_requests')->where('id', $work['id'])->lockForUpdate()->firstOrFail();
+            abort_unless($row->status === 'Accepted', 409);
+            RequestValues::revision($request->input('revision'), $row);
+            $before = ['title' => $row->title, 'details' => $row->details];
+            if ($before !== $fields) {
+                DB::table('relocation_requests')->where('id', $row->id)->update($fields + ['revision' => $row->revision + 1, 'updated_at' => now('UTC')]);
+                RequestValues::activity('relocation', $row->id, $actor, 'Saved basic info', $before, $fields);
+            }
+
+            return DB::table('relocation_requests')->where('id', $row->id)->firstOrFail();
+        });
+        $request->session()->put('relocation_workspace.'.$token, array_replace($work, $fields, ['revision' => (int) $row->revision]));
+        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'values' => $fields]);
+
+        return redirect('/relocation/work/'.$token.'?tab=basic')->with('success', 'Basic info saved.');
     }
 
     public function saveFulfillment(Request $request, string $token)
@@ -261,16 +304,122 @@ class RelocationController
         return $this->fulfillmentResponse($request, $token, $work, $row);
     }
 
-    private function fulfillmentResponse(Request $request, string $token, array $work, object $row)
+    private function fulfillmentResponse(Request $request, string $token, array $work, object $row, string $tab = 'fulfillment')
     {
         $fields = array_intersect_key((array) $row, array_flip(['title', 'details', 'source_location_id', 'destination_location_id']));
         $lines = DB::table('relocation_request_lines')->where('relocation_request_id', $row->id)->pluck('quantity', 'item_id')->all();
         $fulfilled = DB::table('relocation_request_lines')->where('relocation_request_id', $row->id)->pluck('fulfillment_quantity', 'item_id')->all();
         $addedStages = DB::table('relocation_request_lines')->where('relocation_request_id', $row->id)->pluck('added_stage', 'item_id')->all();
+        $received = DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $row->id)->pluck('received', 'item_id')->all();
         $request->session()->put('relocation_workspace.'.$token, array_replace($work, $fields, ['revision' => (int) $row->revision, 'lines' => $lines]));
-        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'values' => $fields, 'lines' => $lines, 'fulfilled' => $fulfilled, 'addedStages' => $addedStages]);
+        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'values' => $fields, 'lines' => $lines, 'fulfilled' => $fulfilled, 'received' => $received, 'addedStages' => $addedStages]);
 
-        return redirect('/relocation/work/'.$token.'?tab=fulfillment')->with('success', 'Fulfillment progress saved.');
+        return redirect('/relocation/work/'.$token.'?tab='.$tab)->with('success', $tab === 'reconcile' ? 'Reconciliation saved.' : 'Fulfillment progress saved.');
+    }
+
+    public function receive(Request $request, string $token)
+    {
+        $work = $this->workspace($request, $token);
+        abort_unless($work['id'], 409);
+        $row = DB::transaction(function () use ($request, $work) {
+            $actor = RequestValues::actor((int) $request->user()->id);
+            abort_unless(RequestValues::manages($actor, 'manager'), 403);
+            $row = DB::table('relocation_requests')->where('id', $work['id'])->lockForUpdate()->firstOrFail();
+            abort_unless($row->status === 'Fulfilled', 409);
+            RequestValues::revision($request->input('revision'), $row);
+            $header = RequestStock::header('relocation', $row->id);
+            $header['received_date'] = now()->toDateString();
+            $header['received_actor'] = (int) $actor->id;
+            $header['received_actor_name'] = $actor->displayName();
+            RequestStock::saveHeader('relocation', $row->id, $header);
+            RequestStock::changed('relocation', $row, $actor, 'Acknowledged receipt', ['received_date' => $header['received_date']], 'Received');
+
+            return DB::table('relocation_requests')->where('id', $row->id)->firstOrFail();
+        });
+
+        return $this->fulfillmentResponse($request, $token, $work, $row, 'reconcile');
+    }
+
+    public function complete(Request $request, string $token)
+    {
+        return $this->saveReconciliation($request, $token, true);
+    }
+
+    public function saveReconciliation(Request $request, string $token, bool $complete = false)
+    {
+        $work = $this->workspace($request, $token);
+        abort_unless($work['id'], 409);
+        $data = $request->validate(['reconciliation' => ['nullable', 'array', 'max:1000'], 'reconciliation.*' => ['nullable', 'string', 'max:30']]);
+        $row = DB::transaction(function () use ($request, $work, $data, $complete) {
+            $actor = RequestValues::actor((int) $request->user()->id);
+            abort_unless(RequestValues::manages($actor, 'manager'), 403);
+            $row = DB::table('relocation_requests')->where('id', $work['id'])->lockForUpdate()->firstOrFail();
+            abort_unless($row->status === 'Received', 409);
+            RequestValues::revision($request->input('revision'), $row);
+            $existing = DB::table('relocation_request_lines')->where('relocation_request_id', $row->id)->orderBy('item_id')->lockForUpdate()->get()->keyBy('item_id');
+            $shipment = DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $row->id)->orderBy('item_id')->lockForUpdate()->get()->keyBy('item_id');
+            $before = [];
+            foreach ($existing as $id => $line) {
+                $before[$id] = $shipment->get($id)?->received === null ? null : (int) $shipment->get($id)->received;
+                if ($line->added_stage !== 'reconciliation' && ! array_key_exists($id, $data['reconciliation'] ?? [])) {
+                    throw ValidationException::withMessages(['reconciliation' => 'Requested and fulfilled items cannot be removed during reconciliation.']);
+                }
+            }
+            $after = [];
+            foreach ($data['reconciliation'] ?? [] as $id => $quantity) {
+                $itemId = RequestValues::id($id, 'reconciliation');
+                abort_unless($itemId, 422);
+                RequestValues::association('items', $itemId, $existing->has($itemId) ? $itemId : null, 'reconciliation.'.$itemId);
+                $after[$itemId] = RequestValues::quantity($quantity, 'reconciliation.'.$itemId, ! $complete);
+            }
+            ksort($after);
+            if ($complete && $after === []) throw ValidationException::withMessages(['reconciliation' => 'Add at least one material item before completing.']);
+            $removed = $existing->filter(fn ($line) => $line->added_stage === 'reconciliation' && ! array_key_exists($line->item_id, $after))->keys()->all();
+            if ($removed) {
+                foreach ($removed as $id) abort_if((int) ($shipment->get($id)?->sent ?? 0) !== 0, 409, 'Shipped items cannot be removed during reconciliation.');
+                DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $row->id)->whereIn('item_id', $removed)->delete();
+                DB::table('relocation_request_lines')->where('relocation_request_id', $row->id)->whereIn('item_id', $removed)->delete();
+            }
+            foreach ($after as $id => $quantity) {
+                if (! $existing->has($id)) {
+                    DB::table('relocation_request_lines')->insert(['relocation_request_id' => $row->id, 'item_id' => $id, 'quantity' => 0, 'fulfillment_quantity' => 0, 'added_stage' => 'reconciliation']);
+                    DB::table('relocation_fulfillment_lines')->insert(['relocation_request_id' => $row->id, 'item_id' => $id, 'sent' => 0, 'received' => $quantity]);
+                } else {
+                    DB::table('relocation_fulfillment_lines')->updateOrInsert(['relocation_request_id' => $row->id, 'item_id' => $id], ['received' => $quantity]);
+                }
+            }
+            if ($complete) {
+                // Reverse this shipment's full sent contribution, not a submitted fulfilled value.
+                $sentLines = DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $row->id)->orderBy('item_id')->get()->keyBy('item_id');
+                abort_unless($sentLines->keys()->diff(array_keys($after))->isEmpty(), 409, 'Shipment records need inspection.');
+                $stock = app(RequestStock::class);
+                $items = $stock->items(array_keys($after));
+                $destination = DB::table('storage_locations')->where('id', $row->destination_location_id)->value('name');
+                $operation = (string) Str::uuid();
+                foreach ($after as $id => $received) {
+                    abort_if($sentLines->get($id)?->sent === null, 409, 'Shipment records need inspection.');
+                    $sent = (int) $sentLines->get($id)->sent;
+                    if ($sent > 0) $stock->source($id, 'transit', -$sent);
+                    if ($received > 0) $stock->storage($id, (int) $row->destination_location_id, $received);
+                    $transfer = min($sent, $received);
+                    if ($transfer > 0) $stock->entry($actor, 'relocation', (int) $row->id, $items[$id], $operation, 'receipt_transfer', 'Relocation: In Transit → '.$destination, $transfer, $items[$id]->unit_cost);
+                    if ($received !== $sent) $stock->entry($actor, 'relocation', (int) $row->id, $items[$id], $operation, 'discrepancy', $received < $sent ? 'Adjustment: In Transit shortage' : 'Adjustment: '.$destination.' overage', $received - $sent, $items[$id]->unit_cost);
+                }
+                $header = RequestStock::header('relocation', $row->id);
+                $header['receipt_operation'] = $operation;
+                $header['receipt_actor'] = (int) $actor->id;
+                $header['completed_date'] = now()->toDateString();
+                RequestStock::saveHeader('relocation', $row->id, $header);
+                RequestStock::changed('relocation', $row, $actor, 'Completed relocation', ['received' => $after], 'Completed');
+            } elseif ($before !== $after) {
+                DB::table('relocation_requests')->where('id', $row->id)->update(['revision' => $row->revision + 1, 'updated_at' => now('UTC')]);
+                RequestValues::activity('relocation', $row->id, $actor, 'Saved reconciliation', $before, $after);
+            }
+
+            return DB::table('relocation_requests')->where('id', $row->id)->firstOrFail();
+        });
+
+        return $this->fulfillmentResponse($request, $token, $work, $row, $complete ? 'confirmation' : 'reconcile');
     }
 
     public function ship(Request $request, string $token)
@@ -282,6 +431,7 @@ class RelocationController
     {
         $work = $this->workspace($request, $token);
         abort_unless($work['id'], 409);
+        $shippingDate = $shipping ? $request->validate(['shipping_date' => ['required', 'date_format:Y-m-d']])['shipping_date'] : null;
         $data = $request->validate(['tracking' => ['nullable', 'array', 'max:50'], 'tracking.*' => ['array'],
             'tracking.*.name' => ['nullable', 'string', 'max:255'],
             'tracking.*.carrier' => ['nullable', 'string', 'in:USPS,UPS,FedEx,Other'],
@@ -295,7 +445,7 @@ class RelocationController
             $name = RequestValues::text($line['name'] ?? null, 'tracking.'.$index.'.name', 255) ?? 'Package '.(count($tracking) + 1);
             $tracking[] = ['name' => $name, 'carrier' => $carrier, 'number' => $number ?? '', 'url' => null];
         }
-        $row = DB::transaction(function () use ($request, $work, $tracking, $shipping) {
+        $row = DB::transaction(function () use ($request, $work, $tracking, $shipping, $shippingDate) {
             $actor = RequestValues::actor((int) $request->user()->id);
             abort_unless(RequestValues::manages($actor, 'manager'), 403);
             $row = DB::table('relocation_requests')->where('id', $work['id'])->lockForUpdate()->firstOrFail();
@@ -332,7 +482,8 @@ class RelocationController
                 $header['tracking'] = $tracking;
                 $header['shipment_operation'] = $operation;
                 $header['shipment_actor'] = (int) $actor->id;
-                $header['shipped_date'] = now()->toDateString();
+                $header['shipment_actor_name'] = $actor->displayName();
+                $header['shipped_date'] = $shippingDate;
                 RequestStock::saveHeader('relocation', $row->id, $header);
                 RequestStock::changed('relocation', $row, $actor, 'Confirmed shipment', ['fulfilled' => $quantities, 'tracking' => $tracking, 'shipped_date' => $header['shipped_date']], 'Fulfilled');
 
@@ -348,9 +499,10 @@ class RelocationController
             return DB::table('relocation_requests')->where('id', $row->id)->firstOrFail();
         });
         $request->session()->put('relocation_workspace.'.$token, array_replace($work, ['revision' => (int) $row->revision]));
-        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'tracking' => $tracking]);
+        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'tracking' => $tracking]
+            + ($shipping ? ['shippingDate' => $shippingDate, 'fulfillerName' => $request->user()->displayName()] : []));
 
-        return redirect('/relocation/work/'.$token.'?tab='.($shipping ? 'ship' : 'tracking'))->with('success', $shipping ? 'Request shipped. Stock moved from Source to In Transit.' : 'Tracking saved.');
+        return redirect('/relocation/work/'.$token.'?tab='.($shipping ? 'ship' : 'tracking'))->with('success', $shipping ? 'Request shipped.' : 'Tracking saved.');
     }
 
     public function balances(Request $request, string $token)

@@ -72,7 +72,7 @@ class InventorySearch
         });
     }
 
-    public function results(array $criteria): array
+    public function results(array $criteria, bool $naturalNames = false): array
     {
         $items = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')->join('categories', 'categories.id', '=', 'collections.category_id')
             ->leftJoin('catalog_metadata as metadata', fn ($join) => $join->on('metadata.record_id', '=', 'items.id')->where('metadata.kind', 'items'))
@@ -88,7 +88,9 @@ class InventorySearch
         if ($criteria['collections']) {
             $items->whereIn('items.collection_id', $criteria['collections']);
         }
-        $items = $items->orderBy('categories.name')->orderBy('collections.name')->orderBy('items.name')->orderBy('items.id')->get();
+        $items->orderBy('categories.name')->orderBy('collections.name');
+        if ($naturalNames) $items->orderByRaw('NATURAL_SORT_KEY(items.name)');
+        $items = $items->orderBy('items.name')->orderBy('items.id')->get();
         $ids = $items->pluck('id')->all();
         $balances = DB::table('inventory_balances')->whereIn('item_id', $ids)->get()->groupBy('item_id');
         $sources = DB::table('inventory_source_balances')->join('inventory_sources', 'inventory_sources.id', '=', 'inventory_source_balances.source_id')

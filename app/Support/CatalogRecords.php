@@ -28,7 +28,7 @@ class CatalogRecords
         return rtrim($prefix, '-').'-'.$suffix;
     }
 
-    public function records(string $kind)
+    public function records(string $kind, bool $naturalNames = false)
     {
         abort_unless(isset(self::KINDS[$kind]), 404);
         if (in_array($kind, ['suppliers', 'purposes', 'programs'], true)) {
@@ -41,6 +41,7 @@ class CatalogRecords
             $query->orderByDesc('record.is_central');
         }
 
+        if ($kind === 'items' && $naturalNames) $query->orderByRaw('NATURAL_SORT_KEY(record.name)');
         $rows = $query->orderBy('record.name')->orderBy('record.id')->get();
         if ($kind === 'categories') {
             $counts = DB::table('collections')->selectRaw('category_id, COUNT(*) AS children')->groupBy('category_id')->pluck('children', 'category_id');

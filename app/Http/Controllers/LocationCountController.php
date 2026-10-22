@@ -39,7 +39,7 @@ class LocationCountController
         $criteria = app(InventorySearch::class)->defaults();
         $criteria['include_inactive'] = true;
 
-        return array_values(array_filter(app(InventorySearch::class)->results($criteria)['rows'], fn ($row) => in_array($row['id'], $draft['items'], true)));
+        return array_values(array_filter(app(InventorySearch::class)->results($criteria, naturalNames: true)['rows'], fn ($row) => in_array($row['id'], $draft['items'], true)));
     }
 
     public function index(Request $request)
@@ -199,6 +199,6 @@ class LocationCountController
         $this->ready();
         $row = DB::table('inventory_count_operations')->where('id', $operation)->firstOrFail();
 
-        return view('inventory.count-result', ['operation' => $row, 'location' => app(CatalogRecords::class)->record('storage_locations', $row->storage_location_id), 'changes' => DB::table('inventory_count_items')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_count_items.inventory_adjustment_id')->where('inventory_count_operation_id', $operation)->orderBy('item_name')->get()]);
+        return view('inventory.count-result', ['operation' => $row, 'location' => app(CatalogRecords::class)->record('storage_locations', $row->storage_location_id), 'changes' => DB::table('inventory_count_items')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_count_items.inventory_adjustment_id')->where('inventory_count_operation_id', $operation)->orderByRaw('NATURAL_SORT_KEY(item_name)')->orderBy('item_name')->get()]);
     }
 }

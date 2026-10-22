@@ -4,7 +4,7 @@
     $progressSteps = \App\Support\PurchaseProgress::navigation(auth()->user(), $progressRow, $progressActive, $progressToken ?? null);
 @endphp
 @section('purchase-save')
-<button type="button" class="primary app-save-progress" data-purchase-save-progress @disabled(empty($progressSaveUrl)) aria-busy="false" @if(empty($progressSaveUrl)) title="No editable progress on this page. Notes and status actions are saved separately." @endif><span data-save-label>Save progress</span><span class="app-search-spinner" aria-hidden="true"></span></button>
+<button type="button" class="primary app-save-progress" data-purchase-save-progress data-save-shortcut @disabled(empty($progressSaveUrl)) aria-busy="false" @if(empty($progressSaveUrl)) title="No editable progress on this page. Notes and status actions are saved separately." @endif><span data-save-label>Save progress</span><span class="app-search-spinner" aria-hidden="true"></span></button>
 @endsection
 <div class="app-relocation-progress" data-purchase-progress data-save-url="{{ $progressSaveUrl ?? '' }}" data-save-key="{{ auth()->id() }}:{{ $progressKey }}" data-save-revision="{{ $progressRevision ?? $progressRow?->revision ?? 0 }}" data-current-revision="{{ $progressRow?->revision ?? 0 }}" data-retained-ack="{{ session('success') === 'Permanent note added.' ? 'purchase-note' : (session('success') === 'Purchase status saved.' ? 'purchase-shipping' : '') }}" data-save-version="{{ $progressVersion ?? 0 }}" data-save-dirty="{{ !empty($progressDirty) ? 'true' : 'false' }}">
 <nav aria-label="Purchase progress"><ol class="app-relocation-steps">

@@ -6,11 +6,11 @@ use Illuminate\Support\Facades\DB;
 
 class RequestCatalog
 {
-    public function rows(array $ids, ?int $source = null, ?int $destination = null): array
+    public function rows(array $ids, ?int $source = null, ?int $destination = null, bool $naturalNames = false): array
     {
         $criteria = app(InventorySearch::class)->defaults();
         $criteria['include_inactive'] = true;
-        $rows = app(InventorySearch::class)->results($criteria)['rows'];
+        $rows = app(InventorySearch::class)->results($criteria, $naturalNames)['rows'];
         $result = [];
         foreach ($rows as $row) {
             if (! in_array($row['id'], $ids, true)) {
@@ -24,20 +24,30 @@ class RequestCatalog
         return $result;
     }
 
-    public function selections(array $criteria, array $excluded, ?int $source, ?int $destination): array
+    public function selections(array $criteria, array $excluded, ?int $source, ?int $destination, bool $naturalNames = false): array
     {
         $active = app(CatalogRecords::class)->records('items')->where('state', 'active')->pluck('id')->map(fn ($id) => (int) $id)->all();
         $results = app(InventorySearch::class)->results($criteria)['rows'];
         $ids = array_values(array_filter(array_column($results, 'id'), fn ($id) => in_array($id, $active, true) && ! in_array($id, $excluded, true)));
 
-        return $this->rows($ids, $source, $destination);
+        return $this->rows($ids, $source, $destination, $naturalNames);
     }
 
-    public function choices(): array
+    public function sortItemLines(array $lines): array
+    {
+        $sorted = [];
+        foreach ($this->rows(array_map('intval', array_keys($lines)), naturalNames: true) as $item) {
+            $sorted[$item['id']] = $lines[$item['id']];
+        }
+
+        return $sorted + $lines;
+    }
+
+    public function choices(bool $naturalNames = false): array
     {
         return ['locations' => app(CatalogRecords::class)->records('storage_locations'),
             'suppliers' => app(CatalogRecords::class)->records('suppliers'),
-            'items' => app(CatalogRecords::class)->records('items'),
+            'items' => app(CatalogRecords::class)->records('items', $naturalNames),
             'collections' => DB::table('collections')->join('categories', 'categories.id', '=', 'collections.category_id')->select('collections.*', 'categories.name as category_name')->orderBy('categories.name')->orderBy('collections.name')->get()];
     }
 }
