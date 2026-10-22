@@ -24,3 +24,24 @@ Creates no Locations, balances, quantity history, requests, suppliers, programs,
 ## Retired sample-data seeder — October 22, 2026
 
 At Jeff's direction, the former development sample fixture/seeder and its `samples:seed` / `samples:reset` commands were removed, including the reset helper that depended on that fixture. Private backups preserve the removed implementation and its former instructions. Existing database data was not changed. Use `catalog:seed` for the current approved catalog.
+
+## Starting-stock CSV — October 22, 2026
+
+`StartingStockSeeder` reads `database/seeders/fixtures/starting-stock.csv`, copied unchanged from Jeff's UTF-8 CSV. Run separately after catalog and location setup; never runs on deployment or through the empty default DatabaseSeeder.
+
+```powershell
+php artisan inventory:seed
+php artisan inventory:seed --file="C:/path/to/starting-stock.csv"
+# Optional existing enabled Admin/Manager; otherwise the initial administrator:
+php artisan inventory:seed --actor=1
+```
+
+Standard entry point `php artisan db:seed --class=StartingStockSeeder` uses the default file and initial administrator. The command uses the application's configured MySQL/MariaDB connection; execution on another installation requires a separate authorization. No new users/roles, items or locations are created.
+
+CSV requires a `SKU` header and one or more existing location-name headers. Columns can be reordered, including SKU. SKUs and location headers must uniquely resolve before any counts are posted. Unknown/ambiguous SKUs or locations, duplicate rows/headers and malformed quantities reject the whole import. UTF-8 BOM is accepted; use CSV quoting around quantities with thousands separators, such as `"3,000"`. Whole signed quantities follow the application's ±1,000,000,000 bounds; fractions/scientific notation and malformed comma grouping are rejected.
+
+Blank/whitespace cells leave existing counts unchanged. Explicit0 sets the count to0. Supplied numbers SET absolute quantities rather than adding them; omitted locations/items remain unchanged. First stock for an item is posted as Starting inventory; later changed values use ordinary audited adjustments. Both go through StockPosting with an existing enabled Admin/Manager, current unit-cost snapshots, normal posting validation and one outer transaction for the entire file. Initial posting follows the existing active-location rules. Existing unit costs, catalog metadata and other business records are untouched.
+
+Rerunning identical counts creates no duplicate history; even all-blank rows have their SKU validated but cause no posting. **If live counts have changed since an import, rerunning resets each supplied numeric cell to the CSV value.** It does not treat a previously used file as permanently completed. A first explicit zero establishes a zero starting balance/history even when no balance exists; already-zero existing stock is unchanged.
+
+Current fixture:206 SKU rows,5 locations (Central/Ames/Indy/Boston/Milwaukee),373 numeric cells and657 blanks, total220003 units.35 item rows contain only blanks. Usage does not require modifying the script when adding existing-location columns or item rows.
