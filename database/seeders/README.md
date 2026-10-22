@@ -1,5 +1,13 @@
 # Catalog seeding
 
+## Command output
+
+Use `php artisan catalog:seed` and `php artisan inventory:seed` for explicit start, success and failure messages. Success is printed after the transaction commits, with counts (including zero new/changed records on an unchanged rerun). Failures return a nonzero exit status and explain input/authorization problems; unexpected failures direct you to private application logs without printing database details. Failed imports do not commit partial catalog/stock changes.
+
+The standard `php artisan db:seed --class=CatalogSeeder` and `php artisan db:seed --class=StartingStockSeeder` entry points also print the same success summaries; failures use Laravel's normal exception output. Programmatic calls without a console command still return the summary without printing.
+
+Forge's `cat: .../.forge/provision-....output: No such file or directory` refers to its command-output capture file, not a seeder validation error. Seeder messages do not repair missing Forge output files. If Forge cannot show output, inspect command execution through SSH before rerunning an import: starting-stock reruns deliberately reapply the supplied counts.
+
 ## Catalog-only seed — October 20, 2026
 
 `CatalogSeeder` reads `database/seeders/fixtures/catalog.tab`, a UTF-8 tab-delimited copy of Jeff's approved catalog file. This is the active catalog-only seeder. The default `DatabaseSeeder` remains empty. Deployments do not run this command automatically.

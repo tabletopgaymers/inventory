@@ -21,7 +21,7 @@ class CatalogSeeder extends Seeder
         }
         $rows = $this->readRows($file ?? database_path('seeders/fixtures/catalog.tab'));
 
-        return DB::transaction(function () use ($rows) {
+        $summary = DB::transaction(function () use ($rows) {
             // Coordinate with ordinary catalog saves; never create accounts or stock.
             if (! DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->first()) {
                 throw new LogicException('Run database migrations before catalog seeding.');
@@ -44,10 +44,12 @@ class CatalogSeeder extends Seeder
                 }
             }
             $summary = ['rows' => count($rows), 'categories' => count($categories), 'collections' => count($collections), 'created' => $created];
-            $this->command?->info('Catalog seed: '.json_encode($summary, JSON_THROW_ON_ERROR));
-
             return $summary;
         });
+
+        $this->command?->info('SUCCESS: Catalog seed completed. '.json_encode($summary, JSON_THROW_ON_ERROR));
+
+        return $summary;
     }
 
     private function readRows(string $file): array

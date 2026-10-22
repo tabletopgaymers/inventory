@@ -19,7 +19,7 @@ class StartingStockSeeder extends Seeder
         }
         [$headers, $rows] = $this->readRows($file ?? database_path('seeders/fixtures/starting-stock.csv'));
 
-        return DB::transaction(function () use ($headers, $rows, $actorId) {
+        $summary = DB::transaction(function () use ($headers, $rows, $actorId) {
             $bootstrap = DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
             $actorId ??= $bootstrap->user_id ? (int) $bootstrap->user_id : null;
             if (! $actorId) {
@@ -94,6 +94,10 @@ class StartingStockSeeder extends Seeder
 
             return $summary;
         }, 3);
+
+        $this->command?->info('SUCCESS: Starting-stock seed completed. '.json_encode($summary, JSON_THROW_ON_ERROR));
+
+        return $summary;
     }
 
     private function readRows(string $file): array
