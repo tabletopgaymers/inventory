@@ -29,7 +29,7 @@
 @if(in_array($mode,['activate','delivery']))<label>Actual movement date (optional; unknown stays unknown)<input type="date" name="actual_date" value="{{ $values['actual_date'] ?? '' }}"></label>@endif
 @if($mode==='activate')</div><x-app.table-region label="Activation supplies" class="app-list-table-panel"><table><thead><tr><th>Item</th><th>Source</th><th>Units</th></tr></thead><tbody>@foreach($values['supplies'] ?? [] as $supply)@php($item=$items->firstWhere('id',$supply['item_id']))<tr><th>{{ $item?->name }}<small class="app-item-sku">{{ $item?->sku }}</small></th><td>{{ $supply['source']==='external' ? 'External / unknown origin' : ($destinations[$supply['source']] ?? 'Unavailable source') }}</td><td>{{ $supply['quantity']===null ? 'Not entered' : number_format($supply['quantity']) }}</td></tr>@endforeach</tbody></table></x-app.table-region><div class="app-content">@endif
 @if(in_array($mode,['counts','correction']))
-@foreach($values['lines'] ?? [] as $itemId=>$line)@php($item=$items->firstWhere('id',(int)$itemId))
+@foreach(app(\App\Support\RequestCatalog::class)->sortItemLines($values['lines'] ?? []) as $itemId=>$line)@php($item=$items->firstWhere('id',(int)$itemId))
 <fieldset><legend>{{ $item?->name ?: ($line['item'] ?? 'Unavailable item') }} · {{ $item?->sku ?: ($line['sku'] ?? '#'.$itemId) }}</legend>
 @if($mode==='correction')<label>Report brought<input name="lines[{{ $itemId }}][brought]" inputmode="numeric" required value="{{ $line['brought'] }}"></label>@else<p>Brought: {{ number_format($line['brought']) }}</p>@endif
 <label>{{ $mode==='correction' ? 'Report remaining' : 'Counted remaining (blank if not counted)' }}<input name="lines[{{ $itemId }}][remaining]" inputmode="numeric" value="{{ $line['remaining'] ?? '' }}" @required($mode==='correction')></label>
@@ -45,6 +45,6 @@
 <input type="hidden" name="split_item" value=""><input type="hidden" name="remove_split" value="">
 @endif
 @if($mode==='correction')<label>Explanation<textarea data-optional name="explanation" maxlength="5000">{{ $values['explanation'] ?? '' }}</textarea></label>@endif
-<div class="actions"><a class="discard" href="{{ $row ? '/events/'.$row->id : '/events' }}">Discard changes</a>@if($mode==='plan')<button class="primary" name="action" value="save" formnovalidate>Save planning</button>@else @if($mode==='counts')<button name="action" value="save" formnovalidate>Save progress</button>@endif<button class="primary" name="action" value="review">{{ $mode==='counts' ? 'Review irreversible finalization' : 'Review '.$mode }}</button>@endif</div>
+<div class="actions"><a class="discard" href="{{ $row ? '/events/'.$row->id : '/events' }}">Discard changes</a>@if($mode==='plan')<button class="primary" name="action" value="save" formnovalidate>Save planning</button>@else @if($mode==='counts')<button name="action" value="save" formnovalidate data-save-shortcut>Save progress</button>@endif<button class="primary" name="action" value="review">{{ $mode==='counts' ? 'Review irreversible finalization' : 'Review '.$mode }}</button>@endif</div>
 </div></form><script src="/requests.js?v=inline-decisions-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

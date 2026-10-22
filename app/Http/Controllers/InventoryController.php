@@ -49,7 +49,7 @@ class InventoryController
     {
         $this->ready();
 
-        return view('inventory.index', ['items' => DB::table('items')->orderBy('name')->get()]);
+        return view('inventory.index', ['items' => DB::table('items')->orderByRaw('NATURAL_SORT_KEY(name)')->orderBy('name')->orderBy('id')->get()]);
     }
 
     public function show(Request $request, int $item)
@@ -70,7 +70,7 @@ class InventoryController
             $state = app(CatalogRecords::class)->record('items', $item)->state;
             $criteria = app(InventorySearch::class)->defaults();
             $criteria['include_inactive'] = true;
-            $results = app(InventorySearch::class)->results($criteria);
+            $results = app(InventorySearch::class)->results($criteria, naturalNames: true);
             $result = collect($results['rows'])->firstWhere('id', $item);
             foreach (app(InventorySearch::class)->columns() as $key => $column) {
                 if ($column['kind'] !== 'storage') {

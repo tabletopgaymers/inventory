@@ -56,7 +56,7 @@ class CatalogController
             $records = $records->sort(fn ($left, $right) =>
                 strcasecmp($left->category_name, $right->category_name)
                 ?: strcasecmp($left->collection_name, $right->collection_name)
-                ?: strcasecmp($left->name, $right->name)
+                ?: strnatcasecmp($left->name, $right->name)
                 ?: ($left->id <=> $right->id)
             )->values();
         }
@@ -92,7 +92,7 @@ class CatalogController
         $category = $kind === 'collections' ? $service->record('categories', (int) $row->category_id) : null;
         $children = $kind === 'categories'
             ? $service->records('collections')->where('category_id', $record)->values()
-            : ($kind === 'collections' ? $service->records('items')->where('collection_id', $record)->values() : collect());
+            : ($kind === 'collections' ? $service->records('items', naturalNames: true)->where('collection_id', $record)->values() : collect());
 
         return view('catalog.show', [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,

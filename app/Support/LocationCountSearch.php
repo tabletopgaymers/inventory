@@ -57,7 +57,7 @@ class LocationCountSearch
         $search = $criteria + app(InventorySearch::class)->defaults();
         $search['include_inactive'] = true;
         $states = app(CatalogRecords::class)->records('items')->keyBy('id');
-        $rows = app(InventorySearch::class)->results($search)['rows'];
+        $rows = app(InventorySearch::class)->results($search, naturalNames: true)['rows'];
 
         return array_values(array_filter($rows, fn ($row) => $row['values']['storage:'.$criteria['location_id']] !== 0
             || (($criteria['include_active_zero'] ?? $this->zeroStockDefault($criteria['location_id'])) && $states[$row['id']]->state === 'active')));

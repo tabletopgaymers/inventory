@@ -1,0 +1,22 @@
+.inventory-search-controls { min-width: 0; container: inventory-search / inline-size; }
+.inventory-search-controls .inventory-search-filter-groups { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--app-density-field-y,.75rem) 1rem; }
+.inventory-search-controls .inventory-search-collections { grid-column: 1 / -1; }
+/* Balanced newspaper columns preserve the alphabetical DOM order down each column. */
+.inventory-search-controls .inventory-search-choices { column-count: 1; column-gap: 1.5rem; }
+.inventory-search-controls .app-choice { margin: var(--app-density-field-y,.75rem) 0; break-inside: avoid; }
+.inventory-search-controls .inventory-search-choices label.app-choice { margin: 0; padding: calc(var(--app-density-field-y,.75rem) / 2) 0; }
+.inventory-search-controls .inventory-search-filter-actions { display: flex; justify-content: flex-end; padding: calc(var(--app-density-field-y,.75rem) / 2) 0 var(--app-density-field-y,.75rem); }
+.inventory-search-controls .search-actions label { min-width: min(100%,16rem); }
+.inventory-search-controls [data-is-feedback]:empty { display: none; }
+@container inventory-search (min-width: 40rem) {
+    .inventory-search-controls .inventory-search-filter-groups { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .inventory-search-controls .inventory-search-collections .inventory-search-choices { column-count: 2; }
+    .inventory-search-controls .inventory-search-locations { grid-column: span 2; }
+    .inventory-search-controls .inventory-search-locations .inventory-search-choices { column-count: 2; }
+    .inventory-search-controls .inventory-search-sources { grid-column: span 1; }
+    .inventory-search-controls .inventory-search-filter-groups:not(:has(.inventory-search-sources)) .inventory-search-locations,
+    .inventory-search-controls .inventory-search-filter-groups:not(:has(.inventory-search-locations)) .inventory-search-sources { grid-column: 1 / -1; }
+}
+@container inventory-search (min-width: 64rem) {
+    .inventory-search-controls .inventory-search-collections .inventory-search-choices { column-count: 3; }
+}

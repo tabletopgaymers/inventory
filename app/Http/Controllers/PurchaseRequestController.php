@@ -76,8 +76,8 @@ class PurchaseRequestController
         $ids = array_map('intval', array_keys($draft['values']['lines']));
         $catalog = app(RequestCatalog::class);
 
-        return $catalog->choices() + ['draft' => $draft, 'row' => $row, 'rows' => $catalog->rows($ids),
-            'results' => $draft['criteria'] === null ? [] : $catalog->selections($draft['criteria'], $ids, null, null),
+        return $catalog->choices(naturalNames: true) + ['draft' => $draft, 'row' => $row, 'rows' => $catalog->rows($ids, naturalNames: true),
+            'results' => $draft['criteria'] === null ? [] : $catalog->selections($draft['criteria'], $ids, null, null, naturalNames: true),
             'submitter' => app(PurchaseRequests::class)->submitter($request->user(), $row)];
     }
 
@@ -344,7 +344,7 @@ class PurchaseRequestController
             'editable' => app(PurchaseRequests::class)->editable($request->user(), $row),
             'manager' => RequestValues::manages($request->user(), 'procurement'),
             'submitter' => app(PurchaseRequests::class)->submitter($request->user(), $row),
-            'requestRows' => app(RequestCatalog::class)->rows(DB::table('purchase_request_lines')->where('purchase_request_id', $id)->pluck('item_id')->map(fn ($value) => (int) $value)->all()),
+            'requestRows' => app(RequestCatalog::class)->rows(DB::table('purchase_request_lines')->where('purchase_request_id', $id)->pluck('item_id')->map(fn ($value) => (int) $value)->all(), naturalNames: true),
             'requestLines' => DB::table('purchase_request_lines')->where('purchase_request_id', $id)->pluck('quantity', 'item_id')->all(),
             'notes' => DB::table('purchase_request_notes')->where('purchase_request_id', $id)->orderByDesc('id')->get(),
             'activity' => DB::table('purchase_request_activity')->where('purchase_request_id', $id)->orderByDesc('id')->get()]);
@@ -428,7 +428,7 @@ class PurchaseRequestController
         }
         $lines = DB::table('purchase_request_lines')->where('purchase_request_id', $id)->get()->keyBy('item_id')->map(fn ($line) => (array) $line)->all();
 
-        return view('requests.purchase-preparation', app(RequestCatalog::class)->choices() + ['row' => $row, 'canPrepare' => false, 'token' => null, 'draft' => ['values' => (array) $row + ['lines' => $lines], 'revision' => $row->revision, 'version' => 0, 'criteria' => null, 'selection' => []], 'rows' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($lines))), 'results' => []]);
+        return view('requests.purchase-preparation', app(RequestCatalog::class)->choices(naturalNames: true) + ['row' => $row, 'canPrepare' => false, 'token' => null, 'draft' => ['values' => (array) $row + ['lines' => $lines], 'revision' => $row->revision, 'version' => 0, 'criteria' => null, 'selection' => []], 'rows' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($lines)), naturalNames: true), 'results' => []]);
     }
 
     public function prepare(Request $request, int $id)

@@ -1,57 +1,47 @@
-# Development samples
+# Catalog seeding
 
-State: Development-only sample data commands. Deployment never invokes these commands.
+## Catalog-only seed — October 20, 2026
 
-`DevelopmentSampleSeeder` uses the approved nonprivate D-186 hierarchy copied from the planning workspace's original `sample-data.md`, with deterministic illustrative quantities. The original source is preserved. The fixture contains 9 categories, 21 collections, 61 items and the 5 supplied storage locations; 7 items have zero stock throughout. It creates no identities, roles, events, suppliers, requests or fulfillment activity.
-
-Run through the guarded Artisan entry point. Without an actor option, reuse the existing initial-admin bootstrap account under the same access/stock lock and current enabled Admin/Manager authorization. No new identity or role is created:
+`CatalogSeeder` reads `database/seeders/fixtures/catalog.tab`, a UTF-8 tab-delimited copy of Jeff's approved catalog file. This is the active catalog-only seeder. The default `DatabaseSeeder` remains empty. Deployments do not run this command automatically.
 
 ```powershell
-php artisan samples:seed
+php artisan catalog:seed
+# An explicitly selected UTF-8 file can be used later:
+php artisan catalog:seed --file="C:/path/to/catalog.tab"
 ```
 
-An explicitly authorized existing actor may be supplied with `--actor=<id>`. Never copy a local actor ID to a remote environment. Missing/disabled/unprivileged bootstrap actors fail safely, even on an already installed fixture; resolve the existing access condition before publication or supply a separately authorized existing actor. The default `DatabaseSeeder` remains empty.
+Standard Laravel entry point is also supported: `php artisan db:seed --class=CatalogSeeder`.
 
-Local/testing runs require the exact local application URL. Hosted runs require explicit `--hosted`, environment `development` and exact `https://dev-inventory.tabletopgaymers.org`; the unchanged `BaselineProbe` additionally enforces loopback MariaDB and environment-specific database/account (`tg_inventory_dev` on hosted development), private/session configuration and schema boundaries. Production, unrelated hosts/databases, wrong option/context, disabled actors and actors without a stock-posting role fail closed. Failures use sanitized command output.
+Required columns: Category, Collection, Item, SkuPre, SkuPost, Sku. Each row describes an Item under its Category/Collection. Sku must equal prefix + dash + suffix (e.g. BH-TGBH). Prefixes may be shared by collections; full SKUs must be unique. Quoted fields follow standard CSV quoting with a tab delimiter. Input must be UTF-8; Unicode fractions and embedded quotation marks are preserved.
 
-The installation is one transaction serialized with catalog/access/stock writes. Existing categories and locations match by scoped name; collections match by category/name and must have the approved prefix. Items match by unique full SKU and must agree with their collection/name. Ambiguous or conflicting identities roll back for inspection. `RPR-THEY` reuses the earlier They/Them record. Existing optional metadata, current costs, non-fixture storage quantities and unrelated records remain intact. New costs are zero/unknown (`n/a`), not invented purchase costs. Required catalog name registries are populated without overwriting existing metadata.
+Optional columns for later enrichment: CategoryDescription, CollectionDescription, ItemDescription, Notes, Variety. Nonblank supplied values update those fields; omitted/blank values preserve existing metadata. Repeated category/collection descriptions within the file must agree. To add other attributes later, extend `CatalogSeeder` explicitly rather than silently ignoring unknown columns.
 
-All quantities pass through `StockPosting`, retaining immutable history and current exact costs. Rationale identifies generated sample activity. An immutable operation UUID, `dbb53b93-cf7b-4859-a1f3-f11b9048ba01`, is the atomic v1 installation receipt. Zero-stock items may have an empty adjustment group but no quantity-history entries. A default rerun with that receipt does no catalog or stock work, preserving subsequent renames, SKUs, retirement, metadata, costs and quantities. It deliberately does not repair or reinitialize later user edits. Future fixture versions need a reviewed installation strategy; editing the JSON does not automatically replay an installed version.
+Reruns add missing records and reuse matching identities; no deletions, renames, reparenting, prefix changes or stock/cost overwrites. Existing statuses and unspecified metadata are preserved. New Items use zero/unknown unit cost. Identity conflicts, malformed rows and unsupported headers abort the transaction. Categories/Collections populate the name registry; all records receive active metadata on creation. Uses a single transaction coordinated with catalog saves through the existing bootstrap lock. Uses the application's configured MySQL/MariaDB connection without environment or database-host restrictions, including when called through db:seed. Run migrations/setup first; publishing the command does not execute it. No actor account required for this explicit CLI catalog setup.
 
-For an explicitly authorized local quantity refresh only:
+Creates no Locations, balances, quantity history, requests, suppliers, programs, purposes, users or roles. Fresh fixture contains 13 Categories, 36 Collections and 206 Items. The source in the documentation workspace is `_data/seeder/seeder-data.tab`; after editing it, copy/export the approved UTF-8 data into the application fixture or select the source explicitly with --file. The application fixture is the default executable input, not an automatically synchronized file.
+
+
+## Retired sample-data seeder — October 22, 2026
+
+At Jeff's direction, the former development sample fixture/seeder and its `samples:seed` / `samples:reset` commands were removed, including the reset helper that depended on that fixture. Private backups preserve the removed implementation and its former instructions. Existing database data was not changed. Use `catalog:seed` for the current approved catalog.
+
+## Starting-stock CSV — October 22, 2026
+
+`StartingStockSeeder` reads `database/seeders/fixtures/starting-stock.csv`, copied unchanged from Jeff's UTF-8 CSV. Run separately after catalog and location setup; never runs on deployment or through the empty default DatabaseSeeder.
 
 ```powershell
-php artisan samples:seed --actor=4 --refresh
+php artisan inventory:seed
+php artisan inventory:seed --file="C:/path/to/starting-stock.csv"
+# Optional existing enabled Admin/Manager; otherwise the initial administrator:
+php artisan inventory:seed --actor=1
 ```
 
-This reruns the same scoped identity reconciliation and sets only approved sample items at the five fixture locations. It retains current costs, other location quantities, unrelated records and all previous history, and fails on renamed/conflicting identities rather than silently reparenting them. It does not delete sample records or reset the database. The command prohibits refresh outside `local`;
+Standard entry point `php artisan db:seed --class=StartingStockSeeder` uses the default file and initial administrator. The command uses the application's configured MySQL/MariaDB connection; execution on another installation requires a separate authorization. No new users/roles, items or locations are created.
 
-## Deployment separation
+CSV requires a `SKU` header and one or more existing location-name headers. Columns can be reordered, including SKU. SKUs and location headers must uniquely resolve before any counts are posted. Unknown/ambiguous SKUs or locations, duplicate rows/headers and malformed quantities reject the whole import. UTF-8 BOM is accepted; use CSV quoting around quantities with thousands separators, such as `"3,000"`. Whole signed quantities follow the application's ±1,000,000,000 bounds; fractions/scientific notation and malformed comma grouping are rejected.
 
-Deployment does not install sample data or reset records. Run these commands only as separately authorized operations.
+Blank/whitespace cells leave existing counts unchanged. Explicit0 sets the count to0. Supplied numbers SET absolute quantities rather than adding them; omitted locations/items remain unchanged. First stock for an item is posted as Starting inventory; later changed values use ordinary audited adjustments. Both go through StockPosting with an existing enabled Admin/Manager, current unit-cost snapshots, normal posting validation and one outer transaction for the entire file. Initial posting follows the existing active-location rules. Existing unit costs, catalog metadata and other business records are untouched.
 
-## Explicit approved development reset — D-220/D-221
+Rerunning identical counts creates no duplicate history; even all-blank rows have their SKU validated but cause no posting. **If live counts have changed since an import, rerunning resets each supplied numeric cell to the CSV value.** It does not treat a previously used file as permanently completed. A first explicit zero establishes a zero starting balance/history even when no balance exists; already-zero existing stock is unchanged.
 
-Only on a direct user request or affirmative approval for that reset, run in the reviewed candidate's directory through the existing approved publisher framework/CLI access:
-
-```sh
-php artisan samples:reset --hosted --confirm=development-business-data --no-interaction
-```
-
-The command is repeatable for later approved resets, never a per-deploy step. It requires the complete compatible transactional schema, exact hosted development context/explicit flag, exact confirmation and an existing enabled **Admin** (defaults to the current initial-admin bootstrap record; optional existing Admin `--actor=<id>`). Testing allows the disposable test database with no hosted flag. Live `local` and all production/unrelated contexts are rejected; the accepted local demo is preserved. A CLI flag cannot verify human approval: the operator must obtain the requested approval before invocation. No timeout or missing response counts as approval.
-
-`DevelopmentSampleReset::TABLES` is the explicit25-table child-before-parent deletion allowlist: all7 request tables,3 count/cost tables,7 catalog/storage/stock/history tables and8 catalog/reference/source/preference tables. It replaces disposable business records, including immutable quantity/cost history only under this reset exception. It preserves users, external identities, roles, contact confirmations, bootstrap/access audits, sessions, applied migrations, configuration/secrets and schema. Account recreation is unnecessary. `DELETE` runs with foreign keys enabled in one transaction; no truncate/drop/migrate:fresh/auto-increment reset. Existing shared bootstrap locking serializes authorized catalog/access/stock/request writes. Any deletion/reseed/audit failure rolls back the original rows, and no partial fresh baseline is committed. Auto-increment gaps may remain after rollback; IDs are not reused.
-
-After deletion, the same seeder loads the current approved fixture and audited illustrative stock. A separate empty stock group with a generated operation UUID captures actor/time/first item and identifies this explicit reset without extra quantity-history entries. The CLI reports that UUID. Every later approved reset creates a fresh baseline/receipt; ordinary seeding continues to use its installation UUID and no-ops after installation. Reset does not offer a first-ever-only lock or silently run because fixture revision changed.
-
-A hosted reset is a separate explicitly authorized operation. Preserve protected accounts, sessions and business history according to the command contract; no reset runs during normal deployment.
-
-For a later approved reset, follow the same command contract. Discard stale business views afterward; monotonic IDs prevent old item/request references targeting new rows.
-
-## Fixture revision and growth convention
-
-Keep the original supplied source unchanged and update its converted approved fixture copy through review. `version` identifies the approved dataset revision (current `development-samples-v1`); increment it when approved names, hierarchy, locations or quantities change. Preserve full item SKUs and category/collection-scoped identities for unchanged records; repeated names in different collections are distinct. Keep existing prefixes/suffixes stable. Append reviewed items/collections/categories; location quantity vectors follow the fixture location list exactly, so location changes require reviewing every vector. Generated quantities remain explicitly illustrative; transaction rationales capture the fixture revision.
-
-The simplest current adoption path for a changed reviewed dataset is an **explicit approved reset**: it removes the installation receipt transactionally and installs the then-current fixture, so v1 never strands future additions. Merely changing `version` or publishing a JSON change does not reset or replay installed data. Normal deployment does not invoke the seeder and preserves later edits/history. No additive importer/version-migration platform is implemented. If future additions must be applied without reset, separately review a narrow additive-only path preserving existing identities/quantities/history; do not infer it from this command.
-
-Future real-production initialization/update from user-supplied actual data is a future scoped goal. This command remains disposable development-only; test quantities are not production opening stock and no production reset/import/history rewrite is authorized.
+Current fixture:206 SKU rows,5 locations (Central/Ames/Indy/Boston/Milwaukee),373 numeric cells and657 blanks, total220003 units.35 item rows contain only blanks. Usage does not require modifying the script when adding existing-location columns or item rows.

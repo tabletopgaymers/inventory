@@ -79,7 +79,7 @@ class InventoryBrowseController
     {
         $this->ready();
         $context = $this->context($request, $token);
-        $result = app(InventorySearch::class)->results($context['submitted']);
+        $result = app(InventorySearch::class)->results($context['submitted'], naturalNames: true);
         $context['export'] = $result;
         $context['export_expires'] = now()->timestamp + 1800;
         $request->session()->put('inventory_browse.'.$token, $context);
@@ -141,7 +141,7 @@ class InventoryBrowseController
         $criteria['include_inactive'] = true;
         $criteria['columns'] = ['storage:'.$location];
 
-        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->results($criteria), 'browse' => $request->query('browse'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->results($criteria, naturalNames: true), 'browse' => $request->query('browse'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
     }
 
     public function classification(Request $request, string $kind, int $record)

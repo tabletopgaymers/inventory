@@ -58,6 +58,20 @@
         <li>Use the normal dark text color for group headings; purple indicates a link.</li>
         <li>Indent record names beneath group headers with the shared <code>app-grouped-item</code> style. Its padding comes from <code>--app-grouped-item-padding</code>, so changes apply globally.</li>
     </ul>
+    <div class="app-content" id="compact-nonwrapping-tables">
+        <h4>For consideration: compact, nonwrapping tables</h4>
+        <p>Jeff liked this pattern while refining Relocation on October 14, 2026. It is implemented in the singular Relocation Material and Review tables and is a candidate for reuse, not a change to every table or the wrapping convention above. When asked for this pattern, use the following details together.</p>
+        <ul>
+            <li>Keep all column titles, group subheaders, item names and values on one line. Apply <code>white-space: nowrap</code> to the table's <code>th</code> and <code>td</code> through a table class; individual cells do not need inline styles. Keep the table inside the shared table-panel component so narrow screens scroll horizontally rather than wrap, clip or shrink the text.</li>
+            <li>Let the Item column take the remaining space without assigning it a width. Use compact percentage widths for the other columns. Percentages are layout targets; the browser may expand columns to fit their nonwrapping content.</li>
+            <li>For editable requested material, use columns in this order: delete, Item, Requested, Fulfilled, Received. Set the delete column to 1% and each quantity column to 5%, preferably with a <code>colgroup</code>. Quantity inputs are about 10 characters wide (<code>10ch</code>), not stretched to fill the row. Fulfilled and Received are disabled at the request stage and are skipped when tabbing.</li>
+            <li>The delete action is a small bold red ✕ in the first column, with an item-specific accessible label. Category : Collection subheaders reserve an empty first cell for that column and span the remaining four columns. Item names beneath them use the existing grouped-item indentation; do not display the SKU beside the name.</li>
+            <li>For the read-only Review table, use Item, a three-column Source group, Requested, and a three-column Destination group. Each location's actual name is a centered heading spanning its three columns; omit “stock.” Requested is also centered. Each projection group has current quantity right-aligned, → centered, and projected quantity right-aligned. Target 7% for each numeric projection column, 2% for each arrow column, and 8% for Requested; tighten only horizontal projection padding so the values stay together. Group subheaders span all eight columns.</li>
+            <li>Source projection is current minus requested; destination projection is current plus requested. These are hypothetical previews and do not reserve or move inventory. Format numbers with thousands separators. Negative values retain the minus sign and use the shared danger red. Invalid requested quantities highlight the affected row using the error message's text/background colors.</li>
+            <li>Use shared table-panel header/footer slots for headings and associated actions. Preserve Display Density for vertical row spacing, input padding and panel padding; compact column widths and horizontal spacing do not require smaller text or fixed row heights.</li>
+        </ul>
+        <p>Implementation references: <code>resources/views/relocation/material-table.blade.php</code> defines the shared Material/Fulfillment table; <code>resources/views/relocation/work.blade.php</code> defines the Review table and styles; <code>public/relocation.js</code> controls table editability, grouped rows and projections. These are in the application checkout. This proposal includes the small row delete action as a specific exception to the general table-action convention above.</p>
+    </div>
 </section>
 <x-app.guide-divider />
 <section id="columns" aria-labelledby="columns-title">

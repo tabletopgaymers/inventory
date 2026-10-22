@@ -47,7 +47,7 @@ class RequestSchema
                 'primary' => ['id'], 'unique' => ['id'], 'foreign' => ['owner_id:users:id', 'source_location_id:storage_locations:id', 'destination_location_id:storage_locations:id'],
             ],
             'relocation_request_lines' => [
-                'columns' => ['id' => $id, 'relocation_request_id' => $id, 'item_id' => $id, 'quantity' => ['int unsigned', false], 'fulfillment_quantity' => ['int unsigned', true]],
+                'columns' => ['id' => $id, 'relocation_request_id' => $id, 'item_id' => $id, 'quantity' => ['bigint', true], 'fulfillment_quantity' => ['int unsigned', true], 'added_stage' => ['varchar(20)', false]],
                 'primary' => ['id'], 'unique' => ['id', 'relocation_request_id,item_id'], 'foreign' => ['relocation_request_id:relocation_requests:id', 'item_id:items:id'],
             ],
             'relocation_request_activity' => [

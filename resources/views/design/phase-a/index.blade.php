@@ -32,6 +32,7 @@
     <h2>Explore the guide</h2>
     <p><a href="/style-guide/presentation">Presentation</a> covers display density, titles, information panels, table panels, responsive columns and status indicators.</p>
     <p><a href="/style-guide/forms">Forms</a> covers input types, numeric values, buttons, save-progress states and validation errors.</p>
+    <p><a href="/style-guide/tab-form">Tab form</a> demonstrates five sections of one form with values retained in browser storage.</p>
     <p><a href="/style-guide/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
     <p><a href="/style-guide/orphaned">Orphaned examples</a> temporarily retains environment indicators, record details, permanent notes, loading states, account feedback, role actions and the legacy table layout.</p>
     <p><a href="/style-guide/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
