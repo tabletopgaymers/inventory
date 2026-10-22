@@ -12,6 +12,11 @@ application key with `php artisan key:generate`, and install the schema with
 `php artisan migrate`. Serve only `public/` through the configured Herd site at
 `https://tg-inventory-app.test`. Never commit environment files or credentials.
 
+Migrations create an active `Central` storage location marked `is_central` when
+the location catalog is empty. Existing location catalogs are left unchanged.
+This is installation data, independent of optional catalog seeding; no stock is
+created.
+
 ## Development deployment
 
 The development site is `https://dev-inventory.tabletopgaymers.org` on Forge,
@@ -23,7 +28,7 @@ Deployment does not run custom scripts, CI, tests, seeders or resets.
 Keep the existing shared environment and storage configuration. Preserve business
 data, immutable history and runtime authorization when deploying. Sample data
 installation or reset is a separate explicitly authorized operation; see
-[development samples](database/seeders/README.md).
+[catalog seeding](database/seeders/README.md).
 
 The optional `APP_REVISION` environment value can label the development footer.
 No generated revision marker is required.
