@@ -1,0 +1,7 @@
+.purchase-panel{margin-bottom:var(--app-space-4,1rem)}.purchase-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}.purchase-tabs,.purchase-fields{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}.purchase-tabs [aria-current]{font-weight:bold;text-decoration:underline}.purchase-fields label{display:flex;flex-direction:column;gap:.35rem}.app-shell .purchase-table{overflow-x:auto;max-width:100%;min-width:0;box-sizing:border-box}.purchase-table table{white-space:nowrap}.purchase-table td{text-align:right}.purchase-table input{width:10ch;text-align:right}.purchase-remove{color:#a00000}.purchase-step,[data-purchase-invoice]{min-width:0;max-width:100%}.purchase-step[hidden]{display:none}.purchase-table input[data-invoice-field="unit"]{width:16ch}
+
+/* Match the Relocation step-panel spacing and selected-tab treatment. */
+.app-shell .purchase-tab-panel{margin-bottom:.75rem}
+.app-shell .purchase-tabs{gap:.25rem;align-items:center}
+.app-shell .purchase-tabs button,.app-shell .purchase-tabs a.button{border-radius:.5rem .5rem 0 0}
+.app-shell .purchase-tabs button[aria-selected="true"],.app-shell .purchase-tabs a[aria-current="page"]{background:#e5dfef;color:var(--app-text,#231c2f);border:2px solid var(--app-primary,#663399)}
