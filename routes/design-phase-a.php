@@ -18,6 +18,7 @@ if (app()->environment(['local', 'development'])) {
             Route::view('/orphaned', 'design.phase-a.orphaned')->name('orphaned');
             Route::view('/examples', 'design.phase-a.examples')->name('examples');
             if ($scope === 'local') {
+                Route::view('/vite-demo', 'design.phase-a.vite-demo')->name('vite-demo');
                 Route::view('/wrapper', 'design.phase-a.wrapper')->name('wrapper');
             }
         });

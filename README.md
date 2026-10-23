@@ -19,6 +19,29 @@ created.
 
 ## Development deployment
 
+### Frontend assets
+
+From the application root, run `npm ci` to install locked frontend dependencies.
+Use `npm run dev` alongside Herd for live CSS/JS development, leaving that terminal
+running; Ctrl+C stops it. If an interrupted process leaves `public/hot`, remove
+that stale marker before using built assets. Use `npm run build` to generate
+hashed assets and the manifest in ignored `public/build/`.
+
+The common shell loads `resources/css/app.css` through Laravel Vite. This imports
+the existing Tailwind/daisyUI theme and app rules from
+`resources/design/phase-a/app-input.css`; edit source, not public/app.css or build
+output. Existing page-specific public CSS and JavaScript remain in use. Vite also
+builds the local style-guide demo and its locally hosted Font Awesome Free icons.
+The nested evaluation package is not the application build.
+
+Before deploying this branch, enable `npm ci --include=dev` followed by
+`npm run build` in the Forge release directory before activating the release.
+The server needs compatible Node/npm (local Node 24); no Vite dev server runs on
+the deployed site. Never deploy public/hot. These are required script changes,
+not a claim that the remote deployment configuration has already been updated.
+
+### Existing server process
+
 The development site is `https://dev-inventory.tabletopgaymers.org` on Forge,
 using the `main` branch. Forge creates a release, installs locked Composer
 packages without development dependencies, runs `php artisan migrate --force`,

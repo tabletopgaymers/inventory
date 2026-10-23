@@ -10,6 +10,7 @@
     <a href="/style-guide/orphaned" @if(request()->is('style-guide/orphaned')) aria-current="page" @endif>Orphaned</a>
     <a href="/style-guide/examples" @if(request()->is('style-guide/examples')) aria-current="page" @endif>Example uses</a>
     @if(app()->environment('local'))
+    <a href="/style-guide/vite-demo" @if(request()->is('style-guide/vite-demo')) aria-current="page" @endif>Vite demo</a>
     <a href="/style-guide/wrapper" @if(request()->is('style-guide/wrapper')) aria-current="page" @endif>Application frame</a>
     @endif
 </nav>

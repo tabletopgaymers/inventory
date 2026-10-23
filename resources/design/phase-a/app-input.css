@@ -1,6 +1,8 @@
 @import "tailwindcss" source(none);
 
 @source "../../views/components/app";
+@source "../../views/purchase";
+@source "../../views/relocation";
 @source "../../views/catalog";
 @source "../../views/inventory";
 @source "../../views/requests";
