@@ -30,7 +30,12 @@ hashed assets and the manifest in ignored `public/build/`.
 The common shell loads `resources/css/app.css` through Laravel Vite. This imports
 the existing Tailwind/daisyUI theme and app rules from
 `resources/design/phase-a/app-input.css`; edit source, not public/app.css or build
-output. Existing page-specific public CSS and JavaScript remain in use. Vite also
+output. Singular Relocation and Purchase request-tab scripts now use Vite entries
+at resources/js/relocation.js and resources/js/purchase-request.js, importing
+shared workflow tab mechanics. Purchase invoice code also uses the Vite entry
+resources/js/purchase-work-invoice.js; all three use shared quantity navigation.
+Other page-specific public CSS and JavaScript
+remain in use. Vite also
 builds the local style-guide demo and its locally hosted Font Awesome Free icons.
 The nested evaluation package is not the application build.
 

@@ -32,11 +32,11 @@
 <input type="hidden" name="revision" value="{{ $revision }}"><input type="hidden" name="mode" value="{{ $mode }}"><input type="hidden" name="tab" value="{{ $tab }}"><input type="hidden" name="next_tab" value="{{ $next[$tab] ?? $tab }}">
 @foreach($tabs as $section=>$heading)
 <section class="purchase-step" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
-<div class="app-content app-record-content purchase-panel"><div class="purchase-heading"><h2>{{ $section==='order' && $mode==='receipt' ? 'Receipt details' : $heading }}</h2>
+<div class="app-content app-record-content purchase-panel"><x-workflow.heading><h2>{{ $section==='order' && $mode==='receipt' ? 'Receipt details' : $heading }}</h2>
 @if(!$readonly)
 @if(isset($next[$section]))<button name="action" value="next" class="primary">Next &gt;</button>@elseif($section===$reviewTab)<button name="action" value="confirm" class="primary" @disabled(!$preview || count($reviewErrors)>0)>{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</button>@endif
 @endif
-</div>
+</x-workflow.heading>
 @if($section==='order')
 <div class="purchase-fields">
 <label>Title<input id="purchase-title" name="title" value="{{ $values['title'] ?? $row->title }}" @readonly($readonly)></label>
@@ -63,7 +63,7 @@
 @endif
 </div>
 @if($section===$editTab)
-<x-app.table-region label="Invoice material" class="app-list-table-panel purchase-table"><table><thead><tr><th></th><th>Item</th><th>{{ $mode==='receipt' ? 'Ordered' : 'Requested' }}</th><th>{{ $mode==='receipt' ? 'Received' : 'Quantity' }}</th><th>Unit ($)</th><th>Cost ($)</th><th>Fee ($)</th><th>Line ($)</th><th></th></tr></thead><tbody>
+<x-app.table-region label="Invoice material" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th></th><th>Item</th><th>{{ $mode==='receipt' ? 'Ordered' : 'Requested' }}</th><th>{{ $mode==='receipt' ? 'Received' : 'Quantity' }}</th><th>Unit ($)</th><th>Cost ($)</th><th>Fee ($)</th><th>Line ($)</th><th></th></tr></thead><tbody>
 @php($group=null)
 @foreach($items as $item)
 @php($id=$item['id'])
@@ -78,7 +78,7 @@
 </select></label><button name="action" value="add">Add selected</button></div>@endif
 @endif
 @if(($section===$reviewTab || $section==='charges') && $preview)
-<x-app.table-region label="Acquisition cost breakdown" class="app-list-table-panel purchase-table"><table><thead><tr><th>Item</th><th>Units</th>@foreach(['cost'=>'Cost','fee'=>'Fee','other'=>'Other fees','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping','acquisition'=>'Acquisition'] as $key=>$label)<th>{{ $label }} ($)</th>@endforeach<th>Acquisition / unit</th></tr></thead><tbody>
+<x-app.table-region label="Acquisition cost breakdown" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Units</th>@foreach(['cost'=>'Cost','fee'=>'Fee','other'=>'Other fees','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping','acquisition'=>'Acquisition'] as $key=>$label)<th>{{ $label }} ($)</th>@endforeach<th>Acquisition / unit</th></tr></thead><tbody>
 @php($group=null)
 @foreach($items as $item)
 @php($id=$item['id'])
@@ -90,14 +90,14 @@
 @endforeach
 </tbody><tfoot><tr><th colspan="9">Total USD</th><td>{{ \App\Support\PurchaseCosting::dollars($preview['total']) }}</td></tr></tfoot></table></x-app.table-region>
 @if($section==='confirmation')
-<x-app.table-region label="Received material" class="app-list-table-panel purchase-table"><table><thead><tr><th>Item</th><th>Ordered</th><th>Received</th><th>Difference</th></tr></thead><tbody>
+<x-app.table-region label="Received material" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Ordered</th><th>Received</th><th>Difference</th></tr></thead><tbody>
 @foreach(array_unique(array_merge(array_keys($ordered),array_keys($preview['lines']))) as $id)
 @php($receivedQuantity=$preview['lines'][$id]['quantity'] ?? 0)
 @php($variance=$receivedQuantity-($ordered[$id] ?? 0))
 <tr><th>{{ $catalogItems->firstWhere('id',(int)$id)?->name ?? '#'.$id }}</th><td>{{ number_format($ordered[$id] ?? 0) }}</td><td>{{ number_format($receivedQuantity) }}</td><td style="color:{{ $variance<0 ? '#991b1b' : '#166534' }}">{{ $variance ? '['.($variance>0 ? '+' : '').number_format($variance).']' : '' }}</td></tr>
 @endforeach
 </tbody></table></x-app.table-region>
-<x-app.table-region :label="$row->status==='Received' ? 'Receipt stock and cost' : 'Receipt stock and cost preview'" class="app-list-table-panel purchase-table">
+<x-app.table-region :label="$row->status==='Received' ? 'Receipt stock and cost' : 'Receipt stock and cost preview'" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all">
 <table><thead><tr><th>Item</th><th>{{ $row->status==='Received' ? 'Current location stock' : 'Location now → after' }}</th><th>{{ $row->status==='Received' ? 'Total held before → after receipt' : 'Total held now → after' }}</th><th>{{ $row->status==='Received' ? 'Unit Cost before → after receipt' : 'Catalog Unit Cost now → after' }}</th></tr></thead><tbody>
 @foreach($preview['projection'] ?? [] as $id=>$projection)
 <tr><th>{{ collect($items)->firstWhere('id',(int)$id)['name'] ?? '#'.$id }}</th>
@@ -118,7 +118,7 @@
 <div class="app-content"><details><summary>Other actions</summary><form method="post" action="{{ $base }}/transition">@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
 @endif
 <dialog data-invoice-leave><h2>Continue without saving?</h2><p>Unsaved invoice edits will be discarded. Cancel receiving also discards the saved receipt draft.</p><button type="button" data-keep-editing>Keep editing</button> <button type="button" data-discard-editing>Continue</button></dialog>
-<script src="/purchase-work-invoice.js?v={{ substr(hash_file('sha256', public_path('purchase-work-invoice.js')),0,12) }}" defer></script>
+@vite('resources/js/purchase-work-invoice.js')
 @endsection
 
 

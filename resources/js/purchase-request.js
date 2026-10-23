@@ -1,9 +1,11 @@
+import { mountTabs } from './workflow/tabs.js';
+import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+
 (() => {
     'use strict';
     const form = document.querySelector('#purchase-request-form');
     if (!form) return;
     const rows = [...form.querySelectorAll('[data-item-row]')];
-    const quantities = rows.map(row => row.querySelector('[data-quantity]'));
     const validQuantity = value => /^\d+$/.test(value.trim()) && Number.isSafeInteger(Number(value)) && Number(value) <= 1000000000;
     let dirty = false, leaving = false, pendingHref = null;
     const dialog = document.querySelector('#purchase-leave');
@@ -19,7 +21,7 @@
         rows.forEach(row => {
             const input = row.querySelector('[data-quantity]');
             const invalid = !validQuantity(input.value);
-            row.classList.toggle('purchase-invalid', invalid && form.dataset.tab === 'review');
+            row.classList.toggle('table-row-error', invalid && form.dataset.tab === 'review');
             if (invalid) messages.push({text:`${row.dataset.name}: enter a nonnegative whole requested quantity (zero is allowed).`,tab:'material',input});
             if (group !== row.dataset.group) {
                 group = row.dataset.group;
@@ -27,8 +29,8 @@
                 const th = cell('th', group); th.colSpan = 2; th.scope = 'rowgroup'; heading.append(th); reviewBody.append(heading);
             }
             const tr = document.createElement('tr');
-            if (invalid) tr.className = 'purchase-invalid';
-            const amount = cell('td', input.value.trim() === '' ? '—' : input.value); amount.className = 'quantity';
+            if (invalid) tr.className = 'table-row-error';
+            const amount = cell('td', input.value.trim() === '' ? '—' : input.value); amount.className = 'table-numeric table-quantity-column';
             tr.append(cell('td', row.dataset.name), amount); reviewBody.append(tr);
         });
         if (!rows.length) { const tr = document.createElement('tr'); const td = cell('td','No catalog items requested. See Request details.'); td.colSpan = 2; tr.append(td); reviewBody.append(tr); }
@@ -41,15 +43,11 @@
         errors.hidden = form.dataset.tab !== 'review' || !messages.length;
         form.querySelector('[data-submit-request]').disabled = form.dataset.canSubmit !== 'true' || messages.length > 0;
     };
-    const showTab = tab => {
-        if (!['basic','material','review'].includes(tab)) tab = 'basic';
+    const showTab = tab => tabUI.activate(tab);
+    const tabUI = mountTabs(form, { initialKey: new URL(location.href).searchParams.get('tab') || form.dataset.tab, onChange: tab => {
         form.dataset.tab = tab; form.querySelector('[data-current-tab]').value = tab;
-        form.querySelectorAll('[role="tabpanel"]').forEach(panel => { panel.hidden = panel.id !== `purchase-panel-${tab}`; });
-        form.querySelectorAll('[data-purchase-tab]').forEach(button => { button.setAttribute('aria-selected',String(button.dataset.purchaseTab === tab)); });
-        const url = new URL(location.href); url.searchParams.set('tab',tab); history.replaceState(null,'',url);
         updateReview();
-    };
-    form.querySelectorAll('[data-purchase-tab]').forEach(button => button.addEventListener('click',() => showTab(button.dataset.purchaseTab)));
+    } });
     form.querySelector('[data-material-next]').addEventListener('click',event => { event.preventDefault(); showTab('review'); });
     const changed = event => {
         if (event.target.hasAttribute('data-item-search')) return;
@@ -57,14 +55,7 @@
     };
     form.addEventListener('input',changed);
     form.addEventListener('change',changed);
-    quantities.forEach((input,index) => input.addEventListener('keydown',event => {
-        if (!['Enter','ArrowDown','ArrowUp'].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || input.readOnly) return;
-        event.preventDefault();
-        const direction = event.key === 'ArrowUp' ? -1 : 1;
-        for (let next = index + direction; next >= 0 && next < quantities.length; next += direction) {
-            if (!quantities[next].readOnly && !quantities[next].disabled) { quantities[next].focus(); quantities[next].select(); break; }
-        }
-    }));
+    mountQuantityNavigation(form, { resolveFields: input => input.matches('[data-quantity]') ? form.querySelectorAll('[data-quantity]') : [] });
     form.addEventListener('submit',event => {
         if (event.submitter?.value === 'submit' && form.querySelector('[data-submit-request]').disabled) { event.preventDefault(); showTab('review'); return; }
         leaving = true;
@@ -94,5 +85,4 @@
         if (dirty && !window.confirm('This action does not save your unsaved request changes. Continue?')) event.preventDefault(); else leaving = true;
     }));
     window.addEventListener('beforeunload',event => { if (dirty && !leaving) { event.preventDefault(); event.returnValue = ''; } });
-    showTab(new URL(location.href).searchParams.get('tab') || form.dataset.tab);
 })();

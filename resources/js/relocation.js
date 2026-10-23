@@ -1,4 +1,5 @@
-'use strict';
+import { mountTabs } from './workflow/tabs.js';
+import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
 (() => {
     const form = document.getElementById('relocation-form');
     if (!form) return;
@@ -15,40 +16,22 @@
     let refreshWorkflow = () => {};
     let refreshReconcile = () => {};
     let refreshConfirmation = () => {};
-    const showTab = tab => {
-        tabs.forEach(candidate => {
-            const active = candidate === tab;
-            candidate.setAttribute('aria-selected', String(active));
-            candidate.tabIndex = active ? 0 : -1;
-            document.getElementById(candidate.getAttribute('aria-controls')).hidden = !active;
-        });
-        form.querySelector('[data-material-notifications]').hidden = !['material', 'fulfillment', 'reconcile'].includes(tab.dataset.step);
+    const tabUI = mountTabs(form, { initialKey: form.dataset.initialStep, removeQueryParams: ['step'], onChange: (key, tab) => {
+        form.querySelector('[data-material-notifications]').hidden = !['material', 'fulfillment', 'reconcile'].includes(tab.dataset.workflowTab);
         refreshReview();
         refreshFulfillment();
         refreshWorkflow();
         refreshShipment();
         refreshReconcile();
         refreshConfirmation();
-        if (['material', 'review', 'ship', 'confirmation'].includes(tab.dataset.step)) refreshBalances();
-        const url = new URL(location.href);
-        url.searchParams.set('tab', tab.dataset.step);
-        url.searchParams.delete('step');
-        history.replaceState(null, '', url);
-    };
-    showTab(tabs.find(tab => tab.dataset.step === form.dataset.initialStep) || tabs[0]);
-    tabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => showTab(tab));
-        tab.addEventListener('keydown', event => {
-            const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
-            if (next === null) return;
-            event.preventDefault(); showTab(tabs[next]); tabs[next].focus();
-        });
-    });
+        if (['material', 'review', 'ship', 'confirmation'].includes(tab.dataset.workflowTab)) refreshBalances();
+    } });
+    const showTab = tab => tabUI.activate(tab?.dataset.workflowTab);
     form.querySelector('[data-material-next]').addEventListener('click', () => {
-        if (!busy) showTab(tabs.find(tab => tab.dataset.step === 'review'));
+        if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'review'));
     });
     form.querySelector('[data-reconcile-next]').addEventListener('click', () => {
-        if (!busy) showTab(tabs.find(tab => tab.dataset.step === 'confirmation'));
+        if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'confirmation'));
     });
     const controls = () => [...form.querySelectorAll('input:not([type="hidden"]), select, textarea')];
     const markDirty = section => {
@@ -61,7 +44,7 @@
     const searchText = form.querySelector('[data-material-search]');
     const searchLoading = form.querySelector('[data-material-search-loading]');
     const searchButton = form.querySelector('[data-material-search-action="search"]');
-    const activeTab = () => form.querySelector('[aria-selected="true"]').dataset.step;
+    const activeTab = () => form.querySelector('[aria-selected="true"]').dataset.workflowTab;
     const canEditTracking = () => form.dataset.manager === 'true' && ['Accepted', 'Fulfilled', 'Received', 'Completed'].includes(form.dataset.status);
     const trackingBody = form.querySelector('[data-tracking-lines]');
     const trackingUrl = (carrier, number) => {
@@ -145,23 +128,14 @@
     });
     updateFilters();
     const requestedRows = () => [...materialRows.querySelectorAll('[data-material-item]')];
-    const navigateQuantity = (event, rows) => {
-        if (!['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.isComposing) return;
-        const input = event.target;
-        if (!(input instanceof HTMLInputElement) || input.type === 'checkbox' || input.readOnly || input.matches(':disabled') || busy) return;
+    const fieldsInColumn = (input, rows) => {
         const cell = input.closest('td');
-        if (!cell) return;
+        if (!cell) return [];
         const column = cell.cellIndex;
-        const fields = rows.map(row => row.cells[column]?.querySelector('input'))
-            .filter(field => field && !field.readOnly && !field.matches(':disabled'));
-        const index = fields.indexOf(input);
-        if (index === -1) return;
-        event.preventDefault();
-        const next = fields[index + (event.key === 'ArrowUp' ? -1 : 1)];
-        if (next) { next.focus(); next.select(); }
+        return rows.map(row => row.cells[column]?.querySelector('input')).filter(Boolean);
     };
-    materialRows.addEventListener('keydown', event => navigateQuantity(event, requestedRows()));
-    results.addEventListener('keydown', event => navigateQuantity(event, [...results.querySelectorAll('[data-search-item]')]));
+    mountQuantityNavigation(materialRows, { isBusy: () => busy, resolveFields: input => fieldsInColumn(input, requestedRows()) });
+    mountQuantityNavigation(results, { isBusy: () => busy, resolveFields: input => fieldsInColumn(input, [...results.querySelectorAll('[data-search-item]')]) });
     const regroupMaterial = () => {
         materialRows.querySelectorAll('[data-material-group]').forEach(group => group.remove());
         const rows = requestedRows().sort((a, b) => a.dataset.itemGroup.localeCompare(b.dataset.itemGroup)
@@ -311,7 +285,7 @@
     const numberText = value => {
         const span = document.createElement('span');
         span.textContent = value.toLocaleString('en-US');
-        span.classList.toggle('relocation-negative', value < 0);
+        span.classList.toggle('table-negative', value < 0);
         return span;
     };
     let balanceGeneration = 0;
@@ -368,10 +342,10 @@
             const value = source.querySelector('input[name^="lines["]').value.trim();
             const valid = /^-?(?:\d{1,10}|\d{1,3}(?:,\d{3}){1,3})$/.test(value) && Math.abs(Number(value.replaceAll(',', ''))) <= 1000000000;
             const quantityError = !valid && ['New', 'Draft'].includes(form.dataset.status);
-            source.classList.toggle('material-quantity-error', quantityError);
+            source.classList.toggle('table-row-error', quantityError);
             if (!valid) errors.push(`${source.dataset.itemName}: enter a nonblank whole-number requested quantity.`);
             const row = form.querySelector('[data-review-row]').content.firstElementChild.cloneNode(true);
-            row.classList.toggle('material-quantity-error', quantityError);
+            row.classList.toggle('table-row-error', quantityError);
             row.children[0].textContent = source.dataset.itemName;
             const quantity = valid ? Number(value.replaceAll(',', '')) : null;
             [[1, source.dataset.sourceBalance, -1], [3, source.dataset.destinationBalance, 1]].forEach(([index, balance, direction]) => {
@@ -392,7 +366,7 @@
         if (form.dataset.status === 'New' || form.dataset.status === 'Draft') {
             errors.forEach(message => { const line = document.createElement('p'); line.textContent = message; reviewErrors.append(line); });
         }
-        reviewErrors.hidden = !reviewErrors.childElementCount || form.querySelector('[aria-selected="true"]').dataset.step !== 'review';
+        reviewErrors.hidden = !reviewErrors.childElementCount || form.querySelector('[aria-selected="true"]').dataset.workflowTab !== 'review';
         submit.disabled = busy || form.dataset.status !== 'Draft' || form.dataset.editable !== 'true' || form.dataset.canSubmit !== 'true' || errors.length > 0;
     };
     refreshShipment = () => {
@@ -433,7 +407,7 @@
             const valid = /^(?:\d{1,10}|\d{1,3}(?:,\d{3}){1,3})$/.test(fulfilled) && Number(fulfilled.replaceAll(',', '')) <= 1000000000;
             if (!valid) errors.push(`${source.dataset.itemName}: enter a nonblank whole-number fulfilled quantity.`);
             const row = form.querySelector('[data-ship-row]').content.firstElementChild.cloneNode(true);
-            row.classList.toggle('material-quantity-error', !valid && form.dataset.status === 'Accepted');
+            row.classList.toggle('table-row-error', !valid && form.dataset.status === 'Accepted');
             row.children[0].textContent = source.dataset.itemName;
             const requestedValid = /^-?(?:\d{1,10}|\d{1,3}(?:,\d{3}){1,3})$/.test(requested);
             if (requestedValid) row.children[2].append(numberText(Number(requested.replaceAll(',', ''))));
@@ -445,7 +419,7 @@
                 const difference = quantity - Number(requested.replaceAll(',', ''));
                 if (difference !== 0) {
                     const value = document.createElement('span');
-                    value.className = difference > 0 ? 'ship-difference-positive' : 'ship-difference-negative';
+                    value.className = difference > 0 ? 'table-variance-positive' : 'table-variance-negative';
                     value.textContent = `[${difference > 0 ? '+' : '-'}${Math.abs(difference).toLocaleString('en-US')}]`;
                     row.children[3].append(value);
                 }
@@ -475,7 +449,7 @@
             const valid = /^(?:\d{1,10}|\d{1,3}(?:,\d{3}){1,3})$/.test(value) && Number(value.replaceAll(',', '')) <= 1000000000;
             if (value === '') blankCount++;
             else if (!valid) errors.push(`${row.dataset.itemName}: enter a whole-number received quantity from 0 to 1,000,000,000.`);
-            if (activeTab() === 'reconcile') row.classList.toggle('material-quantity-error', value !== '' && !valid && form.dataset.status === 'Received');
+            if (activeTab() === 'reconcile') row.classList.toggle('table-row-error', value !== '' && !valid && form.dataset.status === 'Received');
         });
         const progress = form.querySelector('[data-reconcile-progress]');
         progress.hidden = activeTab() !== 'reconcile' || form.dataset.status !== 'Received' || blankCount === 0;
@@ -520,7 +494,7 @@
             const valid = wholeQuantity(received);
             const row = form.querySelector('[data-confirmation-row]').content.firstElementChild.cloneNode(true);
             row.children[0].textContent = source.dataset.itemName;
-            row.classList.toggle('material-quantity-error', !valid && form.dataset.status === 'Received');
+            row.classList.toggle('table-row-error', !valid && form.dataset.status === 'Received');
             if (!valid) errors.push(`${source.dataset.itemName}: enter a nonblank whole-number received quantity.`);
             if (/^-?(?:\d{1,10}|\d{1,3}(?:,\d{3}){1,3})$/.test(requested)) row.children[2].append(numberText(Number(requested.replaceAll(',', ''))));
             else row.children[2].textContent = requested || 'Blank';
@@ -533,7 +507,7 @@
                 const difference = quantity - Number(fulfilled.replaceAll(',', ''));
                 if (difference !== 0) {
                     const variance = document.createElement('span');
-                    variance.className = difference > 0 ? 'ship-difference-positive' : 'ship-difference-negative';
+                    variance.className = difference > 0 ? 'table-variance-positive' : 'table-variance-negative';
                     variance.textContent = `[${difference > 0 ? '+' : '-'}${Math.abs(difference).toLocaleString('en-US')}]`;
                     row.children[4].append(variance);
                 }
@@ -741,7 +715,7 @@
         const receiving = action === 'receive';
         const completing = action === 'complete';
         const reconciliationSave = action === 'save' && activeTab() === 'reconcile' && form.dataset.status === 'Received';
-        const fulfillmentSave = (action === 'save' || printing) && form.dataset.status === 'Accepted' && form.querySelector('[aria-selected="true"]').dataset.step === 'fulfillment';
+        const fulfillmentSave = (action === 'save' || printing) && form.dataset.status === 'Accepted' && form.querySelector('[aria-selected="true"]').dataset.workflowTab === 'fulfillment';
         const basicSave = action === 'save' && form.dataset.status === 'Accepted' && activeTab() === 'basic';
         const trackingSave = action === 'save' && activeTab() === 'tracking' && canEditTracking();
         if (receiving ? form.dataset.manager !== 'true' || form.dataset.status !== 'Fulfilled' : completing ? form.dataset.manager !== 'true' || form.dataset.status !== 'Received' : shipping ? form.dataset.manager !== 'true' || form.dataset.status !== 'Accepted' : accepting ? form.dataset.manager !== 'true' || form.dataset.status !== 'Requested' : fulfillmentSave || basicSave || reconciliationSave ? form.dataset.manager !== 'true' : trackingSave ? !canEditTracking() : form.dataset.editable !== 'true') return;

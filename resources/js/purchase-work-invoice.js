@@ -1,3 +1,5 @@
+import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+
 (() => {
     const form = document.querySelector('[data-purchase-invoice]');
     if (!form) return;
@@ -61,11 +63,5 @@
         const button = event.target.closest('[data-recalculate]');
         if (button) { calculate(button.closest('[data-invoice-line]'), 'unit'); dirty = true; }
     });
-    form.addEventListener('keydown', event => {
-        if (!['Enter','ArrowDown','ArrowUp'].includes(event.key) || !event.target.matches('[data-invoice-field="quantity"]') || event.target.readOnly) return;
-        event.preventDefault();
-        const inputs = [...form.querySelectorAll('[data-invoice-field="quantity"]')].filter(input => !input.readOnly && !input.disabled && input.getClientRects().length);
-        const index = inputs.indexOf(event.target) + (event.key === 'ArrowUp' ? -1 : 1);
-        if (inputs[index]) { inputs[index].focus(); inputs[index].select(); }
-    });
+    mountQuantityNavigation(form, { resolveFields: input => input.matches('[data-invoice-field="quantity"]') ? form.querySelectorAll('[data-invoice-field="quantity"]') : [] });
 })();

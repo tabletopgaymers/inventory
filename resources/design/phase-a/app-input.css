@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 
 @source "../../views/components/app";
+@source "../../views/components/workflow";
 @source "../../views/purchase";
 @source "../../views/relocation";
 @source "../../views/catalog";
@@ -196,7 +197,8 @@
 .app-shell .notice, .app-shell .warning, .app-shell .error { border: 1px solid; border-radius: .5rem; padding: 0.4rem 1rem; margin: 0.5rem 0; }
 .app-shell .notice { background: #f0fdf4; color: #14532d; border-color: #86b796; }
 .app-shell .warning { background: #fffbeb; color: #78350f; border-color: #d6bc78; }
-.app-shell .error { background: #fff1f2; color: #991b1b; border-color: #e6a0a0; }
+.app-shell { --app-error-surface: #fff1f2; }
+.app-shell .error { background: var(--app-error-surface); color: var(--app-danger); border-color: #e6a0a0; }
 .app-shell .app-notice-dismissible { position: relative; padding-right: 3.25rem; }
 .app-shell .app-notice-dismissible > button.app-notice-dismiss {
   position: absolute; top: .3rem; right: .75rem; width: 1.5rem; height: 1.5rem; min-height: 0;

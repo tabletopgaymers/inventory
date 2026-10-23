@@ -1,2 +1,4 @@
 /* Existing theme and app rules stay in one source during incremental extraction. */
 @import '../design/phase-a/app-input.css';
+@import './workflow/navigation.css';
+@import './workflow/tables.css';
