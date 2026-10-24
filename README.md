@@ -39,6 +39,10 @@ remain in use. Vite also
 builds the local style-guide demo and its locally hosted Font Awesome Free icons.
 The nested evaluation package is not the application build.
 
+Standalone documents use x-print.layout/header with resources/css/print.css and
+resources/js/print.js as independent Vite entries. They do not load the normal
+application stylesheet. See /style-guide/workflow and its printable specimen.
+
 Before deploying this branch, enable `npm ci --include=dev` followed by
 `npm run build` in the Forge release directory before activating the release.
 The server needs compatible Node/npm (local Node 24); no Vite dev server runs on

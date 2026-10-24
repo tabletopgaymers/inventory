@@ -58,5 +58,12 @@
     <p>Import mountUnsavedChanges from resources/js/workflow/unsaved-changes.js; supply root, isDirty(), optional isBusy() and message. The application shell is required. The caller owns dirty state and clears only its successfully saved section. confirm(callback, options) uses the shell modal for deliberate actions; allowDeparture() suppresses the unload warning for an accepted server submission; isLeaving() prevents recursive confirmations, and destroy() unregisters listeners/guard. Optional text/title/actionLabel/origin retain the caller's action wording and focus target.</p>
     <p>The shell's optional guard.onLeave callback prevents a second native warning after an approved link departure. Existing guards without it retain their behavior. Field qualifiers, error/notice styling and Ctrl/Cmd+S continue using the existing shared shell/shortcut assets; domain validation messages and save responses remain caller-owned.</p>
 </div>
+<div class="app-content">
+    <h2>Standalone print documents</h2>
+    <p><a href="/style-guide/print" target="_blank" rel="noopener">Open printable specimen</a>. This uses the real x-print.layout and x-print.header, including an empty Notes box and enough fictional rows to inspect pagination.</p>
+    <p>x-print.layout accepts title and optional document-title; its default slot owns document content. It loads only resources/css/print.css and resources/js/print.js, never the application framework or density styles. x-print.header accepts an ordered label/value map, notes and optional notes-label. Metadata uses one-third width, the always-present outlined notes box two-thirds; Notes has an accessible label and no visible heading.</p>
+    <p>Caller-defined tables use print-material, print-collection, print-group-row, print-item, print-quantity-column, print-quantity and print-quantity-heading. Preserve the outer column-header thead and nested collection theads to retain the existing page-repeat behavior and single border edges. Widths/labels/data and empty-state rows remain caller-owned. Standalone print uses fixed spacing, black 1pt borders and half-inch print margins. print-screen-only hides specimen instructions when printing.</p>
+    <p>Relocation still saves progress before opening its packing view in a new tab. That persistence behavior belongs to its workflow script; the shared Print button only invokes browser printing. No save, navigation or auto-print policy is embedded in the shared print layout.</p>
+</div>
 @vite('resources/js/workflow-demo.js')
 @endsection
