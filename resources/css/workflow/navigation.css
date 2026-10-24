@@ -8,5 +8,6 @@
     background: var(--app-workflow-selected); color: var(--app-text, #231c2f);
     border: 2px solid var(--app-primary, #663399);
 }
+.app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { border-bottom: 0; }
 .workflow-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--app-density-field-y); }
 .app-shell .workflow-heading h2 { margin: 0; }
