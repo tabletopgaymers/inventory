@@ -7,6 +7,7 @@
 .app-shell .workflow-tabs [aria-selected="true"], .app-shell .workflow-tabs [aria-current="page"] {
     background: var(--app-workflow-selected); color: var(--app-text, #231c2f);
     border: 2px solid var(--app-primary, #663399);
+    border-bottom: 0;
     position: relative; box-shadow: 0 2px 0 var(--app-workflow-selected);
 }
 .app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { border-bottom: 0; }
