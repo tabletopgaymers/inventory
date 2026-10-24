@@ -24,4 +24,4 @@
 @empty<tr><td colspan="4">No changes recorded.</td></tr>
 @endforelse
 </tbody></table></x-app.table-region>
-<script src="/inventory.js?v=inline-decisions-1" defer></script>
+@vite('resources/js/inventory.js')

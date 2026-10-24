@@ -26,5 +26,5 @@
 @empty<tr><td colspan="{{ 2+count($result['columns'] ?? []) }}">{{ $result === null ? 'Search inventory or choose Show all.' : 'No items match. Change your search or filters, then select Search, or choose Show all.' }}</td></tr>@endforelse
 </tbody></table></x-app.table-region>
 <div class="actions download-bar">@if(!empty($result['rows']))<a class="button" href="/inventory/results/{{ $token }}/csv">Download CSV</a>@else<button disabled>Download CSV</button>@endif</div>
-<script type="application/json" id="browse-state">@json(['submitted'=>$submitted,'scroll'=>$scroll])</script><script src="/inventory-browse.js?v={{ substr(hash_file('sha256', public_path('inventory-browse.js')), 0, 12) }}" defer></script>
+<script type="application/json" id="browse-state">@json(['submitted'=>$submitted,'scroll'=>$scroll])</script>@vite('resources/js/inventory-browse.js')
 @endsection
