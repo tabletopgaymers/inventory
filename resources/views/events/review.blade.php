@@ -15,6 +15,6 @@
 <x-app.table-region label="Report-only changes" class="app-list-table-panel"><table><thead><tr><th>Item</th><th>Brought before → after</th><th>Remaining before → after</th><th>Distributed before → after</th></tr></thead><tbody>@foreach($review['report'] as $item=>$line)@php($before=$review['before'][$item])<tr><th>{{ $line['item'] }}<small class="app-item-sku">{{ $line['sku'] }}</small></th><td>{{ number_format($before['brought']) }} → {{ number_format($line['brought']) }}</td><td>{{ number_format($before['remaining']) }} → {{ number_format($line['remaining']) }}</td><td>{{ number_format($before['distributed']) }} → {{ number_format($line['distributed']) }}</td></tr>@endforeach</tbody></table></x-app.table-region>
 <div class="app-content app-record-content">@if($review['explanation'])<p>{{ $review['explanation'] }}</p>@endif @endif
 <div class="actions"><a class="discard" href="/events/{{ $row->id }}">Discard changes</a><a href="{{ $base }}?work={{ $token }}">Keep editing</a><form method="post" action="{{ $base }}/confirm/{{ $token }}">@csrf<input type="hidden" name="_deliberate" value="1"><button class="primary" data-confirm="{{ $draft['workflowMode']==='finalize' ? 'Finalize this event once? This cannot be undone or reopened.' : 'Confirm these reviewed changes?' }}">{{ $draft['workflowMode']==='finalize' ? 'Finalize event irreversibly' : 'Confirm '.$mode }}</button></form></div>
-<script src="/requests.js?v=inline-decisions-1-sentence-case-1-pending-notice-1" defer></script>
+@vite('resources/js/requests.js')
 </div>
 @endsection
