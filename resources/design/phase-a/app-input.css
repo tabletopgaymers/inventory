@@ -80,7 +80,7 @@
 .app-shell :focus-visible { outline: 3px solid var(--app-primary); outline-offset: 3px; }
 /* Draw field focus inside the existing edge so dimensions and text placement stay fixed. */
 .app-shell :is(input, select, textarea):not(:where([type="hidden"], [type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="button"], [type="submit"], [type="reset"], [type="image"], .app-sku-field input)):focus {
-  --app-field-border: var(--app-primary); outline: 2px solid var(--app-primary); outline-offset: -2px;
+  --app-field-border: var(--app-primary); outline: 3px solid var(--app-primary); outline-offset: -3px;
 }
 .app-shell a:where(:not(.btn)) { color: var(--app-primary); text-underline-offset: .2em; }
 .app-shell a:not(.btn):hover { text-decoration: underline; }
@@ -336,7 +336,7 @@
 .app-sku-field { display: flex; align-items: center; border: 1px solid var(--app-field-border, #9393a3); border-radius: .375rem; background: white; margin-top: .175rem; max-width: 36rem; overflow: hidden; }
 .app-sku-field [data-sku-prefix]:not([hidden]) { display: flex; align-items: center; align-self: stretch; padding: 0 .65rem; background: #e5dfef; color: var(--app-text); font-weight: 400; flex-shrink: 0; }
 .app-shell label .app-sku-field input[name="sku_suffix"]:not([type="hidden"]) { min-width: 0; margin-top: 0; border: 0; border-radius: 0; outline: none; box-shadow: none; flex: 1; }
-.app-sku-field:focus-within { --app-field-border: var(--app-primary); outline: 2px solid var(--app-primary); outline-offset: -2px; }
+.app-sku-field:focus-within { --app-field-border: var(--app-primary); outline: 3px solid var(--app-primary); outline-offset: -3px; }
 .app-shell .requested-items { border: 2px solid #b8a6e6; border-radius: .5rem; padding: 0.5rem 1rem; margin: 0.625rem 0; min-width: 0; }
 .app-shell .requested-items input { max-width: 10rem; }
 .app-shell .request-notes li, .app-shell .request-activity li { margin: 0.5rem 0; }
