@@ -2,7 +2,7 @@
 @if($tableSections ?? false)
     <x-slot:header>
         <div class="app-table-panel-toolbar">
-            <p class="app-table-panel-copy" style="margin:0">Available inventory by category and collection.</p>
+            <p class="app-table-panel-copy">Available inventory by category and collection.</p>
             <div class="app-actions"><button type="button" class="app-new-action">+ New</button></div>
         </div>
     </x-slot:header>
@@ -17,7 +17,7 @@
 @if($tableSections ?? false)
     <x-slot:footer>
         <div class="app-table-panel-toolbar">
-            <p class="app-field-help app-table-panel-copy" style="margin:0">3 items · Fictional quantities for this example.</p>
+            <p class="app-field-help app-table-panel-copy">3 items · Fictional quantities for this example.</p>
             <div class="app-actions"><button type="button">Download CSV</button></div>
         </div>
     </x-slot:footer>

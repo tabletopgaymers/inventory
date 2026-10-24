@@ -2,12 +2,6 @@
 @section('title', 'Search inventory')
 @section('guide-notice')This page searches current development inventory. Searches are read-only: they do not save records, change stock or overwrite saved search preferences.@endsection
 @section('guide-content')
-<style>
-    .guide-search-results table { width: 100%; }
-    .guide-search-results th, .guide-search-results td { white-space: nowrap; }
-    .guide-search-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,18rem),1fr)); gap: var(--app-density-field-y,.75rem) 1rem; }
-    .guide-search-data { white-space: pre-wrap; overflow-wrap: anywhere; }
-</style>
 <p>The search controls are independent of panels and results. The same result data can drive a table, cards, list or selection form. Neither example loads results until Search or Show all.</p>
 <p>Search matches Item, Collection and Category names, following the existing inventory search behavior.</p>
 <h2>All filters · separate controls and results</h2>

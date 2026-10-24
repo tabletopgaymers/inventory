@@ -6,6 +6,7 @@ export default defineConfig({
     plugins: [laravel({
         input: [
             'resources/css/app.css',
+            'resources/css/style-guide.css',
             'resources/css/purchase.css',
             'resources/css/relocation.css',
             'resources/css/print.css',

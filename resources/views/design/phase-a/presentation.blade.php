@@ -78,8 +78,8 @@
     <h2 id="columns-title">Responsive columns</h2>
     <p>A panel can arrange related information in two or more columns when there is room, then stack them as its available width narrows. The toggle changes only this example.</p>
     <div class="app-actions"><button type="button" data-guide-width-toggle aria-controls="guide-column-panel" aria-pressed="false">Show narrow panel</button></div>
-    <div class="app-content" id="guide-column-panel" style="width:100%">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:1rem 2rem">
+    <div class="app-content" id="guide-column-panel">
+        <div class="app-detail-grid guide-column-grid">
             <section><h3>Collection</h3><p>Pronoun ribbons</p><p>Category: Ribbon</p><a href="#table-panel">View the sample table</a></section>
             <section><h3>Inventory</h3><p>370 available</p><p>300 at Central</p><p>Review quantities before requesting a relocation.</p></section>
         </div>
@@ -90,7 +90,7 @@
     <h2 id="statuses-title">Status indicators</h2>
     <div class="app-content">
         <p>Status badges combine a short text label with a color. Use the established workflow states; color supplements the label and never replaces it.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem">@foreach(['Draft','Request','Requested','Active','Ordered','Shipped','Receiving','Received','Finalized','Complete','Cancelled','Inactive','Archived'] as $status)<x-app.status-badge :status="$status" />@endforeach</div>
+        <div class="app-inline-group">@foreach(['Draft','Request','Requested','Active','Ordered','Shipped','Receiving','Received','Finalized','Complete','Cancelled','Inactive','Archived'] as $status)<x-app.status-badge :status="$status" />@endforeach</div>
         <p>Place status beside a record title and in a dedicated table column. A workflow's editing step does not create a new business status.</p>
         <div class="app-title-row"><h3>Sample collection</h3><x-app.status-badge status="Active" /></div>
     </div>

@@ -1,0 +1,19 @@
+/* Guide-only specimens; product components retain shared styles. */
+.guide-search-results table { width: 100%; }
+    .guide-search-results th, .guide-search-results td { white-space: nowrap; }
+    .guide-search-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,18rem),1fr)); gap: var(--app-density-field-y,.75rem) 1rem; }
+    .guide-search-data { white-space: pre-wrap; overflow-wrap: anywhere; }
+.guide-tab-list { display: flex; flex-wrap: wrap; gap: .25rem; border-bottom: 2px solid #e5dfef; }
+    .guide-tab-list button { border-radius: .5rem .5rem 0 0; border-bottom: 0; }
+    .guide-tab-list button[aria-selected="true"] { background: var(--app-primary, #663399); color: white; }
+    .guide-tab-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .guide-tab-heading h2 { margin: 0; }
+    .guide-tab-heading select { width: auto; margin: 0; }
+#guide-table-preview { margin: 0; }
+    #guide-table-preview h2 { margin: 0; }
+    #guide-table-preview .app-table-panel-copy p { margin: .25rem 0 0; }
+    #guide-table-preview p.app-table-panel-copy { margin: 0; }
+    #guide-table-preview table { min-width: 32rem; }
+#guide-column-panel { width: 100%; }
+.guide-column-grid { row-gap: 1rem; }
+.guide-table-stack { display: grid; gap: .75rem; }

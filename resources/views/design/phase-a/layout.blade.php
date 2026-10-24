@@ -1,5 +1,6 @@
 @extends('layout')
 @section('content-sections')
+@vite('resources/css/style-guide.css')
 <nav class="app-section-nav" aria-label="Style guide">
     <a href="/style-guide" @if(request()->is('style-guide')) aria-current="page" @endif>Overview</a>
     <a href="/style-guide/presentation" @if(request()->is('style-guide/presentation')) aria-current="page" @endif>Presentation</a>

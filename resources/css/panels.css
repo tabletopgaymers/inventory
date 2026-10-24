@@ -1,3 +1,7 @@
 /* A stack owns section gaps across form/tab boundaries; child panels own only their padding. */
 .app-panel-stack { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
 .app-shell .app-panel-stack > :is(.app-content, .app-panel, .app-list-table-panel, .app-table-region, .app-collapsible-panel, .workflow-tab-panel, .error, form, section) { margin-block: 0; }
+
+.app-detail-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,16rem),1fr)); gap: .75rem 2rem; }
+.app-inline-group { display: flex; flex-wrap: wrap; gap: .5rem; }
+.app-shell .app-heading-flush, .app-shell .app-table-panel-copy { margin: 0; }
