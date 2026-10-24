@@ -55,6 +55,6 @@
 @include('catalog.archive-dialog')
 @endif
 @endif
-<script src="/catalog.js?v={{ filemtime(public_path('catalog.js')) }}" defer></script>
-<script src="/catalog-progress.js?v={{ filemtime(public_path('catalog-progress.js')) }}" defer></script>
+@vite('resources/js/catalog-form.js')
+
 @endsection

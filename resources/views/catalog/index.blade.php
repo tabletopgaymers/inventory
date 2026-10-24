@@ -58,5 +58,5 @@
 @empty<tr><td colspan="{{ $columnCount }}">No records in this view.</td></tr>@endforelse
 </tbody></table>
 </x-app.table-region>
-<script src="/catalog-status-filter.js?v={{ substr(hash_file('sha256', public_path('catalog-status-filter.js')), 0, 12) }}" defer></script>
+@vite('resources/js/catalog-status-filter.js')
 @endsection

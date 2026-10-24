@@ -77,5 +77,5 @@
     </div>
 </dialog>
 @endif
-<script src="/user-actions.js?v=role-confirmations-1" defer></script>
+@vite('resources/js/user-actions.js')
 @endsection
