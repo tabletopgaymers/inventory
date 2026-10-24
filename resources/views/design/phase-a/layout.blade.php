@@ -22,5 +22,5 @@
 <p class="app-field-help">@yield('intro') Sample controls use fictional data and do not save records. The surrounding app navigation works normally.</p>
 @endif
 @yield('guide-content')
-<script src="/style-guide.js?v={{ substr(hash_file('sha256', public_path('style-guide.js')), 0, 12) }}" defer></script>
+@vite('resources/js/style-guide.js')
 @endsection

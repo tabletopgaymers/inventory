@@ -22,6 +22,7 @@ export default defineConfig({
             'resources/js/requests.js',
             'resources/js/inventory-search-controls.js',
             'resources/js/inventory-search-guide.js',
+            'resources/js/style-guide.js',
             'resources/css/event-report.css',
             'resources/css/vite-demo.css',
             'resources/js/vite-demo.js',

@@ -173,7 +173,7 @@
     const columnPanel = document.getElementById('guide-column-panel');
     widthToggle?.addEventListener('click', () => {
         const narrow = widthToggle.getAttribute('aria-pressed') !== 'true';
-        columnPanel.style.maxWidth = narrow ? '24rem' : '';
+        columnPanel.classList.toggle('guide-column-panel--narrow', narrow);
         widthToggle.setAttribute('aria-pressed', String(narrow));
         widthToggle.textContent = narrow ? 'Show full-width panel' : 'Show narrow panel';
     });
@@ -211,9 +211,8 @@
     if (outputs.length) {
         for (const density of ['compact', 'standard', 'spacious']) {
             const sample = document.createElement('div');
-            sample.className = 'app-shell'; sample.dataset.density = density;
+            sample.className = 'app-shell guide-density-probe'; sample.dataset.density = density;
             sample.setAttribute('aria-hidden', 'true'); sample.inert = true;
-            sample.style.cssText = 'position:fixed;left:-10000px;visibility:hidden;pointer-events:none;min-height:0;';
             const panel = document.createElement('div'); panel.className = 'app-panel';
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Sample';
             panel.append(button); sample.append(panel); document.body.append(sample);

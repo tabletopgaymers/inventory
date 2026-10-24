@@ -17,3 +17,6 @@
 #guide-column-panel { width: 100%; }
 .guide-column-grid { row-gap: 1rem; }
 .guide-table-stack { display: grid; gap: .75rem; }
+
+.guide-column-panel--narrow { max-width: 24rem; }
+.guide-density-probe { position: fixed; left: -10000px; visibility: hidden; pointer-events: none; min-height: 0; }
