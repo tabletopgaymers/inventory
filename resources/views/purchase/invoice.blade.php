@@ -14,7 +14,7 @@
     $reviewTab = $mode === 'receipt' ? 'confirmation' : 'order-review';
     $next = ['order'=>'invoice','invoice'=>'charges','charges'=>$reviewTab,'receive'=>'confirmation'];
 @endphp
-<link rel="stylesheet" href="/purchase.css?v={{ substr(hash_file('sha256', public_path('purchase.css')),0,12) }}">
+@vite(['resources/css/purchase.css', 'resources/js/purchase-work-invoice.js'])
 @include('purchase.tabs')
 @if($reviewErrors)<div class="app-content error" role="alert"><ul>
 @foreach($reviewErrors as $field=>$messages)
@@ -94,7 +94,7 @@
 @foreach(array_unique(array_merge(array_keys($ordered),array_keys($preview['lines']))) as $id)
 @php($receivedQuantity=$preview['lines'][$id]['quantity'] ?? 0)
 @php($variance=$receivedQuantity-($ordered[$id] ?? 0))
-<tr><th>{{ $catalogItems->firstWhere('id',(int)$id)?->name ?? '#'.$id }}</th><td>{{ number_format($ordered[$id] ?? 0) }}</td><td>{{ number_format($receivedQuantity) }}</td><td style="color:{{ $variance<0 ? '#991b1b' : '#166534' }}">{{ $variance ? '['.($variance>0 ? '+' : '').number_format($variance).']' : '' }}</td></tr>
+<tr><th>{{ $catalogItems->firstWhere('id',(int)$id)?->name ?? '#'.$id }}</th><td>{{ number_format($ordered[$id] ?? 0) }}</td><td>{{ number_format($receivedQuantity) }}</td><td class="{{ $variance<0 ? 'table-variance-negative' : 'table-variance-positive' }}">{{ $variance ? '['.($variance>0 ? '+' : '').number_format($variance).']' : '' }}</td></tr>
 @endforeach
 </tbody></table></x-app.table-region>
 <x-app.table-region :label="$row->status==='Received' ? 'Receipt stock and cost' : 'Receipt stock and cost preview'" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all">
@@ -113,11 +113,11 @@
 @endforeach
 @if(!$readonly && $mode==='receipt')<div class="app-content purchase-panel"><button name="action" value="cancel_receipt">Cancel receiving</button></div>@endif
 </form>
-<div class="app-content"><details><summary>Permanent notes</summary><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button>Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p style="white-space:pre-wrap">{{ $note->body }}</p></article>@endforeach</details></div>
+<div class="app-content"><details><summary>Permanent notes</summary><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button>Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</details></div>
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
 <div class="app-content"><details><summary>Other actions</summary><form method="post" action="{{ $base }}/transition">@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
 @endif
-@vite('resources/js/purchase-work-invoice.js')
+
 @endsection
 
 

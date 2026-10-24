@@ -29,31 +29,42 @@ hashed assets and the manifest in ignored `public/build/`.
 
 The common shell loads `resources/css/app.css` through Laravel Vite. This imports
 the existing Tailwind/daisyUI theme and app rules from
-`resources/design/phase-a/app-input.css`; edit source, not public/app.css or build
-output. Singular Relocation and Purchase request-tab scripts now use Vite entries
+`resources/design/phase-a/app-input.css`; edit source, not generated build output.
+The obsolete public/app.css and unused resources/js/app.js starter were removed.
+Singular Relocation and Purchase request-tab scripts use Vite entries
 at resources/js/relocation.js and resources/js/purchase-request.js, importing
 shared workflow tab mechanics. Purchase invoice code also uses the Vite entry
 resources/js/purchase-work-invoice.js; all three use shared quantity navigation.
-Other page-specific public CSS and JavaScript
-remain in use. Vite also
-builds the local style-guide demo and its locally hosted Font Awesome Free icons.
+Domain CSS lives in resources/css/purchase.css and resources/css/relocation.css;
+each domain template includes its CSS and JS entries once. Common theme CSS loads
+first in the shell; domain styles retain their existing precedence. Shared
+workflow modules are imported by those JS entries, not mounted a second time by
+a global auto-loader.
+
+Other public assets intentionally remain: app-shell.js, Save progress shortcuts,
+inventory-search controls and unrelated page assets. Vite domain entries import
+the existing inventory-search client source while their Blade component sets
+script=false; classic callers still load the public script once. Do not include
+both versions on one page. Vite also builds style-guide demos and locally hosted
+Font Awesome Free icons; icons are not yet loaded site-wide.
 The nested evaluation package is not the application build.
 
 Standalone documents use x-print.layout/header with resources/css/print.css and
 resources/js/print.js as independent Vite entries. They do not load the normal
 application stylesheet. See /style-guide/workflow and its printable specimen.
 
-Before deploying this branch, enable `npm ci --include=dev` followed by
+Deployment must run `npm ci --include=dev` followed by
 `npm run build` in the Forge release directory before activating the release.
 The server needs compatible Node/npm (local Node 24); no Vite dev server runs on
-the deployed site. Never deploy public/hot. These are required script changes,
-not a claim that the remote deployment configuration has already been updated.
+the deployed site. Never deploy public/hot. Development mode uses the same entry
+points; no manual hashed-filename edits are needed.
 
 ### Existing server process
 
 The development site is `https://dev-inventory.tabletopgaymers.org` on Forge,
-using the `main` branch. Forge creates a release, installs locked Composer
-packages without development dependencies, runs `php artisan migrate --force`,
+using the branch selected in Forge. Forge creates a release, installs locked
+Composer packages without development dependencies, installs/builds npm assets
+before activation, runs `php artisan migrate --force`,
 caches configuration and views, activates the release and restarts queues.
 Deployment does not run custom scripts, CI, tests, seeders or resets.
 

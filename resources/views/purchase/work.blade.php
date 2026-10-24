@@ -5,10 +5,8 @@
 <button form="purchase-request-form" type="submit" name="action" value="save" class="primary app-save-progress" data-save-shortcut @disabled(!$editable)>Save progress</button>
 @endsection
 @section('content-sections')
-<link rel="stylesheet" href="/purchase.css?v={{ substr(hash_file('sha256', public_path('purchase.css')),0,12) }}">
-<style>
-.purchase-remove{color:#991b1b;background:transparent;border:0;padding:.125rem .25rem;font-weight:bold}.purchase-add{display:flex;flex-wrap:wrap;align-items:end;gap:1rem}.purchase-add label{margin:0}.purchase-review dd{white-space:pre-wrap}
-</style>
+@vite(['resources/css/purchase.css', 'resources/js/purchase-request.js'])
+
 <form id="purchase-request-form" action="/purchase/work/{{ $token }}" method="post" novalidate data-tab="{{ $tab }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-can-submit="{{ $canSubmit ? 'true' : 'false' }}">
 @csrf
 <input type="hidden" name="revision" value="{{ $work['revision'] }}">
@@ -57,10 +55,10 @@
 </x-workflow.tab-panel>
 </form>
 @if($work['id'])
-<div class="app-content"><details><summary>Permanent notes</summary><form method="post" action="/purchase/work/{{ $token }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button type="submit">Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::date($note->occurred_at) }}</p><p style="white-space:pre-wrap">{{ $note->body }}</p></article>@endforeach</details></div>
+<div class="app-content"><details><summary>Permanent notes</summary><form method="post" action="/purchase/work/{{ $token }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button type="submit">Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::date($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</details></div>
 @if(!in_array($row->status, ['Received','Cancelled']) && ($editable || $procurement))
 <div class="app-content"><details><summary>Other actions</summary><form method="post" action="/purchase/work/{{ $token }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $work['revision'] }}">@if($procurement && in_array($row->status,['Request','Ordered','Shipped']))<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
 @endif
 @endif
-@vite('resources/js/purchase-request.js')
+
 @endsection

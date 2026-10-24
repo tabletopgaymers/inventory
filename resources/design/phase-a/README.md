@@ -2,7 +2,7 @@
 
 This nested package retains only the historical static evaluation build. The live application uses the root Vite build; run npm commands from the application root for normal UI development.
 
-`app-input.css` remains the single source of the existing application theme and custom rules, imported by `resources/css/app.css`. The root Vite build owns its compilation. The previous nested `build:app` command is retired; do not regenerate or edit public/app.css. That older compiled file remains temporarily for rollback/reference and is no longer loaded by the application shell.
+`app-input.css` remains the single source of the existing application theme and custom rules, imported by `resources/css/app.css`. Root Vite owns compilation, followed by shared workflow imports. The nested `build:app` command and obsolete public/app.css are retired; historical versions remain recoverable in Git. Do not recreate a parallel application build here. Domain styles now live in resources/css/purchase.css and resources/css/relocation.css.
 
 From this directory, using Node.js 20 or newer and npm:
 

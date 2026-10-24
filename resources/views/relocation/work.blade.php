@@ -5,24 +5,7 @@
 <button type="submit" form="relocation-form" name="action" value="save" class="primary app-save-progress" data-relocation-save data-save-shortcut @disabled(!$editable)><span data-save-label>Save progress</span><span class="app-search-spinner" aria-hidden="true"></span></button>
 @endsection
 @section('content-sections')
-<style>
-    #relocation-form .relocation-shipping-information { margin-top: .75rem; }
-    #relocation-form .material-add-actions { justify-content: flex-end; }
-    #relocation-form .material-remove { color: #b91c1c; background: transparent; border: 0; padding: .125rem .25rem; font-weight: 700; }
-    #relocation-form .relocation-review-table .projection-value { width: 7%; padding-left: .35rem; padding-right: .35rem; }
-    #relocation-form .relocation-review-table td.review-requested { width: 8%; }
-    #relocation-form [data-shipping-label] { font-weight: inherit; margin: 0; }
-    #relocation-form [data-shipping-label] [data-field-qualifier] { display: none; }
-    #relocation-form .tracking-editor-row { display: flex; flex-wrap: wrap; align-items: end; gap: var(--app-density-field-y) 1rem; margin-bottom: var(--app-density-field-y); }
-    #relocation-form .tracking-saved-table { width: auto; border: 0; }
-    #relocation-form .tracking-saved-scroll { overflow-x: auto; }
-    #relocation-form .relocation-ship-table tbody tr:not(.group-row) td:not(:first-child):not(.table-variance) { width: 4%; }
-    #relocation-form .tracking-saved-table td { border: 0; background: transparent; padding: var(--app-density-field-y) 1rem var(--app-density-field-y) 0; white-space: nowrap; }
-    #relocation-form .tracking-editor-row label { display: flex; flex-direction: column; margin: 0; max-width: 100%; }
-    #relocation-form .tracking-editor-row select { width: auto; }
-    #relocation-form [data-tracking-name] { width: 18ch; }
-    #relocation-form [data-tracking-number] { width: 28ch; }
-</style>
+@vite(['resources/css/relocation.css', 'resources/js/relocation.js'])
 <form id="relocation-form" method="post" action="/relocation/work/{{ $token }}" novalidate data-manager="{{ $manager ? 'true' : 'false' }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-status="{{ $status }}" data-can-submit="{{ $submitter ? 'true' : 'false' }}" data-initial-step="{{ $step }}" data-saved="{{ $work['id'] ? 'true' : 'false' }}">
     @csrf
     <input type="hidden" name="revision" value="{{ $work['revision'] }}">
@@ -183,5 +166,5 @@
         <template data-confirmation-group><tr class="group-row"><th colspan="7"></th></tr></template>
     </x-workflow.tab-panel>
 </form>
-@vite('resources/js/relocation.js')
+
 @endsection
