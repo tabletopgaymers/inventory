@@ -1,5 +1,6 @@
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
 import '../../public/inventory-search-controls.js';
 
 (() => {
@@ -9,8 +10,8 @@ import '../../public/inventory-search-controls.js';
     const searchRoot = form.querySelector('[data-inventory-search]');
     const rows = [...form.querySelectorAll('[data-item-row]')];
     const validQuantity = value => /^\d+$/.test(value.trim()) && Number.isSafeInteger(Number(value)) && Number(value) <= 1000000000;
-    let dirty = false, leaving = false, pendingHref = null;
-    const dialog = document.querySelector('#purchase-leave');
+    let dirty = false;
+    const navigation = mountUnsavedChanges(form, { isDirty: () => dirty });
     const errors = form.querySelector('[data-purchase-errors]');
     const reviewBody = form.querySelector('[data-review-items]');
     const cell = (tag, value) => { const el = document.createElement(tag); el.textContent = value; return el; };
@@ -60,7 +61,7 @@ import '../../public/inventory-search-controls.js';
     mountQuantityNavigation(form, { resolveFields: input => input.matches('[data-quantity]') ? form.querySelectorAll('[data-quantity]') : [] });
     form.addEventListener('submit',event => {
         if (event.submitter?.value === 'submit' && form.querySelector('[data-submit-request]').disabled) { event.preventDefault(); showTab('review'); return; }
-        leaving = true;
+        navigation.allowDeparture();
     });
     if (searchRoot) {
         const select = form.querySelector('[data-item-select]');
@@ -86,18 +87,19 @@ import '../../public/inventory-search-controls.js';
         // Keep the existing immediate select filtering; the shared actions also work.
         searchRoot.addEventListener('inventory-search:pending', event => filterOptions(event.detail.criteria));
     }
-    document.addEventListener('click',event => {
-        const anchor = event.target.closest('a[href]');
-        if (!dirty || !anchor || anchor.target === '_blank' || event.ctrlKey || event.metaKey || event.shiftKey || anchor.getAttribute('href').startsWith('#')) return;
-        if (anchor.origin !== location.origin || anchor.href !== location.href) { event.preventDefault(); pendingHref = anchor.href; dialog.showModal(); }
-    });
-    dialog.querySelector('[data-stay]').addEventListener('click',() => { pendingHref = null; dialog.close(); });
-    dialog.querySelector('[data-leave]').addEventListener('click',() => { leaving = true; location.href = pendingHref; });
     document.querySelectorAll('[data-confirm-transition]').forEach(other => other.addEventListener('submit',event => {
-        if (!window.confirm('Continue with this status change? Unsaved form changes will not be saved.')) event.preventDefault(); else leaving = true;
+        if (navigation.isLeaving()) return;
+        event.preventDefault();
+        const button = event.submitter;
+        navigation.confirm(() => other.requestSubmit(button), { origin: button, title: 'Confirm status change',
+            text: 'Continue with this status change? Unsaved form changes will not be saved.', actionLabel: 'Continue' });
     }));
     document.querySelectorAll('form:not(#purchase-request-form):not([data-confirm-transition])').forEach(other => other.addEventListener('submit',event => {
-        if (dirty && !window.confirm('This action does not save your unsaved request changes. Continue?')) event.preventDefault(); else leaving = true;
+        if (navigation.isLeaving()) return;
+        if (!dirty) { navigation.allowDeparture(); return; }
+        event.preventDefault();
+        const button = event.submitter;
+        navigation.confirm(() => other.requestSubmit(button), { origin: button,
+            text: 'This action does not save your unsaved request changes. Continue?', actionLabel: 'Continue' });
     }));
-    window.addEventListener('beforeunload',event => { if (dirty && !leaving) { event.preventDefault(); event.returnValue = ''; } });
 })();

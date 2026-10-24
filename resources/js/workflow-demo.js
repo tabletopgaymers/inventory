@@ -1,5 +1,6 @@
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
 
 document.querySelectorAll('[data-workflow-demo]').forEach(root => {
     const queryParam = root.dataset.workflowDemo;
@@ -16,4 +17,12 @@ document.querySelectorAll('[data-quantity-demo]').forEach(root => {
         row.querySelector('input').setAttribute('aria-label', `Added quantity ${number}`);
         root.querySelector('tbody').append(row);
     });
+});
+
+document.querySelectorAll('[data-unsaved-demo]').forEach(root => {
+    let dirty = false;
+    root.addEventListener('input', () => { dirty = true; });
+    root.addEventListener('reset', () => { dirty = false; });
+    root.addEventListener('submit', event => event.preventDefault());
+    mountUnsavedChanges(root, { isDirty: () => dirty });
 });

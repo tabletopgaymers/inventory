@@ -1,4 +1,5 @@
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
 
 (() => {
     const form = document.querySelector('[data-purchase-invoice]');
@@ -7,29 +8,26 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
     if (linkedField && !linkedField.closest('[hidden]')) { linkedField.focus(); linkedField.select?.(); }
     let dirty = false;
     form.addEventListener('input', () => { dirty = true; });
-    let leaving = false, pending = null;
-    const dialog = document.querySelector('[data-invoice-leave]');
+    const navigation = mountUnsavedChanges(form, { isDirty: () => dirty,
+        message: 'Unsaved invoice edits will be discarded. Keep editing or leave without saving.' });
     form.addEventListener('submit', event => {
-        if (event.submitter?.value === 'cancel_receipt' && !leaving) {
+        if (event.submitter?.value === 'cancel_receipt' && !navigation.isLeaving()) {
             event.preventDefault();
-            pending = () => form.requestSubmit(event.submitter);
-            dialog.showModal();
+            const button = event.submitter;
+            navigation.confirm(() => form.requestSubmit(button), { origin: button, title: 'Cancel receiving?',
+                text: 'Unsaved invoice edits and the saved receipt draft will be discarded.', actionLabel: 'Cancel receiving' });
             return;
         }
-        dirty = false;
-    });
-    document.addEventListener('click', event => {
-        const link = event.target.closest('a[href]');
-        if (!dirty || !link || link.target === '_blank' || event.ctrlKey || event.metaKey || event.shiftKey) return;
-        event.preventDefault(); pending = () => { location.href = link.href; }; dialog.showModal();
+        navigation.allowDeparture();
     });
     document.querySelectorAll('form:not([data-purchase-invoice])').forEach(other => other.addEventListener('submit', event => {
-        if (leaving || !dirty) return;
-        event.preventDefault(); pending = () => other.requestSubmit(event.submitter); dialog.showModal();
+        if (navigation.isLeaving()) return;
+        if (!dirty) { navigation.allowDeparture(); return; }
+        event.preventDefault();
+        const button = event.submitter;
+        navigation.confirm(() => other.requestSubmit(button), { origin: button,
+            text: 'This action does not save your unsaved invoice changes. Continue?', actionLabel: 'Continue' });
     }));
-    dialog.querySelector('[data-keep-editing]').addEventListener('click', () => { pending = null; dialog.close(); });
-    dialog.querySelector('[data-discard-editing]').addEventListener('click', () => { leaving = true; dirty = false; dialog.close(); pending?.(); });
-    window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
     const decimal = (value, places) => {
         if (!/^\d+(?:\.\d+)?$/.test(value)) throw Error('decimal');
         const [whole, fraction = ''] = value.split('.');

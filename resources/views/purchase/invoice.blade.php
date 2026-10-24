@@ -117,7 +117,6 @@
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
 <div class="app-content"><details><summary>Other actions</summary><form method="post" action="{{ $base }}/transition">@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
 @endif
-<dialog data-invoice-leave><h2>Continue without saving?</h2><p>Unsaved invoice edits will be discarded. Cancel receiving also discards the saved receipt draft.</p><button type="button" data-keep-editing>Keep editing</button> <button type="button" data-discard-editing>Continue</button></dialog>
 @vite('resources/js/purchase-work-invoice.js')
 @endsection
 

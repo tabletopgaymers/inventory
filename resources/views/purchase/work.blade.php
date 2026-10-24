@@ -7,7 +7,7 @@
 @section('content-sections')
 <link rel="stylesheet" href="/purchase.css?v={{ substr(hash_file('sha256', public_path('purchase.css')),0,12) }}">
 <style>
-.purchase-remove{color:#991b1b;background:transparent;border:0;padding:.125rem .25rem;font-weight:bold}.purchase-add{display:flex;flex-wrap:wrap;align-items:end;gap:1rem}.purchase-add label{margin:0}.purchase-review dd{white-space:pre-wrap}#purchase-leave{max-width:32rem}#purchase-leave::backdrop{background:#0008}
+.purchase-remove{color:#991b1b;background:transparent;border:0;padding:.125rem .25rem;font-weight:bold}.purchase-add{display:flex;flex-wrap:wrap;align-items:end;gap:1rem}.purchase-add label{margin:0}.purchase-review dd{white-space:pre-wrap}
 </style>
 <form id="purchase-request-form" action="/purchase/work/{{ $token }}" method="post" novalidate data-tab="{{ $tab }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-can-submit="{{ $canSubmit ? 'true' : 'false' }}">
 @csrf
@@ -62,6 +62,5 @@
 <div class="app-content"><details><summary>Other actions</summary><form method="post" action="/purchase/work/{{ $token }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $work['revision'] }}">@if($procurement && in_array($row->status,['Request','Ordered','Shipped']))<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
 @endif
 @endif
-<dialog id="purchase-leave"><h2>Leave without saving?</h2><p>Your unsaved purchase changes will be lost.</p><x-workflow.heading><button type="button" data-stay>Keep editing</button><button type="button" data-leave>Leave without saving</button></x-workflow.heading></dialog>
 @vite('resources/js/purchase-request.js')
 @endsection

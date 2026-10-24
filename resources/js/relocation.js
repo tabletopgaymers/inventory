@@ -1,5 +1,6 @@
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
 import '../../public/inventory-search-controls.js';
 (() => {
     const form = document.getElementById('relocation-form');
@@ -801,5 +802,5 @@ import '../../public/inventory-search-controls.js';
             save.setAttribute('aria-busy', 'false'); save.querySelector('[data-save-label]').textContent = 'Save progress';
         }
     });
-    window.appNavigationGuards?.push({ modal: true, shouldWarn: () => dirty && !busy, message: 'Your changes have not been saved. Keep editing or leave without saving.' });
+    mountUnsavedChanges(form, { isDirty: () => dirty, isBusy: () => busy });
 })();

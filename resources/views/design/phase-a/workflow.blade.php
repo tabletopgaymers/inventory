@@ -51,5 +51,12 @@
 <fieldset disabled><label>Disabled fieldset specimen<input data-demo-quantity value="50"></label></fieldset>
 <template><tr data-demo-dynamic><td class="app-grouped-item"></td><td><input data-demo-quantity></td><td class="table-variance table-joined"></td><td>0</td></tr></template>
 </form>
+<div class="app-content">
+    <h2>Unsaved changes</h2>
+    <p>Type in this field, then follow any normal site link. The shared shell opens one confirmation modal; Keep editing or Escape preserves the field and restores focus. Leave without saving navigates once. Browser reload/close uses the native browser warning. Reset demo clears its dirty state. Nothing is saved.</p>
+    <form data-unsaved-demo><label>Unsaved demo text<input></label><button type="reset">Reset demo</button> <a href="/style-guide/forms">Leave for Forms</a></form>
+    <p>Import mountUnsavedChanges from resources/js/workflow/unsaved-changes.js; supply root, isDirty(), optional isBusy() and message. The application shell is required. The caller owns dirty state and clears only its successfully saved section. confirm(callback, options) uses the shell modal for deliberate actions; allowDeparture() suppresses the unload warning for an accepted server submission; isLeaving() prevents recursive confirmations, and destroy() unregisters listeners/guard. Optional text/title/actionLabel/origin retain the caller's action wording and focus target.</p>
+    <p>The shell's optional guard.onLeave callback prevents a second native warning after an approved link departure. Existing guards without it retain their behavior. Field qualifiers, error/notice styling and Ctrl/Cmd+S continue using the existing shared shell/shortcut assets; domain validation messages and save responses remain caller-owned.</p>
+</div>
 @vite('resources/js/workflow-demo.js')
 @endsection
