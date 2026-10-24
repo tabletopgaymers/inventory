@@ -1,0 +1,3 @@
+/* A stack owns section gaps across form/tab boundaries; child panels own only their padding. */
+.app-panel-stack { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.app-shell .app-panel-stack > :is(.app-content, .app-panel, .app-list-table-panel, .app-table-region, .app-collapsible-panel, .workflow-tab-panel, .error, form, section) { margin-block: 0; }

@@ -299,7 +299,7 @@
 .app-record-content:not(:has(> :not(script, style, input[type="hidden"]))) { display: none; }
 .app-shell fieldset.app-entry-fieldset { border: 0; padding: 0; margin: 0; }
 .app-shell .requested-items.app-entry-items { border: 0; padding: 0; margin: 0; }
-.app-shell .app-content + form:has(.app-list-table-panel),
+.app-shell .app-content + form:has(.app-list-table-panel):not(:where(.app-panel-stack)),
 .app-shell .app-content + #requested-items,
 .app-shell #requested-items + .app-content { margin-top: .75rem; }
 .app-guide-divider { padding: 2.5rem 0; }

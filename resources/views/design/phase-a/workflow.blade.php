@@ -67,4 +67,9 @@
     <p>Relocation still saves progress before opening its packing view in a new tab. That persistence behavior belongs to its workflow script; the shared Print button only invokes browser printing. No save, navigation or auto-print policy is embedded in the shared print layout.</p>
 </div>
 @vite('resources/js/workflow-demo.js')
+<x-app.guide-divider />
+<x-app.panel-stack>
+    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent gap, including across form boundaries. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
+    <x-app.collapsible-panel title="Collapsible specimen"><p>One border surrounds the summary and this body.</p></x-app.collapsible-panel>
+</x-app.panel-stack>
 @endsection

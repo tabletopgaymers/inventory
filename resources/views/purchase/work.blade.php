@@ -7,7 +7,8 @@
 @section('content-sections')
 @vite(['resources/css/purchase.css', 'resources/js/purchase-request.js'])
 
-<form id="purchase-request-form" action="/purchase/work/{{ $token }}" method="post" novalidate data-tab="{{ $tab }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-can-submit="{{ $canSubmit ? 'true' : 'false' }}">
+<x-app.panel-stack>
+<form class="app-panel-stack" id="purchase-request-form" action="/purchase/work/{{ $token }}" method="post" novalidate data-tab="{{ $tab }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-can-submit="{{ $canSubmit ? 'true' : 'false' }}">
 @csrf
 <input type="hidden" name="revision" value="{{ $work['revision'] }}">
 <input type="hidden" name="tab" value="{{ $tab }}" data-current-tab>
@@ -31,7 +32,7 @@
 <label for="purchase-details">Request details<textarea id="purchase-details" name="details" data-optional maxlength="5000" rows="5" @readonly(!$editable)>{{ old('details',$work['details']) }}</textarea></label>
 </fieldset>
 </x-workflow.tab-panel>
-<x-workflow.tab-panel id="purchase-panel-material" labelledby="purchase-tab-material" :active="$tab === 'material'">
+<x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-material" labelledby="purchase-tab-material" :active="$tab === 'material'">
 <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material">
 <x-slot:header><x-workflow.heading><h2>Requested material</h2><button type="submit" class="primary" name="action" value="next" data-material-next>Next &gt;</button></x-workflow.heading></x-slot:header>
 <table><thead><tr><th class="table-action-column"><span class="sr-only">Remove</span></th><th>Item</th><th class="table-heading-center table-quantity-column">Requested</th></tr></thead><tbody>
@@ -48,17 +49,18 @@
 @foreach($collections as $collection)<optgroup data-collection="{{ $collection->id }}" label="{{ $collection->category_name }} : {{ $collection->name }}">@foreach($catalogItems->where('collection_id',$collection->id)->where('state','active') as $catalogItem)@if(!array_key_exists($catalogItem->id,$work['lines']))<option value="{{ $catalogItem->id }}">{{ $catalogItem->name }}</option>@endif @endforeach</optgroup>@endforeach
 </select></label><button name="action" value="add" type="submit">Add selected</button></div></div>@endif
 </x-workflow.tab-panel>
-<x-workflow.tab-panel id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">
+<x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">
 <div class="app-content"><x-workflow.heading><h2>Review purchase request</h2><button class="primary" type="submit" name="action" value="submit" data-submit-request @disabled(!$canSubmit || count($reviewErrors))>Submit</button></x-workflow.heading>
 <dl class="purchase-review"><dt>Title</dt><dd data-review="title">{{ $work['title'] ?: '—' }}</dd><dt>Requester</dt><dd>{{ $requesterName }}</dd><dt>Suggested supplier</dt><dd data-review="suggested_merchant">{{ $work['suggested_merchant'] ?: '—' }}</dd><dt>Request details</dt><dd data-review="details">{{ $work['details'] ?: '—' }}</dd></dl></div>
 <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material"><x-slot:header><h2>Requested material</h2></x-slot:header><table><thead><tr><th>Item</th><th class="table-heading-center table-quantity-column">Requested</th></tr></thead><tbody data-review-items></tbody></table></x-app.table-region>
 </x-workflow.tab-panel>
 </form>
 @if($work['id'])
-<div class="app-content"><details><summary>Permanent notes</summary><form method="post" action="/purchase/work/{{ $token }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button type="submit">Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::date($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</details></div>
+<x-app.collapsible-panel title="Permanent notes"><form method="post" action="/purchase/work/{{ $token }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button type="submit">Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::date($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
 @if(!in_array($row->status, ['Received','Cancelled']) && ($editable || $procurement))
-<div class="app-content"><details><summary>Other actions</summary><form method="post" action="/purchase/work/{{ $token }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $work['revision'] }}">@if($procurement && in_array($row->status,['Request','Ordered','Shipped']))<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
+<x-app.collapsible-panel title="Other actions"><form method="post" action="/purchase/work/{{ $token }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $work['revision'] }}">@if($procurement && in_array($row->status,['Request','Ordered','Shipped']))<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></x-app.collapsible-panel>
 @endif
 @endif
 
+</x-app.panel-stack>
 @endsection

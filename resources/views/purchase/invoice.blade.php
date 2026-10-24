@@ -15,6 +15,7 @@
     $next = ['order'=>'invoice','invoice'=>'charges','charges'=>$reviewTab,'receive'=>'confirmation'];
 @endphp
 @vite(['resources/css/purchase.css', 'resources/js/purchase-work-invoice.js'])
+<x-app.panel-stack>
 @include('purchase.tabs')
 @if($reviewErrors)<div class="app-content error" role="alert"><ul>
 @foreach($reviewErrors as $field=>$messages)
@@ -27,11 +28,11 @@
 @foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$mode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
 @endforeach
 </ul></div>@endif
-<form id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice novalidate>
+<form class="app-panel-stack" id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice novalidate>
 @csrf
 <input type="hidden" name="revision" value="{{ $revision }}"><input type="hidden" name="mode" value="{{ $mode }}"><input type="hidden" name="tab" value="{{ $tab }}"><input type="hidden" name="next_tab" value="{{ $next[$tab] ?? $tab }}">
 @foreach($tabs as $section=>$heading)
-<section class="purchase-step" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
+<section class="purchase-step app-panel-stack" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
 <div class="app-content app-record-content purchase-panel"><x-workflow.heading><h2>{{ $section==='order' && $mode==='receipt' ? 'Receipt details' : $heading }}</h2>
 @if(!$readonly)
 @if(isset($next[$section]))<button name="action" value="next" class="primary">Next &gt;</button>@elseif($section===$reviewTab)<button name="action" value="confirm" class="primary" @disabled(!$preview || count($reviewErrors)>0)>{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</button>@endif
@@ -113,11 +114,12 @@
 @endforeach
 @if(!$readonly && $mode==='receipt')<div class="app-content purchase-panel"><button name="action" value="cancel_receipt">Cancel receiving</button></div>@endif
 </form>
-<div class="app-content"><details><summary>Permanent notes</summary><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button>Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</details></div>
+<x-app.collapsible-panel title="Permanent notes"><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button>Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
-<div class="app-content"><details><summary>Other actions</summary><form method="post" action="{{ $base }}/transition">@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></details></div>
+<x-app.collapsible-panel title="Other actions"><form method="post" action="{{ $base }}/transition">@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></x-app.collapsible-panel>
 @endif
 
+</x-app.panel-stack>
 @endsection
 
 
