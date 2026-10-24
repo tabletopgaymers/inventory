@@ -27,31 +27,40 @@ running; Ctrl+C stops it. If an interrupted process leaves `public/hot`, remove
 that stale marker before using built assets. Use `npm run build` to generate
 hashed assets and the manifest in ignored `public/build/`.
 
-The common shell loads `resources/css/app.css` through Laravel Vite. This imports
-the existing Tailwind/daisyUI theme and app rules from
-`resources/design/phase-a/app-input.css`; edit source, not generated build output.
-The obsolete public/app.css and unused resources/js/app.js starter were removed.
-Singular Relocation and Purchase request-tab scripts use Vite entries
-at resources/js/relocation.js and resources/js/purchase-request.js, importing
-shared workflow tab mechanics. Purchase invoice code also uses the Vite entry
-resources/js/purchase-work-invoice.js; all three use shared quantity navigation.
-Domain CSS lives in resources/css/purchase.css and resources/css/relocation.css;
-each domain template includes its CSS and JS entries once. Common theme CSS loads
-first in the shell; domain styles retain their existing precedence. Shared
-workflow modules are imported by those JS entries, not mounted a second time by
-a global auto-loader.
+The common shell loads `resources/css/app.css` and `resources/js/app.js`
+through Laravel Vite. CSS imports the existing Tailwind/daisyUI theme from
+`resources/design/phase-a/app-input.css`, shared workflow/panel rules, search
+controls and Save progress shortcut styles. Edit resource sources, never generated
+public/build assets or manual filename hashes.
 
-Other public assets intentionally remain: app-shell.js, Save progress shortcuts,
-inventory-search controls and unrelated page assets. Vite domain entries import
-the existing inventory-search client source while their Blade component sets
-script=false; classic callers still load the public script once. Do not include
-both versions on one page. Vite also builds style-guide demos and locally hosted
-Font Awesome Free icons; icons are not yet loaded site-wide.
-The nested evaluation package is not the application build.
+The JS app entry initializes the shell then Save progress shortcuts. Active page
+entries that depend on shell APIs import this same cached module explicitly;
+independent module tags are not an initialization-order contract. Shared search
+has one canonical resources/js/inventory-search-controls.js module and WeakMap
+mount registry. Its component can emit the module once, while domain adapters
+import it and use script=false. Keep one initialization path per behavior.
 
-Standalone documents use x-print.layout/header with resources/css/print.css and
-resources/js/print.js as independent Vite entries. They do not load the normal
-application stylesheet. See /style-guide/workflow and its printable specimen.
+Catalog, user actions, Inventory, Events, Purchase, Relocation and active guide
+scripts are Vite entries. Catalog form setup explicitly precedes progress baseline
+capture through catalog-form.js. Domain styles remain purchase.css/relocation.css;
+style-guide.css owns guide-only presentation. Static page style blocks/attributes
+belong in shared or scoped resource CSS, including presentation formerly written
+by guide JavaScript. Serialized JSON state remains data, not executable styling.
+
+Standalone Relocation print uses x-print.layout/header with print.css/print.js.
+Inventory count worksheets use inventory-worksheet.css (worksheet-base then
+inventory-print) and independent location-counts.js. Neither imports app CSS/JS.
+Event report CSS remains an explicit page entry. Keep print output isolated.
+
+Remaining public sources are intentionally retained legacy/historical assets:
+old purchase/relocation progress and invoice scripts, request-workflow.css and
+requests-print.css; baseline.css and design/phase-a wrapper/evaluation assets.
+Old plural routes/templates are retired references with no functional guarantee;
+do not add compatibility copies for their references to moved files. Historical
+archive/removal is deferred. The nested evaluation package is not the application
+build; its directory also contains the ACTIVE app-input.css source, which must
+remain. Font Awesome Free is locally built in its demo with its license retained;
+it is not loaded site-wide.
 
 Deployment must run `npm ci --include=dev` followed by
 `npm run build` in the Forge release directory before activating the release.
