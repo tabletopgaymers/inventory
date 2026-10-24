@@ -7,6 +7,7 @@
 <div class="app-content">
     <h2 id="fields-title">Form fields</h2>
     <p>Fields are required unless explicitly labeled “optional.” Keep labels visible and mark optional fields consistently. Read-only fields display information; disabled controls indicate unavailable interaction.</p>
+    <p>Focused text fields, text areas and dropdowns use a thicker purple edge without changing their size or moving their contents. Apply this through the shared field styles, including composite SKU fields; buttons, links and choice controls retain their keyboard focus indicators.</p>
     <label>Text field<input name="guide_title" value="Sample supply request" required></label>
     <label>Text area<textarea name="guide_details" data-optional rows="2">New display stands, quantity 2.</textarea></label>
     <label>Dropdown<select name="guide_location" required><option>Central</option><option>Sample storage</option></select></label>
