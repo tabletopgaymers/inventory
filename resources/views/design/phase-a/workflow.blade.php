@@ -5,7 +5,7 @@
 <div class="app-content">
     <h2>In-page tabs</h2>
     <p>Use x-workflow.tabs with a unique prefix, labels, initial active key and accessible label. Pair each key with x-workflow.tab-panel. The same page remains loaded; the URL remembers the selected section.</p>
-    <p>Left/Right arrows, Home and End select and focus tabs; Tab keeps its normal behavior. Panels use the caller's padding class. The shared heading places its title and actions on one row, wrapping on small screens.</p>
+    <p>Left/Right arrows, Home and End select and focus tabs; Tab keeps its normal behavior. The shared tab strip has no enclosing panel, rests on a baseline and scrolls horizontally on narrow screens without wrapping. Both in-page tabs and linked steps use this styling; keep their distinct navigation semantics. Content panels use the caller's padding class. The shared heading places its title and actions on one row, wrapping on small screens.</p>
 </div>
 @foreach(['tab'=>'Primary specimen','second-tab'=>'Independent specimen'] as $parameter=>$specimen)
 @php($active = in_array(request($parameter), ['basic','material','review']) ? request($parameter) : 'basic')

@@ -1,7 +1,9 @@
 .app-shell { --app-workflow-selected: #e5dfef; }
-.app-shell .workflow-tab-panel { margin-bottom: .75rem; }
-.workflow-navigation, .workflow-tabs { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
-.app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { border-radius: .5rem .5rem 0 0; }
+.app-shell .workflow-tab-panel { margin-bottom: .75rem; min-width: 0; max-width: 100%; overflow-x: auto; border-bottom: 1px solid var(--app-border); }
+.workflow-navigation { display: flex; gap: .25rem; align-items: flex-end; width: max-content; min-width: 100%; padding: .5rem .5rem 0; }
+.workflow-tabs { display: flex; flex: none; flex-wrap: nowrap; gap: .25rem; align-items: flex-end; }
+.app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { flex: none; white-space: nowrap; margin: 0; border-radius: .5rem .5rem 0 0; }
+.app-shell .workflow-tabs :focus-visible { outline-offset: -4px; }
 .app-shell .workflow-tabs [aria-selected="true"], .app-shell .workflow-tabs [aria-current="page"] {
     background: var(--app-workflow-selected); color: var(--app-text, #231c2f);
     border: 2px solid var(--app-primary, #663399);
