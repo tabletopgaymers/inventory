@@ -1,7 +1,7 @@
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
 import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
-import '../../public/inventory-search-controls.js';
+import './inventory-search-controls.js';
 
 (() => {
     'use strict';
