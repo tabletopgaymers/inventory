@@ -68,6 +68,7 @@ class RelocationController
         $shipment = $work['id'] ? json_decode(DB::table('relocation_fulfillment')->where('relocation_request_id', $work['id'])->value('data') ?? '{}', true) : [];
 
         return view('relocation.work', ['work' => $work, 'token' => $token, 'editable' => $editable, 'status' => $status, 'submitter' => $submitter, 'manager' => RequestValues::manages($request->user(), 'manager'),
+            'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections']]),
             'requesterName' => $work['id'] ? (\App\Models\User::find($row->owner_id)?->displayName() ?? 'Unknown') : $request->user()->displayName(),
             'requestedDate' => $work['id'] ? $this->requestedDate((int) $work['id']) : null,
             'fulfillerName' => isset($shipment['shipment_actor']) ? ($shipment['shipment_actor_name'] ?? \App\Models\User::find($shipment['shipment_actor'])?->displayName() ?? 'Unknown') : (RequestValues::manages($request->user(), 'manager') ? $request->user()->displayName() : '—'),
@@ -213,7 +214,9 @@ class RelocationController
         $sourceName = DB::table('storage_locations')->where('id', $data['source_location_id'])->value('name');
         $destinationName = DB::table('storage_locations')->where('id', $data['destination_location_id'])->value('name');
 
-        return view('relocation.search-results', compact('results', 'sourceName', 'destinationName'));
+        $view = view('relocation.search-results', compact('results', 'sourceName', 'destinationName'));
+        if ($request->expectsJson()) return response()->json(['schema_version' => 1, 'rows' => $results, 'columns' => (object) [], 'count' => count($results), 'html' => $view->render()])->header('Cache-Control', 'private, no-store');
+        return $view;
     }
 
     public function accept(Request $request, string $token)

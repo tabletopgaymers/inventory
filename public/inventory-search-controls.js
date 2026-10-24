@@ -46,6 +46,7 @@
             controls.forEach(([control]) => { control.disabled = true; });
             button?.setAttribute('aria-busy', 'true');
             root.setAttribute('aria-busy', 'true');
+            emit('busy', { busy: true });
             message('Searching…');
             try {
                 const url = new URL(options.endpoint || root.dataset.endpoint, location.href);
@@ -55,9 +56,15 @@
                 for (const key of ['collections[]', 'columns[]']) url.searchParams.delete(key);
                 next.collections.forEach(id => url.searchParams.append('collections[]', id));
                 next.columns.forEach(key => url.searchParams.append('columns[]', key));
-                const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
-                const data = await response.json();
-                if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Search could not be completed.');
+                options.prepareUrl?.(url, next);
+                if (url.origin !== location.origin) throw new Error('Search must use an endpoint on this site.');
+                let data;
+                if (options.request) data = await options.request(url, next, action);
+                else {
+                    const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                    data = await response.json();
+                    if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Search could not be completed.');
+                }
                 if (!Array.isArray(data.rows) || !data.columns || data.schema_version !== 1) throw new Error('The search response could not be read.');
                 options.render?.(data, root);
                 result = data;
@@ -75,10 +82,12 @@
                 controls.forEach(([control, disabled]) => { control.disabled = disabled; });
                 button?.setAttribute('aria-busy', 'false');
                 root.setAttribute('aria-busy', 'false');
+                emit('busy', { busy: false });
             }
         };
         const clear = (reset = false) => {
             if (busy) return;
+            if (!emit('before-reset', { reset }, true)) return;
             root.querySelectorAll('input[type="checkbox"]').forEach(field => { field.checked = false; });
             if (reset) {
                 text.value = '';

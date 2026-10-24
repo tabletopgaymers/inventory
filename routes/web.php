@@ -3,6 +3,7 @@
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MicrosoftAuthController;
 use App\Http\Controllers\PlannedPageController;
+use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\RelocationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -29,6 +30,14 @@ Route::get('/signed-out', function (Request $request) {
 });
 Route::middleware('auth')->group(function () {
     Route::view('/', 'home');
+    Route::get('/purchase', [PurchaseController::class, 'index']);
+    Route::get('/purchase/new', [PurchaseController::class, 'create'])->block(120, 10);
+    Route::get('/purchase/work/{token}', [PurchaseController::class, 'work'])->block(120, 10);
+    Route::post('/purchase/work/{token}', [PurchaseController::class, 'save'])->block(120, 10);
+    Route::post('/purchase/work/{token}/invoice', [PurchaseController::class, 'invoice'])->block(120, 10);
+    Route::post('/purchase/work/{token}/note', [PurchaseController::class, 'note'])->block(120, 10);
+    Route::post('/purchase/work/{token}/transition', [PurchaseController::class, 'transition'])->block(120, 10);
+    Route::get('/purchase/{id}', [PurchaseController::class, 'show'])->whereNumber('id')->block(120, 10);
     Route::get('/relocation', [RelocationController::class, 'index']);
     Route::get('/relocation/new', [RelocationController::class, 'create'])->block(120, 10);
     Route::get('/relocation/work/{token}', [RelocationController::class, 'work'])->block(120, 10);

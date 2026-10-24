@@ -25,10 +25,12 @@ class AppNavigation
                 ['href' => '/inventory/location-counts', 'label' => 'Location Counts', 'current' => request()->is('inventory/location-counts', 'inventory/location-counts/*')],
             ]],
             ['href' => '/relocation', 'label' => 'Relocations NEW', 'active' => request()->is('relocation', 'relocation/*'), 'children' => []],
-            ...array_map(fn ($name) => ['href' => '/'.strtolower($name), 'label' => $name, 'active' => request()->is(strtolower($name), strtolower($name).'/*'), 'children' => []], ['Events', 'Purchases']),
+            ['href' => '/events', 'label' => 'Events', 'active' => request()->is('events', 'events/*'), 'children' => []],
+            ['href' => '/purchase', 'label' => 'Purchases NEW', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],
             ['href' => '/catalog', 'label' => 'Catalog', 'active' => request()->is('catalog', 'catalog/*'), 'children' => $catalog],
             ['href' => '/users', 'label' => 'Users', 'active' => request()->is('users', 'users/*'), 'children' => []],
             ['href' => '/relocations', 'label' => 'Relocations OLD', 'active' => request()->is('relocations', 'relocations/*'), 'children' => []],
+            ['href' => '/purchases', 'label' => 'Purchases OLD', 'active' => request()->is('purchases', 'purchases/*'), 'children' => []],
         ];
     }
 }

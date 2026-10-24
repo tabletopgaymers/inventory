@@ -6,7 +6,8 @@
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} · TG Inventory</title>
-    <link rel="stylesheet" href="/app.css?v={{ substr(hash_file('sha256', public_path('app.css')), 0, 12) }}"><script src="/app-shell.js?v={{ substr(hash_file('sha256', public_path('app-shell.js')), 0, 12) }}" defer></script>
+    @vite('resources/css/app.css')
+    <script src="/app-shell.js?v={{ substr(hash_file('sha256', public_path('app-shell.js')), 0, 12) }}" defer></script>
     <link rel="stylesheet" href="/save-progress-shortcut.css?v={{ substr(hash_file('sha256', public_path('save-progress-shortcut.css')), 0, 12) }}">
     <script src="/save-progress-shortcut.js?v={{ substr(hash_file('sha256', public_path('save-progress-shortcut.js')), 0, 12) }}" defer></script>
 </head>

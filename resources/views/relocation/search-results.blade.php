@@ -1,6 +1,6 @@
     <table class="relocation-material-table">
-        <colgroup><col class="material-delete-column"><col><col class="material-quantity-column"><col class="material-quantity-column"><col class="material-quantity-column"></colgroup>
-        <thead><tr><th><span class="sr-only">Select</span></th><th>Item</th><th class="material-quantity-heading" data-stock-heading="source_location_id">{{ $sourceName }}</th><th class="material-quantity-heading" data-stock-heading="destination_location_id">{{ $destinationName }}</th><th class="material-quantity-heading" data-search-quantity-heading>Request</th></tr></thead>
+        <colgroup><col class="table-action-column"><col><col class="table-quantity-column"><col class="table-quantity-column"><col class="table-quantity-column"></colgroup>
+        <thead><tr><th><span class="sr-only">Select</span></th><th>Item</th><th class="table-heading-center" data-stock-heading="source_location_id">{{ $sourceName }}</th><th class="table-heading-center" data-stock-heading="destination_location_id">{{ $destinationName }}</th><th class="table-heading-center" data-search-quantity-heading>Request</th></tr></thead>
         <tbody>
             @php($group = null)
             @forelse($results as $item)
@@ -11,7 +11,7 @@
                 <tr data-search-item="{{ $item['id'] }}" data-item-name="{{ $item['name'] }}" data-item-sku="{{ $item['sku'] }}" data-item-group="{{ $group }}" data-item-label="{{ $item['name'] }} · {{ $item['sku'] }}" data-source-balance="{{ $item['source'] }}" data-destination-balance="{{ $item['destination'] }}">
                     <td class="app-grouped-item"><input type="checkbox" data-search-item-check aria-label="Select {{ $item['name'] }} · {{ $item['sku'] }}"></td>
                     <td class="app-grouped-item">{{ $item['name'] }}</td>
-                    <td class="material-stock-value" data-stock-count>{{ number_format($item['source']) }}</td><td class="material-stock-value" data-stock-count>{{ number_format($item['destination']) }}</td>
+                    <td class="table-numeric" data-stock-count>{{ number_format($item['source']) }}</td><td class="table-numeric" data-stock-count>{{ number_format($item['destination']) }}</td>
                     <td><label><span class="sr-only">Request {{ $item['name'] }} · {{ $item['sku'] }}</span><input data-search-quantity aria-label="Request {{ $item['name'] }} · {{ $item['sku'] }}"></label></td>
                 </tr>
             @empty

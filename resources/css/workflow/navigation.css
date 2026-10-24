@@ -1,0 +1,10 @@
+.app-shell { --app-workflow-selected: #e5dfef; }
+.app-shell .workflow-tab-panel { margin-bottom: .75rem; }
+.workflow-navigation, .workflow-tabs { display: flex; flex-wrap: wrap; gap: .25rem; align-items: center; }
+.app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { border-radius: .5rem .5rem 0 0; }
+.app-shell .workflow-tabs [aria-selected="true"], .app-shell .workflow-tabs [aria-current="page"] {
+    background: var(--app-workflow-selected); color: var(--app-text, #231c2f);
+    border: 2px solid var(--app-primary, #663399);
+}
+.workflow-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--app-density-field-y); }
+.app-shell .workflow-heading h2 { margin: 0; }

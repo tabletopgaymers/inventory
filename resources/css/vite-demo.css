@@ -1,0 +1,11 @@
+@import '@fortawesome/fontawesome-free/css/fontawesome.css';
+@import '@fortawesome/fontawesome-free/css/solid.css';
+
+.vite-demo-swatch {
+    border: 2px solid #663399;
+    background: #f3eef9;
+    color: #231c2f;
+    padding: 1rem;
+    border-radius: .5rem;
+    margin-bottom: 1rem;
+}

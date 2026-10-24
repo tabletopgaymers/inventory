@@ -98,10 +98,10 @@
     const inFlight = new WeakSet();
     let panel;
     window.appNavigationGuards = guards;
-    window.appRequestDecision = (message, proceed, origin, actionLabel = 'Confirm action', modal = false) => {
+    window.appRequestDecision = (message, proceed, origin, actionLabel = 'Confirm action', modal = false, title = null) => {
         const drawer = document.getElementById('app-nav-dialog');
         if (drawer?.open) {
-            drawer.addEventListener('close', () => window.appRequestDecision(message, proceed, document.getElementById('app-nav-open'), actionLabel, modal), { once: true });
+            drawer.addEventListener('close', () => window.appRequestDecision(message, proceed, document.getElementById('app-nav-open'), actionLabel, modal, title), { once: true });
             drawer.close();
             return;
         }
@@ -111,8 +111,9 @@
         panel.className = modal ? 'app-user-disable-dialog' : 'warning'; panel.tabIndex = -1;
         panel.dataset.noticeDismissible = 'false';
         if (!modal) panel.setAttribute('role', 'region');
-        panel.setAttribute('aria-label', modal ? 'Unsaved changes' : 'Confirm action');
-        const heading = document.createElement('h2'); heading.textContent = modal ? 'Unsaved changes' : 'Confirm action';
+        const decisionTitle = title || (modal ? 'Unsaved changes' : 'Confirm action');
+        panel.setAttribute('aria-label', decisionTitle);
+        const heading = document.createElement('h2'); heading.textContent = decisionTitle;
         const text = document.createElement('p'); text.textContent = message;
         const actions = document.createElement('div'); actions.className = 'actions';
         const stay = document.createElement('button'); stay.type = 'button'; stay.textContent = modal ? 'Keep editing' : 'Keep editing / cancel action';
@@ -130,7 +131,7 @@
     };
     window.appNavigate = (href, origin) => {
         const guard = guards.find(candidate => candidate.shouldWarn(origin));
-        const leave = () => { window.location.assign(href); };
+        const leave = () => { guard?.onLeave?.(); window.location.assign(href); };
         if (guard) window.appRequestDecision(guard.message, leave, origin, 'Leave without saving', guard.modal);
         else leave();
     };
@@ -157,7 +158,7 @@
         const guard = guards.find(candidate => candidate.shouldWarn(link));
         if (!guard) return;
         event.preventDefault();
-        window.appRequestDecision(guard.message, () => { window.location.assign(link.href); }, link, 'Leave without saving', guard.modal);
+        window.appRequestDecision(guard.message, () => { guard.onLeave?.(); window.location.assign(link.href); }, link, 'Leave without saving', guard.modal);
     }, true);
 })();
 

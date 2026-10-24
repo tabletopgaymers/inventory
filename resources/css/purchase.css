@@ -1,0 +1,14 @@
+/* Domain-specific rules; shared workflow presentation is imported by app.css. */
+.purchase-panel{margin-bottom:var(--app-space-4,1rem)}
+.purchase-fields{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}
+.purchase-fields label{display:flex;flex-direction:column;gap:.35rem}
+.app-shell .purchase-table{overflow-x:auto;max-width:100%;min-width:0;box-sizing:border-box}
+.purchase-remove{color:#a00000}
+.purchase-step,[data-purchase-invoice]{min-width:0;max-width:100%}
+.purchase-step[hidden]{display:none}
+.purchase-table input[data-invoice-field="unit"]{width:16ch}
+
+:where(#purchase-request-form) .purchase-remove{color:#991b1b;background:transparent;border:0;padding:.125rem .25rem;font-weight:bold}
+.purchase-add{display:flex;flex-wrap:wrap;align-items:end;gap:1rem}
+.purchase-add label{margin:0}
+.purchase-review dd{white-space:pre-wrap}
