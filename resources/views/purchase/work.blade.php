@@ -46,8 +46,8 @@
 @if(!$items)<tr><td colspan="3">No catalog items selected. You can describe uncataloged material in Request details.</td></tr>@endif
 </tbody></table>
 </x-app.table-region>
-@if($editable)<div class="app-content"><h2>Add material</h2><div class="purchase-add"><label>Search catalog<input type="search" data-item-search autocomplete="off"></label><label>Item<select name="item_id" data-item-select><option value="">Choose an item</option>
-@foreach($collections as $collection)<optgroup label="{{ $collection->category_name }} : {{ $collection->name }}">@foreach($catalogItems->where('collection_id',$collection->id)->where('state','active') as $catalogItem)@if(!array_key_exists($catalogItem->id,$work['lines']))<option value="{{ $catalogItem->id }}">{{ $catalogItem->name }}</option>@endif @endforeach</optgroup>@endforeach
+@if($editable)<div class="app-content"><h2>Add material</h2><x-app.inventory-search :definition="$searchDefinition" :endpoint="'/purchase/work/'.$token" instance="purchase-material-search" :script="false" /><div class="purchase-add"><label>Item<select name="item_id" data-item-select><option value="">Choose an item</option>
+@foreach($collections as $collection)<optgroup data-collection="{{ $collection->id }}" label="{{ $collection->category_name }} : {{ $collection->name }}">@foreach($catalogItems->where('collection_id',$collection->id)->where('state','active') as $catalogItem)@if(!array_key_exists($catalogItem->id,$work['lines']))<option value="{{ $catalogItem->id }}">{{ $catalogItem->name }}</option>@endif @endforeach</optgroup>@endforeach
 </select></label><button name="action" value="add" type="submit">Add selected</button></div></div>@endif
 </x-workflow.tab-panel>
 <x-workflow.tab-panel id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">

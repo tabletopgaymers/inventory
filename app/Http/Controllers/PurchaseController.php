@@ -97,6 +97,7 @@ class PurchaseController
             $errors = $this->requestErrors($values);
 
             return view('purchase.work', array_replace($common, [
+                'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections']]),
                 'work' => $values, 'editable' => ! $row || app(PurchaseRequests::class)->editable($request->user(), $row),
                 'canSubmit' => (! $row || $row->status === 'Draft') && app(PurchaseRequests::class)->submitter($request->user(), $row),
                 'items' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($values['lines'])), naturalNames: true),

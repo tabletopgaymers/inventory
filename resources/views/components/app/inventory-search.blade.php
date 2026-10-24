@@ -1,4 +1,4 @@
-@props(['definition', 'endpoint', 'instance' => null])
+@props(['definition', 'endpoint', 'instance' => null, 'script' => true])
 @php
     $instance = $instance ?: 'inventory-search-'.\Illuminate\Support\Str::uuid();
     $visible = array_diff($definition['filters'], $definition['hiddenFilters']);
@@ -14,8 +14,12 @@
 @endphp
 @once
 <link rel="stylesheet" href="/inventory-search-controls.css?v={{ substr(hash_file('sha256', public_path('inventory-search-controls.css')), 0, 12) }}">
+@endonce
+@if($script)
+@once
 <script src="/inventory-search-controls.js?v={{ substr(hash_file('sha256', public_path('inventory-search-controls.js')), 0, 12) }}" defer></script>
 @endonce
+@endif
 <div {{ $attributes->class(['inventory-search-controls']) }} id="{{ $instance }}" data-inventory-search data-endpoint="{{ $endpoint }}">
 <div class="search-actions">
 <label>Search inventory<input type="search" data-is-text maxlength="255" value="{{ $defaults['search'] }}"></label>

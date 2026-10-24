@@ -1,10 +1,12 @@
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+import '../../public/inventory-search-controls.js';
 
 (() => {
     'use strict';
     const form = document.querySelector('#purchase-request-form');
     if (!form) return;
+    const searchRoot = form.querySelector('[data-inventory-search]');
     const rows = [...form.querySelectorAll('[data-item-row]')];
     const validQuantity = value => /^\d+$/.test(value.trim()) && Number.isSafeInteger(Number(value)) && Number(value) <= 1000000000;
     let dirty = false, leaving = false, pendingHref = null;
@@ -50,7 +52,7 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
     } });
     form.querySelector('[data-material-next]').addEventListener('click',event => { event.preventDefault(); showTab('review'); });
     const changed = event => {
-        if (event.target.hasAttribute('data-item-search')) return;
+        if (searchRoot?.contains(event.target)) return;
         dirty = true; updateReview();
     };
     form.addEventListener('input',changed);
@@ -60,17 +62,30 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
         if (event.submitter?.value === 'submit' && form.querySelector('[data-submit-request]').disabled) { event.preventDefault(); showTab('review'); return; }
         leaving = true;
     });
-    const search = form.querySelector('[data-item-search]');
-    search?.addEventListener('input',() => {
-        const term = search.value.toLocaleLowerCase();
+    if (searchRoot) {
         const select = form.querySelector('[data-item-select]');
-        select.querySelectorAll('optgroup').forEach(group => {
-            let visible = false;
-            [...group.children].forEach(option => { option.hidden = !`${group.label} ${option.textContent}`.toLocaleLowerCase().includes(term); visible ||= !option.hidden; });
-            group.hidden = !visible;
-        });
-        if (select.selectedOptions[0]?.hidden) select.value = '';
-    });
+        const filterOptions = criteria => {
+            const term = criteria.search.toLocaleLowerCase(), matches = [];
+            select.querySelectorAll('optgroup').forEach(group => {
+                let visible = false;
+                [...group.children].forEach(option => {
+                    option.hidden = !(criteria.collections.length === 0 || criteria.collections.includes(Number(group.dataset.collection)))
+                        || !`${group.label} ${option.textContent}`.toLocaleLowerCase().includes(term);
+                    visible ||= !option.hidden;
+                    if (!option.hidden) matches.push({ id: Number(option.value) });
+                });
+                group.hidden = !visible;
+            });
+            if (select.selectedOptions[0]?.hidden) select.value = '';
+            return matches;
+        };
+        window.appInventorySearch.mount(searchRoot, { request: async (_url, criteria) => {
+            const matches = filterOptions(criteria);
+            return { schema_version: 1, rows: matches, columns: {}, count: matches.length, criteria };
+        } });
+        // Keep the existing immediate select filtering; the shared actions also work.
+        searchRoot.addEventListener('inventory-search:pending', event => filterOptions(event.detail.criteria));
+    }
     document.addEventListener('click',event => {
         const anchor = event.target.closest('a[href]');
         if (!dirty || !anchor || anchor.target === '_blank' || event.ctrlKey || event.metaKey || event.shiftKey || anchor.getAttribute('href').startsWith('#')) return;

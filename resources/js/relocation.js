@@ -1,5 +1,6 @@
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
+import '../../public/inventory-search-controls.js';
 (() => {
     const form = document.getElementById('relocation-form');
     if (!form) return;
@@ -26,7 +27,7 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
         refreshConfirmation();
         if (['material', 'review', 'ship', 'confirmation'].includes(tab.dataset.workflowTab)) refreshBalances();
     } });
-    const showTab = tab => tabUI.activate(tab?.dataset.workflowTab);
+    const showTab = tab => tabUI.activate(tab?.dataset.workflowTab, { allowDisabled: true });
     form.querySelector('[data-material-next]').addEventListener('click', () => {
         if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'review'));
     });
@@ -41,9 +42,7 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
     const materialRows = form.querySelector('[data-material-lines]');
     const results = form.querySelector('[data-material-results]');
     const searchFeedback = form.querySelector('[data-material-search-feedback]');
-    const searchText = form.querySelector('[data-material-search]');
-    const searchLoading = form.querySelector('[data-material-search-loading]');
-    const searchButton = form.querySelector('[data-material-search-action="search"]');
+    const searchRoot = form.querySelector('[data-inventory-search]');
     const activeTab = () => form.querySelector('[aria-selected="true"]').dataset.workflowTab;
     const canEditTracking = () => form.dataset.manager === 'true' && ['Accepted', 'Fulfilled', 'Received', 'Completed'].includes(form.dataset.status);
     const trackingBody = form.querySelector('[data-tracking-lines]');
@@ -113,20 +112,6 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
     const canRemoveMaterial = row => (activeTab() === 'material' && form.dataset.editable === 'true')
         || (activeTab() === 'fulfillment' && form.dataset.status === 'Accepted' && form.dataset.manager === 'true' && row.dataset.addedStage === 'fulfillment')
         || (activeTab() === 'reconcile' && form.dataset.status === 'Received' && form.dataset.manager === 'true' && row.dataset.addedStage === 'reconciliation');
-    const filters = form.querySelector('[data-material-filters]');
-    const updateFilters = () => {
-        const count = form.querySelectorAll('[data-material-collection]:checked').length;
-        form.querySelector('[data-material-filter-summary]').textContent = `— ${count} selected`;
-        filters.classList.toggle('active-filter', count > 0);
-    };
-    form.querySelectorAll('[data-material-collection]').forEach(input => input.addEventListener('change', updateFilters));
-    form.querySelector('[data-material-clear-filters]').addEventListener('click', () => {
-        if (busy || !canAddMaterial()) return;
-        form.querySelectorAll('[data-material-collection]').forEach(input => { input.checked = false; });
-        filters.open = false;
-        updateFilters();
-    });
-    updateFilters();
     const requestedRows = () => [...materialRows.querySelectorAll('[data-material-item]')];
     const fieldsInColumn = (input, rows) => {
         const cell = input.closest('td');
@@ -190,54 +175,31 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
         row.remove(); regroupMaterial(); updateMaterialChoices(); refreshFulfillment(); markDirty();
     });
     requestedRows().forEach(wireMaterialRow);
-    form.querySelectorAll('[data-material-search-action]').forEach(button => button.addEventListener('click', async () => {
-        if (busy || !canAddMaterial() || form.dataset.saved !== 'true') return;
-        if (pendingSelections()) {
-            showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.');
-            return;
-        }
-        if (button.dataset.materialSearchAction === 'reset') {
-            searchText.value = '';
-            form.querySelectorAll('[data-material-collection]').forEach(input => { input.checked = false; });
-            updateFilters();
-            results.replaceChildren(); searchFeedback.hidden = true; updateMaterialChoices(); return;
-        }
-        if (button.dataset.materialSearchAction === 'all') searchText.value = '';
-        const url = new URL(form.getAttribute('action') + '/search', location.origin);
-        url.searchParams.set('search', searchText.value);
-        for (const name of ['source_location_id', 'destination_location_id']) url.searchParams.set(name, form.elements.namedItem(name).value);
-        form.querySelectorAll('[data-material-collection]:checked').forEach(input => url.searchParams.append('collections[]', input.value));
-        requestedRows().forEach(row => url.searchParams.append('excluded[]', row.dataset.materialItem));
-        busy = true;
-        form.querySelector('[data-material-filters]').open = false;
-        searchButton.setAttribute('aria-busy', 'true');
-        searchLoading.textContent = 'Searching inventory…';
-        locationControls.forEach(control => { control.disabled = true; });
-        const buttons = [...form.querySelectorAll('button'), save];
-        buttons.forEach(control => { control.disabled = true; });
-        searchFeedback.hidden = true;
-        try {
-            const response = await fetch(url, { headers: { Accept: 'text/html, application/json', 'X-Requested-With': 'XMLHttpRequest' } });
-            if (!response.ok) {
-                const data = (response.headers.get('content-type') || '').includes('application/json') ? await response.json() : {};
-                showSearchMessage(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Search could not be completed.');
-                return;
-            }
-            results.innerHTML = await response.text();
+    searchRoot.addEventListener('inventory-search:before-search', event => {
+        if (busy || !canAddMaterial() || form.dataset.saved !== 'true') { event.preventDefault(); return; }
+        if (pendingSelections()) { event.preventDefault(); showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.'); }
+    });
+    searchRoot.addEventListener('inventory-search:before-reset', event => {
+        if (busy || !canAddMaterial()) { event.preventDefault(); return; }
+        if (event.detail.reset && pendingSelections()) { event.preventDefault(); showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.'); }
+    });
+    searchRoot.addEventListener('inventory-search:reset', () => { results.replaceChildren(); searchFeedback.hidden = true; updateMaterialChoices(); });
+    searchRoot.addEventListener('inventory-search:busy', event => {
+        busy = event.detail.busy;
+        locationControls.forEach(control => { control.disabled = busy; });
+        [...form.querySelectorAll('button'), save].forEach(button => { button.disabled = busy; });
+        if (!busy) { updateMaterialChoices(); lockSubmittedForm(); refreshWorkflow(); refreshReview(); }
+    });
+    window.appInventorySearch.mount(searchRoot, {
+        prepareUrl(url) {
+            for (const name of ['source_location_id', 'destination_location_id']) url.searchParams.set(name, form.elements.namedItem(name).value);
+            requestedRows().forEach(row => url.searchParams.append('excluded[]', row.dataset.materialItem));
+        },
+        render(data) {
+            results.innerHTML = data.html;
             searchFeedback.hidden = true;
-        } catch { showSearchMessage('Search could not be completed. Try again.'); }
-        finally {
-            busy = false;
-            searchButton.setAttribute('aria-busy', 'false');
-            searchLoading.textContent = '';
-            locationControls.forEach(control => { control.disabled = false; });
-            buttons.forEach(control => { control.disabled = false; });
-            updateMaterialChoices();
-            lockSubmittedForm();
-            refreshWorkflow();
-            refreshReview();
         }
-    }));
+    });
     form.querySelector('[data-material-add-selected]').addEventListener('click', event => {
         if (!event.target.closest('[data-material-add-selected]') || busy || !canAddMaterial()) return;
         const ids = new Set(requestedRows().map(row => row.dataset.materialItem));
@@ -695,7 +657,7 @@ import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
         feedback.focus();
     };
     const edited = event => {
-        if (event.target.matches('[data-material-search], [data-material-collection]')) return;
+        if (searchRoot.contains(event.target)) return;
         markDirty(event.target.matches('[data-shipping-date]') ? 'shipping' : undefined);
     };
     form.addEventListener('input', edited);

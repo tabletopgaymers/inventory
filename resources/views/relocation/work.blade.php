@@ -60,15 +60,7 @@
                 <x-slot:header>
                     <h3>Add material</h3>
             <fieldset class="app-entry-fieldset" data-material-search-fields @disabled(!$editable)>
-                <div class="search-actions"><label>Search inventory<input data-material-search maxlength="255"></label>
-                    <button type="button" class="primary" aria-busy="false" data-material-search-action="search">Search<span class="app-search-spinner" aria-hidden="true"></span></button>
-                    <span class="sr-only" role="status" data-material-search-loading></span>
-                    <button type="button" data-material-search-action="all">Show all</button>
-                    <button type="button" data-material-search-action="reset">Reset</button>
-                </div>
-                <details data-material-filters><summary>Filters <span data-material-filter-summary>— 0 selected</span></summary><div class="collection-checklist">
-                    @foreach($collections as $collection)<label class="app-choice"><input type="checkbox" data-material-collection value="{{ $collection->id }}">{{ $collection->category_name }} : {{ $collection->name }}</label>@endforeach
-                </div><button type="button" data-material-clear-filters>Clear filters</button></details>
+                <x-app.inventory-search :definition="$searchDefinition" :endpoint="'/relocation/work/'.$token.'/search'" instance="relocation-material-search" :script="false" />
             </fieldset>
                 </x-slot:header>
                 <div data-material-results>@include('relocation.search-results', ['results' => [], 'searched' => false, 'sourceName' => $locations->firstWhere('id', (int) $work['source_location_id'])?->name ?: 'Source', 'destinationName' => $locations->firstWhere('id', (int) $work['destination_location_id'])?->name ?: 'Destination'])</div>

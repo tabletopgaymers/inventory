@@ -7,8 +7,9 @@ export function mountTabs(root, { initialKey, queryParam = 'tab', removeQueryPar
     const panelFor = tab => [...root.querySelectorAll('[role="tabpanel"]')]
         .find(panel => panel.id === tab.getAttribute('aria-controls'));
     const available = () => tabs.filter(tab => !tab.disabled && !tab.closest('[hidden]'));
-    const activate = (key, { focus = false } = {}) => {
-        const tab = available().find(candidate => candidate.dataset.workflowTab === key) || available()[0];
+    const activate = (key, { focus = false, allowDisabled = false } = {}) => {
+        const candidates = allowDisabled ? tabs.filter(tab => !tab.closest('[hidden]')) : available();
+        const tab = candidates.find(candidate => candidate.dataset.workflowTab === key) || candidates[0];
         if (!tab || !panelFor(tab)) return;
         tabs.forEach(candidate => {
             const selected = candidate === tab;
