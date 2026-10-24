@@ -8,7 +8,11 @@
     background: var(--app-workflow-selected); color: var(--app-text, #231c2f);
     border: 2px solid var(--app-primary, #663399);
     border-bottom: 0;
-    position: relative; box-shadow: 0 2px 0 var(--app-workflow-selected);
+    position: relative;
+}
+.app-shell .workflow-tabs [aria-selected="true"]::after, .app-shell .workflow-tabs [aria-current="page"]::after {
+    content: ""; position: absolute; left: -2px; right: -2px; bottom: -2px; height: 2px;
+    background: var(--app-workflow-selected); border-inline: 2px solid var(--app-primary); pointer-events: none;
 }
 .app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { border-bottom: 0; }
 .workflow-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--app-density-field-y); }
