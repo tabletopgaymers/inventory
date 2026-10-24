@@ -1,3 +1,5 @@
+import './app.js';
+
 (() => {
   const editor = document.querySelector('[data-stock-editor]');
   const integer = (input, blankZero = false) => {

@@ -11,6 +11,7 @@ export default defineConfig({
             'resources/css/relocation.css',
             'resources/css/print.css',
             'resources/js/print.js',
+            'resources/js/app.js',
             'resources/js/catalog.js',
             'resources/js/catalog-progress.js',
             'resources/js/catalog-status-filter.js',

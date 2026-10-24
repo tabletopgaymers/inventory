@@ -1,3 +1,5 @@
+import '../app.js';
+
 const instances = new WeakMap();
 
 // The caller owns dirty/save state. The shell owns the one confirmation UI.

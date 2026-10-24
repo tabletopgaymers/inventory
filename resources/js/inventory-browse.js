@@ -1,3 +1,5 @@
+import './app.js';
+
 (() => {
     const form = document.getElementById('inventory-search');
     const state = JSON.parse(document.getElementById('browse-state').textContent);

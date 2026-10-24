@@ -1,3 +1,5 @@
+import './app.js';
+
 (() => {
     const form = document.querySelector('[data-catalog-progress]');
     const button = document.querySelector('[data-catalog-save]');

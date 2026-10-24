@@ -1,3 +1,5 @@
+import './app.js';
+
 document.querySelectorAll('[data-unsaved], [data-catalog-progress]').forEach(form => {
     if (form.hasAttribute('data-unsaved')) {
     let changed = false;

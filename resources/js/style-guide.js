@@ -1,3 +1,5 @@
+import './app.js';
+
 (() => {
     const tabForm = document.getElementById('guide-tab-form');
     if (tabForm) {
