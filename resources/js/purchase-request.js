@@ -34,7 +34,8 @@ import '../../public/inventory-search-controls.js';
             const tr = document.createElement('tr');
             if (invalid) tr.className = 'table-row-error';
             const amount = cell('td', input.value.trim() === '' ? '—' : input.value); amount.className = 'table-numeric table-quantity-column';
-            tr.append(cell('td', row.dataset.name), amount); reviewBody.append(tr);
+            const name = cell('td', row.dataset.name); name.className = 'app-grouped-item';
+            tr.append(name, amount); reviewBody.append(tr);
         });
         if (!rows.length) { const tr = document.createElement('tr'); const td = cell('td','No catalog items requested. See Request details.'); td.colSpan = 2; tr.append(td); reviewBody.append(tr); }
         errors.replaceChildren(...messages.map(message => {

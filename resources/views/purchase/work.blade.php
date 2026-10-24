@@ -35,13 +35,13 @@
 </x-workflow.tab-panel>
 <x-workflow.tab-panel id="purchase-panel-material" labelledby="purchase-tab-material" :active="$tab === 'material'">
 <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material">
-<x-workflow.heading><h2>Requested material</h2><button type="submit" class="primary" name="action" value="next" data-material-next>Next &gt;</button></x-workflow.heading>
-<table><thead><tr><th class="table-action-column"><span class="sr-only">Remove</span></th><th>Item</th><th class="table-numeric table-quantity-column">Requested</th></tr></thead><tbody>
+<x-slot:header><x-workflow.heading><h2>Requested material</h2><button type="submit" class="primary" name="action" value="next" data-material-next>Next &gt;</button></x-workflow.heading></x-slot:header>
+<table><thead><tr><th class="table-action-column"><span class="sr-only">Remove</span></th><th>Item</th><th class="table-heading-center table-quantity-column">Requested</th></tr></thead><tbody>
 @php($group = null)
 @foreach($items as $item)
 @php($nextGroup = $item['category'].' : '.$item['collection'])
 @if($group !== $nextGroup)@php($group = $nextGroup)<tr class="group-row"><td></td><th colspan="2" scope="rowgroup">{{ $group }}</th></tr>@endif
-<tr data-item-row data-item-id="{{ $item['id'] }}" data-name="{{ $item['name'] }}" data-group="{{ $group }}"><td><button type="submit" name="remove" value="{{ $item['id'] }}" class="purchase-remove" aria-label="Remove {{ $item['name'] }}" @disabled(!$editable)>✕</button></td><td>{{ $item['name'] }}</td><td class="table-numeric table-quantity-column"><input name="lines[{{ $item['id'] }}]" value="{{ old('lines.'.$item['id'], $work['lines'][$item['id']] ?? '') }}" inputmode="numeric" aria-label="Requested {{ $item['name'] }}" data-quantity @readonly(!$editable)></td></tr>
+<tr data-item-row data-item-id="{{ $item['id'] }}" data-name="{{ $item['name'] }}" data-group="{{ $group }}"><td><button type="submit" name="remove" value="{{ $item['id'] }}" class="purchase-remove" aria-label="Remove {{ $item['name'] }}" @disabled(!$editable)>✕</button></td><td class="app-grouped-item">{{ $item['name'] }}</td><td class="table-numeric table-quantity-column"><input name="lines[{{ $item['id'] }}]" value="{{ old('lines.'.$item['id'], $work['lines'][$item['id']] ?? '') }}" inputmode="numeric" aria-label="Requested {{ $item['name'] }}" data-quantity @readonly(!$editable)></td></tr>
 @endforeach
 @if(!$items)<tr><td colspan="3">No catalog items selected. You can describe uncataloged material in Request details.</td></tr>@endif
 </tbody></table>
@@ -53,7 +53,7 @@
 <x-workflow.tab-panel id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">
 <div class="app-content"><x-workflow.heading><h2>Review purchase request</h2><button class="primary" type="submit" name="action" value="submit" data-submit-request @disabled(!$canSubmit || count($reviewErrors))>Submit</button></x-workflow.heading>
 <dl class="purchase-review"><dt>Title</dt><dd data-review="title">{{ $work['title'] ?: '—' }}</dd><dt>Requester</dt><dd>{{ $requesterName }}</dd><dt>Suggested supplier</dt><dd data-review="suggested_merchant">{{ $work['suggested_merchant'] ?: '—' }}</dd><dt>Request details</dt><dd data-review="details">{{ $work['details'] ?: '—' }}</dd></dl></div>
-<x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material"><h2>Requested material</h2><table><thead><tr><th>Item</th><th class="table-numeric table-quantity-column">Requested</th></tr></thead><tbody data-review-items></tbody></table></x-app.table-region>
+<x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material"><x-slot:header><h2>Requested material</h2></x-slot:header><table><thead><tr><th>Item</th><th class="table-heading-center table-quantity-column">Requested</th></tr></thead><tbody data-review-items></tbody></table></x-app.table-region>
 </x-workflow.tab-panel>
 </form>
 @if($work['id'])
