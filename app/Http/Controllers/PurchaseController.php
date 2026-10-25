@@ -67,6 +67,9 @@ class PurchaseController
             ...PurchaseMaterial::load($row?->id, $lines),
             ...PurchaseRequestBasics::load($row),
         ]);
+        if ($row && $row->status !== 'Draft' && ($snapshot = RequestStock::header('purchase', $row->id)['submitted_request'] ?? null)) {
+            $request->session()->put('purchase_workspace.'.$token, array_replace($request->session()->get('purchase_workspace.'.$token), $snapshot['values']));
+        }
         // The record URL opens a workspace through a second redirect.
         $request->session()->keep(['success', 'error']);
 
@@ -103,7 +106,10 @@ class PurchaseController
                 $old += ['lines' => [], 'estimates' => [], 'other_lines' => []];
                 $old['material_dirty'] = true;
             }
-            $values = array_replace(PurchaseRequestBasics::defaults(), $work, $old);
+            $immutable = $row && $row->status !== 'Draft' ? (RequestStock::header('purchase', $row->id)['submitted_request']['values'] ?? null) : null;
+            // Existing workspace URLs must display the current submission, never an older Draft replay.
+            $values = array_replace(PurchaseRequestBasics::defaults(), $work, $immutable ?? $old);
+            if ($immutable !== null) $values['material_dirty'] = false;
             $errors = $this->requestErrors($values);
 
             return view('purchase.work', array_replace($common, [
@@ -112,7 +118,8 @@ class PurchaseController
                 'deliveryUsers' => \App\Models\User::orderBy('first_name')->orderBy('last_name')->get(),
                 'requesterId' => $row?->owner_id ?? $request->user()->id,
                 'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections']]),
-                'work' => $values, 'editable' => ! $row || app(PurchaseRequests::class)->editable($request->user(), $row),
+                'work' => $values, 'editable' => ! $row || ($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row)),
+                'submittedLabels' => $row && $row->status !== 'Draft' ? (RequestStock::header('purchase', $row->id)['submitted_request']['labels'] ?? []) : [],
                 'canSubmit' => (! $row || $row->status === 'Draft') && app(PurchaseRequests::class)->submitter($request->user(), $row),
                 'items' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($values['lines'])), naturalNames: true),
                 'reviewErrors' => $errors,
@@ -189,10 +196,7 @@ class PurchaseController
         try { RequestValues::text($work['title'], 'title', 255, true); }
         catch (ValidationException $e) { $errors += $e->errors(); }
         $errors += validator($work, PurchaseRequestBasics::rules($work))->errors()->toArray();
-        foreach ($work['lines'] as $id => $value) {
-            try { RequestValues::quantity($value, 'lines.'.$id); }
-            catch (ValidationException $e) { $errors += $e->errors(); }
-        }
+        $errors += PurchaseMaterial::submissionErrors($work);
 
         return $errors;
     }
@@ -203,7 +207,7 @@ class PurchaseController
         $work = $this->workspace($request, $token);
         abort_unless($work['id'], 409, 'Save Basic info first.');
         $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
-        abort_unless(app(PurchaseRequests::class)->editable($request->user(), $row), 403);
+        abort_unless($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row), 403);
         $selection = $request->validate(['live_items' => ['nullable','boolean'], 'excluded' => ['nullable','array','max:1000'], 'excluded.*' => ['integer','min:1']]);
         $data = app(\App\Support\InventorySearchControls::class)->search($request, [
             'filters' => ['collections'], 'activeOnly' => true, 'excludeIds' => !empty($selection['live_items']) ? ($selection['excluded'] ?? []) : array_keys($work['lines']),
@@ -276,7 +280,7 @@ class PurchaseController
             PurchaseMaterial::validate($values);
             if (count($values['lines']) > 1000) throw ValidationException::withMessages(['lines' => 'Use up to 1,000 catalog items.']);
             $row = $work['id'] ? DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail() : null;
-            abort_unless(! $row || app(PurchaseRequests::class)->editable($request->user(), $row), 403);
+            abort_unless(! $row || ($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row)), 403);
             // Add/remove and step navigation retain unfinished values in this workspace.
             if (in_array($action, ['add', 'add_selected', 'remove', 'add_other', 'remove_other'], true) || ($action === 'next' && $data['tab'] !== 'basic')) {
                 $values['material_dirty'] = true;
@@ -285,6 +289,7 @@ class PurchaseController
                 return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? 'review' : 'material'));
             }
             $submit = $action === 'submit';
+            if ($submit && ($errors = $this->requestErrors($values))) throw ValidationException::withMessages($errors);
             $lines = [];
             foreach ($values['lines'] as $id => $value) {
                 $item = RequestValues::id($id, 'lines');
@@ -293,6 +298,11 @@ class PurchaseController
                 if ($quantity !== null) $lines[$item] = ['quantity' => $quantity];
             }
             $saved = DB::transaction(function () use ($request, $work, $values, $lines, $submit) {
+                RequestValues::actor((int) $request->user()->id);
+                if ($work['id']) {
+                    $locked = DB::table('purchase_requests')->where('id', $work['id'])->lockForUpdate()->firstOrFail();
+                    abort_unless($locked->status === 'Draft', 403, 'Submitted request material is read-only. Return it to Draft for corrections.');
+                }
                 if (! $submit && $work['id']) {
                     // Retain procurement metadata on an existing line while its quantity is unfinished.
                     $retained = DB::table('purchase_request_lines')->where('purchase_request_id', $work['id'])->pluck('quantity', 'item_id');
@@ -316,7 +326,13 @@ class PurchaseController
                         $row->revision++;
                     }
                     $header['singular_request_draft'] = ['revision' => (int) $row->revision, 'lines' => $values['lines']];
-                } else unset($header['singular_request_draft']);
+                } else {
+                    unset($header['singular_request_draft']);
+                    $snapshotValues = array_intersect_key($values, array_flip(['title', ...PurchaseRequestBasics::FIELDS, 'vendor_other_id', 'vendor_other_baseline', 'lines', 'estimates', 'material_names', 'other_lines']));
+                    $snapshotValues = array_replace($snapshotValues, PurchaseMaterial::load($id, []));
+                    $header['submitted_request'] = ['values' => $snapshotValues, 'labels' => PurchaseRequestBasics::labels($values), 'submitted_at' => now('UTC')->toIso8601String(), 'actor' => $request->user()->displayName()];
+                    RequestValues::activity('purchase', $id, $request->user(), 'Submitted request snapshot', null, $header['submitted_request']);
+                }
                 RequestStock::saveHeader('purchase', $id, $header);
 
                 return ['id' => $id, 'values' => $values];

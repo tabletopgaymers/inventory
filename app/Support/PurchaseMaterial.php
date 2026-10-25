@@ -61,6 +61,23 @@ class PurchaseMaterial
         }
     }
 
+    public static function submissionErrors(array $work): array
+    {
+        $errors = [];
+        if (count($work['lines'] ?? []) + count($work['other_lines'] ?? []) === 0) $errors['lines'] = ['Add at least one material item before submitting.'];
+        foreach ($work['lines'] ?? [] as $key => $value) {
+            try { RequestValues::quantity($value, 'lines.'.$key); }
+            catch (ValidationException $e) { $errors += $e->errors(); }
+        }
+        foreach ($work['other_lines'] ?? [] as $key => $line) {
+            try { RequestValues::quantity($line['quantity'] ?? null, 'other_lines.'.$key.'.quantity'); }
+            catch (ValidationException $e) { $errors += $e->errors(); }
+            try { RequestValues::text($line['description'] ?? null, 'other_lines.'.$key.'.description', 500, true); }
+            catch (ValidationException $e) { $errors += $e->errors(); }
+        }
+        return $errors;
+    }
+
     public static function save(int $id, array $work): void
     {
         $rows = [];

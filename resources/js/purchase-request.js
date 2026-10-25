@@ -109,6 +109,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         });
         form.querySelectorAll('[data-review]').forEach(el => { el.textContent = form.elements[el.dataset.review].value || '—'; });
         form.querySelectorAll('[data-review-choice]').forEach(el => {
+            if (el.dataset.submittedLabel) { el.textContent = el.dataset.submittedLabel; return; }
             const kind = el.dataset.reviewChoice;
             const select = form.elements[`${kind}_choice`];
             const fields = kind === 'vendor' ? ['name','website','contact','email','phone'] : ['name','address','email','phone'];
@@ -118,23 +119,35 @@ import { mountProgressSave } from './workflow/progress-save.js';
         });
         reviewBody.replaceChildren();
         let group = null;
-        rows().forEach(row => {
+        materialRows().forEach(row => {
             const input = row.querySelector('[data-quantity]');
-            const invalid = !validQuantity(input.value);
+            const description = row.querySelector('[data-other-description]');
+            const label = description ? description.value.trim() : row.dataset.name;
+            const price = row.querySelector('[data-estimated-unit]');
+            const unitValue = price.value.trim().replace(/^\./, '0.');
+            const badPrice = unitValue !== '' && !/^\d{1,12}(?:\.\d{1,12})?$/.test(unitValue);
+            const invalid = !validQuantity(input.value) || (description && !label) || badPrice;
             row.classList.toggle('table-row-error', invalid && form.dataset.tab === 'review');
-            if (invalid) messages.push({text:`${row.dataset.name}: enter a nonnegative whole requested quantity (zero is allowed).`,tab:'material',input});
-            if (group !== row.dataset.group) {
-                group = row.dataset.group;
+            if (!validQuantity(input.value)) messages.push({text:`${label || 'Other item'}: enter a nonnegative whole requested quantity (zero is allowed).`,tab:'material',input});
+            if (description && !label) messages.push({text:'Enter an Other item description.',tab:'material',input:description});
+            if (badPrice) messages.push({text:`${label || 'Other item'}: correct the estimated unit price or leave it blank.`,tab:'material',input:price});
+            if (group !== (row.dataset.group || 'Other items')) {
+                group = row.dataset.group || 'Other items';
                 const heading = document.createElement('tr'); heading.className = 'group-row';
-                const th = cell('th', group); th.colSpan = 2; th.scope = 'rowgroup'; heading.append(th); reviewBody.append(heading);
+                const th = cell('th', group); th.colSpan = 4; th.scope = 'rowgroup'; heading.append(th); reviewBody.append(heading);
             }
             const tr = document.createElement('tr');
             if (invalid) tr.className = 'table-row-error';
             const amount = cell('td', input.value.trim() === '' ? '—' : input.value); amount.className = 'table-numeric table-quantity-column';
-            const name = cell('td', row.dataset.name); name.className = 'app-grouped-item';
-            tr.append(name, amount); reviewBody.append(tr);
+            const name = cell('td', label || 'Other item'); name.className = 'app-grouped-item';
+            const unit = cell('td',row.querySelector('[data-estimated-unit]').value || '—'); unit.className='table-numeric';
+            const total = cell('td',row.querySelector('[data-material-total]').textContent); total.className='table-numeric';
+            tr.append(name, amount, unit, total); reviewBody.append(tr);
         });
-        if (!rows().length) { const tr = document.createElement('tr'); const td = cell('td','No catalog items requested.'); td.colSpan = 2; tr.append(td); reviewBody.append(tr); }
+        if (!materialRows().length) {
+            messages.push({text:'Add at least one material item before submitting.',tab:'material',input:form.querySelector('[data-add-other]') || form.querySelector('[data-material-next]')});
+            const tr = document.createElement('tr'); const td = cell('td','No material requested.'); td.colSpan = 4; tr.append(td); reviewBody.append(tr);
+        }
         errors.replaceChildren(...messages.map(message => {
             const paragraph = document.createElement('p');
             const link = cell('a',message.text); link.href = '#'+(message.input.id || 'purchase-panel-'+message.tab);
@@ -150,7 +163,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         updateReview();
     } });
     form.querySelector('[data-material-next]').addEventListener('click',event => { event.preventDefault(); showTab('review'); });
-    const markDirty = () => { editGeneration++; dirty = true; save.classList.add('app-save-dirty'); updateBasicChoices(); updateReview(); updateMaterialTotals(); };
+    const markDirty = () => { editGeneration++; dirty = true; save.classList.add('app-save-dirty'); updateBasicChoices(); updateMaterialTotals(); updateReview(); };
     const changed = event => {
         if (searchRoot?.contains(event.target) || searchResults?.contains(event.target)) return;
         markDirty();

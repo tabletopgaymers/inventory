@@ -114,6 +114,19 @@ class PurchaseRequestBasics
         return '';
     }
 
+    public static function labels(array $values): array
+    {
+        $vendor = self::vendorName($values);
+        if (self::isOtherVendor($values)) $vendor = implode("\n", array_filter(array_map(fn ($key) => $values['vendor_'.$key] ?? '', ['name','website','contact','email','phone'])));
+        $choice = $values['delivery_choice'] ?? '';
+        $delivery = match (true) {
+            str_starts_with($choice, 'location:') => app(CatalogRecords::class)->records('storage_locations')->firstWhere('id', (int) substr($choice,9))?->name ?? '',
+            str_starts_with($choice, 'user:') => User::find((int) substr($choice,5))?->displayName() ?? '',
+            default => implode("\n", array_filter(array_map(fn ($key) => $values['delivery_'.$key] ?? '', ['name','address','email','phone']))),
+        };
+        return compact('vendor','delivery');
+    }
+
     private static function vendorFields(object $record): array
     {
         $fields = [];
