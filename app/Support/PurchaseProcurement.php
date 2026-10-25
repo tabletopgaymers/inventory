@@ -41,11 +41,12 @@ class PurchaseProcurement
         if (!$row || (!in_array($row->state,['active','unverified'],true) && $id !== $retained)) throw ValidationException::withMessages(['supplier_id'=>'Choose an active or Unverified vendor.']);
     }
 
-    public static function complete(object $row, array $values): array
+    public static function complete(object $row, array $values, bool $receipt=false): array
     {
         $supplier=RequestValues::id($values['supplier_id'] ?? null,'supplier_id');
         if (!$supplier) throw ValidationException::withMessages(['supplier_id'=>'Choose and verify the actual vendor in Procurement.']);
-        RequestValues::association('suppliers',$supplier,null,'supplier_id',true);
+        RequestValues::association('suppliers',$supplier,$receipt?$row->supplier_id:null,'supplier_id',!$receipt);
+        if ((self::vendorSnapshot($supplier)['state'] ?? null)==='unverified') throw ValidationException::withMessages(['supplier_id'=>'Verify the vendor before continuing.']);
         $delivery=[];
         foreach (self::FIELDS as $field) $delivery[$field]=RequestValues::text($values[$field] ?? null,$field,$field==='delivery_address'?5000:255,in_array($field,['delivery_choice','delivery_name','delivery_address'],true)) ?? '';
         $choice=$delivery['delivery_choice']; $type=null; $source=null;

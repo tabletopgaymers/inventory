@@ -126,4 +126,11 @@ class PurchaseCosting
 
         return StockNumbers::cost((string) BigDecimal::of($cost)->multipliedBy($held)->plus($amount)->dividedBy($held + $received, 12, RoundingMode::HalfUp));
     }
+
+    public static function receiptCost(int $held, string $cost, int $received, int $acquisition, bool $storage): string
+    {
+        $purchase=StockNumbers::cost((string)BigDecimal::of(self::dollars($acquisition))->dividedBy($received,12,RoundingMode::HalfUp));
+        if (!$storage || $held<=0 || BigDecimal::of($cost)->isZero() || BigDecimal::of($purchase)->isGreaterThanOrEqualTo($cost)) return $purchase;
+        return self::average($held,$cost,$received,$acquisition);
+    }
 }

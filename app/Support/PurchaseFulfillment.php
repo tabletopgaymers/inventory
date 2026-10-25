@@ -10,12 +10,12 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseFulfillment
 {
-    public function validateCatalogLines(int $id, int $actor, array $lines): void
+    public function validateCatalogLines(int $id, int $actor, array $lines, string $mode='order'): void
     {
         $retained = DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$id)->whereNotNull('item_id')->pluck('item_id')->map(fn($item)=>(int)$item)->all();
         $retained = array_merge($retained,DB::table('purchase_request_lines')->where('purchase_request_id',$id)->pluck('item_id')->map(fn($item)=>(int)$item)->all(),
             DB::table('purchase_material_lines')->where('purchase_request_id',$id)->whereNotNull('item_id')->pluck('item_id')->map(fn($item)=>(int)$item)->all());
-        foreach ($this->progressDraft($actor,$id,'order')['values']['lines'] ?? [] as $key=>$line) {
+        foreach ($this->progressDraft($actor,$id,$mode)['values']['lines'] ?? [] as $key=>$line) {
             $item=array_key_exists('item_id',$line)?$line['item_id']:(ctype_digit((string)$key)?$key:null);
             if ($item) $retained[]=(int)$item;
         }
@@ -44,6 +44,64 @@ class PurchaseFulfillment
         // Historical orders predate explicit destination types; their nonnull location means storage.
         if (!$row->receiving_location_id) return [];
         return DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$row->id)->whereNotNull('item_id')->pluck('quantity','item_id')->map(fn($qty)=>(int)$qty)->all();
+    }
+
+    public function recordedOrder(int $id): array
+    {
+        $entry=DB::table('purchase_request_activity')->where('purchase_request_id',$id)->whereIn('action',['Marked Ordered','Saved ordered changes'])->orderByDesc('id')->first();
+        return json_decode($entry->current ?? '{}',true);
+    }
+
+    public function receiptReview(int $actorId, int $id, mixed $revision, array $data): array
+    {
+        return DB::transaction(function () use($actorId,$id,$revision,$data) {
+            $actor=RequestValues::actor($actorId);
+            abort_unless(RequestValues::manages($actor,'procurement'),403);
+            $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($row->status,['Ordered','Shipped'],true),409);
+            RequestValues::revision($revision,$row);
+            $header=RequestStock::header('purchase',$id);
+            $this->assertReceiptSource($header,$data);
+            $order=$this->recordedOrder($id);
+            if (!$order || (int)($order['supplier_id'] ?? 0)!==(int)$row->supplier_id) throw ValidationException::withMessages(['order'=>'Record the updated order before confirming receipt. Receiving values are retained.']);
+            $protected=['title','supplier_id','receiving_location_id','ordered_date','shipped_date',...PurchaseProcurement::FIELDS];
+            $values=array_replace($data,array_replace(array_fill_keys($protected,''),array_intersect_key($order,array_flip($protected))));
+            if ($values['delivery_choice']==='' && !empty($order['receiving_location_id'])) $values['delivery_choice']='location:'.$order['receiving_location_id'];
+            $fields=PurchaseProcurement::complete($row,$values,true);
+            $fields['vendor_snapshot']=$order['vendor_snapshot'] ?? $fields['vendor_snapshot'];
+            $raw=PurchaseProgress::invoice($values);
+            foreach ($raw['lines'] as $key=>$line) if ($line['item_id'] && !isset($order['lines'][$key])) {
+                foreach ($order['lines'] ?? [] as $orderedKey=>$orderedLine) if (($orderedLine['item_id'] ?? null)===$line['item_id'] && !isset($raw['lines'][$orderedKey])) {
+                    unset($raw['lines'][$key]);$line['line_key']=(string)$orderedKey;$line['source_request_key']=$orderedLine['source_request_key'] ?? null;$raw['lines'][$orderedKey]=$line;break;
+                }
+            }
+            $received=[];$positive=[];
+            foreach ($raw['lines'] as $key=>$line) {
+                $quantity=RequestValues::quantity($line['quantity'],'lines.'.$key.'.quantity');
+                RequestValues::text($line['description'],'lines.'.$key.'.description',500,true);
+                if ($quantity===0) $received[$key]=array_replace($line,['quantity'=>0,'unit'=>'0.000000000000','cost'=>0,'fee'=>0]);
+                else {
+                    foreach (['unit','cost','fee'] as $field) if ($line[$field]==='') throw ValidationException::withMessages(['lines.'.$key.'.'.$field=>'Complete this received item’s '.$field.'.']);
+                    $positive[$key]=$line;
+                }
+            }
+            if ($positive===[]) throw ValidationException::withMessages(['lines'=>'No items were received. Cancel the purchase after resolving the outcome with the vendor.']);
+            $costing=app(PurchaseCosting::class)->calculate(array_replace($values,['lines'=>$positive]));
+            $this->validateCatalogLines($id,$actorId,$costing['lines'],'receipt');
+            $received=array_replace($received,$costing['lines']);
+            foreach ($order['lines'] ?? [] as $key=>$line) if (!isset($received[$key])) $received[$key]=array_replace($line,['line_key'=>(string)$key,'quantity'=>0,'unit'=>'0.000000000000','cost'=>0,'fee'=>0]);
+            $stock=app(RequestStock::class);$ids=array_values(array_filter(array_column($costing['lines'],'item_id')));$items=$stock->items($ids);$projection=[];
+            foreach ($costing['lines'] as $key=>$line) if ($line['item_id']) {
+                $item=$line['item_id'];$held=$stock->held($item);$storage=$fields['delivery_type']==='storage';
+                $before=$items[$item]->unit_cost;$after=PurchaseCosting::receiptCost($held,$before,$line['quantity'],$line['acquisition'],$storage);
+                $location=$storage?(int)DB::table('inventory_balances')->where('item_id',$item)->where('storage_location_id',$fields['receiving_location_id'])->value('quantity'):null;
+                $projection[$key]=['item_id'=>$item,'held'=>$held,'before_cost'=>$before,'after_held'=>$held+($storage?$line['quantity']:0),'after_cost'=>$after,
+                    'stock_change'=>$storage?$line['quantity']:0,'location_before'=>$location,'location_after'=>$storage?$location+$line['quantity']:null];
+            }
+            return $costing+$fields+['title'=>$order['title'],'ordered_date'=>$order['ordered_date'],'shipped_date'=>$order['shipped_date'] ?? '',
+                'received_date'=>RequestStock::date($values['received_date'] ?? null,'received_date'),'source_order_operation'=>$header['order_operation'],
+                'received_lines'=>$received,'ordered_lines'=>$order['lines'] ?? [],'projection'=>$projection,'receiver_id'=>$actorId,'receiver_name'=>$actor->displayName(),'can_confirm'=>false];
+        },3);
     }
 
     private function recordOrder(int $actorId, int $id, mixed $revision, array $data, string $action, ?string $operation): array
@@ -157,6 +215,10 @@ class PurchaseFulfillment
         $header = array_replace($header, ['title' => $row->title ?? '', 'supplier_id' => $row->supplier_id ?? '', 'receiving_location_id' => $row->receiving_location_id ?? '']);
         if (!$header['supplier_id'] && str_starts_with($header['request_basics']['vendor_choice'] ?? '', 'supplier:')) $header['supplier_id'] = substr($header['request_basics']['vendor_choice'],9);
         $delivery = $header['submitted_request']['delivery_snapshot'] ?? PurchaseProcurement::delivery($header['request_basics'] ?? []);
+        if ($row->status==='Received' && !isset($header['delivery_choice']) && $row->receiving_location_id) {
+            $delivery=array_replace(array_fill_keys(PurchaseProcurement::FIELDS,''),['delivery_choice'=>'location:'.$row->receiving_location_id,'delivery_name'=>'Storage location #'.$row->receiving_location_id]);
+            $header['legacy_delivery']=true;
+        }
         if (($delivery['delivery_choice'] ?? '') === '' && $row->receiving_location_id) $delivery = PurchaseProcurement::delivery(['delivery_choice'=>'location:'.$row->receiving_location_id]);
         foreach (PurchaseProcurement::FIELDS as $field) $header[$field] ??= $delivery[$field];
 

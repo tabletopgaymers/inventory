@@ -178,16 +178,23 @@ class PurchaseController
         $preview = null; $reviewErrors = [];
         if (in_array($tab, ['order-review', 'confirmation', 'charges'], true)) {
             try {
-                if ($row->status !== 'Received') $this->invoiceComplete($values, $tab !== 'charges', $mode);
-                if ($mode === 'order') {
+                $storedFinal=$row->status==='Received' && $mode==='receipt' ? (RequestStock::header('purchase',$row->id)['final_breakdown'] ?? null) : null;
+                if ($storedFinal) $preview=$storedFinal;
+                elseif ($mode==='receipt' && $tab==='confirmation') {
+                    if ($editable) $preview=$service->receiptReview((int)$request->user()->id,$row->id,$invoice['revision'],$values);
+                    else $reviewErrors=['receipt'=>['Procurement handles receiving confirmation.']];
+                } elseif ($mode === 'order') {
+                    if ($row->status !== 'Received') $this->invoiceComplete($values, $tab !== 'charges', $mode);
                     $preview=$tab !== 'charges' && $editable ? $service->orderReview((int)$request->user()->id,$row->id,$invoice['revision'],$values) : app(PurchaseCosting::class)->calculate($values);
-                } else $preview = $editable && $tab !== 'charges' ? $service->work((int) $request->user()->id, $row->id, $invoice['revision'], $values, $mode, 'review') : app(PurchaseCosting::class)->calculate($values);
-                if (! $editable && $row->status === 'Received' && $mode === 'receipt') $preview = RequestStock::header('purchase', $row->id)['final_breakdown'] ?? $preview;
+                } else {
+                    $charged=$values;
+                    foreach ($charged['lines'] as $key=>$line) if (RequestValues::quantity($line['quantity'],'lines.'.$key.'.quantity')===0) unset($charged['lines'][$key]);
+                    $preview=app(PurchaseCosting::class)->calculate($charged);
+                }
             } catch (ValidationException $e) {
                 $reviewErrors = $e->errors();
                 try {
-                    $this->invoiceComplete($values, false, $mode);
-                    $preview = app(PurchaseCosting::class)->calculate($values);
+                    if ($mode==='order') { $this->invoiceComplete($values, false, $mode); $preview = app(PurchaseCosting::class)->calculate($values); }
                 } catch (ValidationException) { /* Keep entered values visible while unfinished. */ }
             } catch (HttpException $e) {
                 if ($e->getStatusCode() !== 409) throw $e;
@@ -201,7 +208,7 @@ class PurchaseController
         try { $reviewDate = \App\Support\DisplayDates::businessDate($values[$mode === 'receipt' ? 'received_date' : 'ordered_date']); }
         catch (\Throwable) { $reviewDate = '—'; }
 
-        return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate','receiptStale') + [
+        return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate','receiptStale','recordedOrder') + [
             'revision' => $invoice['revision'], 'requested' => DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->pluck('quantity', 'item_id')->all(),
             'deliveryUsers' => $procurement ? \App\Models\User::where(function ($query) use ($values) {
                 $query->where('enabled',true);

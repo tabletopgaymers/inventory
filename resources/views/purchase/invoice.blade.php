@@ -23,12 +23,14 @@
 @if($reviewErrors)<div class="app-content error" role="alert"><ul>
 @foreach($reviewErrors as $field=>$messages)
 @php
-    $targetTab=null; $targetId=null;
+    $targetTab=null; $targetId=null; $targetMode=$mode;
     if(preg_match('/^lines\.([A-Za-z0-9-]+)\.(quantity|unit|cost|fee|description|item_id)$/',$field,$match)) { $targetTab=$editTab; $targetId='purchase-line-'.$match[1].'-'.($match[2]==='item_id'?'description':$match[2]); }
-    elseif(in_array($field,['title','supplier_id','delivery_choice','delivery_name','delivery_address','delivery_email','delivery_phone','receiving_location_id','ordered_date','shipped_date','received_date'])) { $targetTab=$field==='received_date' ? 'receive' : 'order'; $targetId='purchase-'.$field; }
+    elseif(in_array($field,['title','supplier_id','delivery_choice','delivery_name','delivery_address','delivery_email','delivery_phone','receiving_location_id','ordered_date','shipped_date','received_date'])) { $targetTab=$field==='received_date' ? 'receive' : 'order'; $targetId='purchase-'.$field; if($field!=='received_date')$targetMode='order'; }
     elseif(in_array($field,['other_fees','discount','tax','shipping','shipping_method'])) { $targetTab='charges'; $targetId='purchase-'.$field; }
+    elseif($mode==='receipt' && in_array($field,['source_order_operation','revision'])) { $targetTab='receive';$targetId='app-main'; }
+    elseif($field==='order') { $targetTab='order-review';$targetMode='order';$targetId='app-main'; }
 @endphp
-@foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$mode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
+@foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$targetMode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
 @endforeach
 </ul></div>@endif
 <form class="app-panel-stack" id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice novalidate>
@@ -38,7 +40,7 @@
 <section class="purchase-step app-panel-stack" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
 <div class="app-content app-record-content purchase-panel"><x-workflow.heading><h2>{{ $section==='order' && $mode==='receipt' ? 'Receipt details' : $heading }}</h2>
 @if(!$readonly)
-@if(isset($next[$section]))<button name="action" value="next" class="primary">Next &gt;</button>@elseif($section===$reviewTab)<button name="action" value="confirm" class="primary" @disabled(!$preview || count($reviewErrors)>0)>{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</button>@endif
+@if(isset($next[$section]))<button name="action" value="next" class="primary">Next &gt;</button>@elseif($section===$reviewTab)<button name="action" value="confirm" class="primary" @disabled(!$preview || count($reviewErrors)>0 || ($mode==='receipt' && !($preview['can_confirm'] ?? false)))>{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</button>@endif
 @endif
 </x-workflow.heading>
 @if($section==='order')
@@ -84,7 +86,7 @@
 @else<p>Final receipt clears this purchase’s Ordered quantities and applies the confirmed stock and Unit Cost effects.</p>@endif
 @if(!$preview)<p>Complete the invoice and required details before confirmation.</p>@endif
 @if($section==='order-review' && $preview)
-<h3>Ordered quantities</h3><dl class="purchase-review">@foreach($preview['lines'] as $line)<dt>{{ $line['description'] }}</dt><dd>{{ $line['item_id'] && str_starts_with($values['delivery_choice'] ?? '', 'location:') ? number_format($line['quantity']).' Ordered' : 'No inventory quantity' }}</dd>@endforeach</dl>
+<h3>Ordered quantities</h3><dl class="purchase-review">@foreach($preview['lines'] as $line)<dt>{{ $line['description'] ?? $catalogItems->firstWhere('id',(int)($line['item_id'] ?? 0))?->name ?? 'Item' }}</dt><dd>{{ !empty($line['item_id']) && str_starts_with($values['delivery_choice'] ?? '', 'location:') ? number_format($line['quantity']).' Ordered' : 'No inventory quantity' }}</dd>@endforeach</dl>
 @endif
 @endif
 </div>
@@ -105,23 +107,8 @@
 @endforeach
 </tbody><tfoot><tr><th colspan="9">Total USD</th><td>{{ \App\Support\PurchaseCosting::dollars($preview['total']) }}</td></tr></tfoot></table></x-app.table-region>
 @if($section==='confirmation')
-<x-app.table-region data-invoice-derived label="Received material" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Ordered</th><th>Received</th><th>Difference</th></tr></thead><tbody>
-@foreach(array_unique(array_merge(array_keys($ordered),array_keys($preview['lines']))) as $id)
-@php($receivedQuantity=$preview['lines'][$id]['quantity'] ?? 0)
-@php($variance=$receivedQuantity-($ordered[$id] ?? 0))
-<tr><th>{{ $catalogItems->firstWhere('id',(int)$id)?->name ?? '#'.$id }}</th><td>{{ number_format($ordered[$id] ?? 0) }}</td><td>{{ number_format($receivedQuantity) }}</td><td class="{{ $variance<0 ? 'table-variance-negative' : 'table-variance-positive' }}">{{ $variance ? '['.($variance>0 ? '+' : '').number_format($variance).']' : '' }}</td></tr>
-@endforeach
-</tbody></table></x-app.table-region>
-<x-app.table-region data-invoice-derived :label="$row->status==='Received' ? 'Receipt stock and cost' : 'Receipt stock and cost preview'" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all">
-<table><thead><tr><th>Item</th><th>{{ $row->status==='Received' ? 'Current location stock' : 'Location now → after' }}</th><th>{{ $row->status==='Received' ? 'Total held before → after receipt' : 'Total held now → after' }}</th><th>{{ $row->status==='Received' ? 'Unit Cost before → after receipt' : 'Catalog Unit Cost now → after' }}</th></tr></thead><tbody>
-@foreach($preview['projection'] ?? [] as $id=>$projection)
-<tr><th>{{ collect($items)->firstWhere('id',(int)$id)['name'] ?? '#'.$id }}</th>
-<td>{{ number_format($locationStocks[$id] ?? 0) }}@if($row->status!=='Received') → {{ number_format(($locationStocks[$id] ?? 0)+$preview['lines'][$id]['quantity']) }}@endif</td>
-<td>{{ number_format($projection['held']) }} → {{ number_format($projection['after_held']) }}</td>
-<td>{{ \App\Support\StockNumbers::displayCost($projection['before_cost']) }} → {{ \App\Support\StockNumbers::displayCost($projection['after_cost']) }}</td></tr>
-@endforeach
-</tbody></table></x-app.table-region>
-<div class="app-content"><p>Total held includes all storage, active events and In Transit.</p><p>{{ $row->status==='Received' ? 'Held and Unit Cost values were recorded at receipt. Location stock shows the current count.' : 'Preview may change before confirmation.' }}</p></div>
+@include('purchase.partials.confirmation')
+
 @endif
 @endif
 </section>
