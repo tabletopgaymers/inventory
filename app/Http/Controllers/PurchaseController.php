@@ -150,10 +150,23 @@ class PurchaseController
                 }
                 unset($line);
             }
+            if ($mode === 'order' && !isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
+                // Only a genuinely new workspace without a saved invoice gets the request seed.
+                if (!$saved) $values['lines']=\App\Support\PurchaseInvoiceLines::requested($row->id);
+                $values['lines_initialized']=true;
+            }
             $work['invoices'][$mode] = ['values' => $values, 'revision' => $saved['revision'] ?? $row->revision, 'operation' => (string) Str::uuid()];
             $request->session()->put('purchase_workspace.'.$token, $work);
         }
         $invoice = $work['invoices'][$mode];
+        if ($mode === 'order' && !isset($invoice['values']['lines_initialized']) && !isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
+            // Existing workspace values may include unsaved Next/add/recalculate edits, including an intentional empty set.
+            foreach ($invoice['values']['lines'] as $key=>&$line) $line = array_replace(\App\Support\PurchaseInvoiceLines::identity($key,$line),$line);
+            unset($line);
+            $invoice['values']['lines_initialized'] = true;
+            $work['invoices'][$mode]=$invoice;
+            $request->session()->put('purchase_workspace.'.$token,$work);
+        }
         $values = array_replace($invoice['values'], $request->old());
         if ($row->status === 'Received') {
             // Receipt posting replaces the live invoice rows; the recorded order is immutable activity.
@@ -188,7 +201,9 @@ class PurchaseController
                 $query->where('enabled',true);
                 if (str_starts_with($values['delivery_choice'] ?? '', 'user:')) $query->orWhere('id',(int)substr($values['delivery_choice'],5));
             })->orderBy('first_name')->get() : collect(),
-            'items' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($values['lines'])), naturalNames: true),
+            'items' => \App\Support\PurchaseInvoiceLines::rows($values['lines']),
+            'requestMaterial' => \App\Support\PurchaseInvoiceLines::requested($row->id),
+            'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters'=>['collections']]),
             'suppliers' => app(CatalogRecords::class)->records('suppliers'),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
         ]);
@@ -211,7 +226,9 @@ class PurchaseController
         $work = $this->workspace($request, $token);
         abort_unless($work['id'], 409, 'Save Basic info first.');
         $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
-        abort_unless($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row), 403);
+        $stage=$request->query('stage','request');
+        if ($stage === 'request') abort_unless($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row), 403);
+        else abort_unless(in_array($stage,['order','receipt'],true) && RequestValues::manages($request->user(),'procurement') && in_array($row->status,$stage==='receipt'?['Ordered','Shipped']:['Draft','Request','Ordered','Shipped'],true),403);
         $selection = $request->validate(['live_items' => ['nullable','boolean'], 'excluded' => ['nullable','array','max:1000'], 'excluded.*' => ['integer','min:1']]);
         $data = app(\App\Support\InventorySearchControls::class)->search($request, [
             'filters' => ['collections'], 'activeOnly' => true, 'excludeIds' => !empty($selection['live_items']) ? ($selection['excluded'] ?? []) : array_keys($work['lines']),
@@ -372,7 +389,7 @@ class PurchaseController
         foreach ($snapshot['lines'] ?? [] as $id => $line) $values['lines'][$id] = [
             'quantity' => (string) $line['quantity'], 'unit' => $line['unit'],
             'cost' => PurchaseCosting::dollars((int) $line['cost']), 'fee' => PurchaseCosting::dollars((int) $line['fee']), 'basis' => 'unit',
-        ];
+        ] + array_intersect_key($line,array_flip(['item_id','description','group_label','source_request_key']));
 
         return $values + ['title' => '', 'supplier_id' => '', 'receiving_location_id' => '', 'ordered_date' => '', 'shipped_date' => '', 'received_date' => '', 'shipping_method' => 'line_total'];
     }
@@ -396,7 +413,7 @@ class PurchaseController
         foreach ($required as $field => $label) {
             if (($values[$field] ?? '') === '') $errors[$field] = ['Complete '.$label.' before confirming.'];
         }
-        $names = DB::table('items')->whereIn('id', array_keys($values['lines'] ?? []))->pluck('name', 'id');
+        $names = array_map(fn($line)=>$line['description'] ?? 'Item',$values['lines'] ?? []);
         foreach ($values['lines'] ?? [] as $id => $line) foreach (['quantity', 'unit', 'cost', 'fee'] as $field) {
             $label = $field === 'quantity' ? ($mode === 'receipt' ? 'received quantity' : 'ordered quantity') : $field;
             if (($line[$field] ?? '') === '') $errors['lines.'.$id.'.'.$field] = [($names[$id] ?? 'Item #'.$id).': enter '.$label.' before confirming.'];

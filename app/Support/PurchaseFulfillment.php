@@ -152,7 +152,7 @@ class PurchaseFulfillment
                         $completeCosts = false;
                     } elseif ($field === 'quantity') {
                         if (RequestValues::quantity($line[$field], 'lines.'.$item.'.quantity') === 0) {
-                            throw ValidationException::withMessages(['lines.'.$item.'.quantity' => 'Retained invoice lines need positive individual units. Remove absent lines.']);
+                            $completeCosts = false;
                         }
                     } elseif ($field === 'unit') {
                         StockNumbers::cost($line[$field]);

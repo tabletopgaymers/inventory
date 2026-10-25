@@ -86,13 +86,7 @@
 </tbody><tfoot><tr><th colspan="4" scope="row" class="table-numeric" data-material-grand-total-label>Estimated merchandise total</th><td class="table-numeric" data-material-grand-total>—</td></tr></tfoot></table>
 </x-app.table-region>
 @if($editable)
-<x-app.table-region label="Catalog search results" :nowrap="true" :quantity-fields="true" class="purchase-material">
-<x-slot:header><x-workflow.heading><h2>Add material</h2><button type="button" name="action" value="add_other" data-add-other>Add Other item</button></x-workflow.heading>
-<x-app.inventory-search :definition="$searchDefinition" :endpoint="'/purchase/work/'.$token.'/search'" instance="purchase-material-search" :script="false" />
-<p class="warning" role="status" data-purchase-search-feedback hidden></p></x-slot:header>
-<table><colgroup><col class="table-action-column"><col><col class="table-quantity-column"><col class="table-quantity-column"></colgroup><thead><tr><th><span class="sr-only">Select</span></th><th>Item</th><th class="table-heading-center">Est. unit price</th><th class="table-heading-center">Request</th></tr></thead><tbody data-purchase-search-results><tr><td colspan="4">Use Search or Show all to find items.</td></tr></tbody></table>
-<x-slot:footer><div class="app-table-panel-toolbar app-material-add-actions"><div class="app-actions"><button name="action" value="add_selected" type="button" class="primary" data-add-selected disabled>Add selected</button></div></div></x-slot:footer>
-</x-app.table-region>
+@include('purchase.partials.catalog-picker')
 @endif
 </x-workflow.tab-panel>
 <x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">

@@ -12,6 +12,7 @@ class PurchaseCosting
 {
     public static function money(mixed $value, string $field): int
     {
+        if (is_string($value) && str_starts_with($value,'.')) $value='0'.$value;
         if ((! is_string($value) && ! is_int($value)) || ! preg_match('/\A\d{1,10}(?:\.\d{1,2})?\z/D', (string) $value)) {
             throw ValidationException::withMessages([$field => 'Enter a nonnegative USD amount with at most two decimal places.']);
         }

@@ -58,6 +58,7 @@ class PurchaseProgress
             throw ValidationException::withMessages(['lines' => 'Use up to 1,000 invoice lines.']);
         }
         $clean['lines'] = [];
+        $clean['lines_initialized'] = true;
         foreach ($input as $id => $line) {
             if (!is_array($line)) throw ValidationException::withMessages(['lines' => 'Enter invoice rows.']);
             $identity = PurchaseInvoiceLines::identity($id, $line);

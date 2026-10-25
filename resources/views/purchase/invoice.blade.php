@@ -85,19 +85,7 @@
 @endif
 </div>
 @if($section===$editTab)
-<x-app.table-region label="Invoice material" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th></th><th>Item</th><th>{{ $mode==='receipt' ? 'Ordered' : 'Requested' }}</th><th>{{ $mode==='receipt' ? 'Received' : 'Quantity' }}</th><th>Unit ($)</th><th>Cost ($)</th><th>Fee ($)</th><th>Line ($)</th><th></th></tr></thead><tbody>
-@php($group=null)
-@foreach($items as $item)
-@php($id=$item['id'])
-@if($group!==$item['category'].' : '.$item['collection']) @php($group=$item['category'].' : '.$item['collection'])<tr><td></td><th colspan="8">{{ $group }}</th></tr>@endif
-<tr data-invoice-line><td>@if(!$readonly)<button name="remove" value="{{ $id }}" aria-label="Remove {{ $item['name'] }}" class="purchase-remove">✕</button>@endif</td><th>{{ $item['name'] }}</th><td>{{ $mode==='receipt' ? ($ordered[$id] ?? 0) : (is_array($requested[$id] ?? null) ? ($requested[$id]['quantity'] ?? '—') : ($requested[$id] ?? '—')) }}</td>
-@foreach(['quantity','unit','cost','fee'] as $field)<td><input id="purchase-line-{{ $id }}-{{ $field }}" name="lines[{{ $id }}][{{ $field }}]" data-invoice-field="{{ $field }}" aria-label="{{ ucfirst($field) }} for {{ $item['name'] }}" inputmode="{{ $field==='quantity' ? 'numeric' : 'decimal' }}" value="{{ $values['lines'][$id][$field] ?? '' }}" @readonly($readonly)></td>@endforeach
-<td data-line-total>—</td><td><input type="hidden" name="lines[{{ $id }}][basis]" value="{{ $values['lines'][$id]['basis'] ?? 'unit' }}" data-line-basis>@if(!$readonly)<button name="recalculate" value="{{ $id }}">Recalculate</button>@endif</td></tr>
-@endforeach
-</tbody></table></x-app.table-region>
-@if(!$readonly)<div class="app-content purchase-panel purchase-fields"><label>Add material<select name="item_id"><option value="">Choose item…</option>
-@foreach($collections as $collection)<optgroup label="{{ $collection->category_name }} : {{ $collection->name }}">@foreach($catalogItems->where('collection_id',$collection->id)->where('state','active') as $choice)@if(!array_key_exists($choice->id,$values['lines'] ?? []))<option value="{{ $choice->id }}">{{ $choice->name }}</option>@endif @endforeach</optgroup>@endforeach
-</select></label><button name="action" value="add">Add selected</button></div>@endif
+@include('purchase.partials.invoice-material')
 @endif
 @if(($section===$reviewTab || $section==='charges') && $preview)
 <p data-derived-stale hidden>Amounts changed. Open a fresh review to calculate the saved allocations.</p>
@@ -107,7 +95,7 @@
 @php($id=$item['id'])
 @if(isset($preview['lines'][$id]))
 @php($line=$preview['lines'][$id])
-@if($group!==$item['category'].' : '.$item['collection'])@php($group=$item['category'].' : '.$item['collection'])<tr><th colspan="10">{{ $group }}</th></tr>@endif
+@if($group!==$item['group'])@php($group=$item['group'])<tr><th colspan="10">{{ $group }}</th></tr>@endif
 <tr><th>{{ $item['name'] }}</th><td>{{ number_format($line['quantity']) }}</td>@foreach(['cost','fee','other','discount','tax','shipping','acquisition'] as $field)<td>{{ \App\Support\PurchaseCosting::dollars($line[$field]) }}</td>@endforeach<td>${{ \Brick\Math\BigDecimal::of($line['acquisition_unit'])->toScale(3, \Brick\Math\RoundingMode::HalfUp) }}</td></tr>
 @endif
 @endforeach

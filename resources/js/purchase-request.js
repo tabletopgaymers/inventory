@@ -3,7 +3,7 @@ import './app.js';
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
 import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
-import './inventory-search-controls.js';
+import { mountPurchasePicker } from './purchase/catalog-picker.js';
 import { mountProgressSave } from './workflow/progress-save.js';
 
 (() => {
@@ -235,95 +235,13 @@ import { mountProgressSave } from './workflow/progress-save.js';
         row.remove(); regroupMaterial(); markDirty();
         (materialRows()[Math.min(index,materialRows().length-1)]?.querySelector('input') || form.querySelector('[data-add-other]'))?.focus();
     });
-    if (searchRoot) {
-        let searchBusy = false;
-        const catalogChoices = new Map();
-        const updateAddButton = () => { addSelected.disabled = saveBusy || searchBusy || !searchResults.querySelector('[data-search-item]'); };
-        const renderResults = data => {
-            searchResults.replaceChildren(); searchFeedback.hidden = true;
-            catalogChoices.clear();
-            let group = null;
-            data.rows.forEach(item => {
-                catalogChoices.set(String(item.id), item);
-                const label = `${item.name} · ${item.sku}`;
-                const nextGroup = `${item.category} : ${item.collection}`;
-                if (group !== nextGroup) {
-                    group = nextGroup;
-                    const row = document.createElement('tr'); row.className = 'group-row'; row.dataset.searchGroup = '';
-                    const selectCell = document.createElement('th');
-                    const check = document.createElement('input'); check.type = 'checkbox'; check.dataset.searchGroupCheck = '';
-                    check.setAttribute('aria-label', `Select items in ${group}`); selectCell.append(check);
-                    const heading = cell('th', group); heading.colSpan = 3; heading.scope = 'rowgroup';
-                    row.append(selectCell, heading); searchResults.append(row);
-                }
-                const row = document.createElement('tr'); row.dataset.searchItem = item.id;
-                const selectCell = document.createElement('td'); selectCell.className = 'app-grouped-item';
-                const check = document.createElement('input'); check.type = 'checkbox'; check.name = 'selected[]'; check.value = item.id;
-                check.dataset.searchItemCheck = ''; check.setAttribute('aria-label', `Select ${label}`); selectCell.append(check);
-                const name = cell('td', item.name); name.className = 'app-grouped-item';
-                const unit = cell('td', item.unit_price || '—'); unit.className = 'table-numeric';
-                const quantityCell = document.createElement('td'); quantityCell.className = 'table-numeric';
-                const input = document.createElement('input'); input.name = `add_quantities[${item.id}]`; input.maxLength = 30;
-                input.dataset.searchQuantity = ''; input.setAttribute('aria-label', `Request ${label}`); quantityCell.append(input);
-                row.append(selectCell, name, unit, quantityCell); searchResults.append(row);
-            });
-            if (!data.rows.length) {
-                const row = document.createElement('tr'); const message = cell('td', 'No matching active items to add.'); message.colSpan = 4;
-                row.append(message); searchResults.append(row);
-            }
-            updateAddButton();
-        };
-        searchResults.addEventListener('change', event => {
-            if (!event.target.matches('[data-search-group-check]')) return;
-            const checks = [];
-            let row = event.target.closest('[data-search-group]').nextElementSibling;
-            while (row && !row.hasAttribute('data-search-group')) {
-                const check = row.querySelector('[data-search-item-check]'); if (check) checks.push(check);
-                row = row.nextElementSibling;
-            }
-            if (event.target.checked || checks.every(check => check.checked)) checks.forEach(check => { check.checked = event.target.checked; });
-        });
-        searchRoot.addEventListener('inventory-search:before-search', event => {
-            if (saveBusy) { event.preventDefault(); return; }
-            if (pendingSelections()) { event.preventDefault(); showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.'); }
-        });
-        searchRoot.addEventListener('inventory-search:before-reset', event => {
-            if (saveBusy) { event.preventDefault(); return; }
-            if (event.detail.reset && pendingSelections()) { event.preventDefault(); showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.'); }
-        });
-        searchRoot.addEventListener('inventory-search:reset', () => { renderResults({rows:[]}); });
-        searchRoot.addEventListener('inventory-search:busy', event => { searchBusy = event.detail.busy; updateAddButton(); });
-        addSelected.addEventListener('click', () => {
-            if (saveBusy || searchBusy || form.dataset.editable !== 'true') return;
-            const ids = new Set(rows().map(row => row.dataset.itemId));
-            const selected = [...searchResults.querySelectorAll('[data-search-item]')].filter(row => !ids.has(row.dataset.searchItem)
-                && (row.querySelector('[data-search-item-check]').checked || row.querySelector('[data-search-quantity]').value.trim() !== ''));
-            if (!selected.length) { showSearchMessage('Check an item or enter a quantity to add.'); return; }
-            if (materialRows().length + selected.length > 1000) { showSearchMessage('Use up to 1,000 material lines.'); return; }
+    if (searchRoot) mountPurchasePicker({root:searchRoot,results:searchResults,feedback:searchFeedback,button:addSelected,
+        getIds:()=>rows().map(row=>row.dataset.itemId),getCount:()=>materialRows().length,isBusy:()=>saveBusy || form.dataset.editable!=='true',
+        onAdd: selections=>{
             let first;
-            selected.forEach(result => {
-                const item = catalogChoices.get(result.dataset.searchItem);
-                const entered = result.querySelector('[data-search-quantity]').value.trim();
-                const normalized = entered.replaceAll(',','');
-                const quantity = /^(?:\d+|\d{1,3}(?:,\d{3})+)$/.test(entered) && validQuantity(normalized) ? String(Number(normalized)) : '';
-                const row = appendMaterial({id:String(item.id),name:item.name,group:`${item.category} : ${item.collection}`,quantity,unit:item.unit_price});
-                first ||= row; result.remove();
-            });
-            searchResults.querySelectorAll('[data-search-group]').forEach(group => {
-                if (!group.nextElementSibling || group.nextElementSibling.hasAttribute('data-search-group')) group.remove();
-            });
-            if (!searchResults.querySelector('[data-search-item]')) renderResults({rows:[]});
-            regroupMaterial(); markDirty(); updateAddButton(); searchFeedback.hidden = true;
-            first?.querySelector('[data-quantity]').focus();
-        });
-        window.appInventorySearch.mount(searchRoot, {
-            prepareUrl(url) {
-                url.searchParams.set('live_items','1');
-                rows().forEach(row => url.searchParams.append('excluded[]',row.dataset.itemId));
-            },
-            render: renderResults,
-        });
-    }
+            selections.forEach(({item,quantity})=>{const row=appendMaterial({id:String(item.id),name:item.name,group:`${item.category} : ${item.collection}`,quantity,unit:item.unit_price});first ||= row;});
+            regroupMaterial();markDirty();first?.querySelector('[data-quantity]').focus();
+        }});
     document.querySelectorAll('[data-confirm-transition]').forEach(other => other.addEventListener('submit',event => {
         if (navigation.isLeaving()) return;
         event.preventDefault();
