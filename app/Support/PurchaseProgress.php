@@ -39,14 +39,14 @@ class PurchaseProgress
     public static function invoice(array $data): array
     {
         $clean = [];
-        foreach (['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'received_date', 'other_fees', 'discount', 'tax', 'shipping', 'shipping_method'] as $name) {
+        foreach (['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'received_date', 'other_fees', 'discount', 'tax', 'shipping', 'shipping_method', ...PurchaseProcurement::FIELDS] as $name) {
             $value = $data[$name] ?? '';
             if ($value !== null && ! is_string($value) && ! is_int($value)) {
                 throw ValidationException::withMessages([$name => 'Enter a single value.']);
             }
             $value = (string) ($value ?? '');
-            if (mb_strlen($value) > 255) {
-                throw ValidationException::withMessages([$name => 'Use at most 255 characters.']);
+            if (mb_strlen($value) > ($name === 'delivery_address' ? 5000 : 255)) {
+                throw ValidationException::withMessages([$name => 'This value is too long.']);
             }
             $clean[$name] = $value;
         }

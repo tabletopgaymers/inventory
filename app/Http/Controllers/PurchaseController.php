@@ -184,6 +184,10 @@ class PurchaseController
 
         return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate') + [
             'revision' => $invoice['revision'], 'requested' => DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->pluck('quantity', 'item_id')->all(),
+            'deliveryUsers' => $procurement ? \App\Models\User::where(function ($query) use ($values) {
+                $query->where('enabled',true);
+                if (str_starts_with($values['delivery_choice'] ?? '', 'user:')) $query->orWhere('id',(int)substr($values['delivery_choice'],5));
+            })->orderBy('first_name')->get() : collect(),
             'items' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($values['lines'])), naturalNames: true),
             'suppliers' => app(CatalogRecords::class)->records('suppliers'),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
@@ -331,6 +335,9 @@ class PurchaseController
                     $snapshotValues = array_intersect_key($values, array_flip(['title', ...PurchaseRequestBasics::FIELDS, 'vendor_other_id', 'vendor_other_baseline', 'lines', 'estimates', 'material_names', 'other_lines']));
                     $snapshotValues = array_replace($snapshotValues, PurchaseMaterial::load($id, []));
                     $header['submitted_request'] = ['values' => $snapshotValues, 'labels' => PurchaseRequestBasics::labels($values), 'submitted_at' => now('UTC')->toIso8601String(), 'actor' => $request->user()->displayName()];
+                    $vendorId = str_starts_with($values['vendor_choice'],'supplier:') ? (int)substr($values['vendor_choice'],9) : null;
+                    $header['submitted_request']['vendor_snapshot'] = \App\Support\PurchaseProcurement::vendorSnapshot($vendorId);
+                    $header['submitted_request']['delivery_snapshot'] = \App\Support\PurchaseProcurement::delivery($values);
                     RequestValues::activity('purchase', $id, $request->user(), 'Submitted request snapshot', null, $header['submitted_request']);
                 }
                 RequestStock::saveHeader('purchase', $id, $header);
@@ -353,7 +360,13 @@ class PurchaseController
 
     private function orderValues(array $snapshot): array
     {
-        $values = array_intersect_key($snapshot, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'shipping_method']));
+        $values = array_intersect_key($snapshot, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'shipping_method', ...\App\Support\PurchaseProcurement::FIELDS]));
+        if (!isset($values['delivery_choice']) && !empty($values['receiving_location_id'])) {
+            $values['delivery_choice']='location:'.$values['receiving_location_id'];
+            $values['delivery_name']='Storage location #'.$values['receiving_location_id'];
+            $values['delivery_address']='';
+            $values['legacy_delivery']=true;
+        }
         foreach (['other_fees', 'discount', 'tax', 'shipping'] as $field) $values[$field] = PurchaseCosting::dollars((int) ($snapshot['charges'][$field] ?? 0));
         $values['lines'] = [];
         foreach ($snapshot['lines'] ?? [] as $id => $line) $values['lines'][$id] = [
@@ -396,7 +409,7 @@ class PurchaseController
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
             abort_unless($work['id'], 404);
-            $request->validate(['mode' => ['required', 'in:order,receipt'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,cancel_receipt,recalculate'], 'tab' => ['required', 'in:order,invoice,charges,order-review,receive,confirmation']]);
+            $request->validate(['mode' => ['required', 'in:order,receipt'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,cancel_receipt,recalculate,replace_vendor'], 'tab' => ['required', 'in:order,invoice,charges,order-review,receive,confirmation']]);
             $mode = $request->input('mode');
             abort_unless(isset($work['invoices'][$mode]), 404);
             $service = app(PurchaseFulfillment::class);
@@ -405,6 +418,12 @@ class PurchaseController
             abort_unless(in_array($row->status, $mode === 'receipt' ? ['Ordered', 'Shipped'] : ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
             RequestValues::revision($request->input('revision'), $row);
             $action = $request->input('action') ?: ($request->filled('remove') ? 'remove' : ($request->filled('recalculate') ? 'recalculate' : 'save'));
+            if ($action === 'replace_vendor') {
+                $replacement = RequestValues::id($request->input('supplier_id'),'supplier_id');
+                if (!$replacement) throw ValidationException::withMessages(['supplier_id'=>'Choose a replacement vendor.']);
+                $outcome = app(\App\Support\PurchaseProcurement::class)->replace((int)$request->user()->id,$row->id,$request->input('revision'),$replacement,$request->boolean('delete_unused_vendor'));
+                return redirect('/purchase/'.$row->id.'?tab=order')->with('success',$outcome['removed'] ? 'Vendor replaced; unused vendor removed and its details preserved in a permanent note.' : 'Vendor replaced; original record retained'.($outcome['reason'] ? ': '.$outcome['reason'] : '').'.');
+            }
             if ($action === 'cancel_receipt') {
                 DB::transaction(function () use ($request, $row) {
                     $actor = RequestValues::actor((int) $request->user()->id);

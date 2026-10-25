@@ -7,7 +7,7 @@
 @section('content-sections')
 @php
     $readonly = !($editable ?? false) || in_array($row->status, ['Received','Cancelled'], true);
-    $tabs = ['order'=>'Order details','invoice'=>'Order invoice','charges'=>$mode==='receipt' ? 'Receipt charges' : 'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'];
+    $tabs = ['order'=>'Procurement','invoice'=>'Order','charges'=>$mode==='receipt' ? 'Receipt charges' : 'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'];
     $tab = array_key_exists($tab, $tabs) ? $tab : ($mode === 'receipt' ? 'receive' : 'order');
     $base = '/purchase/work/'.$token;
     $editTab = $mode === 'receipt' ? 'receive' : 'invoice';
@@ -41,16 +41,34 @@
 @endif
 </x-workflow.heading>
 @if($section==='order')
-@if($requestedSupplier?->state === 'unverified')<p class="notice">Suggested supplier: {{ $requestedSupplier->name }} (Unverified). @if($procurement)<a href="/catalog/suppliers/{{ $requestedSupplier->id }}/edit">Review supplier</a> to verify it, or choose an active supplier below.@endif</p>@endif
-<div class="purchase-fields">
+@php($actualSupplier=$suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0)))
+<div class="app-form-row">
+<div>
 <label>Title<input id="purchase-title" name="title" value="{{ $values['title'] ?? $row->title }}" @readonly($readonly)></label>
-@foreach(['supplier_id'=>['Supplier',$suppliers],'receiving_location_id'=>['Receiving location',$locations]] as $field=>$definition)
-<label>{{ $definition[0] }}<select id="purchase-{{ $field }}" name="{{ $field }}" @disabled($readonly)><option value="">Choose…</option>@foreach($definition[1] as $choice)<option value="{{ $choice->id }}" @selected((string)($values[$field] ?? '')===(string)$choice->id)>{{ $choice->name }}{{ $choice->state === 'unverified' ? ' (Unverified)' : '' }}</option>@endforeach</select></label>
-@endforeach
+<label>Vendor<select id="purchase-supplier_id" name="supplier_id" @disabled($readonly)><option value="">Choose a vendor</option>@foreach($suppliers as $choice)@if(in_array($choice->state,['active','unverified']) || (string)$choice->id===(string)($values['supplier_id'] ?? ''))<option value="{{ $choice->id }}" @selected((string)($values['supplier_id'] ?? '')===(string)$choice->id)>{{ $choice->name }}{{ $choice->state==='unverified' ? ' (Unverified)' : '' }}</option>@endif @endforeach</select></label>
+@if($actualSupplier)
+<dl><dt>Vendor status</dt><dd>{{ ucfirst($actualSupplier->state) }}</dd>@foreach(['website'=>'Website','contact_name'=>'Contact','email'=>'Email','phone'=>'Phone'] as $field=>$label)@if($actualSupplier->$field)<dt>{{ $label }}</dt><dd>{{ $actualSupplier->$field }}</dd>@endif @endforeach</dl>
+@if(!$readonly && $actualSupplier->state==='unverified')<p class="notice">This vendor needs explicit verification before Record order. <a href="/catalog/suppliers/{{ $actualSupplier->id }}/edit">Review and verify vendor</a></p>@endif
+@endif
+@if(!$readonly && $row->status!=='Draft')<label><input type="checkbox" name="delete_unused_vendor" value="1"> Remove the original vendor if unused</label><button name="action" value="replace_vendor" data-replace-vendor>Replace vendor</button><p class="app-field-help">Replacement preserves the submitted and current vendor details in a permanent note. Used or shared vendors are retained.</p>@endif
+<label>Procurer<input value="{{ $values['procurer_name'] ?? auth()->user()->displayName() }}" readonly></label>
 @foreach(['ordered_date'=>'Ordered','shipped_date'=>'Shipped'] as $field=>$label)<label>{{ $label }}<input id="purchase-{{ $field }}" type="date" name="{{ $field }}" value="{{ $values[$field] ?? '' }}" @readonly($readonly)></label>@endforeach
 @if($mode==='order')<input type="hidden" name="received_date" value="{{ $values['received_date'] ?? '' }}">@endif
 </div>
-@if(!$readonly && $row->status==='Ordered')<p>Mark shipped records the shipping date and status. Use Update order on Order review to change the recorded invoice.</p><button name="action" value="ship">Mark shipped</button>@endif
+<div>
+<label>Deliver to<select name="delivery_choice" data-delivery-choice @disabled($readonly)><option value="">Choose destination</option>
+@if($readonly)<option value="{{ $values['delivery_choice'] ?? '' }}" selected>{{ $values['delivery_name'] ?? 'Saved destination' }}</option>@else
+<optgroup label="Storage locations">@foreach($locations as $location)@if($location->state==='active' || ($values['delivery_choice'] ?? '')==='location:'.$location->id)<option value="location:{{ $location->id }}" @selected(($values['delivery_choice'] ?? '')==='location:'.$location->id) data-name="{{ $location->name }}" data-address="{{ $location->mailing_address }}">{{ $location->name }}</option>@endif @endforeach</optgroup>
+<optgroup label="Current users">@foreach($deliveryUsers as $user)<option value="user:{{ $user->id }}" @selected(($values['delivery_choice'] ?? '')==='user:'.$user->id) data-name="{{ $user->displayName() }}" data-address="{{ $user->mailing_address }}" data-email="{{ $user->personal_email ?: $user->contact_email }}" data-phone="{{ $user->mobile_number }}">{{ $user->displayName() }}{{ !$user->enabled ? ' (Inactive)' : '' }}</option>@endforeach</optgroup>
+<option value="other" @selected(($values['delivery_choice'] ?? '')==='other')>OTHER</option>@endif</select></label>
+<input type="hidden" name="receiving_location_id" value="{{ str_starts_with($values['delivery_choice'] ?? '', 'location:') ? substr($values['delivery_choice'],9) : '' }}">
+@foreach(['delivery_name'=>'Name','delivery_address'=>'Mailing address','delivery_email'=>'Email','delivery_phone'=>'Phone'] as $field=>$label)
+<x-app.field :label="$label" :for="'purchase-'.$field" :name="$field">@if($field==='delivery_address')<textarea id="purchase-{{ $field }}" name="{{ $field }}" rows="4" maxlength="5000" placeholder="Provide the delivery address in a format appropriate to its location." @readonly($readonly)>{{ $values[$field] ?? '' }}</textarea>@else<input id="purchase-{{ $field }}" name="{{ $field }}" value="{{ $values[$field] ?? '' }}" maxlength="255" @if(in_array($field,['delivery_email','delivery_phone'])) data-optional @endif @readonly($readonly)>@endif</x-app.field>
+@endforeach
+@if(!empty($values['legacy_delivery']))<p class="notice">The recorded order identifies {{ $locations->firstWhere('id',(int)$values['receiving_location_id'])?->name ?? $values['delivery_name'] }}. No historical mailing address was recorded.</p>@endif
+<p class="app-field-help">These delivery details belong to this purchase. Changes do not update the user or storage location.</p>
+</div></div>
+@if(!$readonly && $row->status==='Ordered')<p>Mark shipped records the date and status; it does not move stock.</p><button name="action" value="ship">Mark shipped</button>@endif
 @elseif($section==='invoice' || $section==='receive')
 <p>{{ $section==='receive' ? 'Verify the actual delivery and final invoice. Saving does not add stock.' : 'Enter the actual supplier invoice. Requested quantities remain a reference.' }}</p>
 @if($section==='receive' && $mode==='receipt')<label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">{{ $readonly ? 'Receipt details' : 'Edit receipt details' }}</a> · <a href="{{ $base }}?tab=charges&mode=receipt">{{ $readonly ? 'Receipt charges' : 'Edit receipt charges' }}</a></p>@endif

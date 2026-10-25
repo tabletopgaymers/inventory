@@ -15,7 +15,7 @@
 <input type="hidden" name="tab" value="{{ $tab }}" data-current-tab>
 <x-workflow.tabs prefix="purchase" label="Purchase request steps" :active="$tab" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review']">
 <nav class="workflow-tabs" aria-label="Purchase fulfillment steps" data-fulfillment-links @if(!$work['id']) hidden @endif>
-@foreach(['order'=>'Order details','invoice'=>'Order invoice','charges'=>'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'] as $key=>$label)
+@foreach(['order'=>'Procurement','invoice'=>'Order','charges'=>'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'] as $key=>$label)
 @if(!in_array($key,['receive','confirmation']) || in_array($row?->status,['Ordered','Shipped','Received']))<a class="button" href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</a>@endif
 @endforeach
 </nav>
@@ -35,6 +35,7 @@
 <div>
 <label for="purchase-vendor">Vendor or suggested source<select id="purchase-vendor" name="vendor_choice" required data-other-choice="vendor" aria-controls="purchase-vendor-other" @disabled(!$editable)>
 <option value="">Choose a supplier</option>
+@if(str_starts_with($work['vendor_choice'], 'supplier:') && !$suppliers->firstWhere('id',(int)substr($work['vendor_choice'],9)))<option value="{{ $work['vendor_choice'] }}" selected data-other="{{ !empty($work['vendor_other_id']) ? 'true' : 'false' }}">{{ $work['vendor_name'] ?: ($submittedLabels['vendor'] ?? 'Submitted vendor') }}</option>@endif
 @foreach($suppliers as $supplier)
 @if(in_array($supplier->state, ['active','unverified']) || $work['vendor_choice'] === 'supplier:'.$supplier->id)<option value="supplier:{{ $supplier->id }}" @if((string)($work['vendor_other_id'] ?? '') === (string)$supplier->id) data-other="true" @endif @selected($work['vendor_choice'] === 'supplier:'.$supplier->id)>{{ (string)($work['vendor_other_id'] ?? '') === (string)$supplier->id ? 'OTHER: '.$supplier->name : $supplier->name.($supplier->state === 'unverified' ? ' (Unverified)' : '') }}</option>@endif
 @endforeach

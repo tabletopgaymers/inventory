@@ -26,8 +26,19 @@ import { mountProgressSave } from './workflow/progress-save.js';
         if (!unchanged) return;
         dirty = false; save?.classList.remove('app-save-dirty');
     }});
+    form.querySelector('[data-delivery-choice]')?.addEventListener('change', event => {
+        const option = event.target.selectedOptions[0];
+        ['name','address','email','phone'].forEach(field => { form.elements[`delivery_${field}`].value = option.dataset[field] || ''; });
+        form.elements.receiving_location_id.value = event.target.value.startsWith('location:') ? event.target.value.slice(9) : '';
+    });
     form.addEventListener('submit', event => {
         if ((event.submitter?.value || 'save') === 'save') return;
+        if (event.submitter?.value === 'replace_vendor' && !navigation.isLeaving()) {
+            event.preventDefault(); const button = event.submitter;
+            navigation.confirm(() => form.requestSubmit(button), {origin:button,title:'Replace vendor?',actionLabel:'Replace vendor',
+                text:'Replace the vendor with the selected vendor and preserve its details in a permanent note? If removal is selected, only an unused, unshared vendor will be deleted. Other unsaved invoice changes will not be saved.'});
+            return;
+        }
         if (event.submitter?.value === 'cancel_receipt' && !navigation.isLeaving()) {
             event.preventDefault();
             const button = event.submitter;

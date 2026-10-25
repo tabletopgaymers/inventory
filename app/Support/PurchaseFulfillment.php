@@ -67,6 +67,10 @@ class PurchaseFulfillment
 
         unset($header['purchase_progress']);
         $header = array_replace($header, ['title' => $row->title ?? '', 'supplier_id' => $row->supplier_id ?? '', 'receiving_location_id' => $row->receiving_location_id ?? '']);
+        if (!$header['supplier_id'] && str_starts_with($header['request_basics']['vendor_choice'] ?? '', 'supplier:')) $header['supplier_id'] = substr($header['request_basics']['vendor_choice'],9);
+        $delivery = $header['submitted_request']['delivery_snapshot'] ?? PurchaseProcurement::delivery($header['request_basics'] ?? []);
+        if (($delivery['delivery_choice'] ?? '') === '' && $row->receiving_location_id) $delivery = PurchaseProcurement::delivery(['delivery_choice'=>'location:'.$row->receiving_location_id]);
+        foreach (PurchaseProcurement::FIELDS as $field) $header[$field] ??= $delivery[$field];
 
         return $header + ['ordered_date' => $row->planned_date ?? '',
             'shipped_date' => '', 'received_date' => '', 'shipping_method' => 'line_total', 'discount' => '0.00', 'tax' => '0.00', 'shipping' => '0.00', 'other_fees' => '0.00', 'lines' => $lines];
@@ -113,12 +117,19 @@ class PurchaseFulfillment
             abort_unless($mode === 'receipt' ? in_array($row->status, ['Ordered', 'Shipped'], true) : in_array($row->status, ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
             RequestValues::revision($revision, $row);
             $clean = PurchaseProgress::invoice($data);
+            $clean['procurer_id'] = $actorId;
+            $clean['procurer_name'] = $actor->displayName();
+            if ($clean['delivery_email'] !== '' && !filter_var($clean['delivery_email'],FILTER_VALIDATE_EMAIL)) throw ValidationException::withMessages(['delivery_email'=>'Enter a valid delivery email or leave it blank.']);
             $header = RequestStock::header('purchase', $id);
             $before = $header['purchase_progress'][$actorId][$mode] ?? null;
+            if ($clean['delivery_choice'] === '' && $clean['receiving_location_id'] !== '') $clean['delivery_choice']='location:'.$clean['receiving_location_id'];
+            $clean['receiving_location_id'] = str_starts_with($clean['delivery_choice'],'location:') ? substr($clean['delivery_choice'],9) : '';
+            if ($clean['delivery_choice'] !== '') PurchaseRequestBasics::validateChoices(['vendor_choice'=>'', 'delivery_choice'=>$clean['delivery_choice']], ['delivery_choice'=>$before['values']['delivery_choice'] ?? $header['delivery_choice'] ?? $header['request_basics']['delivery_choice'] ?? '']);
             foreach (['supplier_id' => 'suppliers', 'receiving_location_id' => 'storage_locations'] as $field => $catalog) {
                 $value = RequestValues::id($clean[$field], $field);
                 $retainedValue = RequestValues::id($before['values'][$field] ?? null, $field);
-                RequestValues::association($catalog, $value, $value === $retainedValue ? $retainedValue : $row->$field, $field);
+                if ($field === 'supplier_id') PurchaseProcurement::draftVendor($value,$value === $retainedValue ? $retainedValue : $row->$field);
+                else RequestValues::association($catalog, $value, $value === $retainedValue ? $retainedValue : $row->$field, $field);
             }
             foreach (['ordered_date', 'shipped_date', 'received_date'] as $field) {
                 if ($clean[$field] !== '') {
