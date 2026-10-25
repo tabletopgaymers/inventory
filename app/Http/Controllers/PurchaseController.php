@@ -530,10 +530,10 @@ class PurchaseController
             $work['invoices'][$mode]['values'] = $values;
             $request->session()->put('purchase_workspace.'.$token, $work);
             if ($action === 'confirm') {
-                $this->invoiceComplete($values, true, $mode);
+                if ($mode==='order') $this->invoiceComplete($values, true, $mode);
                 $service->work((int) $request->user()->id, $row->id, $request->input('revision'), $values, $mode, 'confirm', $work['invoices'][$mode]['operation']);
 
-                return redirect('/purchase/'.$row->id.'?tab='.($mode === 'receipt' ? 'confirmation' : 'order-review'))->with('success', $mode === 'receipt' ? 'Receipt confirmed. Stock and catalog unit costs updated.' : 'Order recorded. Held stock and catalog unit costs unchanged.');
+                return redirect('/purchase/'.$row->id.'?tab='.($mode === 'receipt' ? 'confirmation' : 'order-review'))->with('success', $mode === 'receipt' ? 'Receipt confirmed. Purchase finalized.' : 'Order recorded. Held stock and catalog unit costs unchanged.');
             }
             if ($action === 'ship') {
                 $service->transition((int) $request->user()->id, $row->id, $request->input('revision'), 'shipped', $values['shipped_date']);

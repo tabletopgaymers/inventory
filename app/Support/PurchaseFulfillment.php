@@ -70,7 +70,7 @@ class PurchaseFulfillment
             $fields=PurchaseProcurement::complete($row,$values,true);
             $fields['vendor_snapshot']=$order['vendor_snapshot'] ?? $fields['vendor_snapshot'];
             $raw=PurchaseProgress::invoice($values);
-            foreach ($raw['lines'] as $key=>$line) if ($line['item_id'] && !isset($order['lines'][$key])) {
+            foreach ($raw['lines'] as $key=>$line) if ($line['item_id'] && ($order['lines'][$key]['item_id'] ?? null)!==$line['item_id']) {
                 foreach ($order['lines'] ?? [] as $orderedKey=>$orderedLine) if (($orderedLine['item_id'] ?? null)===$line['item_id'] && !isset($raw['lines'][$orderedKey])) {
                     unset($raw['lines'][$key]);$line['line_key']=(string)$orderedKey;$line['source_request_key']=$orderedLine['source_request_key'] ?? null;$raw['lines'][$orderedKey]=$line;break;
                 }
@@ -89,7 +89,7 @@ class PurchaseFulfillment
             $costing=app(PurchaseCosting::class)->calculate(array_replace($values,['lines'=>$positive]));
             $this->validateCatalogLines($id,$actorId,$costing['lines'],'receipt');
             $received=array_replace($received,$costing['lines']);
-            foreach ($order['lines'] ?? [] as $key=>$line) if (!isset($received[$key])) $received[$key]=array_replace($line,['line_key'=>(string)$key,'quantity'=>0,'unit'=>'0.000000000000','cost'=>0,'fee'=>0]);
+            foreach ($order['lines'] ?? [] as $key=>$line) if (!isset($received[$key])) $received[$key]=array_replace(PurchaseInvoiceLines::identity($key,$line),$line,['line_key'=>(string)$key,'quantity'=>0,'unit'=>'0.000000000000','cost'=>0,'fee'=>0]);
             $stock=app(RequestStock::class);$ids=array_values(array_filter(array_column($costing['lines'],'item_id')));$items=$stock->items($ids);$projection=[];
             foreach ($costing['lines'] as $key=>$line) if ($line['item_id']) {
                 $item=$line['item_id'];$held=$stock->held($item);$storage=$fields['delivery_type']==='storage';
@@ -100,7 +100,7 @@ class PurchaseFulfillment
             }
             return $costing+$fields+['title'=>$order['title'],'ordered_date'=>$order['ordered_date'],'shipped_date'=>$order['shipped_date'] ?? '',
                 'received_date'=>RequestStock::date($values['received_date'] ?? null,'received_date'),'source_order_operation'=>$header['order_operation'],
-                'received_lines'=>$received,'ordered_lines'=>$order['lines'] ?? [],'projection'=>$projection,'receiver_id'=>$actorId,'receiver_name'=>$actor->displayName(),'can_confirm'=>false];
+                'received_lines'=>$received,'ordered_lines'=>$order['lines'] ?? [],'projection'=>$projection,'receiver_id'=>$actorId,'receiver_name'=>$actor->displayName(),'can_confirm'=>true];
         },3);
     }
 
@@ -226,30 +226,6 @@ class PurchaseFulfillment
             'shipped_date' => '', 'received_date' => '', 'shipping_method' => 'line_total', 'discount' => '0.00', 'tax' => '0.00', 'shipping' => '0.00', 'other_fees' => '0.00', 'lines' => $lines];
     }
 
-    private function validate(object $row, array $data, bool $receipt): array
-    {
-        $fields = ['title' => RequestValues::text($data['title'] ?? null, 'title', 255, true),
-            'supplier_id' => RequestValues::id($data['supplier_id'] ?? null, 'supplier_id'),
-            'receiving_location_id' => RequestValues::id($data['receiving_location_id'] ?? null, 'receiving_location_id'),
-            'ordered_date' => RequestStock::date($data['ordered_date'] ?? null, 'ordered_date'),
-            'shipped_date' => RequestStock::date($data['shipped_date'] ?? null, 'shipped_date', true),
-            'received_date' => RequestStock::date($data['received_date'] ?? null, 'received_date', ! $receipt)];
-        if (! $fields['supplier_id'] || ! $fields['receiving_location_id']) {
-            throw ValidationException::withMessages(['order' => 'Choose a supplier and receiving storage location.']);
-        }
-        RequestValues::association('suppliers', $fields['supplier_id'], $row->supplier_id, 'supplier_id');
-        RequestValues::association('storage_locations', $fields['receiving_location_id'], $row->receiving_location_id, 'receiving_location_id');
-        $costing = app(PurchaseCosting::class)->calculate($data);
-        $existing = DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $row->id)->pluck('item_id')->map(fn ($id) => (int) $id)->all();
-        $existing = array_unique(array_merge($existing, DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->pluck('item_id')->map(fn ($id) => (int) $id)->all()));
-        foreach ($costing['lines'] as $key => $line) {
-            $item = $line['item_id'];
-            if ($item) RequestValues::association('items', $item, in_array($item, $existing, true) ? $item : null, 'lines.'.$key.'.item_id');
-        }
-
-        return $fields + $costing;
-    }
-
     public function progressDraft(int $actorId, int $id, string $mode): ?array
     {
         return RequestStock::header('purchase', $id)['purchase_progress'][$actorId][$mode] ?? null;
@@ -359,83 +335,50 @@ class PurchaseFulfillment
         }
         if ($mode==='order') return $this->recordOrder($actorId,$id,$revision,$data,$action,$operation);
 
-        return DB::transaction(function () use ($actorId, $id, $revision, $data, $mode, $action, $operation) {
-            $actor = RequestValues::actor($actorId);
-            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'], 503);
-            abort_unless(RequestValues::manages($actor, 'procurement'), 403);
-            $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
-            $header = RequestStock::header('purchase', $id);
-            if ($action === 'confirm' && ($header[$mode.'_operation'] ?? null) === $operation) {
-                abort_unless(($header[$mode.'_actor'] ?? null) === $actorId, 403);
+        if ($action==='review') return $this->receiptReview($actorId,$id,$revision,$data);
+        return $this->recordReceipt($actorId,$id,$revision,$data,$operation);
+    }
 
-                return ['duplicate' => true];
+    private function recordReceipt(int $actorId, int $id, mixed $revision, array $data, string $operation): array
+    {
+        return DB::transaction(function () use($actorId,$id,$revision,$data,$operation) {
+            $actor=RequestValues::actor($actorId);
+            abort_unless(RequestValues::manages($actor,'procurement'),403);
+            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'],503);
+            $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
+            $header=RequestStock::header('purchase',$id);
+            if (($header['receipt_operation'] ?? null)===$operation) {
+                abort_unless((int)($header['receipt_actor'] ?? 0)===$actorId,403);
+                return ['duplicate'=>true];
             }
-            abort_unless($mode === 'receipt' ? in_array($row->status, ['Ordered', 'Shipped'], true) : in_array($row->status, ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
-            RequestValues::revision($revision, $row);
-            $clean = $this->validate($row, $data, $mode === 'receipt');
-            // Mixed identities can be saved now; stock posting is adapted in its own reviewed step.
-            foreach ($clean['lines'] as $key => $line) {
-                abort_unless($line['item_id'] && (string) $key === (string) $line['item_id'], 409, 'Mixed invoice posting is not available yet. Save progress instead.');
+            abort_unless(in_array($row->status,['Ordered','Shipped'],true),409,'Received is final.');
+            RequestValues::revision($revision,$row);
+            $clean=$this->receiptReview($actorId,$id,$revision,$data);
+            $stock=app(RequestStock::class);$expected=$this->expected($row,$header);
+            $ids=array_unique(array_merge(array_keys($expected),array_values(array_filter(array_column($clean['lines'],'item_id')))));
+            $items=$stock->items($ids);
+            foreach ($expected as $item=>$quantity) {
+                $stock->source($item,'ordered',-(int)$quantity);
+                $stock->entry($actor,'purchase',$id,$items[$item],$operation,'ordered','Purchase expectation cleared at final receipt',-(int)$quantity,$items[$item]->unit_cost);
             }
-            $old = DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->orderBy('item_id')->get()->keyBy('item_id');
-            $stock = app(RequestStock::class);
-            $ids = array_unique(array_merge(array_keys($clean['lines']), $old->keys()->all()));
-            $items = $stock->items($ids);
-            $projection = [];
-            foreach ($clean['lines'] as $itemId => $line) {
-                $held = $stock->held($itemId);
-                $projection[$itemId] = ['held' => $held, 'before_cost' => $items[$itemId]->unit_cost,
-                    'after_held' => $held + $line['quantity'], 'after_cost' => PurchaseCosting::average($held, $items[$itemId]->unit_cost, $line['quantity'], $line['acquisition'])];
+            foreach ($clean['lines'] as $key=>$line) if ($line['item_id']) {
+                $item=$line['item_id'];$projection=$clean['projection'][$key];
+                if ($clean['delivery_type']==='storage') $stock->storage($item,$clean['receiving_location_id'],$line['quantity']);
+                DB::table('items')->where('id',$item)->update(['unit_cost'=>$projection['after_cost'],'updated_at'=>now('UTC')]);
+                $stock->entry($actor,'purchase',$id,$items[$item],$operation,'purchase_receipt','Purchase receipt: '.$clean['vendor_snapshot']['name'].' → '.$clean['delivery_name'],$projection['stock_change'],$projection['after_cost']);
             }
-            $clean['projection'] = $projection;
-            if ($action === 'review') {
-                return $clean;
-            }
-            $pending = in_array($row->status, ['Ordered', 'Shipped'], true);
-            $supplier = DB::table('catalog_references')->where('id', $clean['supplier_id'])->value('name');
-            $destination = DB::table('storage_locations')->where('id', $clean['receiving_location_id'])->value('name');
-            foreach ($ids as $itemId) {
-                $before = $pending ? (int) ($old->get($itemId)?->quantity ?? 0) : 0;
-                $after = $mode === 'receipt' ? 0 : ($clean['lines'][$itemId]['quantity'] ?? 0);
-                $delta = $after - $before;
-                if ($delta !== 0) {
-                    $stock->source($itemId, 'ordered', $delta);
-                    $stock->entry($actor, 'purchase', $id, $items[$itemId], $operation, 'ordered', 'Purchase expectation: '.$supplier.' → '.$destination, $delta, $items[$itemId]->unit_cost);
-                }
-                if ($mode === 'receipt' && isset($clean['lines'][$itemId])) {
-                    $line = $clean['lines'][$itemId];
-                    $afterCost = $projection[$itemId]['after_cost'];
-                    $stock->storage($itemId, $clean['receiving_location_id'], $line['quantity']);
-                    DB::table('items')->where('id', $itemId)->update(['unit_cost' => $afterCost, 'updated_at' => now('UTC')]);
-                    $stock->entry($actor, 'purchase', $id, $items[$itemId], $operation, 'purchase_receipt', 'Purchase: '.$supplier.' → '.$destination, $line['quantity'], $afterCost);
-                }
-            }
-            // Keep explicit line order for deterministic cent tie-breaking on reload.
-            DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->delete();
-            foreach ($clean['lines'] as $line) {
-                DB::table('purchase_fulfillment_lines')->insert(['purchase_request_id' => $id] + array_intersect_key($line, array_flip(['line_key', 'description', 'group_label', 'source_request_key', 'item_id', 'quantity', 'unit', 'cost', 'fee'])));
-            }
-            $saved = array_intersect_key($clean, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'received_date', 'shipping_method']));
-            foreach ($clean['charges'] as $field => $cents) {
-                $saved[$field] = PurchaseCosting::dollars($cents);
-            }
-            $saved[$mode.'_operation'] = $operation;
-            $saved[$mode.'_actor'] = $actorId;
-            $saved['preparation_baseline'] = $this->preparationLines($id);
-            if ($mode === 'receipt') {
-                $saved['final_breakdown'] = $clean;
-            }
-            // Clear only this actor's successfully confirmed mode, under the posting lock.
-            unset($header['purchase_progress'][$actorId][$mode]);
-            if (empty($header['purchase_progress'][$actorId])) {
-                unset($header['purchase_progress'][$actorId]);
-            }
-            RequestStock::saveHeader('purchase', $id, array_replace($header, $saved));
-            DB::table('purchase_requests')->where('id', $id)->update(['title' => $clean['title'], 'supplier_id' => $clean['supplier_id'], 'receiving_location_id' => $clean['receiving_location_id']]);
-            RequestStock::changed('purchase', $row, $actor, $mode === 'receipt' ? 'Received purchase' : ($pending ? 'Saved ordered changes' : 'Marked Ordered'), $clean, $mode === 'receipt' ? 'Received' : ($row->status === 'Shipped' ? 'Shipped' : 'Ordered'));
-
+            DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$id)->delete();
+            foreach ($clean['received_lines'] as $line) DB::table('purchase_fulfillment_lines')->insert(['purchase_request_id'=>$id]+array_intersect_key($line,array_flip(['line_key','item_id','description','group_label','source_request_key','quantity','unit','cost','fee'])));
+            $saved=array_intersect_key($clean,array_flip(['title','supplier_id','vendor_snapshot','receiving_location_id','ordered_date','shipped_date','received_date','shipping_method','delivery_type','delivery_source_id',...PurchaseProcurement::FIELDS]));
+            foreach ($clean['charges'] as $field=>$cents) $saved[$field]=PurchaseCosting::dollars($cents);
+            $clean['procurer_id']=$header['procurer_id'] ?? null;$clean['procurer_name']=$header['procurer_name'] ?? '';
+            $saved += ['receipt_operation'=>$operation,'receipt_actor'=>$actorId,'receiver_id'=>$actorId,'receiver_name'=>$actor->displayName(),'ordered_quantities'=>[],'final_breakdown'=>$clean];
+            unset($header['purchase_progress'][$actorId]['receipt']);
+            RequestStock::saveHeader('purchase',$id,array_replace($header,$saved));
+            DB::table('purchase_requests')->where('id',$id)->update(['title'=>$clean['title'],'supplier_id'=>$clean['supplier_id'],'receiving_location_id'=>$clean['receiving_location_id']]);
+            RequestStock::changed('purchase',$row,$actor,'Received purchase',$clean,'Received');
             return $clean;
-        }, 3);
+        },3);
     }
 
     public function transition(int $actorId, int $id, mixed $revision, string $action, ?string $date = null): void
