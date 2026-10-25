@@ -156,10 +156,16 @@ class PurchaseController
                 if (!$saved) $values['lines']=\App\Support\PurchaseInvoiceLines::requested($row->id);
                 $values['lines_initialized']=true;
             }
-            $work['invoices'][$mode] = ['values' => $values, 'revision' => $saved['revision'] ?? $row->revision, 'operation' => (string) Str::uuid()];
+            $work['invoices'][$mode] = ['values' => $values, 'revision' => $saved['revision'] ?? $row->revision, 'operation' => (string) Str::uuid(), 'saved_values'=>PurchaseProgress::invoice($values), 'dirty'=>false];
             $request->session()->put('purchase_workspace.'.$token, $work);
         }
         $invoice = $work['invoices'][$mode];
+        if (!isset($invoice['saved_values']) && $editable) {
+            $invoice['saved_values']=PurchaseProgress::invoice(($service->progressDraft((int)$request->user()->id,$row->id,$mode)['values'] ?? $invoice['values']));
+            $invoice['dirty']=true;
+            $work['invoices'][$mode]=$invoice;
+            $request->session()->put('purchase_workspace.'.$token,$work);
+        }
         if ($mode === 'order' && !isset($invoice['values']['lines_initialized']) && !isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
             // Existing workspace values may include unsaved Next/add/recalculate edits, including an intentional empty set.
             foreach ($invoice['values']['lines'] as $key=>&$line) $line = array_replace(\App\Support\PurchaseInvoiceLines::identity($key,$line),$line);
@@ -168,13 +174,19 @@ class PurchaseController
             $work['invoices'][$mode]=$invoice;
             $request->session()->put('purchase_workspace.'.$token,$work);
         }
-        $values = array_replace($invoice['values'], $request->old());
+        $old = $request->old();
+        if (($old['purchase_form'] ?? null) === 'invoice') {
+            // A full invoice with every row removed submits no lines controls.
+            $old['lines'] ??= [];
+        }
+        $values = array_replace($invoice['values'], $old);
         if ($mode==='receipt') $values=$this->receiptFields($values,$invoice['values']);
         $receiptStale=$mode==='receipt' && $row->status!=='Received' && ((int)$invoice['revision']!==(int)$row->revision || ($values['source_order_operation'] ?? null)!==(RequestStock::header('purchase',$row->id)['order_operation'] ?? null));
         if ($row->status === 'Received') {
             // Receipt posting replaces the live invoice rows; the recorded order is immutable activity.
             $values = $mode === 'order' ? $this->orderValues($recordedOrder) : $service->data($row->id);
         }
+        $invoiceDirty=$editable && (!empty($invoice['dirty']) || ($request->old('purchase_form')==='invoice'));
         $preview = null; $reviewErrors = [];
         if (in_array($tab, ['order-review', 'confirmation', 'charges'], true)) {
             try {
@@ -208,7 +220,7 @@ class PurchaseController
         try { $reviewDate = \App\Support\DisplayDates::businessDate($values[$mode === 'receipt' ? 'received_date' : 'ordered_date']); }
         catch (\Throwable) { $reviewDate = '—'; }
 
-        return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate','receiptStale','recordedOrder') + [
+        return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate','receiptStale','recordedOrder','invoiceDirty') + [
             'revision' => $invoice['revision'], 'requested' => DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->pluck('quantity', 'item_id')->all(),
             'deliveryUsers' => $procurement ? \App\Models\User::where(function ($query) use ($values) {
                 $query->where('enabled',true);
@@ -390,7 +402,7 @@ class PurchaseController
 
     private function orderValues(array $snapshot): array
     {
-        $values = array_intersect_key($snapshot, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'shipping_method', ...\App\Support\PurchaseProcurement::FIELDS]));
+        $values = array_intersect_key($snapshot, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'shipping_method','procurer_id','procurer_name', ...\App\Support\PurchaseProcurement::FIELDS]));
         if (!isset($values['delivery_choice']) && !empty($values['receiving_location_id'])) {
             $values['delivery_choice']='location:'.$values['receiving_location_id'];
             $values['delivery_name']='Storage location #'.$values['receiving_location_id'];
@@ -445,7 +457,7 @@ class PurchaseController
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
             abort_unless($work['id'], 404);
-            $request->validate(['mode' => ['required', 'in:order,receipt'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,cancel_receipt,recalculate,replace_vendor,reconcile_receipt'], 'tab' => ['required', 'in:order,invoice,charges,order-review,receive,confirmation']]);
+            $request->validate(['mode' => ['required', 'in:order,receipt'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,cancel_receipt,recalculate,replace_vendor,reconcile_receipt,discard_order'], 'tab' => ['required', 'in:order,invoice,charges,order-review,receive,confirmation']]);
             $mode = $request->input('mode');
             abort_unless(isset($work['invoices'][$mode]), 404);
             $service = app(PurchaseFulfillment::class);
@@ -453,7 +465,22 @@ class PurchaseController
             abort_unless(RequestValues::manages($request->user(), 'procurement'), 403);
             abort_unless(in_array($row->status, $mode === 'receipt' ? ['Ordered', 'Shipped'] : ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
             $action = $request->input('action') ?: ($request->filled('remove') ? 'remove' : ($request->filled('recalculate') ? 'recalculate' : 'save'));
-            if (!in_array($action,['reconcile_receipt','cancel_receipt'],true)) RequestValues::revision($request->input('revision'), $row);
+            if (!in_array($action,['reconcile_receipt','cancel_receipt','discard_order'],true)) RequestValues::revision($request->input('revision'), $row);
+            if ($action==='discard_order') {
+                abort_unless($mode==='order',422);
+                DB::transaction(function () use($request,$row) {
+                    $actor=RequestValues::actor((int)$request->user()->id);
+                    abort_unless(RequestValues::manages($actor,'procurement'),403);
+                    $locked=DB::table('purchase_requests')->where('id',$row->id)->lockForUpdate()->firstOrFail();
+                    RequestValues::revision($row->revision,$locked);
+                    abort_unless(in_array($locked->status,['Draft','Request','Ordered','Shipped'],true),409);
+                    $header=RequestStock::header('purchase',$row->id);unset($header['purchase_progress'][$actor->id]['order']);
+                    $header=$this->advanceProgressRevision($header,(int)$actor->id,(int)$locked->revision,(int)$locked->revision+1);
+                    RequestStock::saveHeader('purchase',$row->id,$header);
+                    RequestStock::changed('purchase',$locked,$actor,'Discarded order draft',[]);
+                },3);
+                return redirect('/purchase/'.$row->id.'?tab=order')->with('success','Your order draft was discarded. The request and recorded order are unchanged.');
+            }
             if ($action === 'replace_vendor') {
                 abort_unless($mode==='order',422);
                 $replacement = RequestValues::id($request->input('supplier_id'),'supplier_id');
@@ -502,7 +529,7 @@ class PurchaseController
                 },3);
                 foreach ($work['invoices'] as $otherMode=>$draft) if ((int)$draft['revision']===(int)$row->revision) $work['invoices'][$otherMode]['revision']=$saved['revision'];
                 if ((int)$work['revision']===(int)$row->revision) $work['revision']=$saved['revision'];
-                $work['invoices']['receipt']=['values'=>$saved['values'],'revision'=>$saved['revision'],'operation'=>(string)Str::uuid()];
+                $work['invoices']['receipt']=['values'=>$saved['values'],'revision'=>$saved['revision'],'operation'=>(string)Str::uuid(),'saved_values'=>PurchaseProgress::invoice($saved['values']),'dirty'=>false];
                 $request->session()->put('purchase_workspace.'.$token,$work);
                 return redirect('/purchase/work/'.$token.'?tab=receive')->with('success','Receipt values retained and linked to the updated order. Check new and removed items before confirmation.');
             }
@@ -528,6 +555,7 @@ class PurchaseController
                 unset($line);
             }
             $work['invoices'][$mode]['values'] = $values;
+            $work['invoices'][$mode]['dirty'] = $values !== ($work['invoices'][$mode]['saved_values'] ?? []);
             $request->session()->put('purchase_workspace.'.$token, $work);
             if ($action === 'confirm') {
                 if ($mode==='order') $this->invoiceComplete($values, true, $mode);
@@ -553,6 +581,8 @@ class PurchaseController
                     if ((int) $draft['revision'] === (int) $row->revision) $work['invoices'][$otherMode]['revision'] = $saved['revision'];
                 }
                 if ((int) $work['revision'] === (int) $row->revision) $work['revision'] = $saved['revision'];
+                $work['invoices'][$mode]['saved_values']=PurchaseProgress::invoice($saved['values']);
+                $work['invoices'][$mode]['dirty']=false;
                 $request->session()->put('purchase_workspace.'.$token, $work);
                 if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => $row->id, 'revision' => $saved['revision'],
                     'status' => $row->status, 'values' => $saved['values'], 'message' => 'Progress saved. Stock and cost unchanged.']);

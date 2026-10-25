@@ -10,11 +10,12 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     if (!form) return;
     const linkedField = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (linkedField && !linkedField.closest('[hidden]')) { linkedField.focus(); linkedField.select?.(); }
-    let dirty = false;
+    let dirty = form.dataset.workspaceDirty==='true';
     let editGeneration = 0;
     const searchRoot=form.querySelector('[data-inventory-search]'), searchResults=form.querySelector('[data-purchase-search-results]');
     const pendingSelections=()=>Boolean(searchResults?.querySelector('[data-search-item-check]:checked')) || [...(searchResults?.querySelectorAll('[data-search-quantity]') || [])].some(input=>input.value.trim()!=='');
     const save = document.querySelector('[data-save-shortcut]');
+    save?.classList.toggle('app-save-dirty',dirty);
     const markDirty = () => {
         editGeneration++; dirty = true; save?.classList.add('app-save-dirty');
         form.querySelectorAll('[data-invoice-derived]').forEach(element => { element.hidden = true; });
@@ -37,6 +38,16 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     });
     form.addEventListener('submit', event => {
         if ((event.submitter?.value || 'save') === 'save') return;
+        if (event.submitter?.value==='ship' && dirty && !navigation.isLeaving()) {
+            event.preventDefault();const button=event.submitter;
+            navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Mark shipped?',actionLabel:'Mark shipped',text:'Mark this purchase Shipped without saving your order edits? Save progress first to retain them.'});
+            return;
+        }
+        if (event.submitter?.value === 'discard_order' && !navigation.isLeaving()) {
+            event.preventDefault();const button=event.submitter;
+            navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Discard order draft?',actionLabel:'Discard draft',text:'Discard your saved and unsaved order edits and reload the latest request or recorded order? This does not cancel the purchase or change inventory.'});
+            return;
+        }
         if (event.submitter?.value === 'reconcile_receipt' && !navigation.isLeaving()) {
             event.preventDefault(); const button=event.submitter;
             navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Reconcile with updated order?',actionLabel:'Reconcile',text:'Keep your entered receiving values and use the updated order as their reference? New items need receiving counts; check removed and changed items before confirmation.'});
@@ -59,6 +70,11 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     });
     document.querySelectorAll('form:not([data-purchase-invoice])').forEach(other => other.addEventListener('submit', event => {
         if (navigation.isLeaving()) return;
+        if (other.matches('[data-confirm-transition]')) {
+            event.preventDefault();const button=event.submitter;
+            navigation.confirm(()=>other.requestSubmit(button),{origin:button,title:'Confirm status change',actionLabel:'Continue',text:'Continue with this status change?'+(dirty?' Unsaved invoice edits will not be saved.':'')});
+            return;
+        }
         if (!dirty) { navigation.allowDeparture(); return; }
         event.preventDefault();
         const button = event.submitter;

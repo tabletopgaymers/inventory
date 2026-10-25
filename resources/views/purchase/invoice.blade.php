@@ -33,8 +33,9 @@
 @foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$targetMode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
 @endforeach
 </ul></div>@endif
-<form class="app-panel-stack" id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice novalidate>
+<form class="app-panel-stack" id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice data-workspace-dirty="{{ $invoiceDirty ? 'true' : 'false' }}" novalidate>
 @csrf
+<input type="hidden" name="purchase_form" value="invoice">
 <input type="hidden" name="revision" value="{{ $revision }}"><input type="hidden" name="mode" value="{{ $mode }}"><input type="hidden" name="tab" value="{{ $tab }}"><input type="hidden" name="next_tab" value="{{ $next[$tab] ?? $tab }}">
 @foreach($tabs as $section=>$heading)
 <section class="purchase-step app-panel-stack" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
@@ -114,10 +115,11 @@
 </section>
 @endforeach
 @if(!$readonly && $mode==='receipt')<div class="app-content purchase-panel"><button name="action" value="cancel_receipt">Cancel receiving</button></div>@endif
+@if(!$readonly && $mode==='order')<div class="app-content"><button name="action" value="discard_order">Discard order draft</button></div>@endif
 </form>
 <x-app.collapsible-panel title="Permanent notes"><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button>Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
-<x-app.collapsible-panel title="Other actions"><form method="post" action="{{ $base }}/transition">@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></x-app.collapsible-panel>
+<x-app.collapsible-panel title="Other actions"><form method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></x-app.collapsible-panel>
 @endif
 
 </x-app.panel-stack>

@@ -21,7 +21,7 @@
 </nav>
 </x-workflow.tabs>
 <div class="app-content" data-progress-feedback hidden></div>
-<div class="error" role="alert" data-purchase-errors @if($tab !== 'review' || !$reviewErrors) hidden @endif>
+<div class="error" role="alert" data-purchase-errors @if(!$editable || $tab !== 'review' || !$reviewErrors) hidden @endif>
 @foreach($reviewErrors as $messages)@foreach((array)$messages as $message)<p>{{ $message }}</p>@endforeach @endforeach
 </div>
 <x-workflow.tab-panel class="app-content" id="purchase-panel-basic" labelledby="purchase-tab-basic" :active="$tab === 'basic'">

@@ -413,6 +413,13 @@ class PurchaseFulfillment
                 }
                 $header['ordered_quantities']=[];
             }
+            if (in_array($row->status,['Ordered','Shipped'],true) && in_array($next,['Ordered','Shipped'],true)) {
+                foreach ($header['purchase_progress'][$actorId] ?? [] as $mode=>$draft) {
+                    if ((int)$draft['revision']!==(int)$row->revision) continue;
+                    if ($mode==='receipt' && ($draft['values']['source_order_operation'] ?? null)!==($header['order_operation'] ?? null)) continue;
+                    $header['purchase_progress'][$actorId][$mode]['revision']=(int)$row->revision+1;
+                }
+            }
             RequestStock::saveHeader('purchase', $id, $header);
             RequestStock::changed('purchase', $row, $actor, 'Status changed', ['recorded_dates' => array_intersect_key($header, array_flip(['ordered_date', 'shipped_date', 'received_date']))], $next);
         }, 3);

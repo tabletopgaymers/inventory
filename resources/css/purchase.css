@@ -1,5 +1,4 @@
 /* Domain-specific rules; shared workflow presentation is imported by app.css. */
-.purchase-panel{margin-bottom:var(--app-space-4,1rem)}
 .purchase-fields{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}
 .purchase-fields label{display:flex;flex-direction:column;gap:.35rem}
 .app-shell .purchase-table{overflow-x:auto;max-width:100%;min-width:0;box-sizing:border-box}
