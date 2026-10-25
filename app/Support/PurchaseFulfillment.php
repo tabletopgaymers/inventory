@@ -27,12 +27,74 @@ class PurchaseFulfillment
         return DB::transaction(function () use($actorId,$id,$revision,$values) {
             $actor=RequestValues::actor($actorId);
             abort_unless(RequestValues::manages($actor,'procurement'),403);
+            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'],503);
             $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($row->status,['Draft','Request','Ordered','Shipped'],true),409);
             RequestValues::revision($revision,$row);
             $costing=app(PurchaseCosting::class)->calculate($values);
             $this->validateCatalogLines($id,$actorId,$costing['lines']);
             return $costing + PurchaseProcurement::complete($row,$values);
+        },3);
+    }
+
+    public function expected(object $row, array $header): array
+    {
+        if (!in_array($row->status,['Ordered','Shipped'],true)) return [];
+        if (isset($header['ordered_quantities'])) return $header['ordered_quantities'];
+        // Historical orders predate explicit destination types; their nonnull location means storage.
+        if (!$row->receiving_location_id) return [];
+        return DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$row->id)->whereNotNull('item_id')->pluck('quantity','item_id')->map(fn($qty)=>(int)$qty)->all();
+    }
+
+    private function recordOrder(int $actorId, int $id, mixed $revision, array $data, string $action, ?string $operation): array
+    {
+        return DB::transaction(function () use($actorId,$id,$revision,$data,$action,$operation) {
+            $actor=RequestValues::actor($actorId);
+            abort_unless(RequestValues::manages($actor,'procurement'),403);
+            $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
+            $header=RequestStock::header('purchase',$id);
+            if ($action==='confirm' && ($header['order_operation'] ?? null)===$operation) {
+                abort_unless((int)($header['order_actor'] ?? 0)===$actorId,403);
+                return ['duplicate'=>true];
+            }
+            abort_unless(in_array($row->status,['Request','Ordered','Shipped'],true),409,'Submit the request before recording an order.');
+            RequestValues::revision($revision,$row);
+            $clean=$this->orderReview($actorId,$id,$revision,$data);
+            $clean += ['title'=>RequestValues::text($data['title'] ?? null,'title',255,true),
+                'ordered_date'=>RequestStock::date($data['ordered_date'] ?? null,'ordered_date'),
+                'shipped_date'=>RequestStock::date($data['shipped_date'] ?? null,'shipped_date',true), 'received_date'=>''];
+            $clean['procurer_id']=$header['procurer_id'] ?? $actorId;
+            $clean['procurer_name']=$header['procurer_name'] ?? $actor->displayName();
+            if ($action==='review') return $clean;
+            $old=$this->expected($row,$header);
+            $new=[];
+            if ($clean['delivery_type']==='storage') foreach ($clean['lines'] as $line) if ($line['item_id']) $new[$line['item_id']]=$line['quantity'];
+            $original=$row->supplier_id ?: (str_starts_with($header['request_basics']['vendor_choice'] ?? '', 'supplier:')?(int)substr($header['request_basics']['vendor_choice'],9):null);
+            if ($original && (int)$original !== (int)$clean['supplier_id']) {
+                // A different actual vendor always leaves evidence, even without optional deletion.
+                app(PurchaseProcurement::class)->replace($actorId,$id,$row->revision,$clean['supplier_id'],false);
+                $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
+                $header=RequestStock::header('purchase',$id);
+            }
+            $stock=app(RequestStock::class);
+            $ids=array_unique(array_merge(array_keys($old),array_keys($new)));
+            $items=$stock->items($ids);
+            foreach ($ids as $item) {
+                $delta=($new[$item] ?? 0)-($old[$item] ?? 0);
+                if (!$delta) continue;
+                $stock->source($item,'ordered',$delta);
+                $stock->entry($actor,'purchase',$id,$items[$item],$operation,'ordered','Purchase expectation: '.$clean['vendor_snapshot']['name'].' → '.$clean['delivery_name'],$delta,$items[$item]->unit_cost);
+            }
+            DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$id)->delete();
+            foreach ($clean['lines'] as $line) DB::table('purchase_fulfillment_lines')->insert(['purchase_request_id'=>$id]+array_intersect_key($line,array_flip(['line_key','item_id','description','group_label','source_request_key','quantity','unit','cost','fee'])));
+            $saved=array_intersect_key($clean,array_flip(['title','supplier_id','vendor_snapshot','receiving_location_id','ordered_date','shipped_date','received_date','shipping_method','delivery_type','delivery_source_id',...PurchaseProcurement::FIELDS]));
+            foreach ($clean['charges'] as $field=>$cents) $saved[$field]=PurchaseCosting::dollars($cents);
+            $saved += ['order_operation'=>$operation,'order_actor'=>$actorId,'ordered_quantities'=>$new,'procurer_id'=>$header['procurer_id'] ?? $actorId,'procurer_name'=>$header['procurer_name'] ?? $actor->displayName()];
+            unset($header['purchase_progress'][$actorId]['order']);
+            RequestStock::saveHeader('purchase',$id,array_replace($header,$saved));
+            DB::table('purchase_requests')->where('id',$id)->update(['title'=>$clean['title'],'supplier_id'=>$clean['supplier_id'],'receiving_location_id'=>$clean['receiving_location_id']]);
+            RequestStock::changed('purchase',$row,$actor,in_array($row->status,['Ordered','Shipped'],true)?'Saved ordered changes':'Marked Ordered',$clean,$row->status==='Shipped'?'Shipped':'Ordered');
+            return $clean;
         },3);
     }
 
@@ -56,7 +118,7 @@ class PurchaseFulfillment
                 'group_label' => $line->group_label, 'source_request_key' => $line->source_request_key,
                 'quantity' => $line->quantity, 'unit' => $line->unit, 'cost' => PurchaseCosting::dollars((int) $line->cost), 'fee' => PurchaseCosting::dollars((int) $line->fee)];
         }
-        if ($lines !== [] && in_array($row->status, ['Draft', 'Request'], true)) {
+        if ($lines !== [] && in_array($row->status, ['Draft', 'Request'], true) && !isset($header['order_operation'])) {
             // Only later preparation edits override retained actual invoice values.
             // Unchanged requested quantities must not replace distinct actual units.
             $current = $this->preparationLines($id);
@@ -224,6 +286,7 @@ class PurchaseFulfillment
         if ($action === 'confirm') {
             abort_unless(is_string($operation) && Str::isUuid($operation), 422);
         }
+        if ($mode==='order') return $this->recordOrder($actorId,$id,$revision,$data,$action,$operation);
 
         return DB::transaction(function () use ($actorId, $id, $revision, $data, $mode, $action, $operation) {
             $actor = RequestValues::actor($actorId);
@@ -323,17 +386,18 @@ class PurchaseFulfillment
             abort_unless($next !== null, 409, 'Received is final and Cancelled is terminal.');
             $header = RequestStock::header('purchase', $id);
             if ($action === 'shipped') {
-                $header['shipped_date'] = RequestStock::date($date, 'shipped_date');
+                $header['shipped_date'] = RequestStock::date($date ?: now(DisplayDates::effectiveZone())->toDateString(), 'shipped_date');
             }
             if (in_array($row->status, ['Ordered', 'Shipped'], true) && ! in_array($next, ['Ordered', 'Shipped'], true)) {
                 $stock = app(RequestStock::class);
-                $lines = DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->orderBy('item_id')->get()->keyBy('item_id');
-                $items = $stock->items($lines->keys()->all());
+                $lines = $this->expected($row,$header);
+                $items = $stock->items(array_keys($lines));
                 $operation = (string) Str::uuid();
-                foreach ($lines as $itemId => $line) {
-                    $stock->source($itemId, 'ordered', -(int) $line->quantity);
-                    $stock->entry($actor, 'purchase', $id, $items[$itemId], $operation, 'ordered', $next === 'Cancelled' ? 'Purchase Cancelled' : 'Purchase returned to Request', -(int) $line->quantity, $items[$itemId]->unit_cost);
+                foreach ($lines as $itemId => $quantity) {
+                    $stock->source($itemId, 'ordered', -(int) $quantity);
+                    $stock->entry($actor, 'purchase', $id, $items[$itemId], $operation, 'ordered', $next === 'Cancelled' ? 'Purchase Cancelled' : 'Purchase returned to Request', -(int) $quantity, $items[$itemId]->unit_cost);
                 }
+                $header['ordered_quantities']=[];
             }
             RequestStock::saveHeader('purchase', $id, $header);
             RequestStock::changed('purchase', $row, $actor, 'Status changed', ['recorded_dates' => array_intersect_key($header, array_flip(['ordered_date', 'shipped_date', 'received_date']))], $next);
