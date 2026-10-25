@@ -1,6 +1,12 @@
 @props(['title', 'guest' => false])
 @php($signedIn = ! $guest && auth()->check())
 @php($displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard')
+@php
+    $releaseBranch = (string) config('baseline.branch');
+    $releaseRevision = (string) config('baseline.revision');
+    $releaseCommit = preg_match('/\A[0-9a-f]{40,64}\z/i', $releaseRevision) ? substr($releaseRevision, 0, 7) : $releaseRevision;
+    $releaseLabel = implode(' · ', array_filter([$releaseBranch, $releaseCommit])) ?: 'Version unavailable';
+@endphp
 <!doctype html>
 <html lang="en" data-theme="tg-app">
 <head>
@@ -37,7 +43,7 @@
             @endif
             {{ $slot }}
         </main>
-        <footer class="app-footer"><span>TG Inventory · {{ app()->environment('local') ? 'Local development' : 'Development' }}</span><span>{{ config('baseline.revision') ?: 'Unrecorded working copy' }}</span></footer>
+        <footer class="app-footer"><span>TG Inventory · {{ app()->environment('local') ? 'Local development' : 'Development' }}</span><span @if($releaseRevision)title="{{ $releaseRevision }}"@endif>{{ $releaseLabel }}</span></footer>
     </div>
 </div>
 @if($signedIn)

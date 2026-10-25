@@ -82,8 +82,19 @@ data, immutable history and runtime authorization when deploying. Sample data
 installation or reset is a separate explicitly authorized operation; see
 [catalog seeding](database/seeders/README.md).
 
-The optional `APP_REVISION` environment value can label the development footer.
-No generated revision marker is required.
+The footer displays `APP_BRANCH` and a short `APP_REVISION` (the full commit SHA
+is available on hover). Set these from the actual release checkout before
+`artisan optimize` caches configuration, without editing the shared .env:
+
+```bash
+export APP_BRANCH="$(git branch --show-current)"
+export APP_REVISION="$(git rev-parse HEAD)"
+```
+
+For a detached checkout, use the configured deployment branch as the branch
+label. Installations without release metadata display `Version unavailable`;
+existing non-SHA revision labels remain supported. No Git commands run during
+page requests, and no generated revision file is required.
 
 ## Additional installations
 
