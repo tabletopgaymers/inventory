@@ -193,6 +193,11 @@ class PurchaseFulfillment
         return RequestStock::header('purchase', $id)['purchase_progress'][$actorId][$mode] ?? null;
     }
 
+    public function assertReceiptSource(array $header, array $values): void
+    {
+        if (empty($header['order_operation']) || ($values['source_order_operation'] ?? null)!==$header['order_operation']) throw ValidationException::withMessages(['source_order_operation'=>'The recorded order changed. Your receipt values are retained; reconcile with the updated order before continuing.']);
+    }
+
     public function saveProgress(int $actorId, int $id, mixed $revision, array $data, string $mode): array
     {
         abort_unless(in_array($mode, ['order', 'receipt'], true), 422);
@@ -205,11 +210,15 @@ class PurchaseFulfillment
             abort_unless($mode === 'receipt' ? in_array($row->status, ['Ordered', 'Shipped'], true) : in_array($row->status, ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
             RequestValues::revision($revision, $row);
             $clean = PurchaseProgress::invoice($data);
-            $clean['procurer_id'] = $actorId;
-            $clean['procurer_name'] = $actor->displayName();
             if ($clean['delivery_email'] !== '' && !filter_var($clean['delivery_email'],FILTER_VALIDATE_EMAIL)) throw ValidationException::withMessages(['delivery_email'=>'Enter a valid delivery email or leave it blank.']);
             $header = RequestStock::header('purchase', $id);
+            $clean['procurer_id'] = $mode==='order' ? $actorId : ($header['procurer_id'] ?? null);
+            $clean['procurer_name'] = $mode==='order' ? $actor->displayName() : ($header['procurer_name'] ?? '');
             $before = $header['purchase_progress'][$actorId][$mode] ?? null;
+            if ($mode==='receipt') {
+                $this->assertReceiptSource($header,$clean);
+                $clean['receiver_id']=$actorId; $clean['receiver_name']=$actor->displayName();
+            }
             if ($clean['delivery_choice'] === '' && $clean['receiving_location_id'] !== '') $clean['delivery_choice']='location:'.$clean['receiving_location_id'];
             $clean['receiving_location_id'] = str_starts_with($clean['delivery_choice'],'location:') ? substr($clean['delivery_choice'],9) : '';
             if ($clean['delivery_choice'] !== '') PurchaseRequestBasics::validateChoices(['vendor_choice'=>'', 'delivery_choice'=>$clean['delivery_choice']], ['delivery_choice'=>$before['values']['delivery_choice'] ?? $header['delivery_choice'] ?? $header['request_basics']['delivery_choice'] ?? '']);

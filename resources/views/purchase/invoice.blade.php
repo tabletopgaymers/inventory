@@ -2,7 +2,7 @@
 @section('title', $row->title ?: 'Purchase')
 @section('title-status')<span class="status-badge">{{ $row->status }}</span>@endsection
 @section('page-actions')
-@if($editable)<button form="purchase-invoice-form" name="action" value="save" data-save-shortcut>Save progress</button>@endif
+@if($editable)<button form="purchase-invoice-form" name="action" value="save" data-save-shortcut @disabled($receiptStale ?? false)>Save progress</button>@endif
 @endsection
 @section('content-sections')
 @php
@@ -19,6 +19,7 @@
 <x-app.panel-stack>
 @include('purchase.tabs')
 <div class="app-content" data-progress-feedback hidden></div>
+@if($receiptStale)<div class="app-content warning" role="alert">This purchase changed since receiving was opened. Your receipt values are retained. Use “Reconcile with updated order” on Receive, then check new and removed items.</div>@endif
 @if($reviewErrors)<div class="app-content error" role="alert"><ul>
 @foreach($reviewErrors as $field=>$messages)
 @php
@@ -42,6 +43,7 @@
 </x-workflow.heading>
 @if($section==='order')
 @php($actualSupplier=$suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0)))
+<fieldset class="app-entry-fieldset" @disabled($mode==='receipt')>
 <div class="app-form-row">
 <div>
 <label>Title<input id="purchase-title" name="title" value="{{ $values['title'] ?? $row->title }}" @readonly($readonly)></label>
@@ -68,10 +70,11 @@
 @if(!empty($values['legacy_delivery']))<p class="notice">The recorded order identifies {{ $locations->firstWhere('id',(int)$values['receiving_location_id'])?->name ?? $values['delivery_name'] }}. No historical mailing address was recorded.</p>@endif
 <p class="app-field-help">These delivery details belong to this purchase. Changes do not update the user or storage location.</p>
 </div></div>
-@if(!$readonly && $row->status==='Ordered')<p>Mark shipped records the date and status; it does not move stock.</p><button name="action" value="ship">Mark shipped</button>@endif
+</fieldset>
+@if(!$readonly && $mode==='order' && $row->status==='Ordered')<p>Mark shipped records the date and status; it does not move stock.</p><button name="action" value="ship">Mark shipped</button>@endif
 @elseif($section==='invoice' || $section==='receive')
 <p>{{ $section==='receive' ? 'Verify the actual delivery and final invoice. Saving does not add stock.' : 'Enter the actual supplier invoice. Requested quantities remain a reference.' }}</p>
-@if($section==='receive' && $mode==='receipt')<label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">{{ $readonly ? 'Receipt details' : 'Edit receipt details' }}</a> · <a href="{{ $base }}?tab=charges&mode=receipt">{{ $readonly ? 'Receipt charges' : 'Edit receipt charges' }}</a></p>@endif
+@if($section==='receive' && $mode==='receipt')<label>Receiver<input value="{{ $values['receiver_name'] ?? ($readonly ? '—' : auth()->user()->displayName()) }}" readonly></label><label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">Receipt details</a> · <a href="{{ $base }}?tab=charges&mode=receipt">Receipt charges</a></p>@if($receiptStale && !$readonly)<button name="action" value="reconcile_receipt">Reconcile with updated order</button>@endif @endif
 @elseif($section==='charges')
 @include('purchase.partials.charges')
 @elseif($section==='order-review' || $section==='confirmation')

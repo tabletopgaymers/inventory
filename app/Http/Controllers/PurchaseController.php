@@ -137,7 +137,8 @@ class PurchaseController
         $editable = $procurement && in_array($row->status, $mode === 'receipt' ? ['Ordered', 'Shipped'] : ['Draft', 'Request', 'Ordered', 'Shipped'], true);
         if (! isset($work['invoices'][$mode])) {
             $saved = $editable ? $service->progressDraft((int) $request->user()->id, $row->id, $mode) : null;
-            $values = $saved['values'] ?? $service->data($row->id);
+            $values = $saved['values'] ?? ($mode==='receipt' && $recordedOrder ? $this->orderValues($recordedOrder) : $service->data($row->id));
+            if ($mode==='receipt' && !$saved && $row->status !== 'Received') $values['source_order_operation']=RequestStock::header('purchase',$row->id)['order_operation'] ?? '';
             if (! $saved && $row->status !== 'Received') {
                 // An unconfirmed order's old placeholder is not an actual receipt date.
                 $values['received_date'] = $mode === 'receipt' ? now(\App\Support\DisplayDates::effectiveZone())->toDateString() : '';
@@ -168,6 +169,8 @@ class PurchaseController
             $request->session()->put('purchase_workspace.'.$token,$work);
         }
         $values = array_replace($invoice['values'], $request->old());
+        if ($mode==='receipt') $values=$this->receiptFields($values,$invoice['values']);
+        $receiptStale=$mode==='receipt' && $row->status!=='Received' && ((int)$invoice['revision']!==(int)$row->revision || ($values['source_order_operation'] ?? null)!==(RequestStock::header('purchase',$row->id)['order_operation'] ?? null));
         if ($row->status === 'Received') {
             // Receipt posting replaces the live invoice rows; the recorded order is immutable activity.
             $values = $mode === 'order' ? $this->orderValues($recordedOrder) : $service->data($row->id);
@@ -198,7 +201,7 @@ class PurchaseController
         try { $reviewDate = \App\Support\DisplayDates::businessDate($values[$mode === 'receipt' ? 'received_date' : 'ordered_date']); }
         catch (\Throwable) { $reviewDate = '—'; }
 
-        return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate') + [
+        return view('purchase.invoice', $common + compact('mode', 'editable', 'values', 'preview', 'reviewErrors', 'locationStocks', 'ordered', 'reviewDate','receiptStale') + [
             'revision' => $invoice['revision'], 'requested' => DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->pluck('quantity', 'item_id')->all(),
             'deliveryUsers' => $procurement ? \App\Models\User::where(function ($query) use ($values) {
                 $query->where('enabled',true);
@@ -397,6 +400,12 @@ class PurchaseController
         return $values + ['title' => '', 'supplier_id' => '', 'receiving_location_id' => '', 'ordered_date' => '', 'shipped_date' => '', 'received_date' => '', 'shipping_method' => 'line_total'];
     }
 
+    private function receiptFields(array $input, array $trusted): array
+    {
+        $protected=array_fill_keys(['title','supplier_id','receiving_location_id','ordered_date','shipped_date','source_order_operation',...\App\Support\PurchaseProcurement::FIELDS],'');
+        return array_replace(array_diff_key($input,$protected),array_replace($protected,array_intersect_key($trusted,$protected)));
+    }
+
     /** Advance only this actor's drafts which were based on the unchanged recorded order. */
     private function advanceProgressRevision(array $header, int $actor, int $before, int $after): array
     {
@@ -429,27 +438,29 @@ class PurchaseController
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
             abort_unless($work['id'], 404);
-            $request->validate(['mode' => ['required', 'in:order,receipt'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,cancel_receipt,recalculate,replace_vendor'], 'tab' => ['required', 'in:order,invoice,charges,order-review,receive,confirmation']]);
+            $request->validate(['mode' => ['required', 'in:order,receipt'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,cancel_receipt,recalculate,replace_vendor,reconcile_receipt'], 'tab' => ['required', 'in:order,invoice,charges,order-review,receive,confirmation']]);
             $mode = $request->input('mode');
             abort_unless(isset($work['invoices'][$mode]), 404);
             $service = app(PurchaseFulfillment::class);
             $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
             abort_unless(RequestValues::manages($request->user(), 'procurement'), 403);
             abort_unless(in_array($row->status, $mode === 'receipt' ? ['Ordered', 'Shipped'] : ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
-            RequestValues::revision($request->input('revision'), $row);
             $action = $request->input('action') ?: ($request->filled('remove') ? 'remove' : ($request->filled('recalculate') ? 'recalculate' : 'save'));
+            if (!in_array($action,['reconcile_receipt','cancel_receipt'],true)) RequestValues::revision($request->input('revision'), $row);
             if ($action === 'replace_vendor') {
+                abort_unless($mode==='order',422);
                 $replacement = RequestValues::id($request->input('supplier_id'),'supplier_id');
                 if (!$replacement) throw ValidationException::withMessages(['supplier_id'=>'Choose a replacement vendor.']);
                 $outcome = app(\App\Support\PurchaseProcurement::class)->replace((int)$request->user()->id,$row->id,$request->input('revision'),$replacement,$request->boolean('delete_unused_vendor'));
                 return redirect('/purchase/'.$row->id.'?tab=order')->with('success',$outcome['removed'] ? 'Vendor replaced; unused vendor removed and its details preserved in a permanent note.' : 'Vendor replaced; original record retained'.($outcome['reason'] ? ': '.$outcome['reason'] : '').'.');
             }
             if ($action === 'cancel_receipt') {
+                abort_unless($mode==='receipt',422);
                 DB::transaction(function () use ($request, $row) {
                     $actor = RequestValues::actor((int) $request->user()->id);
                     abort_unless(RequestValues::manages($actor, 'procurement'), 403);
                     $locked = DB::table('purchase_requests')->where('id', $row->id)->lockForUpdate()->firstOrFail();
-                    RequestValues::revision($request->input('revision'), $locked);
+                    RequestValues::revision($row->revision, $locked);
                     $header = RequestStock::header('purchase', $row->id);
                     unset($header['purchase_progress'][$actor->id]['receipt']);
                     $header = $this->advanceProgressRevision($header, (int) $actor->id, (int) $locked->revision, (int) $locked->revision + 1);
@@ -461,7 +472,34 @@ class PurchaseController
 
                 return redirect('/purchase/'.$row->id.'?tab=order')->with('success', 'Receipt work discarded. The recorded order is unchanged.');
             }
-            $values = PurchaseProgress::invoice($request->all());
+            $payload=$request->all();
+            if ($mode==='receipt') {
+                $payload=$this->receiptFields($payload,$work['invoices'][$mode]['values']);
+                if ($action==='reconcile_receipt') $payload['source_order_operation']=RequestStock::header('purchase',$row->id)['order_operation'] ?? '';
+            }
+            $values = PurchaseProgress::invoice($payload);
+            if ($action==='reconcile_receipt') {
+                abort_unless($mode==='receipt',422);
+                $header=RequestStock::header('purchase',$row->id);
+                $entry=DB::table('purchase_request_activity')->where('purchase_request_id',$row->id)->whereIn('action',['Marked Ordered','Saved ordered changes'])->orderByDesc('id')->first();
+                $fresh=$this->orderValues(json_decode($entry->current ?? '{}',true));
+                foreach ($fresh['lines'] as $key=>$line) if (!isset($values['lines'][$key])) $values['lines'][$key]=array_replace($line,['quantity'=>'','cost'=>'']);
+                foreach (['title','supplier_id','receiving_location_id','ordered_date','shipped_date',...\App\Support\PurchaseProcurement::FIELDS] as $field) $values[$field]=$fresh[$field] ?? '';
+                $values['source_order_operation']=$header['order_operation'];
+                $saved=DB::transaction(function () use($service,$request,$row,$values) {
+                    $saved=$service->saveProgress((int)$request->user()->id,$row->id,$row->revision,$values,'receipt');
+                    $header=RequestStock::header('purchase',$row->id);
+                    $advanced=$this->advanceProgressRevision($header,(int)$request->user()->id,(int)$row->revision,(int)$saved['revision']);
+                    if ($advanced!==$header) RequestStock::saveHeader('purchase',$row->id,$advanced);
+                    return $saved;
+                },3);
+                foreach ($work['invoices'] as $otherMode=>$draft) if ((int)$draft['revision']===(int)$row->revision) $work['invoices'][$otherMode]['revision']=$saved['revision'];
+                if ((int)$work['revision']===(int)$row->revision) $work['revision']=$saved['revision'];
+                $work['invoices']['receipt']=['values'=>$saved['values'],'revision'=>$saved['revision'],'operation'=>(string)Str::uuid()];
+                $request->session()->put('purchase_workspace.'.$token,$work);
+                return redirect('/purchase/work/'.$token.'?tab=receive')->with('success','Receipt values retained and linked to the updated order. Check new and removed items before confirmation.');
+            }
+            if ($mode==='receipt') $service->assertReceiptSource(RequestStock::header('purchase',$row->id),$values);
             // Preserve logical invoice order for deterministic residual-cent allocation.
             $values['lines'] = array_replace(array_intersect_key($work['invoices'][$mode]['values']['lines'], $values['lines']), $values['lines']);
             if ($action === 'remove') unset($values['lines'][(int) $request->input('remove', $request->input('item_id'))]);

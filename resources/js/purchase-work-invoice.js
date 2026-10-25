@@ -37,6 +37,11 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     });
     form.addEventListener('submit', event => {
         if ((event.submitter?.value || 'save') === 'save') return;
+        if (event.submitter?.value === 'reconcile_receipt' && !navigation.isLeaving()) {
+            event.preventDefault(); const button=event.submitter;
+            navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Reconcile with updated order?',actionLabel:'Reconcile',text:'Keep your entered receiving values and use the updated order as their reference? New items need receiving counts; check removed and changed items before confirmation.'});
+            return;
+        }
         if (event.submitter?.value === 'replace_vendor' && !navigation.isLeaving()) {
             event.preventDefault(); const button = event.submitter;
             navigation.confirm(() => form.requestSubmit(button), {origin:button,title:'Replace vendor?',actionLabel:'Replace vendor',

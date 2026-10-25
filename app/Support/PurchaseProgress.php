@@ -59,6 +59,10 @@ class PurchaseProgress
         }
         $clean['lines'] = [];
         $clean['lines_initialized'] = true;
+        if (array_key_exists('source_order_operation',$data)) {
+            if (!is_string($data['source_order_operation']) || !\Illuminate\Support\Str::isUuid($data['source_order_operation'])) throw ValidationException::withMessages(['source_order_operation'=>'Reconcile this receipt with the recorded order before saving.']);
+            $clean['source_order_operation']=$data['source_order_operation'];
+        }
         foreach ($input as $id => $line) {
             if (!is_array($line)) throw ValidationException::withMessages(['lines' => 'Enter invoice rows.']);
             $identity = PurchaseInvoiceLines::identity($id, $line);
