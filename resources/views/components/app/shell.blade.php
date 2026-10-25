@@ -2,10 +2,12 @@
 @php
     $signedIn = ! $guest && auth()->check();
     $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';
-    $releaseBranch = (string) config('baseline.branch');
-    $releaseRevision = (string) config('baseline.revision');
+    $releaseMetadata = app(\App\Support\ReleaseMetadata::class)->current();
+    $releaseBranch = $releaseMetadata['branch'];
+    $releaseRevision = $releaseMetadata['revision'];
     $releaseCommit = preg_match('/\A[0-9a-f]{40,64}\z/i', $releaseRevision) ? substr($releaseRevision, 0, 7) : $releaseRevision;
     $releaseLabel = implode(' · ', array_filter([$releaseBranch, $releaseCommit])) ?: 'Version unavailable';
+    if ($releaseMetadata['modified']) $releaseLabel .= ' · modified';
 @endphp
 <!doctype html>
 <html lang="en" data-theme="tg-app">

@@ -21,8 +21,8 @@ class BaselineProbe
         $key = config('app.key', '');
         $decodedKey = str_starts_with($key, 'base64:') ? base64_decode(substr($key, 7), true) : $key;
 
-        // Validate security settings, not a particular site's name or server version.
-        if (config('app.debug') !== false
+        // Local development may show debug details; hosted environments must not.
+        if ((! app()->environment('local') && config('app.debug') !== false)
             || ! is_string($decodedKey)
             || ! \Illuminate\Encryption\Encrypter::supported($decodedKey, config('app.cipher'))
             || config('session.table') !== 'sessions'

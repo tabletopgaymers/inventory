@@ -12,6 +12,10 @@ application key with `php artisan key:generate`, and install the schema with
 `php artisan migrate`. Serve only `public/` through the configured Herd site at
 `https://tg-inventory-app.test`. Never commit environment files or credentials.
 
+Private local development may use `APP_ENV=local` with `APP_DEBUG=true` for
+detailed errors. The startup check requires debug mode off in all other
+environments. Keep debug pages and their configuration/request details private.
+
 Migrations create an active `Central` storage location marked `is_central` when
 the location catalog is empty. Existing location catalogs are left unchanged.
 This is installation data, independent of optional catalog seeding; no stock is
@@ -94,7 +98,14 @@ export APP_REVISION="$(git rev-parse HEAD)"
 For a detached checkout, use the configured deployment branch as the branch
 label. Installations without release metadata display `Version unavailable`;
 existing non-SHA revision labels remain supported. No Git commands run during
-page requests, and no generated revision file is required.
+deployed page requests, and no generated revision file is required.
+
+With `APP_ENV=local`, the footer instead reads the current checkout's Git branch
+and commit on each page render, adding `modified` for staged, unstaged or
+untracked changes. Ignored files such as .env, build output and private inputs do
+not mark it modified. Refresh after a commit or branch switch to update the label.
+A detached checkout displays `Detached HEAD`. If Git is unavailable, slow or the
+checkout has no .git, recorded metadata is used without breaking the page.
 
 ## Additional installations
 
