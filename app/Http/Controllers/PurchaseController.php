@@ -7,6 +7,8 @@ use App\Support\PurchaseCosting;
 use App\Support\PurchaseFulfillment;
 use App\Support\PurchaseProgress;
 use App\Support\PurchaseRequests;
+use App\Support\PurchaseRequestBasics;
+use App\Support\PurchaseMaterial;
 use App\Support\RequestCatalog;
 use App\Support\RequestStock;
 use App\Support\RequestValues;
@@ -62,6 +64,8 @@ class PurchaseController
             'actor' => (int) $request->user()->id, 'id' => $row?->id, 'revision' => $row?->revision,
             'title' => $row?->title ?? '', 'suggested_merchant' => $row?->suggested_merchant ?? '',
             'details' => $row?->details ?? '', 'lines' => $lines, 'invoices' => [],
+            ...PurchaseMaterial::load($row?->id, $lines),
+            ...PurchaseRequestBasics::load($row),
         ]);
         // The record URL opens a workspace through a second redirect.
         $request->session()->keep(['success', 'error']);
@@ -75,7 +79,7 @@ class PurchaseController
         $work = $request->session()->get('purchase_workspace.'.$token);
         abort_unless(is_array($work) && $work['actor'] === (int) $request->user()->id && $request->user()->enabled, 404);
 
-        return $work;
+        return PurchaseRequestBasics::restoreOtherVendor($work) + ['estimates' => [], 'material_names' => [], 'other_lines' => []];
     }
 
     public function work(Request $request, string $token)
@@ -93,10 +97,20 @@ class PurchaseController
             'catalogItems' => app(CatalogRecords::class)->records('items', true),
         ];
         if (in_array($tab, ['basic', 'material', 'review'], true)) {
-            $values = array_replace($work, $request->old());
+            $old = $request->old();
+            if (($old['purchase_form'] ?? null) === 'request') {
+                // Omitted collections on a submitted standard form mean intentionally empty.
+                $old += ['lines' => [], 'estimates' => [], 'other_lines' => []];
+                $old['material_dirty'] = true;
+            }
+            $values = array_replace(PurchaseRequestBasics::defaults(), $work, $old);
             $errors = $this->requestErrors($values);
 
             return view('purchase.work', array_replace($common, [
+                'suppliers' => app(CatalogRecords::class)->records('suppliers'),
+                'locations' => app(CatalogRecords::class)->records('storage_locations'),
+                'deliveryUsers' => \App\Models\User::orderBy('first_name')->orderBy('last_name')->get(),
+                'requesterId' => $row?->owner_id ?? $request->user()->id,
                 'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections']]),
                 'work' => $values, 'editable' => ! $row || app(PurchaseRequests::class)->editable($request->user(), $row),
                 'canSubmit' => (! $row || $row->status === 'Draft') && app(PurchaseRequests::class)->submitter($request->user(), $row),
@@ -174,6 +188,7 @@ class PurchaseController
         $errors = [];
         try { RequestValues::text($work['title'], 'title', 255, true); }
         catch (ValidationException $e) { $errors += $e->errors(); }
+        $errors += validator($work, PurchaseRequestBasics::rules($work))->errors()->toArray();
         foreach ($work['lines'] as $id => $value) {
             try { RequestValues::quantity($value, 'lines.'.$id); }
             catch (ValidationException $e) { $errors += $e->errors(); }
@@ -182,30 +197,89 @@ class PurchaseController
         return $errors;
     }
 
+    public function search(Request $request, string $token)
+    {
+        $this->ready();
+        $work = $this->workspace($request, $token);
+        abort_unless($work['id'], 409, 'Save Basic info first.');
+        $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
+        abort_unless(app(PurchaseRequests::class)->editable($request->user(), $row), 403);
+        $selection = $request->validate(['live_items' => ['nullable','boolean'], 'excluded' => ['nullable','array','max:1000'], 'excluded.*' => ['integer','min:1']]);
+        $data = app(\App\Support\InventorySearchControls::class)->search($request, [
+            'filters' => ['collections'], 'activeOnly' => true, 'excludeIds' => !empty($selection['live_items']) ? ($selection['excluded'] ?? []) : array_keys($work['lines']),
+        ]);
+        $costs = DB::table('items')->whereIn('id', array_column($data['rows'], 'id'))->pluck('unit_cost', 'id');
+        foreach ($data['rows'] as &$item) {
+            $cost = BigDecimal::of($costs[$item['id']] ?? 0);
+            $item['unit_price'] = $cost->isPositive() ? (string) $cost->strippedOfTrailingZeros() : '';
+        }
+        unset($item);
+
+        return response()->json($data)->header('Cache-Control', 'private, no-store');
+    }
+
     public function save(Request $request, string $token)
     {
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
             $data = $request->validate([
-                'action' => ['nullable', 'in:save,next,add,remove,submit'], 'tab' => ['required', 'in:basic,material,review'],
-                'title' => ['nullable', 'string', 'max:255'], 'suggested_merchant' => ['nullable', 'string', 'max:255'], 'details' => ['nullable', 'string', 'max:5000'],
+                'action' => ['nullable', 'in:save,next,add,add_selected,add_other,remove,remove_other,submit'], 'tab' => ['required', 'in:basic,material,review'],
+                'title' => ['required', 'string', 'max:255'],
                 'lines' => ['nullable', 'array', 'max:1000'], 'lines.*' => ['nullable', 'string', 'max:30'], 'item_id' => ['nullable', 'integer'], 'remove' => ['nullable', 'integer'],
+                'estimates' => ['nullable','array','max:1000'], 'estimates.*' => ['nullable','string','max:30'],
+                'other_lines' => ['nullable','array','max:1000'], 'other_lines.*' => ['array:description,quantity,unit'],
+                'other_lines.*.description' => ['nullable','string','max:500'], 'other_lines.*.quantity' => ['nullable','string','max:30'],
+                'other_lines.*.unit' => ['nullable','string','max:30'], 'remove_other' => ['nullable','uuid'],
+                'selected' => ['nullable','array','max:1000'], 'selected.*' => ['integer','distinct','min:1'],
+                'add_quantities' => ['nullable','array','max:1000'], 'add_quantities.*' => ['nullable','string','max:30'],
+            ] + PurchaseRequestBasics::rules(array_replace($request->all(), ['vendor_other_id' => $work['vendor_other_id'] ?? ''])), [], [
+                'vendor_choice' => 'vendor or suggested source', 'delivery_choice' => 'delivery destination',
+                'vendor_name' => 'vendor name', 'delivery_name' => 'delivery name', 'delivery_address' => 'mailing address',
             ]);
-            $action = $data['action'] ?? (isset($data['remove']) ? 'remove' : 'save');
-            $values = array_replace($work, array_intersect_key($data, array_flip(['title', 'suggested_merchant', 'details'])));
+            $action = $data['action'] ?? (isset($data['remove_other']) ? 'remove_other' : (isset($data['remove']) ? 'remove' : 'save'));
+            $values = array_replace(PurchaseRequestBasics::defaults(), $work, array_intersect_key($data, array_flip(['title', ...PurchaseRequestBasics::FIELDS])));
+            foreach (PurchaseRequestBasics::FIELDS as $field) $values[$field] = $values[$field] ?? '';
+            PurchaseRequestBasics::validateChoices($values, $work);
+            $values['suggested_merchant'] = PurchaseRequestBasics::vendorName($values);
             $values['lines'] = $data['lines'] ?? [];
-            if ($action === 'remove') unset($values['lines'][(int) ($data['remove'] ?? $data['item_id'] ?? 0)]);
-            if ($action === 'add') {
-                $id = RequestValues::id($data['item_id'] ?? null, 'item_id');
-                if (! $id) throw ValidationException::withMessages(['item_id' => 'Choose an item to add.']);
-                RequestValues::association('items', $id, null, 'item_id', true);
-                $values['lines'][$id] ??= '';
+            $values['estimates'] = $data['estimates'] ?? [];
+            $values['other_lines'] = $data['other_lines'] ?? [];
+            if ($action === 'remove') {
+                $removed = (int) ($data['remove'] ?? $data['item_id'] ?? 0);
+                unset($values['lines'][$removed], $values['estimates'][$removed], $values['material_names'][$removed]);
             }
+            if ($action === 'remove_other') unset($values['other_lines'][$data['remove_other']]);
+            if ($action === 'add_other') $values['other_lines'][(string) Str::uuid()] = ['description' => '', 'quantity' => '', 'unit' => ''];
+            $adding = [];
+            if ($action === 'add') $adding[RequestValues::id($data['item_id'] ?? null, 'item_id') ?? 0] = '';
+            if ($action === 'add_selected') {
+                $selected = array_map('intval', $data['selected'] ?? []);
+                foreach (array_unique([...$selected, ...array_keys($data['add_quantities'] ?? [])]) as $key) {
+                    $value = trim((string) ($data['add_quantities'][$key] ?? ''));
+                    if ($value === '' && !in_array((int) $key, $selected, true)) continue;
+                    $id = RequestValues::id($key, 'selected');
+                    if (!$id) throw ValidationException::withMessages(['selected' => 'Choose catalog items.']);
+                    try { $value = (string) (RequestValues::quantity($value, 'selected', true) ?? ''); }
+                    catch (ValidationException) { $value = ''; }
+                    $adding[$id] = $value;
+                }
+                if (!$adding) throw ValidationException::withMessages(['selected' => 'Check an item or enter a quantity to add.']);
+            }
+            foreach ($adding as $id => $quantity) {
+                if (!$id) throw ValidationException::withMessages(['item_id' => 'Choose an item to add.']);
+                RequestValues::association('items', $id, null, 'item_id', true);
+                $values['lines'][$id] ??= $quantity;
+                $catalogItem = DB::table('items')->where('id', $id)->firstOrFail();
+                $values['material_names'][$id] ??= $catalogItem->name;
+                $values['estimates'][$id] ??= BigDecimal::of($catalogItem->unit_cost)->isPositive() ? (string) BigDecimal::of($catalogItem->unit_cost)->strippedOfTrailingZeros() : '';
+            }
+            PurchaseMaterial::validate($values);
             if (count($values['lines']) > 1000) throw ValidationException::withMessages(['lines' => 'Use up to 1,000 catalog items.']);
             $row = $work['id'] ? DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail() : null;
             abort_unless(! $row || app(PurchaseRequests::class)->editable($request->user(), $row), 403);
             // Add/remove and step navigation retain unfinished values in this workspace.
-            if (in_array($action, ['add', 'remove'], true) || ($action === 'next' && $data['tab'] !== 'basic')) {
+            if (in_array($action, ['add', 'add_selected', 'remove', 'add_other', 'remove_other'], true) || ($action === 'next' && $data['tab'] !== 'basic')) {
+                $values['material_dirty'] = true;
                 $request->session()->put('purchase_workspace.'.$token, $values);
 
                 return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? 'review' : 'material'));
@@ -218,7 +292,7 @@ class PurchaseController
                 $quantity = RequestValues::quantity($value, 'lines.'.$item, ! $submit);
                 if ($quantity !== null) $lines[$item] = ['quantity' => $quantity];
             }
-            $values['id'] = DB::transaction(function () use ($request, $work, $values, $lines, $submit) {
+            $saved = DB::transaction(function () use ($request, $work, $values, $lines, $submit) {
                 if (! $submit && $work['id']) {
                     // Retain procurement metadata on an existing line while its quantity is unfinished.
                     $retained = DB::table('purchase_request_lines')->where('purchase_request_id', $work['id'])->pluck('quantity', 'item_id');
@@ -226,7 +300,14 @@ class PurchaseController
                 }
                 $id = app(PurchaseRequests::class)->saveWork((int) $request->user()->id, $work['id'], $request->input('revision'), array_intersect_key($values, array_flip(['title', 'suggested_merchant', 'details'])) + ['lines' => $lines], $submit);
                 $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
+                $values = PurchaseRequestBasics::saveVendor($values);
                 $header = RequestStock::header('purchase', $id);
+                $basics = array_intersect_key($values, PurchaseRequestBasics::defaults());
+                if (($header['request_basics'] ?? []) !== $basics) {
+                    RequestValues::activity('purchase', $id, $request->user(), 'Saved request preferences', $header['request_basics'] ?? null, $basics);
+                }
+                $header['request_basics'] = $basics;
+                PurchaseMaterial::save($id, $values);
                 if (! $submit) {
                     foreach (array_keys($values['lines']) as $item) RequestValues::association('items', (int) $item, array_key_exists($item, $work['lines']) ? (int) $item : null, 'lines.'.$item);
                     // Blank quantities are raw working data, never silently zero units.
@@ -238,10 +319,13 @@ class PurchaseController
                 } else unset($header['singular_request_draft']);
                 RequestStock::saveHeader('purchase', $id, $header);
 
-                return $id;
+                return ['id' => $id, 'values' => $values];
             }, 3);
+            $values = $saved['values'];
+            $values['id'] = $saved['id'];
             $values['revision'] = DB::table('purchase_requests')->where('id', $values['id'])->value('revision');
             $values['invoices'] = [];
+            $values['material_dirty'] = false;
             $request->session()->put('purchase_workspace.'.$token, $values);
 
             return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? 'material' : $data['tab']))->with('success', $submit ? 'Request submitted. No stock or cost changed.' : 'Progress saved.');

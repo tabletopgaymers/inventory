@@ -14,6 +14,13 @@ use Illuminate\Validation\ValidationException;
 
 class CatalogController
 {
+    private function canMaintain(Request $request, string $kind, ?int $record): bool
+    {
+        return $request->user()->hasRole('admin') || $request->user()->hasRole('manager')
+            || ($kind === 'suppliers' && $record && \App\Support\RequestValues::manages($request->user(), 'procurement')
+                && DB::table('catalog_references')->where('id', $record)->where('kind', 'suppliers')->where('state', 'unverified')->exists());
+    }
+
     private function ready(): void
     {
         abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['catalogReady'], 503, 'Catalog is not ready.');
@@ -25,12 +32,13 @@ class CatalogController
         $service = app(CatalogRecords::class);
         $records = $service->records($kind);
         $statusOptions = ['active', 'inactive', 'archived'];
+        if ($kind === 'suppliers') $statusOptions[] = 'unverified';
         $selectedStatuses = $statusOptions;
         if ($request->has('status_filter')) {
             $filter = $request->validate([
                 'status_filter' => ['required', 'in:1'],
                 'statuses' => ['nullable', 'array'],
-                'statuses.*' => ['string', 'in:active,inactive,archived'],
+                'statuses.*' => ['string', \Illuminate\Validation\Rule::in($statusOptions)],
             ]);
             $selectedStatuses = array_values(array_unique($filter['statuses'] ?? []));
             $records = $records->whereIn('state', $selectedStatuses)->values();
@@ -96,14 +104,14 @@ class CatalogController
 
         return view('catalog.show', [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
-            'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'),
+            'canManage' => $this->canMaintain($request, $kind, $record),
         ]);
     }
 
     public function archive(Request $request, string $kind, int $record)
     {
         $this->ready();
-        abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
+        abort_unless($this->canMaintain($request, $kind, $record), 403);
         $row = app(CatalogRecords::class)->record($kind, $record);
 
         $inventoryContext = $kind === 'items' && $request->is('inventory/*');
@@ -114,7 +122,7 @@ class CatalogController
     public function form(Request $request, string $kind, ?int $record = null)
     {
         $this->ready();
-        abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
+        abort_unless($this->canMaintain($request, $kind, $record), 403);
         abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
         $service = app(CatalogRecords::class);
         $row = $record ? $service->record($kind, $record) : null;
@@ -166,7 +174,7 @@ class CatalogController
     {
         $this->ready();
         abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
-        abort_unless($request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 403);
+        abort_unless($this->canMaintain($request, $kind, $record), 403);
         $rules = ['name' => $this->text(true), 'description' => $this->text(false, 5000), 'notes' => $this->text(false, 5000)];
         if ($kind === 'storage_locations') {
             $rules['mailing_address'] = $this->multilineText();
@@ -210,7 +218,7 @@ class CatalogController
         try {
             $id = DB::transaction(function () use ($request, $kind, $record, $data) {
                 $service = app(CatalogRecords::class);
-                $service->authorize((int) $request->user()->id);
+                $service->authorize((int) $request->user()->id, $kind, $record);
                 $reference = in_array($kind, ['suppliers', 'purposes', 'programs'], true);
                 $table = $reference ? 'catalog_references' : $kind;
                 $old = $record ? DB::table($table)->where('id', $record)->lockForUpdate()->firstOrFail() : null;
@@ -344,7 +352,7 @@ class CatalogController
         $data = $request->validate(['action' => ['required', 'in:activate,inactivate,archive,restore'], 'confirm' => ['required_if:action,archive', 'accepted_if:action,archive']]);
         DB::transaction(function () use ($request, $kind, $record, $data) {
             $service = app(CatalogRecords::class);
-            $service->authorize((int) $request->user()->id);
+            $service->authorize((int) $request->user()->id, $kind, $record);
             $row = $service->record($kind, $record);
             $reference = in_array($kind, ['suppliers', 'purposes', 'programs'], true);
             DB::table($reference ? 'catalog_references' : $kind)->where('id', $record)->lockForUpdate()->firstOrFail();
@@ -363,6 +371,8 @@ class CatalogController
                 DB::table('catalog_metadata')->updateOrInsert(['kind' => $kind, 'record_id' => $record], ['state' => $state, 'description' => $existing->description ?? null, 'notes' => $existing->notes ?? null, 'updated_at' => now('UTC')]);
             }
         }, 3);
+
+        if ($kind === 'suppliers') return redirect(CatalogRecords::viewUrl($kind, $record))->with('success', 'Supplier status updated; request history retained.');
 
         return back()->with('success', 'Lifecycle updated; associated records and inventory retained.');
     }

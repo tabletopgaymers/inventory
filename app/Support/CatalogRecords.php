@@ -76,10 +76,14 @@ class CatalogRecords
         }
     }
 
-    public function authorize(int $actor): void
+    public function authorize(int $actor, ?string $kind = null, ?int $record = null): void
     {
         DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
         $user = DB::table('users')->where('id', $actor)->lockForUpdate()->first();
-        abort_unless($user && $user->enabled && DB::table('user_roles')->where('user_id', $actor)->whereIn('role', ['admin', 'manager'])->exists(), 403);
+        $catalogManager = DB::table('user_roles')->where('user_id', $actor)->whereIn('role', ['admin', 'manager'])->exists();
+        $supplierReviewer = $kind === 'suppliers' && $record
+            && RequestValues::manages(\App\Models\User::findOrFail($actor), 'procurement')
+            && DB::table('catalog_references')->where('id', $record)->where('kind', 'suppliers')->where('state', 'unverified')->lockForUpdate()->exists();
+        abort_unless($user && $user->enabled && ($catalogManager || $supplierReviewer), 403);
     }
 }

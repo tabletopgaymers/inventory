@@ -2,10 +2,10 @@
 .app-shell .workflow-table--numeric td { text-align: right; }
 .app-shell .workflow-table--numeric-after-first td:not(:first-child) { text-align: right; }
 .app-shell .workflow-table--quantities td { vertical-align: middle; }
-.app-shell .workflow-table--quantities label, .app-shell .workflow-table--quantities input { margin: 0; }
-.app-shell .workflow-table--quantities :where(input:not([type="checkbox"])) { width: 10ch; max-width: 100%; text-align: right; }
-.app-shell .workflow-table--quantities input[type="checkbox"] { width: auto; }
-.app-shell .workflow-table--quantities [data-field-qualifier] { display: none; }
+.app-shell .workflow-table--quantities :where(td, th) :is(label, input) { margin: 0; }
+.app-shell .workflow-table--quantities :where(td, th) :where(input:not([type="checkbox"])) { width: 10ch; max-width: 100%; text-align: right; }
+.app-shell .workflow-table--quantities :where(td, th) input[type="checkbox"] { width: auto; }
+.app-shell .workflow-table--quantities :where(td, th) [data-field-qualifier] { display: none; }
 .app-shell .table-action-column { width: 1%; }
 .app-shell .table-quantity-column { width: 5%; }
 .app-shell .table-numeric { text-align: right; }
@@ -19,3 +19,6 @@
 .app-shell .table-variance-negative { color: var(--app-danger); }
 .app-shell .table-negative { color: var(--app-danger); }
 .app-shell .table-row-error > td { background: var(--app-error-surface); color: var(--app-danger); }
+.app-shell button.material-remove { color: #b91c1c; background: transparent; border: 0; padding: .125rem .25rem; font-weight: 700; }
+.app-shell button.material-remove:hover { background: transparent; }
+.app-material-add-actions { justify-content: flex-end; }

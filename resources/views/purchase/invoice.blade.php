@@ -13,6 +13,7 @@
     $editTab = $mode === 'receipt' ? 'receive' : 'invoice';
     $reviewTab = $mode === 'receipt' ? 'confirmation' : 'order-review';
     $next = ['order'=>'invoice','invoice'=>'charges','charges'=>$reviewTab,'receive'=>'confirmation'];
+    $requestedSupplier = str_starts_with($work['vendor_choice'] ?? '', 'supplier:') ? $suppliers->firstWhere('id', (int) substr($work['vendor_choice'], 9)) : null;
 @endphp
 @vite(['resources/css/purchase.css', 'resources/js/purchase-work-invoice.js'])
 <x-app.panel-stack>
@@ -39,10 +40,11 @@
 @endif
 </x-workflow.heading>
 @if($section==='order')
+@if($requestedSupplier?->state === 'unverified')<p class="notice">Suggested supplier: {{ $requestedSupplier->name }} (Unverified). @if($procurement)<a href="/catalog/suppliers/{{ $requestedSupplier->id }}/edit">Review supplier</a> to verify it, or choose an active supplier below.@endif</p>@endif
 <div class="purchase-fields">
 <label>Title<input id="purchase-title" name="title" value="{{ $values['title'] ?? $row->title }}" @readonly($readonly)></label>
 @foreach(['supplier_id'=>['Supplier',$suppliers],'receiving_location_id'=>['Receiving location',$locations]] as $field=>$definition)
-<label>{{ $definition[0] }}<select id="purchase-{{ $field }}" name="{{ $field }}" @disabled($readonly)><option value="">Choose…</option>@foreach($definition[1] as $choice)<option value="{{ $choice->id }}" @selected((string)($values[$field] ?? '')===(string)$choice->id)>{{ $choice->name }}</option>@endforeach</select></label>
+<label>{{ $definition[0] }}<select id="purchase-{{ $field }}" name="{{ $field }}" @disabled($readonly)><option value="">Choose…</option>@foreach($definition[1] as $choice)<option value="{{ $choice->id }}" @selected((string)($values[$field] ?? '')===(string)$choice->id)>{{ $choice->name }}{{ $choice->state === 'unverified' ? ' (Unverified)' : '' }}</option>@endforeach</select></label>
 @endforeach
 @foreach(['ordered_date'=>'Ordered','shipped_date'=>'Shipped'] as $field=>$label)<label>{{ $label }}<input id="purchase-{{ $field }}" type="date" name="{{ $field }}" value="{{ $values[$field] ?? '' }}" @readonly($readonly)></label>@endforeach
 @if($mode==='order')<input type="hidden" name="received_date" value="{{ $values['received_date'] ?? '' }}">@endif
