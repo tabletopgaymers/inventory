@@ -2,6 +2,7 @@ import './app.js';
 
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
 import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
+import { mountProgressSave } from './workflow/progress-save.js';
 
 (() => {
     const form = document.querySelector('[data-purchase-invoice]');
@@ -9,10 +10,24 @@ import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
     const linkedField = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (linkedField && !linkedField.closest('[hidden]')) { linkedField.focus(); linkedField.select?.(); }
     let dirty = false;
-    form.addEventListener('input', () => { dirty = true; });
+    let editGeneration = 0;
+    const save = document.querySelector('[data-save-shortcut]');
+    const markDirty = () => {
+        editGeneration++; dirty = true; save?.classList.add('app-save-dirty');
+        form.querySelectorAll('[data-invoice-derived]').forEach(element => { element.hidden = true; });
+        form.querySelectorAll('[data-derived-stale]').forEach(element => { element.hidden = false; });
+    };
+    form.addEventListener('input', markDirty);
+    form.addEventListener('change', markDirty);
     const navigation = mountUnsavedChanges(form, { isDirty: () => dirty,
         message: 'Unsaved invoice edits will be discarded. Keep editing or leave without saving.' });
+    mountProgressSave(form, {feedback:document.querySelector('[data-progress-feedback]'), getGeneration:() => editGeneration, onSaved:(result, {unchanged}) => {
+        document.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
+        if (!unchanged) return;
+        dirty = false; save?.classList.remove('app-save-dirty');
+    }});
     form.addEventListener('submit', event => {
+        if ((event.submitter?.value || 'save') === 'save') return;
         if (event.submitter?.value === 'cancel_receipt' && !navigation.isLeaving()) {
             event.preventDefault();
             const button = event.submitter;

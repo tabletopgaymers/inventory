@@ -328,6 +328,9 @@ class PurchaseController
             $values['material_dirty'] = false;
             $request->session()->put('purchase_workspace.'.$token, $values);
 
+            if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => $values['id'], 'revision' => $values['revision'],
+                'status' => DB::table('purchase_requests')->where('id', $values['id'])->value('status'), 'values' => array_intersect_key($values, array_flip(['title', ...PurchaseRequestBasics::FIELDS])),
+                'other_vendor_id' => $values['vendor_other_id'] ?? '', 'message' => 'Progress saved.']);
             return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? 'material' : $data['tab']))->with('success', $submit ? 'Request submitted. No stock or cost changed.' : 'Progress saved.');
         });
     }
@@ -451,6 +454,8 @@ class PurchaseController
                 }
                 if ((int) $work['revision'] === (int) $row->revision) $work['revision'] = $saved['revision'];
                 $request->session()->put('purchase_workspace.'.$token, $work);
+                if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => $row->id, 'revision' => $saved['revision'],
+                    'status' => $row->status, 'values' => $saved['values'], 'message' => 'Progress saved. Stock and cost unchanged.']);
             }
             $tab = $request->input('tab');
             if ($action === 'next') $tab = $mode === 'receipt' ? 'confirmation' : match ($tab) { 'order' => 'invoice', 'invoice' => 'charges', default => 'order-review' };

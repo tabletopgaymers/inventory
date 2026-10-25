@@ -14,14 +14,13 @@
 <input type="hidden" name="revision" value="{{ $work['revision'] }}">
 <input type="hidden" name="tab" value="{{ $tab }}" data-current-tab>
 <x-workflow.tabs prefix="purchase" label="Purchase request steps" :active="$tab" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review']">
-@if($work['id'])
-<nav class="workflow-tabs" aria-label="Purchase fulfillment steps">
+<nav class="workflow-tabs" aria-label="Purchase fulfillment steps" data-fulfillment-links @if(!$work['id']) hidden @endif>
 @foreach(['order'=>'Order details','invoice'=>'Order invoice','charges'=>'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'] as $key=>$label)
-@if(!in_array($key,['receive','confirmation']) || in_array($row->status,['Ordered','Shipped','Received']))<a class="button" href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</a>@endif
+@if(!in_array($key,['receive','confirmation']) || in_array($row?->status,['Ordered','Shipped','Received']))<a class="button" href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</a>@endif
 @endforeach
 </nav>
-@endif
 </x-workflow.tabs>
+<div class="app-content" data-progress-feedback hidden></div>
 <div class="error" role="alert" data-purchase-errors @if($tab !== 'review' || !$reviewErrors) hidden @endif>
 @foreach($reviewErrors as $messages)@foreach((array)$messages as $message)<p>{{ $message }}</p>@endforeach @endforeach
 </div>

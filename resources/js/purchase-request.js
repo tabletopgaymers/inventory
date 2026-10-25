@@ -4,6 +4,7 @@ import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
 import { mountUnsavedChanges } from './workflow/unsaved-changes.js';
 import './inventory-search-controls.js';
+import { mountProgressSave } from './workflow/progress-save.js';
 
 (() => {
     'use strict';
@@ -18,8 +19,10 @@ import './inventory-search-controls.js';
         || [...(searchResults?.querySelectorAll('[data-search-quantity]') || [])].some(input => input.value.trim() !== '');
     const validQuantity = value => /^\d+$/.test(value.trim()) && Number.isSafeInteger(Number(value)) && Number(value) <= 1000000000;
     let dirty = form.dataset.workspaceDirty === 'true';
+    let editGeneration = 0;
     const save = document.querySelector('[data-save-shortcut]');
     save.classList.toggle('app-save-dirty', dirty);
+    let saveBusy = false;
     const navigation = mountUnsavedChanges(form, { isDirty: () => dirty || Boolean(pendingSelections()) });
     const errors = form.querySelector('[data-purchase-errors]');
     const reviewBody = form.querySelector('[data-review-items]');
@@ -60,6 +63,31 @@ import './inventory-search-controls.js';
         });
     };
     updateBasicChoices();
+    mountProgressSave(form, { feedback:form.querySelector('[data-progress-feedback]'), onBusy:value => { saveBusy = value; },
+        canSave:() => !searchRoot || !window.appInventorySearch.get(searchRoot)?.getState().busy,
+        getGeneration:() => editGeneration, onSaved:(result, {unchanged}) => {
+        form.elements.revision.value = result.revision;
+        document.querySelectorAll('form input[name="revision"]').forEach(input => { input.value = result.revision; });
+        if (!unchanged) return;
+        Object.entries(result.values || {}).forEach(([name,value]) => {
+            const input = form.elements[name];
+            if (input && input.tagName !== 'SELECT') input.value = value ?? '';
+        });
+        const vendor = form.elements.vendor_choice;
+        const choice = result.values?.vendor_choice;
+        if (choice && ![...vendor.options].some(option => option.value === choice)) vendor.add(new Option(result.values.vendor_name || 'Vendor',choice));
+        if (choice) vendor.value = choice;
+        [...vendor.options].forEach(option => {
+            option.dataset.other = String(Boolean(result.other_vendor_id) && option.value === `supplier:${result.other_vendor_id}`);
+            if (option.dataset.other === 'true') option.textContent = `OTHER: ${result.values.vendor_name}`;
+        });
+        form.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
+        document.querySelectorAll('form input[name="revision"]').forEach(input => { input.value = result.revision; });
+        document.querySelector('.status-badge').textContent = result.status;
+        form.querySelector('[data-fulfillment-links]').hidden = false;
+        dirty = false; save.classList.remove('app-save-dirty');
+        updateBasicChoices(); updateReview();
+    }});
     const updateReview = () => {
         const messages = [];
         if (!form.elements.title.value.trim()) messages.push({text:'Enter a title in Basic info.',tab:'basic',input:form.elements.title});
@@ -122,7 +150,7 @@ import './inventory-search-controls.js';
         updateReview();
     } });
     form.querySelector('[data-material-next]').addEventListener('click',event => { event.preventDefault(); showTab('review'); });
-    const markDirty = () => { dirty = true; save.classList.add('app-save-dirty'); updateBasicChoices(); updateReview(); updateMaterialTotals(); };
+    const markDirty = () => { editGeneration++; dirty = true; save.classList.add('app-save-dirty'); updateBasicChoices(); updateReview(); updateMaterialTotals(); };
     const changed = event => {
         if (searchRoot?.contains(event.target) || searchResults?.contains(event.target)) return;
         markDirty();
@@ -131,6 +159,7 @@ import './inventory-search-controls.js';
     form.addEventListener('change',changed);
     mountQuantityNavigation(form, { resolveFields: input => input.matches('[data-quantity]') ? form.querySelectorAll('[data-quantity]') : input.matches('[data-search-quantity]') ? form.querySelectorAll('[data-search-quantity]') : [] });
     form.addEventListener('submit',event => {
+        if ((event.submitter?.value || 'save') === 'save') return;
         if (event.submitter?.value === 'submit' && form.querySelector('[data-submit-request]').disabled) { event.preventDefault(); showTab('review'); return; }
         navigation.allowDeparture();
     });
@@ -182,13 +211,13 @@ import './inventory-search-controls.js';
         return row;
     };
     form.querySelector('[data-add-other]')?.addEventListener('click', () => {
-        if (form.dataset.editable !== 'true') return;
+        if (saveBusy || form.dataset.editable !== 'true') return;
         if (materialRows().length >= 1000) { showSearchMessage('Use up to 1,000 material lines.'); return; }
         const row = appendMaterial({key:crypto.randomUUID()}); regroupMaterial(); markDirty(); row.querySelector('[data-other-description]').focus();
     });
     materialBody.addEventListener('click',event => {
         const button = event.target.closest('[data-material-remove]');
-        if (!button || form.dataset.editable !== 'true') return;
+        if (!button || saveBusy || form.dataset.editable !== 'true') return;
         const row = button.closest('[data-material-line]'); const index = materialRows().indexOf(row);
         row.remove(); regroupMaterial(); markDirty();
         (materialRows()[Math.min(index,materialRows().length-1)]?.querySelector('input') || form.querySelector('[data-add-other]'))?.focus();
@@ -196,7 +225,7 @@ import './inventory-search-controls.js';
     if (searchRoot) {
         let searchBusy = false;
         const catalogChoices = new Map();
-        const updateAddButton = () => { addSelected.disabled = searchBusy || !searchResults.querySelector('[data-search-item]'); };
+        const updateAddButton = () => { addSelected.disabled = saveBusy || searchBusy || !searchResults.querySelector('[data-search-item]'); };
         const renderResults = data => {
             searchResults.replaceChildren(); searchFeedback.hidden = true;
             catalogChoices.clear();
@@ -242,15 +271,17 @@ import './inventory-search-controls.js';
             if (event.target.checked || checks.every(check => check.checked)) checks.forEach(check => { check.checked = event.target.checked; });
         });
         searchRoot.addEventListener('inventory-search:before-search', event => {
+            if (saveBusy) { event.preventDefault(); return; }
             if (pendingSelections()) { event.preventDefault(); showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.'); }
         });
         searchRoot.addEventListener('inventory-search:before-reset', event => {
+            if (saveBusy) { event.preventDefault(); return; }
             if (event.detail.reset && pendingSelections()) { event.preventDefault(); showSearchMessage('Use Add selected or clear checked items and entered quantities before changing search results.'); }
         });
         searchRoot.addEventListener('inventory-search:reset', () => { renderResults({rows:[]}); });
         searchRoot.addEventListener('inventory-search:busy', event => { searchBusy = event.detail.busy; updateAddButton(); });
         addSelected.addEventListener('click', () => {
-            if (searchBusy || form.dataset.editable !== 'true') return;
+            if (saveBusy || searchBusy || form.dataset.editable !== 'true') return;
             const ids = new Set(rows().map(row => row.dataset.itemId));
             const selected = [...searchResults.querySelectorAll('[data-search-item]')].filter(row => !ids.has(row.dataset.searchItem)
                 && (row.querySelector('[data-search-item-check]').checked || row.querySelector('[data-search-quantity]').value.trim() !== ''));

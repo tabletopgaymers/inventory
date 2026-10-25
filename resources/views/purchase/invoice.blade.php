@@ -18,6 +18,7 @@
 @vite(['resources/css/purchase.css', 'resources/js/purchase-work-invoice.js'])
 <x-app.panel-stack>
 @include('purchase.tabs')
+<div class="app-content" data-progress-feedback hidden></div>
 @if($reviewErrors)<div class="app-content error" role="alert"><ul>
 @foreach($reviewErrors as $field=>$messages)
 @php
@@ -81,7 +82,8 @@
 </select></label><button name="action" value="add">Add selected</button></div>@endif
 @endif
 @if(($section===$reviewTab || $section==='charges') && $preview)
-<x-app.table-region label="Acquisition cost breakdown" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Units</th>@foreach(['cost'=>'Cost','fee'=>'Fee','other'=>'Other fees','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping','acquisition'=>'Acquisition'] as $key=>$label)<th>{{ $label }} ($)</th>@endforeach<th>Acquisition / unit</th></tr></thead><tbody>
+<p data-derived-stale hidden>Amounts changed. Open a fresh review to calculate the saved allocations.</p>
+<x-app.table-region data-invoice-derived label="Acquisition cost breakdown" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Units</th>@foreach(['cost'=>'Cost','fee'=>'Fee','other'=>'Other fees','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping','acquisition'=>'Acquisition'] as $key=>$label)<th>{{ $label }} ($)</th>@endforeach<th>Acquisition / unit</th></tr></thead><tbody>
 @php($group=null)
 @foreach($items as $item)
 @php($id=$item['id'])
@@ -93,14 +95,14 @@
 @endforeach
 </tbody><tfoot><tr><th colspan="9">Total USD</th><td>{{ \App\Support\PurchaseCosting::dollars($preview['total']) }}</td></tr></tfoot></table></x-app.table-region>
 @if($section==='confirmation')
-<x-app.table-region label="Received material" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Ordered</th><th>Received</th><th>Difference</th></tr></thead><tbody>
+<x-app.table-region data-invoice-derived label="Received material" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Ordered</th><th>Received</th><th>Difference</th></tr></thead><tbody>
 @foreach(array_unique(array_merge(array_keys($ordered),array_keys($preview['lines']))) as $id)
 @php($receivedQuantity=$preview['lines'][$id]['quantity'] ?? 0)
 @php($variance=$receivedQuantity-($ordered[$id] ?? 0))
 <tr><th>{{ $catalogItems->firstWhere('id',(int)$id)?->name ?? '#'.$id }}</th><td>{{ number_format($ordered[$id] ?? 0) }}</td><td>{{ number_format($receivedQuantity) }}</td><td class="{{ $variance<0 ? 'table-variance-negative' : 'table-variance-positive' }}">{{ $variance ? '['.($variance>0 ? '+' : '').number_format($variance).']' : '' }}</td></tr>
 @endforeach
 </tbody></table></x-app.table-region>
-<x-app.table-region :label="$row->status==='Received' ? 'Receipt stock and cost' : 'Receipt stock and cost preview'" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all">
+<x-app.table-region data-invoice-derived :label="$row->status==='Received' ? 'Receipt stock and cost' : 'Receipt stock and cost preview'" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all">
 <table><thead><tr><th>Item</th><th>{{ $row->status==='Received' ? 'Current location stock' : 'Location now → after' }}</th><th>{{ $row->status==='Received' ? 'Total held before → after receipt' : 'Total held now → after' }}</th><th>{{ $row->status==='Received' ? 'Unit Cost before → after receipt' : 'Catalog Unit Cost now → after' }}</th></tr></thead><tbody>
 @foreach($preview['projection'] ?? [] as $id=>$projection)
 <tr><th>{{ collect($items)->firstWhere('id',(int)$id)['name'] ?? '#'.$id }}</th>
