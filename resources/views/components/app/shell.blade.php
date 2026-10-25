@@ -1,7 +1,7 @@
 @props(['title', 'guest' => false])
-@php($signedIn = ! $guest && auth()->check())
-@php($displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard')
 @php
+    $signedIn = ! $guest && auth()->check();
+    $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';
     $releaseBranch = (string) config('baseline.branch');
     $releaseRevision = (string) config('baseline.revision');
     $releaseCommit = preg_match('/\A[0-9a-f]{40,64}\z/i', $releaseRevision) ? substr($releaseRevision, 0, 7) : $releaseRevision;
