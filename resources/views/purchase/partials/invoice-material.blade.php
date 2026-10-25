@@ -5,8 +5,8 @@
 @foreach($items as $item)
 @php($key=$item['id']) @php($line=$values['lines'][$key])
 @if($group!==$item['group'])@php($group=$item['group'])<tr class="group-row"><th colspan="9" scope="rowgroup">{{ $group }}</th></tr>@endif
-<tr data-invoice-line data-line-key="{{ $key }}" data-group="{{ $group }}"><td>@if(!$readonly)<button type="button" data-remove-invoice class="material-remove" aria-label="Remove {{ $item['name'] }}">✕</button>@endif</td><td class="app-grouped-item">
-<input name="lines[{{ $key }}][description]" value="{{ $item['name'] }}" maxlength="500" data-invoice-description aria-label="Item description" @readonly($readonly || $item['item_id'])>
+<tr data-invoice-line data-line-key="{{ $key }}" data-group="{{ $group }}" @class(['table-row-error'=>collect(array_keys($reviewErrors))->contains(fn($field)=>str_starts_with($field,'lines.'.$key.'.'))])><td>@if(!$readonly)<button type="button" data-remove-invoice class="material-remove" aria-label="Remove {{ $item['name'] }}">✕</button>@endif</td><td class="app-grouped-item">
+<input id="purchase-line-{{ $key }}-description" name="lines[{{ $key }}][description]" value="{{ $item['name'] }}" maxlength="500" data-invoice-description aria-label="Item description" @readonly($readonly || $item['item_id'])>
 <input type="hidden" name="lines[{{ $key }}][item_id]" value="{{ $item['item_id'] }}" data-invoice-item>
 <input type="hidden" name="lines[{{ $key }}][group_label]" value="{{ $group }}" data-invoice-group>
 <input type="hidden" name="lines[{{ $key }}][source_request_key]" value="{{ $line['source_request_key'] ?? '' }}">

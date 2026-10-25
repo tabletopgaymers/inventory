@@ -41,6 +41,27 @@ class PurchaseProcurement
         if (!$row || (!in_array($row->state,['active','unverified'],true) && $id !== $retained)) throw ValidationException::withMessages(['supplier_id'=>'Choose an active or Unverified vendor.']);
     }
 
+    public static function complete(object $row, array $values): array
+    {
+        $supplier=RequestValues::id($values['supplier_id'] ?? null,'supplier_id');
+        if (!$supplier) throw ValidationException::withMessages(['supplier_id'=>'Choose and verify the actual vendor in Procurement.']);
+        RequestValues::association('suppliers',$supplier,null,'supplier_id',true);
+        $delivery=[];
+        foreach (self::FIELDS as $field) $delivery[$field]=RequestValues::text($values[$field] ?? null,$field,$field==='delivery_address'?5000:255,in_array($field,['delivery_choice','delivery_name','delivery_address'],true)) ?? '';
+        $choice=$delivery['delivery_choice']; $type=null; $source=null;
+        if (preg_match('/\Alocation:([1-9][0-9]*)\z/D',$choice,$match)) {
+            $type='storage';$source=RequestValues::id($match[1],'delivery_choice');
+            RequestValues::association('storage_locations',$source,$row->receiving_location_id,'delivery_choice');
+        } elseif (preg_match('/\Auser:([1-9][0-9]*)\z/D',$choice,$match)) {
+            $type='user';$source=RequestValues::id($match[1],'delivery_choice');
+            $header=RequestStock::header('purchase',$row->id);
+            PurchaseRequestBasics::validateChoices(['vendor_choice'=>'','delivery_choice'=>$choice],['delivery_choice'=>$header['delivery_choice'] ?? $header['request_basics']['delivery_choice'] ?? '']);
+        } elseif ($choice==='other') $type='other';
+        else throw ValidationException::withMessages(['delivery_choice'=>'Choose a delivery destination in Procurement.']);
+        if ($delivery['delivery_email'] !== '' && !filter_var($delivery['delivery_email'],FILTER_VALIDATE_EMAIL)) throw ValidationException::withMessages(['delivery_email'=>'Enter a valid delivery email or leave it blank.']);
+        return $delivery + ['supplier_id'=>$supplier,'vendor_snapshot'=>self::vendorSnapshot($supplier),'delivery_type'=>$type,'delivery_source_id'=>$source,'receiving_location_id'=>$type==='storage'?$source:null];
+    }
+
     public static function references(mixed $data, int $id): bool
     {
         if (!is_array($data)) return false;

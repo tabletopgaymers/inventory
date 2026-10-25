@@ -10,6 +10,32 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseFulfillment
 {
+    public function validateCatalogLines(int $id, int $actor, array $lines): void
+    {
+        $retained = DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$id)->whereNotNull('item_id')->pluck('item_id')->map(fn($item)=>(int)$item)->all();
+        $retained = array_merge($retained,DB::table('purchase_request_lines')->where('purchase_request_id',$id)->pluck('item_id')->map(fn($item)=>(int)$item)->all(),
+            DB::table('purchase_material_lines')->where('purchase_request_id',$id)->whereNotNull('item_id')->pluck('item_id')->map(fn($item)=>(int)$item)->all());
+        foreach ($this->progressDraft($actor,$id,'order')['values']['lines'] ?? [] as $key=>$line) {
+            $item=array_key_exists('item_id',$line)?$line['item_id']:(ctype_digit((string)$key)?$key:null);
+            if ($item) $retained[]=(int)$item;
+        }
+        foreach ($lines as $key=>$line) if ($line['item_id']) RequestValues::association('items',$line['item_id'],in_array($line['item_id'],$retained,true)?$line['item_id']:null,'lines.'.$key.'.item_id');
+    }
+
+    public function orderReview(int $actorId, int $id, mixed $revision, array $values): array
+    {
+        return DB::transaction(function () use($actorId,$id,$revision,$values) {
+            $actor=RequestValues::actor($actorId);
+            abort_unless(RequestValues::manages($actor,'procurement'),403);
+            $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($row->status,['Draft','Request','Ordered','Shipped'],true),409);
+            RequestValues::revision($revision,$row);
+            $costing=app(PurchaseCosting::class)->calculate($values);
+            $this->validateCatalogLines($id,$actorId,$costing['lines']);
+            return $costing + PurchaseProcurement::complete($row,$values);
+        },3);
+    }
+
     private function preparationLines(int $id): array
     {
         $lines = [];

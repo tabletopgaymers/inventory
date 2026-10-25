@@ -23,8 +23,8 @@
 @foreach($reviewErrors as $field=>$messages)
 @php
     $targetTab=null; $targetId=null;
-    if(preg_match('/^lines\.(\d+)\.(quantity|unit|cost|fee)$/',$field,$match)) { $targetTab=$editTab; $targetId='purchase-line-'.$match[1].'-'.$match[2]; }
-    elseif(in_array($field,['title','supplier_id','receiving_location_id','ordered_date','shipped_date','received_date'])) { $targetTab=$field==='received_date' ? 'receive' : 'order'; $targetId='purchase-'.$field; }
+    if(preg_match('/^lines\.([A-Za-z0-9-]+)\.(quantity|unit|cost|fee|description|item_id)$/',$field,$match)) { $targetTab=$editTab; $targetId='purchase-line-'.$match[1].'-'.($match[2]==='item_id'?'description':$match[2]); }
+    elseif(in_array($field,['title','supplier_id','delivery_choice','delivery_name','delivery_address','delivery_email','delivery_phone','receiving_location_id','ordered_date','shipped_date','received_date'])) { $targetTab=$field==='received_date' ? 'receive' : 'order'; $targetId='purchase-'.$field; }
     elseif(in_array($field,['other_fees','discount','tax','shipping','shipping_method'])) { $targetTab='charges'; $targetId='purchase-'.$field; }
 @endphp
 @foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$mode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
@@ -56,7 +56,7 @@
 @if($mode==='order')<input type="hidden" name="received_date" value="{{ $values['received_date'] ?? '' }}">@endif
 </div>
 <div>
-<label>Deliver to<select name="delivery_choice" data-delivery-choice @disabled($readonly)><option value="">Choose destination</option>
+<label>Deliver to<select id="purchase-delivery_choice" name="delivery_choice" data-delivery-choice @disabled($readonly)><option value="">Choose destination</option>
 @if($readonly)<option value="{{ $values['delivery_choice'] ?? '' }}" selected>{{ $values['delivery_name'] ?? 'Saved destination' }}</option>@else
 <optgroup label="Storage locations">@foreach($locations as $location)@if($location->state==='active' || ($values['delivery_choice'] ?? '')==='location:'.$location->id)<option value="location:{{ $location->id }}" @selected(($values['delivery_choice'] ?? '')==='location:'.$location->id) data-name="{{ $location->name }}" data-address="{{ $location->mailing_address }}">{{ $location->name }}</option>@endif @endforeach</optgroup>
 <optgroup label="Current users">@foreach($deliveryUsers as $user)<option value="user:{{ $user->id }}" @selected(($values['delivery_choice'] ?? '')==='user:'.$user->id) data-name="{{ $user->displayName() }}" data-address="{{ $user->mailing_address }}" data-email="{{ $user->personal_email ?: $user->contact_email }}" data-phone="{{ $user->mobile_number }}">{{ $user->displayName() }}{{ !$user->enabled ? ' (Inactive)' : '' }}</option>@endforeach</optgroup>
@@ -73,15 +73,16 @@
 <p>{{ $section==='receive' ? 'Verify the actual delivery and final invoice. Saving does not add stock.' : 'Enter the actual supplier invoice. Requested quantities remain a reference.' }}</p>
 @if($section==='receive' && $mode==='receipt')<label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">{{ $readonly ? 'Receipt details' : 'Edit receipt details' }}</a> · <a href="{{ $base }}?tab=charges&mode=receipt">{{ $readonly ? 'Receipt charges' : 'Edit receipt charges' }}</a></p>@endif
 @elseif($section==='charges')
-<p>{{ $mode==='receipt' ? 'Receipt charges' : 'Order charges' }} — USD. Final allocations are calculated when saved or reviewed.</p><div class="purchase-fields">
-@foreach(['other_fees'=>'Other fees','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping'] as $field=>$label)<label>{{ $label }}<input id="purchase-{{ $field }}" name="{{ $field }}" value="{{ $values[$field] ?? '0' }}" inputmode="decimal" @readonly($readonly)></label>@endforeach
-<label>Shipping allocation<select id="purchase-shipping_method" name="shipping_method" @disabled($readonly)><option value="line_total" @selected(($values['shipping_method'] ?? 'line_total')==='line_total')>By line total</option><option value="quantity" @selected(($values['shipping_method'] ?? '')==='quantity')>By quantity</option></select></label></div>
+@include('purchase.partials.charges')
 @elseif($section==='order-review' || $section==='confirmation')
-<dl><dt>Supplier</dt><dd>{{ $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Receiving location</dt><dd>{{ $locations->firstWhere('id',(int)($values['receiving_location_id'] ?? 0))?->name ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></dl>
-@if($row->status==='Received')
-<p>{{ $mode==='receipt' ? 'Receipt confirmed. Pending quantities were cleared, actual stock was added, and catalog Unit Cost was updated. Received is final.' : 'This is the recorded order. Confirmation shows the final received quantities and costs.' }}</p>
-@else<p>{{ $mode==='receipt' ? 'Confirming receipt clears this purchase’s Ordered expectation, adds actual stock, and updates catalog Unit Cost. Received is final.' : 'Recording an order changes only its Ordered expectation. Storage stock and catalog Unit Cost do not change.' }}</p>@endif
+<dl class="purchase-review"><dt>Title</dt><dd>{{ $values['title'] ?? $row->title }}</dd><dt>Vendor</dt><dd>{{ $preview['vendor_snapshot']['name'] ?? $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Deliver to</dt><dd>{{ $values['delivery_name'] ?? '—' }}</dd><dt>Mailing address</dt><dd>{{ $values['delivery_address'] ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></dl>
+@if($row->status==='Received')<p>Received is final. These are stored purchase values.</p>
+@elseif($mode==='order')<p>Recording the order changes Ordered quantities only for catalog items going to storage. Held stock and catalog Unit Cost do not change until final receipt.</p>
+@else<p>Final receipt clears this purchase’s Ordered quantities and applies the confirmed stock and Unit Cost effects.</p>@endif
 @if(!$preview)<p>Complete the invoice and required details before confirmation.</p>@endif
+@if($section==='order-review' && $preview)
+<h3>Ordered quantities</h3><dl class="purchase-review">@foreach($preview['lines'] as $line)<dt>{{ $line['description'] }}</dt><dd>{{ $line['item_id'] && str_starts_with($values['delivery_choice'] ?? '', 'location:') ? number_format($line['quantity']).' Ordered' : 'No inventory quantity' }}</dd>@endforeach</dl>
+@endif
 @endif
 </div>
 @if($section===$editTab)

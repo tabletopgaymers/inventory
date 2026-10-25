@@ -175,8 +175,10 @@ class PurchaseController
         $preview = null; $reviewErrors = [];
         if (in_array($tab, ['order-review', 'confirmation', 'charges'], true)) {
             try {
-                $this->invoiceComplete($values, $tab !== 'charges', $mode);
-                $preview = $editable && $tab !== 'charges' ? $service->work((int) $request->user()->id, $row->id, $invoice['revision'], $values, $mode, 'review') : app(PurchaseCosting::class)->calculate($values);
+                if ($row->status !== 'Received') $this->invoiceComplete($values, $tab !== 'charges', $mode);
+                if ($mode === 'order') {
+                    $preview=$tab !== 'charges' && $editable ? $service->orderReview((int)$request->user()->id,$row->id,$invoice['revision'],$values) : app(PurchaseCosting::class)->calculate($values);
+                } else $preview = $editable && $tab !== 'charges' ? $service->work((int) $request->user()->id, $row->id, $invoice['revision'], $values, $mode, 'review') : app(PurchaseCosting::class)->calculate($values);
                 if (! $editable && $row->status === 'Received' && $mode === 'receipt') $preview = RequestStock::header('purchase', $row->id)['final_breakdown'] ?? $preview;
             } catch (ValidationException $e) {
                 $reviewErrors = $e->errors();
@@ -189,6 +191,7 @@ class PurchaseController
                 $reviewErrors = ['revision' => ['This purchase changed. Open it again from the index to load its latest values.']];
             }
         }
+        if ($tab === 'order-review' && $row->status === 'Draft') $reviewErrors['status']=['Submit this request before recording an order.'];
         $locationStocks = DB::table('inventory_balances')->where('storage_location_id', (int) ($values['receiving_location_id'] ?: 0))->pluck('quantity', 'item_id')->all();
 
         if ($row->status === 'Received' && $mode === 'order' && ! $recordedOrder) $reviewErrors = ['order' => ['The recorded order snapshot is unavailable. View Confirmation for the final receipt.']];
@@ -409,7 +412,7 @@ class PurchaseController
     {
         $errors = [];
         $required = ['other_fees' => 'Other fees', 'discount' => 'Discount', 'tax' => 'Tax', 'shipping' => 'Shipping'];
-        if ($details) $required += ['title' => 'Title', 'supplier_id' => 'Supplier', 'receiving_location_id' => 'Receiving location', 'ordered_date' => 'Ordered date'];
+        if ($details) $required += ['title' => 'Title', 'supplier_id' => 'Vendor', 'delivery_choice'=>'Delivery destination','delivery_name'=>'Delivery name','delivery_address'=>'Mailing address', 'ordered_date' => 'Ordered date'];
         foreach ($required as $field => $label) {
             if (($values[$field] ?? '') === '') $errors[$field] = ['Complete '.$label.' before confirming.'];
         }
