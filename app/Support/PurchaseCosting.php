@@ -60,14 +60,14 @@ class PurchaseCosting
     {
         $input = $data['lines'] ?? [];
         if (! is_array($input) || $input === [] || count($input) > 1000) {
-            throw ValidationException::withMessages(['lines' => 'Keep at least one catalog line, up to 1,000. Remove absent items before final receipt; cancel a wholly missing purchase.']);
+            throw ValidationException::withMessages(['lines' => 'Keep at least one material line, up to 1,000. Cancel a wholly missing purchase.']);
         }
         $lines = [];
         foreach ($input as $item => $line) {
-            $id = RequestValues::id($item, 'lines');
-            if (! $id || ! is_array($line)) {
-                throw ValidationException::withMessages(['lines' => 'Choose existing catalog items.']);
-            }
+            if (!is_array($line)) throw ValidationException::withMessages(['lines' => 'Enter invoice rows.']);
+            $identity = PurchaseInvoiceLines::identity($item, $line);
+            $id = $identity['line_key'];
+            if ($identity['description'] === '') throw ValidationException::withMessages(['lines.'.$id.'.description' => 'Enter an item description.']);
             $quantity = RequestValues::quantity($line['quantity'] ?? null, 'lines.'.$item.'.quantity');
             if ($quantity === 0) {
                 throw ValidationException::withMessages(['lines.'.$item.'.quantity' => 'Retained lines need positive individual units. Remove absent lines.']);
@@ -79,8 +79,9 @@ class PurchaseCosting
             if ((string) $expected !== self::dollars($cost)) {
                 throw ValidationException::withMessages(['lines.'.$item.'.cost' => 'Cost does not equal quantity × the retained exact Unit, rounded to cents. Correct or explicitly recalculate this row.']);
             }
-            $lines[$id] = ['item_id' => $id, 'quantity' => $quantity, 'unit' => $unit, 'cost' => $cost, 'fee' => $fee];
+            $lines[$id] = $identity + ['quantity' => $quantity, 'unit' => $unit, 'cost' => $cost, 'fee' => $fee];
         }
+        PurchaseInvoiceLines::assertUnique($lines);
         $charges = [];
         foreach (['other_fees', 'discount', 'tax', 'shipping'] as $field) {
             $charges[$field] = self::money($data[$field] ?? '0', $field);

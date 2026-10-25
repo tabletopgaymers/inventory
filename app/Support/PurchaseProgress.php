@@ -55,14 +55,14 @@ class PurchaseProgress
         }
         $input = $data['lines'] ?? [];
         if (! is_array($input) || count($input) > 1000) {
-            throw ValidationException::withMessages(['lines' => 'Use up to 1,000 catalog lines.']);
+            throw ValidationException::withMessages(['lines' => 'Use up to 1,000 invoice lines.']);
         }
         $clean['lines'] = [];
         foreach ($input as $id => $line) {
-            $item = RequestValues::id($id, 'lines');
-            if (! $item || ! is_array($line)) {
-                throw ValidationException::withMessages(['lines' => 'Choose catalog items for the invoice draft.']);
-            }
+            if (!is_array($line)) throw ValidationException::withMessages(['lines' => 'Enter invoice rows.']);
+            $identity = PurchaseInvoiceLines::identity($id, $line);
+            $item = $identity['line_key'];
+            $clean['lines'][$item] = $identity;
             foreach (['quantity', 'unit', 'cost', 'fee', 'basis'] as $name) {
                 $value = $line[$name] ?? ($name === 'basis' ? 'unit' : '');
                 if ($value !== null && ! is_string($value) && ! is_int($value)) {
@@ -75,6 +75,7 @@ class PurchaseProgress
                 $clean['lines'][$item][$name] = $value;
             }
         }
+        PurchaseInvoiceLines::assertUnique($clean['lines']);
         if (strlen(json_encode($clean, JSON_THROW_ON_ERROR)) > 250000) {
             throw ValidationException::withMessages(['lines' => 'The invoice draft is too large.']);
         }

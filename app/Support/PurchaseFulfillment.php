@@ -26,7 +26,9 @@ class PurchaseFulfillment
         $header = RequestStock::header('purchase', $id);
         $lines = [];
         foreach (DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->orderBy('id')->get() as $line) {
-            $lines[$line->item_id] = ['quantity' => $line->quantity, 'unit' => $line->unit, 'cost' => PurchaseCosting::dollars((int) $line->cost), 'fee' => PurchaseCosting::dollars((int) $line->fee)];
+            $lines[$line->line_key] = ['line_key' => $line->line_key, 'item_id' => $line->item_id, 'description' => $line->description,
+                'group_label' => $line->group_label, 'source_request_key' => $line->source_request_key,
+                'quantity' => $line->quantity, 'unit' => $line->unit, 'cost' => PurchaseCosting::dollars((int) $line->cost), 'fee' => PurchaseCosting::dollars((int) $line->fee)];
         }
         if ($lines !== [] && in_array($row->status, ['Draft', 'Request'], true)) {
             // Only later preparation edits override retained actual invoice values.
@@ -86,8 +88,9 @@ class PurchaseFulfillment
         $costing = app(PurchaseCosting::class)->calculate($data);
         $existing = DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $row->id)->pluck('item_id')->map(fn ($id) => (int) $id)->all();
         $existing = array_unique(array_merge($existing, DB::table('purchase_request_lines')->where('purchase_request_id', $row->id)->pluck('item_id')->map(fn ($id) => (int) $id)->all()));
-        foreach (array_keys($costing['lines']) as $item) {
-            RequestValues::association('items', $item, in_array($item, $existing, true) ? $item : null, 'lines.'.$item);
+        foreach ($costing['lines'] as $key => $line) {
+            $item = $line['item_id'];
+            if ($item) RequestValues::association('items', $item, in_array($item, $existing, true) ? $item : null, 'lines.'.$key.'.item_id');
         }
 
         return $fields + $costing;
@@ -123,10 +126,16 @@ class PurchaseFulfillment
                 }
             }
             $retained = array_unique(array_merge(DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->pluck('item_id')->map(fn ($item) => (int) $item)->all(), DB::table('purchase_request_lines')->where('purchase_request_id', $id)->pluck('item_id')->map(fn ($item) => (int) $item)->all()));
-            $retained = array_unique(array_merge($retained, array_map('intval', array_keys($before['values']['lines'] ?? []))));
+            foreach ($before['values']['lines'] ?? [] as $key => $line) {
+                $item = array_key_exists('item_id', $line) ? $line['item_id'] : (ctype_digit((string) $key) ? $key : null);
+                if ($item) $retained[] = (int) $item;
+            }
+            $retained = array_unique($retained);
             $completeCosts = $clean['lines'] !== [];
-            foreach ($clean['lines'] as $item => $line) {
-                RequestValues::association('items', $item, in_array($item, $retained, true) ? $item : null, 'lines.'.$item);
+            foreach ($clean['lines'] as $key => $line) {
+                $item = $line['item_id'];
+                if ($item) RequestValues::association('items', $item, in_array($item, $retained, true) ? $item : null, 'lines.'.$key.'.item_id');
+                $item = $key;
                 foreach (['quantity', 'unit', 'cost', 'fee'] as $field) {
                     if ($line[$field] === '') {
                         $completeCosts = false;
@@ -193,6 +202,10 @@ class PurchaseFulfillment
             abort_unless($mode === 'receipt' ? in_array($row->status, ['Ordered', 'Shipped'], true) : in_array($row->status, ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
             RequestValues::revision($revision, $row);
             $clean = $this->validate($row, $data, $mode === 'receipt');
+            // Mixed identities can be saved now; stock posting is adapted in its own reviewed step.
+            foreach ($clean['lines'] as $key => $line) {
+                abort_unless($line['item_id'] && (string) $key === (string) $line['item_id'], 409, 'Mixed invoice posting is not available yet. Save progress instead.');
+            }
             $old = DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->orderBy('item_id')->get()->keyBy('item_id');
             $stock = app(RequestStock::class);
             $ids = array_unique(array_merge(array_keys($clean['lines']), $old->keys()->all()));
@@ -229,7 +242,7 @@ class PurchaseFulfillment
             // Keep explicit line order for deterministic cent tie-breaking on reload.
             DB::table('purchase_fulfillment_lines')->where('purchase_request_id', $id)->delete();
             foreach ($clean['lines'] as $line) {
-                DB::table('purchase_fulfillment_lines')->insert(['purchase_request_id' => $id] + array_intersect_key($line, array_flip(['item_id', 'quantity', 'unit', 'cost', 'fee'])));
+                DB::table('purchase_fulfillment_lines')->insert(['purchase_request_id' => $id] + array_intersect_key($line, array_flip(['line_key', 'description', 'group_label', 'source_request_key', 'item_id', 'quantity', 'unit', 'cost', 'fee'])));
             }
             $saved = array_intersect_key($clean, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'received_date', 'shipping_method']));
             foreach ($clean['charges'] as $field => $cents) {

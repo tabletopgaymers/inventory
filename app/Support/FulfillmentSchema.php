@@ -81,6 +81,12 @@ class FulfillmentSchema
                 ? ['quantity' => ['int unsigned', false], 'unit' => $cost, 'cost' => $id, 'fee' => $id]
                 : ['sent' => ['int unsigned', true], 'received' => ['int unsigned', true]];
             $contract[$kind.'_fulfillment_lines'] = ['columns' => ['id' => $id, $request => $id, 'item_id' => $id] + $fields, 'unique' => ['id', $request.',item_id'], 'foreign' => [$request.':'.$kind.'_requests:id', 'item_id:items:id']];
+            if ($kind === 'purchase') {
+                $contract[$kind.'_fulfillment_lines']['columns']['item_id'] = $optionalId;
+                $contract[$kind.'_fulfillment_lines']['columns'] += ['line_key' => ['varchar(50)', false], 'description' => ['varchar(500)', false],
+                    'group_label' => ['varchar(600)', false], 'source_request_key' => ['varchar(50)', true]];
+                $contract[$kind.'_fulfillment_lines']['unique'][] = $request.',line_key';
+            }
         }
         $contract['request_stock_entries'] = ['columns' => ['id' => $id, 'operation_id' => ['char(36)', false], 'purchase_request_id' => $optionalId, 'relocation_request_id' => $optionalId, 'item_id' => $id, 'actor_id' => $id,
             'actor_name' => ['varchar(255)', false], 'item_name' => ['varchar(255)', false], 'item_sku' => ['varchar(101)', false], 'entry_kind' => ['varchar(30)', false], 'description' => ['varchar(600)', false], 'quantity_change' => ['int', false], 'unit_cost' => $cost, 'explanation' => ['text', true], 'posted_at' => ['timestamp', false]],
