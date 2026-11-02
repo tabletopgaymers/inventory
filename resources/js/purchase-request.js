@@ -23,6 +23,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
     const save = document.querySelector('[data-save-shortcut]');
     save.classList.toggle('app-save-dirty', dirty);
     let saveBusy = false;
+    let materialPicker;
     const navigation = mountUnsavedChanges(form, { isDirty: () => dirty || Boolean(pendingSelections()) });
     const errors = form.querySelector('[data-purchase-errors]');
     const reviewBody = form.querySelector('[data-review-items]');
@@ -68,6 +69,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         getGeneration:() => editGeneration, onSaved:(result, {unchanged}) => {
         form.elements.revision.value = result.revision;
         document.querySelectorAll('form input[name="revision"]').forEach(input => { input.value = result.revision; });
+        materialPicker?.setSavedDestination(result.values?.delivery_choice);
         if (!unchanged) return;
         Object.entries(result.values || {}).forEach(([name,value]) => {
             const input = form.elements[name];
@@ -76,11 +78,14 @@ import { mountProgressSave } from './workflow/progress-save.js';
         const vendor = form.elements.vendor_choice;
         const choice = result.values?.vendor_choice;
         if (choice && ![...vendor.options].some(option => option.value === choice)) vendor.add(new Option(result.values.vendor_name || 'Vendor',choice));
-        if (choice) vendor.value = choice;
         [...vendor.options].forEach(option => {
             option.dataset.other = String(Boolean(result.other_vendor_id) && option.value === `supplier:${result.other_vendor_id}`);
-            if (option.dataset.other === 'true') option.textContent = `OTHER: ${result.values.vendor_name}`;
+            if (option.dataset.other === 'true') {
+                option.textContent = `OTHER: ${result.values.vendor_name}`;
+                vendor.append(option);
+            }
         });
+        if (choice) vendor.value = choice;
         form.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
         document.querySelectorAll('form input[name="revision"]').forEach(input => { input.value = result.revision; });
         document.querySelector('.status-badge').textContent = result.status;
@@ -166,6 +171,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
     const markDirty = () => { editGeneration++; dirty = true; save.classList.add('app-save-dirty'); updateBasicChoices(); updateMaterialTotals(); updateReview(); };
     const changed = event => {
         if (searchRoot?.contains(event.target) || searchResults?.contains(event.target)) return;
+        if(event.target.name==='delivery_choice')materialPicker?.invalidateDestination();
         markDirty();
     };
     form.addEventListener('input',changed);
@@ -235,7 +241,8 @@ import { mountProgressSave } from './workflow/progress-save.js';
         row.remove(); regroupMaterial(); markDirty();
         (materialRows()[Math.min(index,materialRows().length-1)]?.querySelector('input') || form.querySelector('[data-add-other]'))?.focus();
     });
-    if (searchRoot) mountPurchasePicker({root:searchRoot,results:searchResults,feedback:searchFeedback,button:addSelected,
+    if (searchRoot) materialPicker=mountPurchasePicker({root:searchRoot,results:searchResults,feedback:searchFeedback,button:addSelected,
+        getDestinationChoice:()=>form.elements.delivery_choice.value,
         getIds:()=>rows().map(row=>row.dataset.itemId),getCount:()=>materialRows().length,isBusy:()=>saveBusy || form.dataset.editable!=='true',
         onAdd: selections=>{
             let first;

@@ -259,9 +259,16 @@ class PurchaseController
             'filters' => ['collections'], 'activeOnly' => true, 'excludeIds' => !empty($selection['live_items']) ? ($selection['excluded'] ?? []) : array_keys($work['lines']),
         ]);
         $costs = DB::table('items')->whereIn('id', array_column($data['rows'], 'id'))->pluck('unit_cost', 'id');
+        $destination = $stage === 'request' && preg_match('/\Alocation:([1-9][0-9]*)\z/', $work['delivery_choice'] ?? '', $match)
+            ? (int) $match[1] : null;
+        $data['destination_choice'] = $stage === 'request' ? ($work['delivery_choice'] ?? '') : null;
+        $data['destination_location'] = $destination ? DB::table('storage_locations')->where('id', $destination)->first(['id', 'name']) : null;
+        $quantities = $destination ? DB::table('inventory_balances')->where('storage_location_id', $destination)
+            ->whereIn('item_id', array_column($data['rows'], 'id'))->pluck('quantity', 'item_id') : [];
         foreach ($data['rows'] as &$item) {
             $cost = BigDecimal::of($costs[$item['id']] ?? 0);
             $item['unit_price'] = $cost->isPositive() ? (string) $cost->strippedOfTrailingZeros() : '';
+            if ($destination) $item['destination_quantity'] = (int) ($quantities[$item['id']] ?? 0);
         }
         unset($item);
 

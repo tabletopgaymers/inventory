@@ -19,7 +19,7 @@ class ItemCostController
     private function access(Request $request): void
     {
         $this->ready();
-        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($request->user()->canAdjustUnitCost(), 403);
     }
 
     private function itemUrl(Request $request, int $item): string

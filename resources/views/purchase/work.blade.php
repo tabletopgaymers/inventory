@@ -33,10 +33,10 @@
 </div>
 <div class="app-form-row">
 <div>
-<label for="purchase-vendor">Vendor or suggested source<select id="purchase-vendor" name="vendor_choice" required data-other-choice="vendor" aria-controls="purchase-vendor-other" @disabled(!$editable)>
+<label for="purchase-vendor">Source (existing or suggested)<select id="purchase-vendor" name="vendor_choice" required data-other-choice="vendor" aria-controls="purchase-vendor-other" @disabled(!$editable)>
 <option value="">Choose a supplier</option>
 @if(str_starts_with($work['vendor_choice'], 'supplier:') && !$suppliers->firstWhere('id',(int)substr($work['vendor_choice'],9)))<option value="{{ $work['vendor_choice'] }}" selected data-other="{{ !empty($work['vendor_other_id']) ? 'true' : 'false' }}">{{ $work['vendor_name'] ?: ($submittedLabels['vendor'] ?? 'Submitted vendor') }}</option>@endif
-@foreach($suppliers as $supplier)
+@foreach($suppliers->sortBy(fn ($supplier) => (string) ($work['vendor_other_id'] ?? '') === (string) $supplier->id ? 1 : 0) as $supplier)
 @if(in_array($supplier->state, ['active','unverified']) || $work['vendor_choice'] === 'supplier:'.$supplier->id)<option value="supplier:{{ $supplier->id }}" @if((string)($work['vendor_other_id'] ?? '') === (string)$supplier->id) data-other="true" @endif @selected($work['vendor_choice'] === 'supplier:'.$supplier->id)>{{ (string)($work['vendor_other_id'] ?? '') === (string)$supplier->id ? 'OTHER: '.$supplier->name : $supplier->name.($supplier->state === 'unverified' ? ' (Unverified)' : '') }}</option>@endif
 @endforeach
 @if(empty($work['vendor_other_id']) || $work['vendor_choice'] === 'other')<option value="other" @selected($work['vendor_choice'] === 'other')>OTHER</option>@endif
@@ -86,12 +86,21 @@
 </tbody><tfoot><tr><th colspan="4" scope="row" class="table-numeric" data-material-grand-total-label>Estimated merchandise total</th><td class="table-numeric" data-material-grand-total>—</td></tr></tfoot></table>
 </x-app.table-region>
 @if($editable)
-@include('purchase.partials.catalog-picker')
+@include('purchase.partials.catalog-picker', ['destinationLocation' => str_starts_with($work['delivery_choice'] ?? '', 'location:') ? $locations->firstWhere('id', (int) substr($work['delivery_choice'], 9)) : null])
 @endif
 </x-workflow.tab-panel>
 <x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">
 <div class="app-content"><x-workflow.heading><h2>Review purchase request</h2><button class="primary" type="submit" name="action" value="submit" data-submit-request @disabled(!$canSubmit || count($reviewErrors))>Submit</button></x-workflow.heading>
-<dl class="purchase-review"><dt>Title</dt><dd data-review="title">{{ $work['title'] ?: '—' }}</dd><dt>Requestor</dt><dd>{{ $requesterName }}</dd><dt>Vendor or suggested source</dt><dd data-review-choice="vendor" data-submitted-label="{{ $submittedLabels['vendor'] ?? '' }}"></dd><dt>Deliver to</dt><dd data-review-choice="delivery" data-submitted-label="{{ $submittedLabels['delivery'] ?? '' }}"></dd></dl></div>
+<div class="app-form-row">
+<dl class="app-summary">
+<dt>Title</dt><dd data-review="title">{{ $work['title'] ?: '—' }}</dd>
+<dt>Source</dt><dd data-review-choice="vendor" data-submitted-label="{{ $submittedLabels['vendor'] ?? '' }}"></dd>
+</dl>
+<dl class="app-summary">
+<dt>Requestor</dt><dd>{{ $requesterName }}</dd>
+<dt>Deliver to</dt><dd data-review-choice="delivery" data-submitted-label="{{ $submittedLabels['delivery'] ?? '' }}"></dd>
+</dl>
+</div></div>
 <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material"><x-slot:header><h2>Requested material</h2></x-slot:header><table><thead><tr><th>Item</th><th class="table-heading-center table-quantity-column">Requested</th><th class="table-numeric purchase-material-value-column">Est. unit price</th><th class="table-numeric purchase-material-value-column">Est. total</th></tr></thead><tbody data-review-items></tbody></table></x-app.table-region>
 </x-workflow.tab-panel>
 </form>

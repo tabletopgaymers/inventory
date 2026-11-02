@@ -1,14 +1,39 @@
 import '../inventory-search-controls.js';
 
 // Shared Purchase selection adapter; stage callers own rows, prices and persistence.
-export function mountPurchasePicker({root,results,feedback,button,getIds,getCount,onAdd,isBusy=()=>false,stage='request'}) {
+export function mountPurchasePicker({root,results,feedback,button,getIds,getCount,onAdd,isBusy=()=>false,stage='request',getDestinationChoice=null}) {
     const cell=(tag,text)=>{ const element=document.createElement(tag); element.textContent=text; return element; };
     const pending=()=>Boolean(results.querySelector('[data-search-item-check]:checked')) || [...results.querySelectorAll('[data-search-quantity]')].some(input=>input.value.trim()!=='');
     const message=text=>{ feedback.hidden=false; feedback.textContent=text; };
     let searching=false;
+    const table=results.closest('table');
+    let savedDestinationChoice=getDestinationChoice?.();
+    let hasDestinationStock=Boolean(table.querySelector('[data-destination-stock-heading]'));
+    let columnCount=hasDestinationStock ? 5 : 4;
+    const destinationSaved=()=>!getDestinationChoice || getDestinationChoice()===savedDestinationChoice;
+    const stockDestination=location=>{
+        table.querySelectorAll('[data-destination-stock-heading], [data-destination-stock-column], [data-destination-stock-value]').forEach(element=>element.remove());
+        hasDestinationStock=Boolean(location);columnCount=hasDestinationStock ? 5 : 4;
+        if(location){
+            const heading=cell('th',location.name);heading.className='table-heading-center';heading.dataset.destinationStockHeading='';
+            table.tHead.rows[0].insertBefore(heading,table.tHead.rows[0].cells[2]);
+            const column=document.createElement('col');column.className='table-quantity-column';column.dataset.destinationStockColumn='';
+            table.querySelector('colgroup').insertBefore(column,table.querySelector('colgroup').children[2]);
+        }
+        results.querySelectorAll('[data-search-group] th:last-child').forEach(title=>{title.colSpan=columnCount-1;});
+        results.querySelectorAll('td[colspan]').forEach(text=>{text.colSpan=columnCount;});
+    };
+    const invalidateDestination=()=>{
+        stockDestination(null);
+        message('Delivery destination changed. '+(destinationSaved() ? 'Search again' : 'Save progress, then search again')+' to see current destination quantities. Pending item selections are retained.');
+    };
     const choices=new Map();
     const update=()=>{ button.disabled=isBusy() || searching || !results.querySelector('[data-search-item]'); };
     const render=data=>{
+        if(getDestinationChoice && 'destination_choice' in data && (!destinationSaved() || data.destination_choice!==savedDestinationChoice)) {
+            invalidateDestination();return;
+        }
+        stockDestination(data.destination_location || null);
         results.replaceChildren(); choices.clear(); feedback.hidden=true;
         let group=null;
         data.rows.forEach(item=>{
@@ -17,7 +42,7 @@ export function mountPurchasePicker({root,results,feedback,button,getIds,getCoun
             if(group!==next) {
                 group=next; const row=document.createElement('tr'); row.className='group-row'; row.dataset.searchGroup='';
                 const selection=document.createElement('th'),check=document.createElement('input'); check.type='checkbox'; check.dataset.searchGroupCheck=''; check.setAttribute('aria-label',`Select items in ${group}`); selection.append(check);
-                const title=cell('th',group); title.colSpan=3; title.scope='rowgroup'; row.append(selection,title); results.append(row);
+                const title=cell('th',group); title.colSpan=columnCount-1; title.scope='rowgroup'; row.append(selection,title); results.append(row);
             }
             const row=document.createElement('tr'); row.dataset.searchItem=item.id;
             const selection=document.createElement('td'); selection.className='app-grouped-item';
@@ -26,9 +51,11 @@ export function mountPurchasePicker({root,results,feedback,button,getIds,getCoun
             const price=cell('td',item.unit_price || '—'); price.className='table-numeric';
             const quantity=document.createElement('td'); quantity.className='table-numeric';
             const input=document.createElement('input'); input.dataset.searchQuantity=''; input.maxLength=30; input.setAttribute('aria-label',`Request ${item.name} · ${item.sku}`); quantity.append(input);
-            row.append(selection,name,price,quantity); results.append(row);
+            row.append(selection,name);
+            if(hasDestinationStock){const stock=cell('td',Number(item.destination_quantity ?? 0).toLocaleString());stock.className='table-numeric';stock.dataset.destinationStockValue='';row.append(stock);}
+            row.append(price,quantity); results.append(row);
         });
-        if(!data.rows.length){ const row=document.createElement('tr'),text=cell('td','No matching active items to add.'); text.colSpan=4; row.append(text); results.append(row); }
+        if(!data.rows.length){ const row=document.createElement('tr'),text=cell('td','No matching active items to add.'); text.colSpan=columnCount; row.append(text); results.append(row); }
         update();
     };
     results.addEventListener('change',event=>{
@@ -39,6 +66,7 @@ export function mountPurchasePicker({root,results,feedback,button,getIds,getCoun
     });
     root.addEventListener('inventory-search:before-search',event=>{
         if(isBusy()){event.preventDefault();return;}
+        if(!destinationSaved()){event.preventDefault();invalidateDestination();return;}
         if(pending()){event.preventDefault();message('Use Add selected or clear checked items and entered quantities before changing search results.');}
     });
     root.addEventListener('inventory-search:before-reset',event=>{
@@ -64,5 +92,7 @@ export function mountPurchasePicker({root,results,feedback,button,getIds,getCoun
         feedback.hidden=true; update();
     });
     const api=window.appInventorySearch.mount(root,{prepareUrl(url){url.searchParams.set('live_items','1');url.searchParams.set('stage',stage);getIds().forEach(id=>url.searchParams.append('excluded[]',id));},render});
-    return {pending,api};
+    return {pending,api,invalidateDestination,setSavedDestination(choice){
+        if(savedDestinationChoice!==choice){savedDestinationChoice=choice;invalidateDestination();}
+    }};
 }

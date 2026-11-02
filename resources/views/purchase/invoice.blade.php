@@ -50,9 +50,9 @@
 <div class="app-form-row">
 <div>
 <label>Title<input id="purchase-title" name="title" value="{{ $values['title'] ?? $row->title }}" @readonly($readonly)></label>
-<label>Vendor<select id="purchase-supplier_id" name="supplier_id" @disabled($readonly)><option value="">Choose a vendor</option>@foreach($suppliers as $choice)@if(in_array($choice->state,['active','unverified']) || (string)$choice->id===(string)($values['supplier_id'] ?? ''))<option value="{{ $choice->id }}" @selected((string)($values['supplier_id'] ?? '')===(string)$choice->id)>{{ $choice->name }}{{ $choice->state==='unverified' ? ' (Unverified)' : '' }}</option>@endif @endforeach</select></label>
+<label>Source<select id="purchase-supplier_id" name="supplier_id" @disabled($readonly)><option value="">Choose a vendor</option>@foreach($suppliers as $choice)@if(in_array($choice->state,['active','unverified']) || (string)$choice->id===(string)($values['supplier_id'] ?? ''))<option value="{{ $choice->id }}" @selected((string)($values['supplier_id'] ?? '')===(string)$choice->id)>{{ $choice->name }}{{ $choice->state==='unverified' ? ' (Unverified)' : '' }}</option>@endif @endforeach</select></label>
 @if($actualSupplier)
-<dl><dt>Vendor status</dt><dd>{{ ucfirst($actualSupplier->state) }}</dd>@foreach(['website'=>'Website','contact_name'=>'Contact','email'=>'Email','phone'=>'Phone'] as $field=>$label)@if($actualSupplier->$field)<dt>{{ $label }}</dt><dd>{{ $actualSupplier->$field }}</dd>@endif @endforeach</dl>
+<dl><dt>Source status</dt><dd>{{ ucfirst($actualSupplier->state) }}</dd>@foreach(['website'=>'Website','contact_name'=>'Contact','email'=>'Email','phone'=>'Phone'] as $field=>$label)@if($actualSupplier->$field)<dt>{{ $label }}</dt><dd>{{ $actualSupplier->$field }}</dd>@endif @endforeach</dl>
 @if(!$readonly && $actualSupplier->state==='unverified')<p class="notice">This vendor needs explicit verification before Record order. <a href="/catalog/suppliers/{{ $actualSupplier->id }}/edit">Review and verify vendor</a></p>@endif
 @endif
 @if(!$readonly && $row->status!=='Draft')<label><input type="checkbox" name="delete_unused_vendor" value="1"> Remove the original vendor if unused</label><button name="action" value="replace_vendor" data-replace-vendor>Replace vendor</button><p class="app-field-help">Replacement preserves the submitted and current vendor details in a permanent note. Used or shared vendors are retained.</p>@endif
@@ -81,7 +81,7 @@
 @elseif($section==='charges')
 @include('purchase.partials.charges')
 @elseif($section==='order-review' || $section==='confirmation')
-<dl class="purchase-review"><dt>Title</dt><dd>{{ $values['title'] ?? $row->title }}</dd><dt>Vendor</dt><dd>{{ $preview['vendor_snapshot']['name'] ?? $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Deliver to</dt><dd>{{ $values['delivery_name'] ?? '—' }}</dd><dt>Mailing address</dt><dd>{{ $values['delivery_address'] ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></dl>
+<dl class="purchase-review"><dt>Title</dt><dd>{{ $values['title'] ?? $row->title }}</dd><dt>Source</dt><dd>{{ $preview['vendor_snapshot']['name'] ?? $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Deliver to</dt><dd>{{ $values['delivery_name'] ?? '—' }}</dd><dt>Mailing address</dt><dd>{{ $values['delivery_address'] ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></dl>
 @if($row->status==='Received')<p>Received is final. These are stored purchase values.</p>
 @elseif($mode==='order')<p>Recording the order changes Ordered quantities only for catalog items going to storage. Held stock and catalog Unit Cost do not change until final receipt.</p>
 @else<p>Final receipt clears this purchase’s Ordered quantities and applies the confirmed stock and Unit Cost effects.</p>@endif

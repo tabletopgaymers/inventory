@@ -21,7 +21,7 @@
 </div>
 <div>
 @if($record)<label>Unit cost<input readonly value="{{ \App\Support\StockNumbers::displayCost($record->unit_cost) }}"></label>
-@if(auth()->user()->hasRole('admin'))<p class="app-field-help"><a href="{{ $recordBase }}{{ $record->id }}/cost">Adjust unit cost</a></p>@endif
+@if(auth()->user()->canAdjustUnitCost())<p class="app-field-help"><a href="{{ $recordBase }}{{ $record->id }}/cost">Adjust unit cost</a></p>@endif
 @else<label>Unit cost<input data-optional name="unit_cost" inputmode="decimal" value="{{ old('unit_cost') }}"></label>@endif
 @foreach(['in_person_ask'=>'In-person ask','online_ask'=>'Online ask','irs_fmv'=>'IRS Fair Market Value'] as $field=>$fieldLabel)<label>{{ $fieldLabel }}<input data-optional name="{{ $field }}" inputmode="decimal" value="{{ old($field, $metadata?->$field) }}"></label>@endforeach
 <label>Bundle type<input data-optional name="bundle_type" @required(old('bundle_quantity', $metadata?->bundle_quantity) !== null && old('bundle_quantity', $metadata?->bundle_quantity) !== '') maxlength="255" value="{{ old('bundle_type', $metadata?->bundle_type) }}"></label>
