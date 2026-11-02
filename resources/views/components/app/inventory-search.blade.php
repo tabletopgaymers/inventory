@@ -12,12 +12,9 @@
     }
     uasort($sources, fn ($a, $b) => strnatcasecmp($a['name'], $b['name']));
 @endphp
-@once
-<link rel="stylesheet" href="/inventory-search-controls.css?v={{ substr(hash_file('sha256', public_path('inventory-search-controls.css')), 0, 12) }}">
-@endonce
 @if($script)
 @once
-<script src="/inventory-search-controls.js?v={{ substr(hash_file('sha256', public_path('inventory-search-controls.js')), 0, 12) }}" defer></script>
+@vite('resources/js/inventory-search-controls.js')
 @endonce
 @endif
 <div {{ $attributes->class(['inventory-search-controls']) }} id="{{ $instance }}" data-inventory-search data-endpoint="{{ $endpoint }}">

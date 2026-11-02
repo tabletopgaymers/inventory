@@ -33,7 +33,7 @@
 <x-app.table-region label="Item quantities by location" class="app-list-table-panel">
 <x-slot:header>
 <div class="app-table-panel-toolbar">
-<h2 style="margin:0">Locations</h2>
+<h2 class="app-heading-flush">Locations</h2>
 @if($canCorrect)<div class="app-actions"><a class="button" href="/inventory/items/{{ $item->id }}/edit">Edit inventory</a></div>@endif
 </div>
 </x-slot:header>
@@ -45,7 +45,7 @@
 @if($catalogReady)
 <x-app.table-region label="Events and pending inventory" class="app-list-table-panel">
 <x-slot:header>
-<h2 style="margin:0">Events and pending inventory</h2>
+<h2 class="app-heading-flush">Events and pending inventory</h2>
 <p class="app-field-help">These read-only balances are excluded from Available. Purchase and relocation history links open their source requests.</p>
 </x-slot:header>
 <table><thead><tr><th>Source</th><th class="number">Quantity</th></tr></thead><tbody>@foreach($extraBalances as $balance)<tr><td>{{ $balance['name'] }}</td><td class="number">{{ number_format($balance['quantity']) }}</td></tr>@endforeach</tbody></table>

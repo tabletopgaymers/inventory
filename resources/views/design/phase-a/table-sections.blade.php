@@ -2,15 +2,8 @@
 @section('title', 'Optional table headers and footers')
 @section('intro', 'Optional sections supported by the shared table-panel component.')
 @section('guide-content')
-<style>
-    #guide-table-preview { margin: 0; }
-    #guide-table-preview h2 { margin: 0; }
-    #guide-table-preview .app-table-panel-copy p { margin: .25rem 0 0; }
-    #guide-table-preview p.app-table-panel-copy { margin: 0; }
-    #guide-table-preview table { min-width: 32rem; }
-</style>
 <p>Plain table panels remain the default. This optional layout combines a small table-specific header or footer with the table, under one outer border. It can replace a small adjacent panel whose only purpose is to describe or act on that table.</p>
-<div style="display:grid;gap:.75rem">
+<div class="guide-table-stack">
 <div class="app-content">
     <p>The catalog groups items by category and collection. Use consistent names so records are easy to find.</p>
 </div>

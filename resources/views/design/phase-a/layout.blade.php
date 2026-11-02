@@ -1,5 +1,6 @@
 @extends('layout')
 @section('content-sections')
+@vite('resources/css/style-guide.css')
 <nav class="app-section-nav" aria-label="Style guide">
     <a href="/style-guide" @if(request()->is('style-guide')) aria-current="page" @endif>Overview</a>
     <a href="/style-guide/presentation" @if(request()->is('style-guide/presentation')) aria-current="page" @endif>Presentation</a>
@@ -21,5 +22,5 @@
 <p class="app-field-help">@yield('intro') Sample controls use fictional data and do not save records. The surrounding app navigation works normally.</p>
 @endif
 @yield('guide-content')
-<script src="/style-guide.js?v={{ substr(hash_file('sha256', public_path('style-guide.js')), 0, 12) }}" defer></script>
+@vite('resources/js/style-guide.js')
 @endsection

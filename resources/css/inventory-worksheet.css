@@ -1,0 +1,3 @@
+/* Standalone worksheet: deliberately excludes application UI styles. */
+@import './worksheet-base.css';
+@import './inventory-print.css';

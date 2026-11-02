@@ -24,5 +24,5 @@
 </div>
 </form>
 </div>
-<script src="/catalog-progress.js?v={{ filemtime(public_path('catalog-progress.js')) }}" defer></script>
+@vite('resources/js/catalog-progress.js')
 @endsection

@@ -104,7 +104,7 @@ class InventoryController
         }
         if ($schema['fulfillmentReady']) {
             $requestHistory = DB::table('request_stock_entries')->where('item_id', $item)->get()->map(function ($entry) {
-                $entry->request_url = $entry->purchase_request_id !== null ? '/purchases/'.$entry->purchase_request_id : '/relocations/'.$entry->relocation_request_id;
+                $entry->request_url = $entry->purchase_request_id !== null ? '/purchase/'.$entry->purchase_request_id : '/relocations/'.$entry->relocation_request_id;
 
                 return $entry;
             });
@@ -136,7 +136,7 @@ class InventoryController
 
         $itemBase = $request->is('catalog/*') ? '/catalog/items/' : '/inventory/items/';
         $itemEditUrl = $itemBase.$item.($request->is('catalog/*') ? '/edit' : '/details/edit');
-        return view('inventory.item', ['itemBase' => $itemBase, 'itemEditUrl' => $itemEditUrl, 'item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->hasRole('admin'),
+        return view('inventory.item', ['itemBase' => $itemBase, 'itemEditUrl' => $itemEditUrl, 'item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->canAdjustUnitCost(),
             'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'purpose' => $purpose, 'programs' => $programs, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);
     }
 

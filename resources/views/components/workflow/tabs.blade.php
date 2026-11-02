@@ -1,5 +1,5 @@
 @props(['tabs', 'prefix', 'active', 'label'])
-<div class="app-content workflow-tab-panel">
+<div class="workflow-tab-panel">
     <div class="workflow-navigation">
         <div class="workflow-tabs" role="tablist" aria-label="{{ $label }}">
         @foreach($tabs as $key => $title)

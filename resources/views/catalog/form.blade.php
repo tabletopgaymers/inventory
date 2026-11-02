@@ -46,7 +46,7 @@
 <x-app.action type="submit" name="action" value="restore">Restore</x-app.action>
 @else
 <x-app.action variant="danger" href="{{ $actionBase }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="catalog-archive-dialog">Archive</x-app.action>
-<x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'active' ? 'Deactivate' : 'Activate' }}</x-app.action>
+<x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'unverified' ? 'Verify supplier' : ($record->state === 'active' ? 'Deactivate' : 'Activate') }}</x-app.action>
 @endif
 </div>
 </form>
@@ -55,6 +55,6 @@
 @include('catalog.archive-dialog')
 @endif
 @endif
-<script src="/catalog.js?v={{ filemtime(public_path('catalog.js')) }}" defer></script>
-<script src="/catalog-progress.js?v={{ filemtime(public_path('catalog-progress.js')) }}" defer></script>
+@vite('resources/js/catalog-form.js')
+
 @endsection

@@ -1,3 +1,5 @@
+import './app.js';
+
 (() => {
     const form = document.getElementById('user-disable-form');
     const trigger = document.getElementById('user-disable-trigger');

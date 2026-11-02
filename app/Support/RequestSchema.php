@@ -7,7 +7,7 @@ class RequestSchema
 {
     public const MIGRATION = '2026_10_06_030000_create_request_intake_tables';
 
-    public const TABLES = ['purchase_requests', 'purchase_request_lines', 'purchase_request_notes', 'purchase_request_activity', 'relocation_requests', 'relocation_request_lines', 'relocation_request_activity'];
+    public const TABLES = ['purchase_requests', 'purchase_request_lines', 'purchase_material_lines', 'purchase_request_notes', 'purchase_request_activity', 'relocation_requests', 'relocation_request_lines', 'relocation_request_activity'];
 
     public function state($database, array $tables): array
     {
@@ -33,6 +33,12 @@ class RequestSchema
             'purchase_request_lines' => [
                 'columns' => ['id' => $id, 'purchase_request_id' => $id, 'item_id' => $id, 'quantity' => ['int unsigned', false], 'estimate' => ['decimal(24,12)', true], 'note' => $text],
                 'primary' => ['id'], 'unique' => ['id', 'purchase_request_id,item_id'], 'foreign' => ['purchase_request_id:purchase_requests:id', 'item_id:items:id'],
+            ],
+            'purchase_material_lines' => [
+                'columns' => ['id' => $id, 'purchase_request_id' => $id, 'line_key' => ['varchar(50)', false], 'item_id' => $optionalId,
+                    'description' => ['varchar(500)', false], 'quantity' => ['int unsigned', true], 'estimated_unit_price' => ['decimal(24,12)', true]],
+                'primary' => ['id'], 'unique' => ['id', 'purchase_request_id,line_key', 'purchase_request_id,item_id'],
+                'foreign' => ['purchase_request_id:purchase_requests:id', 'item_id:items:id'],
             ],
             'purchase_request_notes' => [
                 'columns' => ['id' => $id, 'purchase_request_id' => $id, 'actor_id' => $id, 'actor_name' => ['varchar(255)', false], 'body' => ['text', false], 'occurred_at' => ['timestamp', false]],

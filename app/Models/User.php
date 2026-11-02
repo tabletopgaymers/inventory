@@ -28,6 +28,11 @@ class User extends Authenticatable
         return in_array($role, $this->roles(), true);
     }
 
+    public function canAdjustUnitCost(): bool
+    {
+        return $this->enabled && array_intersect($this->roles(), ['admin', 'procurement']) !== [];
+    }
+
     public function validContact(): bool
     {
         return $this->contact_attested && is_string($this->contact_email)

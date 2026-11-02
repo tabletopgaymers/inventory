@@ -3,7 +3,7 @@
 @section('content-sections')
 <div class="app-content app-record-content">
 @hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,16rem),1fr));gap:.75rem 2rem">
+<div class="app-detail-grid">
 <div><dl class="app-user-details">
 <dt>Item</dt><dd><a href="/inventory/items/{{ $group->item_id }}">{{ $group->item_name }}</a></dd>
 <dt>SKU</dt><dd>{{ $group->item_sku }}</dd>

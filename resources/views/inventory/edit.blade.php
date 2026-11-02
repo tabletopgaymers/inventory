@@ -21,6 +21,6 @@
 </tbody></table></x-app.table-region><div class="app-content">
 <div class="stock-total"><h3>Total available</h3><span aria-label="Current total">{{ number_format($locations->sum('quantity')) }}</span><span data-new-total aria-label="New total" aria-live="polite"></span></div>
 <div class="actions"><a class="discard" href="/inventory/items/{{ $item->id }}" data-discard>Cancel</a><button class="primary">Continue</button></div>
-</div></form><script src="/inventory.js?v=inline-decisions-1" defer></script>
+</div></form>@vite('resources/js/inventory.js')
 
 @endsection

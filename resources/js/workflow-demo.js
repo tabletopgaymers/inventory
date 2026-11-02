@@ -1,3 +1,5 @@
+import './app.js';
+
 import { mountTabs } from './workflow/tabs.js';
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
 import { mountUnsavedChanges } from './workflow/unsaved-changes.js';

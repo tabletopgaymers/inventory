@@ -1,15 +1,20 @@
 @props(['title', 'guest' => false])
-@php($signedIn = ! $guest && auth()->check())
-@php($displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard')
+@php
+    $signedIn = ! $guest && auth()->check();
+    $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';
+    $releaseMetadata = app(\App\Support\ReleaseMetadata::class)->current();
+    $releaseBranch = $releaseMetadata['branch'];
+    $releaseRevision = $releaseMetadata['revision'];
+    $releaseCommit = preg_match('/\A[0-9a-f]{40,64}\z/i', $releaseRevision) ? substr($releaseRevision, 0, 7) : $releaseRevision;
+    $releaseLabel = implode(' · ', array_filter([$releaseBranch, $releaseCommit])) ?: 'Version unavailable';
+    if ($releaseMetadata['modified']) $releaseLabel .= ' · modified';
+@endphp
 <!doctype html>
 <html lang="en" data-theme="tg-app">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title }} · TG Inventory</title>
-    @vite('resources/css/app.css')
-    <script src="/app-shell.js?v={{ substr(hash_file('sha256', public_path('app-shell.js')), 0, 12) }}" defer></script>
-    <link rel="stylesheet" href="/save-progress-shortcut.css?v={{ substr(hash_file('sha256', public_path('save-progress-shortcut.css')), 0, 12) }}">
-    <script src="/save-progress-shortcut.js?v={{ substr(hash_file('sha256', public_path('save-progress-shortcut.js')), 0, 12) }}" defer></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}" data-density="{{ array_key_exists($displayDensity, \App\Models\User::DISPLAY_DENSITIES) ? $displayDensity : 'standard' }}">
 <a class="app-skip" href="#app-main">Skip to content</a>
@@ -40,7 +45,7 @@
             @endif
             {{ $slot }}
         </main>
-        <footer class="app-footer"><span>TG Inventory · {{ app()->environment('local') ? 'Local development' : 'Development' }}</span><span>{{ config('baseline.revision') ?: 'Unrecorded working copy' }}</span></footer>
+        <footer class="app-footer"><span>TG Inventory · {{ app()->environment('local') ? 'Local development' : 'Development' }}</span><span @if($releaseRevision)title="{{ $releaseRevision }}"@endif>{{ $releaseLabel }}</span></footer>
     </div>
 </div>
 @if($signedIn)

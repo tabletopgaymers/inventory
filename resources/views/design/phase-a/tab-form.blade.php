@@ -2,14 +2,6 @@
 @section('title', 'Tab form')
 @section('intro', 'Demo values are retained in this browser. Switch tabs to work with different sections of one form.')
 @section('guide-content')
-<style>
-    .guide-tab-list { display: flex; flex-wrap: wrap; gap: .25rem; border-bottom: 2px solid #e5dfef; }
-    .guide-tab-list button { border-radius: .5rem .5rem 0 0; border-bottom: 0; }
-    .guide-tab-list button[aria-selected="true"] { background: var(--app-primary, #663399); color: white; }
-    .guide-tab-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-    .guide-tab-heading h2 { margin: 0; }
-    .guide-tab-heading select { width: auto; margin: 0; }
-</style>
 <div class="app-content">
     <form id="guide-tab-form" onsubmit="return false">
         <div class="guide-tab-list" role="tablist" aria-label="Demo form sections">

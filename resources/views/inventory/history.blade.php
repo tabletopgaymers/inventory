@@ -2,7 +2,7 @@
 @if($historyHeader ?? false)
 <x-slot:header>
 <div class="app-table-panel-toolbar">
-<h2 id="history" style="margin:0">History</h2>
+<h2 id="history" class="app-heading-flush">History</h2>
 <span>Sort by <a href="?{{ http_build_query($historyContext + ['sort' => 'date']) }}#history">date</a> or <a href="?{{ http_build_query($historyContext + ['sort' => 'description']) }}#history">description</a>.</span>
 </div>
 </x-slot:header>
@@ -24,4 +24,4 @@
 @empty<tr><td colspan="4">No changes recorded.</td></tr>
 @endforelse
 </tbody></table></x-app.table-region>
-<script src="/inventory.js?v=inline-decisions-1" defer></script>
+@vite('resources/js/inventory.js')

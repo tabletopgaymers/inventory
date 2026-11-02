@@ -1,3 +1,5 @@
+import './app.js';
+
 (() => {
     const trigger = document.querySelector('.catalog-status-trigger');
     const menu = document.getElementById('catalog-status-filter');

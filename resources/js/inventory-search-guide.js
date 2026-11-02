@@ -1,3 +1,5 @@
+import './inventory-search-controls.js';
+
 (() => {
     const full = document.getElementById('guide-search-full');
     const picker = document.getElementById('guide-search-picker');

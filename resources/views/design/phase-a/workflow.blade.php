@@ -5,7 +5,7 @@
 <div class="app-content">
     <h2>In-page tabs</h2>
     <p>Use x-workflow.tabs with a unique prefix, labels, initial active key and accessible label. Pair each key with x-workflow.tab-panel. The same page remains loaded; the URL remembers the selected section.</p>
-    <p>Left/Right arrows, Home and End select and focus tabs; Tab keeps its normal behavior. Panels use the caller's padding class. The shared heading places its title and actions on one row, wrapping on small screens.</p>
+    <p>Left/Right arrows, Home and End select and focus tabs; Tab keeps its normal behavior. The shared tab strip has no enclosing panel, rests on a baseline and scrolls horizontally on narrow screens without wrapping. Both in-page tabs and linked steps use this styling; keep their distinct navigation semantics. Content panels use the caller's padding class. The shared heading places its title and actions on one row, wrapping on small screens.</p>
 </div>
 @foreach(['tab'=>'Primary specimen','second-tab'=>'Independent specimen'] as $parameter=>$specimen)
 @php($active = in_array(request($parameter), ['basic','material','review']) ? request($parameter) : 'basic')
@@ -25,7 +25,7 @@
     <a class="button" href="/style-guide/forms">Forms</a>
 </x-workflow.steps>
 <div class="app-content"><h2>Agent usage</h2><p>Import mountTabs from resources/js/workflow/tabs.js in the domain Vite entry. Pass the form/root, initialKey and an onChange callback for domain refreshes. Use queryParam when independent widgets share a page. activate(key) supports Next and error links; destroy() removes listeners. Repeated mounting returns the existing instance. Never use tab styling to infer permission, persistence or validation rules.</p></div>
-<div class="app-content"><h2>Asset ownership</h2><p>The common shell loads resources/css/app.css (existing theme, then shared workflow rules). Purchase and Relocation include their resources/css domain stylesheet and resources/js domain entry once using Vite; print has independent entries. No page-specific inline workflow stylesheet or old public/purchase.css is needed. Shared modules are imported explicitly, not auto-initialized again globally. Font Awesome remains demo-only. Existing public shell, shortcut and classic search assets are intentional compatibility boundaries.</p><p>For programmatic tab changes immediately after a save, activate(key, {allowDisabled:true}) can bypass temporary busy-disabled buttons when the caller has already authorized the transition. Ordinary clicks/keyboard retain disabled checks. Preserve domain refresh ordering and dirty-section bookkeeping.</p></div>
+<div class="app-content"><h2>Asset ownership</h2><p>The common shell loads resources/css/app.css (existing theme, then shared workflow rules). Purchase and Relocation include their resources/css domain stylesheet and resources/js domain entry once using Vite; print has independent entries. No page-specific inline workflow stylesheet or old public/purchase.css is needed. Shared modules are imported explicitly, not auto-initialized again globally. Font Awesome remains demo-only. The shell, Save progress shortcut and search controls now also use Vite. Dependent page entries import the same cached app bootstrap before using shell APIs; shared search has one module and mount registry. Legacy plural and unused historical public assets are retained outside the active migration.</p><p>For programmatic tab changes immediately after a save, activate(key, {allowDisabled:true}) can bypass temporary busy-disabled buttons when the caller has already authorized the transition. Ordinary clicks/keyboard retain disabled checks. Preserve domain refresh ordering and dirty-section bookkeeping.</p></div>
 <div class="app-content">
     <h2>Tables and quantity navigation</h2>
     <p>x-app.table-region retains its header/content/footer slots and adds opt-in nowrap, quantity-fields, separators and numeric (all or after-first) options. Other callers retain their existing defaults. Standard density and grouped-item indentation come from the app theme.</p>
@@ -67,4 +67,9 @@
     <p>Relocation still saves progress before opening its packing view in a new tab. That persistence behavior belongs to its workflow script; the shared Print button only invokes browser printing. No save, navigation or auto-print policy is embedded in the shared print layout.</p>
 </div>
 @vite('resources/js/workflow-demo.js')
+<x-app.guide-divider />
+<x-app.panel-stack>
+    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent gap, including across form boundaries. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
+    <x-app.collapsible-panel title="Collapsible specimen"><p>One border surrounds the summary and this body.</p></x-app.collapsible-panel>
+</x-app.panel-stack>
 @endsection

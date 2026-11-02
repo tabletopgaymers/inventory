@@ -25,7 +25,11 @@ trait RequestPageSupport
         $this->identity($request);
         try {
             return $callback();
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson() && isset($e->errors()['revision'])) return response()->json(['saved' => false, 'errors' => $e->errors()], 409);
+            throw $e;
         } catch (QueryException|\PDOException) {
+            if ($request->expectsJson()) return response()->json(['saved' => false, 'message' => 'The request could not be saved. Your entered values are retained.'], 409);
             return back()->withInput()->with('error', 'The request could not be saved. Your entered values are retained; reload the saved request before trying again.');
         }
     }

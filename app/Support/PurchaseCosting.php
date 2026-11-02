@@ -12,6 +12,7 @@ class PurchaseCosting
 {
     public static function money(mixed $value, string $field): int
     {
+        if (is_string($value) && str_starts_with($value,'.')) $value='0'.$value;
         if ((! is_string($value) && ! is_int($value)) || ! preg_match('/\A\d{1,10}(?:\.\d{1,2})?\z/D', (string) $value)) {
             throw ValidationException::withMessages([$field => 'Enter a nonnegative USD amount with at most two decimal places.']);
         }
@@ -60,14 +61,14 @@ class PurchaseCosting
     {
         $input = $data['lines'] ?? [];
         if (! is_array($input) || $input === [] || count($input) > 1000) {
-            throw ValidationException::withMessages(['lines' => 'Keep at least one catalog line, up to 1,000. Remove absent items before final receipt; cancel a wholly missing purchase.']);
+            throw ValidationException::withMessages(['lines' => 'Keep at least one material line, up to 1,000. Cancel a wholly missing purchase.']);
         }
         $lines = [];
         foreach ($input as $item => $line) {
-            $id = RequestValues::id($item, 'lines');
-            if (! $id || ! is_array($line)) {
-                throw ValidationException::withMessages(['lines' => 'Choose existing catalog items.']);
-            }
+            if (!is_array($line)) throw ValidationException::withMessages(['lines' => 'Enter invoice rows.']);
+            $identity = PurchaseInvoiceLines::identity($item, $line);
+            $id = $identity['line_key'];
+            if ($identity['description'] === '') throw ValidationException::withMessages(['lines.'.$id.'.description' => 'Enter an item description.']);
             $quantity = RequestValues::quantity($line['quantity'] ?? null, 'lines.'.$item.'.quantity');
             if ($quantity === 0) {
                 throw ValidationException::withMessages(['lines.'.$item.'.quantity' => 'Retained lines need positive individual units. Remove absent lines.']);
@@ -79,8 +80,9 @@ class PurchaseCosting
             if ((string) $expected !== self::dollars($cost)) {
                 throw ValidationException::withMessages(['lines.'.$item.'.cost' => 'Cost does not equal quantity × the retained exact Unit, rounded to cents. Correct or explicitly recalculate this row.']);
             }
-            $lines[$id] = ['item_id' => $id, 'quantity' => $quantity, 'unit' => $unit, 'cost' => $cost, 'fee' => $fee];
+            $lines[$id] = $identity + ['quantity' => $quantity, 'unit' => $unit, 'cost' => $cost, 'fee' => $fee];
         }
+        PurchaseInvoiceLines::assertUnique($lines);
         $charges = [];
         foreach (['other_fees', 'discount', 'tax', 'shipping'] as $field) {
             $charges[$field] = self::money($data[$field] ?? '0', $field);
@@ -123,5 +125,12 @@ class PurchaseCosting
         }
 
         return StockNumbers::cost((string) BigDecimal::of($cost)->multipliedBy($held)->plus($amount)->dividedBy($held + $received, 12, RoundingMode::HalfUp));
+    }
+
+    public static function receiptCost(int $held, string $cost, int $received, int $acquisition, bool $storage): string
+    {
+        $purchase=StockNumbers::cost((string)BigDecimal::of(self::dollars($acquisition))->dividedBy($received,12,RoundingMode::HalfUp));
+        if (!$storage || $held<=0 || BigDecimal::of($cost)->isZero() || BigDecimal::of($purchase)->isGreaterThanOrEqualTo($cost)) return $purchase;
+        return self::average($held,$cost,$received,$acquisition);
     }
 }

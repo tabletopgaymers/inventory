@@ -1,0 +1,13 @@
+/* A stack owns section gaps across form/tab boundaries; child panels own only their padding. */
+.app-panel-stack { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.app-shell .app-panel-stack > :is(.app-content, .app-panel, .app-list-table-panel, .app-table-region, .app-collapsible-panel, .workflow-tab-panel, .error, form, section) { margin-block: 0; }
+
+.app-detail-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,16rem),1fr)); gap: .75rem 2rem; }
+.app-inline-group { display: flex; flex-wrap: wrap; gap: .5rem; }
+.app-form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--app-density-field-y) 2rem; align-items: start; }
+.app-form-row > * { min-width: 0; }
+.app-summary { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: var(--app-density-field-y) 1rem; align-content: start; margin: 0; }
+.app-summary dt { font-weight: 600; }
+.app-summary dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.app-shell .app-form-row :is(label, .app-field) > :is(input, select, textarea) { width: 100%; max-width: 100%; box-sizing: border-box; }
+.app-shell .app-heading-flush, .app-shell .app-table-panel-copy { margin: 0; }

@@ -79,9 +79,8 @@ class DailyInventoryPosting
         }
 
         return DB::transaction(function () use ($actor, $itemId, $operation, $after, $rationale) {
-            app(CatalogRecords::class)->authorize($actor);
-            $user = User::findOrFail($actor);
-            abort_unless($user->hasRole('admin'), 403);
+            $user = RequestValues::actor($actor);
+            abort_unless($user->canAdjustUnitCost(), 403);
             $item = DB::table('items')->where('id', $itemId)->lockForUpdate()->firstOrFail();
             $previous = DB::table('item_cost_entries')->where('operation_id', $operation)->first();
             if ($previous) {

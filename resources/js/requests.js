@@ -1,3 +1,5 @@
+import './app.js';
+
 'use strict';
 const requestIndex = document.querySelector('[data-request-index]');
 if (requestIndex) {
