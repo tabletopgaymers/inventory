@@ -1,0 +1,14 @@
+.memory-demo-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
+.memory-demo-columns > * { min-width: 0; }
+.memory-demo-combobox { position: relative; }
+.memory-demo-combobox input { width: 100%; box-sizing: border-box; padding-inline-end: 2.5rem; }
+.app-shell button.memory-demo-clear { position: absolute; top: 0; right: .25rem; min-height: 0; height: 100%; padding: 0 .5rem; border: 0; background: transparent; color: var(--app-muted); }
+.app-shell button.memory-demo-clear:hover { background: transparent; color: var(--app-text); }
+.app-shell ul.memory-demo-suggestions { position: absolute; z-index: 5; inset: 100% 0 auto; max-height: 24rem; overflow-y: auto; margin: .25rem 0 0; padding: 0; list-style: none; background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--app-radius); box-shadow: 0 .25rem .75rem #0002; }
+.memory-demo-suggestions [role="option"] { margin: 0; padding: .125rem .75rem; cursor: pointer; white-space: nowrap; }
+.memory-demo-suggestions .memory-demo-level-1 { padding-inline-start: 1.75rem; }
+.memory-demo-suggestions .memory-demo-level-2 { padding-inline-start: 2.75rem; }
+.memory-demo-suggestions [role="option"]:hover, .memory-demo-suggestions [aria-selected="true"] { background: var(--app-primary); color: var(--app-surface); }
+.memory-demo-suggestions [role="option"].memory-demo-added { color: var(--app-border); }
+.app-shell .memory-demo-columns button.material-remove { min-height: 0; padding-block: 0; line-height: inherit; }
+@media (max-width: 60rem) { .memory-demo-columns { grid-template-columns: minmax(0, 1fr); } }

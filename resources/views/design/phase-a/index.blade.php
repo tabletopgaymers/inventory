@@ -35,6 +35,7 @@
     <p><a href="/style-guide/tab-form">Tab form</a> demonstrates five sections of one form with values retained in browser storage.</p>
     <p><a href="/style-guide/workflow">Workflow components</a> demonstrates the real shared tabs, panels, table options, quantity navigation, unsaved-change handling and standalone print foundation.</p>
     <p><a href="/style-guide/vite-demo">Vite demo</a> demonstrates built assets and locally hosted Font Awesome Free.</p>
+    <p><a href="/style-guide/browser-memory-demo">Browser Memory Demo</a> searches a catalog snapshot and builds an inventory list entirely in browser memory.</p>
     <p><a href="/style-guide/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
     <p><a href="/style-guide/orphaned">Orphaned examples</a> temporarily retains environment indicators, record details, permanent notes, loading states, account feedback, role actions and the legacy table layout.</p>
     <p><a href="/style-guide/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>

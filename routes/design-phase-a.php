@@ -11,6 +11,8 @@ if (app()->environment(['local', 'development'])) {
             Route::view('/presentation', 'design.phase-a.presentation')->name('presentation');
             Route::view('/table-sections', 'design.phase-a.table-sections')->name('table-sections');
             Route::view('/forms', 'design.phase-a.forms')->name('forms');
+            Route::get('/browser-memory-demo', [\App\Http\Controllers\BrowserMemoryDemoController::class, 'index'])->name('browser-memory-demo');
+            Route::get('/browser-memory-demo/data', [\App\Http\Controllers\BrowserMemoryDemoController::class, 'data'])->name('browser-memory-demo.data');
             Route::get('/inventory-search', [InventorySearchGuideController::class, 'index'])->name('inventory-search');
             Route::get('/inventory-search/results', [InventorySearchGuideController::class, 'results'])->name('inventory-search.results');
             Route::view('/tab-form', 'design.phase-a.tab-form')->name('tab-form');
