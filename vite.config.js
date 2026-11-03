@@ -32,6 +32,8 @@ export default defineConfig({
             'resources/js/purchase-request.js',
             'resources/js/purchase-work-invoice.js',
             'resources/js/workflow-demo.js',
+            'resources/css/browser-memory-demo.css',
+            'resources/js/browser-memory-demo.js',
         ],
         refresh: ['resources/views/**/*.blade.php'],
     }), tailwindcss()],

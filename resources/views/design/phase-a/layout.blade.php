@@ -6,6 +6,7 @@
     <a href="/style-guide/presentation" @if(request()->is('style-guide/presentation')) aria-current="page" @endif>Presentation</a>
     <a href="/style-guide/forms" @if(request()->is('style-guide/forms')) aria-current="page" @endif>Forms</a>
     <a href="/style-guide/inventory-search" @if(request()->is('style-guide/inventory-search')) aria-current="page" @endif>Search inventory</a>
+    <a href="/style-guide/browser-memory-demo" @if(request()->is('style-guide/browser-memory-demo')) aria-current="page" @endif>Browser Memory Demo</a>
     <a href="/style-guide/tab-form" @if(request()->is('style-guide/tab-form')) aria-current="page" @endif>Tab form</a>
     <a href="/style-guide/workflow" @if(request()->is('style-guide/workflow')) aria-current="page" @endif>Workflow components</a>
     <a href="/style-guide/notifications" @if(request()->is('style-guide/notifications')) aria-current="page" @endif>Notifications</a>
