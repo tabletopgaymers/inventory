@@ -36,10 +36,13 @@ import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
         link.addEventListener('click', () => target.focus());
         summary.replaceChildren(link);
         controls.forEach((input, controlIndex) => {
-            const error = document.createElement('p');
-            error.id = `app-error-${index}-${controlIndex}`;
-            error.className = 'app-field-error'; error.textContent = message;
-            input.insertAdjacentElement('afterend', error);
+            let error = input.closest('.app-field')?.querySelector('.app-field-error');
+            if (!error) {
+                error = document.createElement('p');
+                error.id = `app-error-${index}-${controlIndex}`;
+                error.className = 'app-field-error'; error.textContent = message;
+                input.insertAdjacentElement('afterend', error);
+            }
             input.setAttribute('aria-invalid', 'true');
             input.setAttribute('aria-describedby', [input.getAttribute('aria-describedby'), error.id].filter(Boolean).join(' '));
         });

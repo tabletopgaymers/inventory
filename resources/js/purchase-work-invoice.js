@@ -14,6 +14,8 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     mountNotices();
     const linkedField = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (linkedField && !linkedField.closest('[hidden]')) { linkedField.focus(); linkedField.select?.(); }
+    // The shared shell renders/links field errors; focus the first visible problem.
+    [...form.querySelectorAll('[aria-invalid="true"]')].find(control => !control.closest('[hidden]'))?.focus();
     let dirty = form.dataset.workspaceDirty==='true';
     let editGeneration = 0;
     const searchRoot=form.querySelector('[data-inventory-search]'), searchResults=form.querySelector('[data-purchase-search-results]');

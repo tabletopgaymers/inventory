@@ -21,7 +21,7 @@
 @endif
 @if($kind === 'items')@include('catalog.item-fields')@endif
 @if(in_array($kind, ['categories','collections','storage_locations']))<label>Description<input type="text" data-optional name="description" maxlength="5000" value="{{ old('description', $record?->description) }}"></label>@endif
-@if($kind === 'storage_locations')<label>Mailing address<textarea data-optional name="mailing_address" maxlength="5000">{{ old('mailing_address', $record?->mailing_address) }}</textarea></label>@endif
+@if($kind === 'storage_locations')<label>Mailing address<textarea required name="mailing_address" maxlength="5000">{{ old('mailing_address', $record?->mailing_address) }}</textarea></label>@endif
 @if($kind === 'suppliers')@foreach(['contact_name'=>'Contact name','email'=>'Email','phone'=>'Phone','website'=>'Website'] as $field=>$label)<label>{{ $label }}<input data-optional name="{{ $field }}" maxlength="255" value="{{ old($field, $record?->$field) }}"></label>@endforeach<label>Address<textarea data-optional name="address" maxlength="5000">{{ old('address', $record?->address) }}</textarea></label>@endif
 @if(in_array($kind,['suppliers','purposes','programs']))<label>Notes<textarea data-optional name="notes" maxlength="5000">{{ old('notes', $kind === 'items' ? $metadata?->notes : $record?->notes) }}</textarea></label>@endif
 </form>

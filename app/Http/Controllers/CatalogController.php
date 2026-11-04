@@ -178,7 +178,7 @@ class CatalogController
         abort_unless($this->canMaintain($request, $kind, $record), 403);
         $rules = ['name' => $this->text(true), 'description' => $this->text(false, 5000), 'notes' => $this->text(false, 5000)];
         if ($kind === 'storage_locations') {
-            $rules['mailing_address'] = $this->multilineText();
+            $rules['mailing_address'] = array_replace($this->multilineText(), [0 => 'required']);
         }
         if (in_array($kind, ['purposes', 'programs'], true)) {
             $rules['notes'] = $this->multilineText();

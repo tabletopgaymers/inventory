@@ -563,6 +563,23 @@ class PurchaseController
             $work['invoices'][$mode]['values'] = $values;
             $work['invoices'][$mode]['dirty'] = $values !== ($work['invoices'][$mode]['saved_values'] ?? []);
             $request->session()->put('purchase_workspace.'.$token, $work);
+            if ($action === 'next' && $mode === 'order' && $request->input('tab') === 'order') {
+                validator($values, [
+                    'title' => ['required', 'string', 'max:255'],
+                    'supplier_id' => ['required', 'integer'],
+                    'ordered_date' => ['required', 'date_format:Y-m-d'],
+                    'shipped_date' => ['nullable', 'date_format:Y-m-d'],
+                    'delivery_choice' => ['required', 'string'],
+                    'delivery_name' => ['required', 'string', 'max:255'],
+                    'delivery_address' => ['required', 'string', 'max:5000'],
+                    'delivery_email' => ['nullable', 'email'],
+                ], ['required' => 'Complete :attribute before continuing.'], [
+                    'supplier_id' => 'Supplier', 'ordered_date' => 'Ordered date', 'shipped_date' => 'Shipped date',
+                    'delivery_choice' => 'Deliver to', 'delivery_name' => 'Delivery name',
+                    'delivery_address' => 'Mailing address', 'delivery_email' => 'Email',
+                ])->validate();
+                DB::transaction(fn () => \App\Support\PurchaseProcurement::complete($row, $values));
+            }
             if ($action === 'confirm') {
                 if ($mode==='order') $this->invoiceComplete($values, true, $mode);
                 $service->work((int) $request->user()->id, $row->id, $request->input('revision'), $values, $mode, 'confirm', $work['invoices'][$mode]['operation']);
