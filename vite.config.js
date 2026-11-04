@@ -20,7 +20,7 @@ export default defineConfig({
             'resources/js/inventory.js',
             'resources/js/inventory-browse.js',
             'resources/js/location-counts.js',
-            'resources/js/requests.js',
+            'resources/js/events.js',
             'resources/js/inventory-search-controls.js',
             'resources/js/inventory-search-guide.js',
             'resources/js/style-guide.js',

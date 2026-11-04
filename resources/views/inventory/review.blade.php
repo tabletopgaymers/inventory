@@ -2,7 +2,7 @@
 @section('title', 'Review inventory — '.$item->name)
 @section('content-sections')
 <div class="app-content app-record-content">
-@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
+
 <p>Review the proposed History entries. Only Save records the correction.</p>
 
 @php($entries = collect($changes)->map(fn($change) => (object) ($change + ['unit_cost' => $item->unit_cost])))

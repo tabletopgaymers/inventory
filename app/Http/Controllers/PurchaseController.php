@@ -410,12 +410,6 @@ class PurchaseController
     private function orderValues(array $snapshot): array
     {
         $values = array_intersect_key($snapshot, array_flip(['title', 'supplier_id', 'receiving_location_id', 'ordered_date', 'shipped_date', 'shipping_method','procurer_id','procurer_name', ...\App\Support\PurchaseProcurement::FIELDS]));
-        if (!isset($values['delivery_choice']) && !empty($values['receiving_location_id'])) {
-            $values['delivery_choice']='location:'.$values['receiving_location_id'];
-            $values['delivery_name']='Storage location #'.$values['receiving_location_id'];
-            $values['delivery_address']='';
-            $values['legacy_delivery']=true;
-        }
         foreach (['other_fees', 'discount', 'tax', 'shipping'] as $field) $values[$field] = PurchaseCosting::dollars((int) ($snapshot['charges'][$field] ?? 0));
         $values['lines'] = [];
         foreach ($snapshot['lines'] ?? [] as $id => $line) $values['lines'][$id] = [

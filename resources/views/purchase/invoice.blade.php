@@ -73,7 +73,6 @@
 @foreach(['delivery_name'=>'Name','delivery_address'=>'Mailing address','delivery_email'=>'Email','delivery_phone'=>'Phone'] as $field=>$label)
 <x-app.field :label="$label" :for="'purchase-'.$field" :name="$field">@if($field==='delivery_address')<textarea id="purchase-{{ $field }}" name="{{ $field }}" rows="4" maxlength="5000" placeholder="Provide the delivery address in a format appropriate to its location." @readonly($readonly)>{{ $values[$field] ?? '' }}</textarea>@else<input id="purchase-{{ $field }}" name="{{ $field }}" value="{{ $values[$field] ?? '' }}" maxlength="255" @if(in_array($field,['delivery_email','delivery_phone'])) data-optional @endif @readonly($readonly)>@endif</x-app.field>
 @endforeach
-@if(!empty($values['legacy_delivery']))<p class="notice">The recorded order identifies {{ $locations->firstWhere('id',(int)$values['receiving_location_id'])?->name ?? $values['delivery_name'] }}. No historical mailing address was recorded.</p>@endif
 <p class="app-field-help">These delivery details belong to this purchase. Changes do not update the user or storage location.</p>
 </div></div>
 </fieldset>
