@@ -156,7 +156,12 @@
   font: inherit; font-weight: 400; color: var(--app-text); border: 1px solid var(--app-field-border, #9393a3); border-radius: var(--app-field-radius); background: white;
   padding: var(--app-density-input-y) .65rem; min-height: 2rem; max-width: 100%;
 }
-.app-shell label:not(.app-choice) input, .app-shell label select, .app-shell label textarea { display: block; width: 100%; max-width: 36rem; margin-top: 0.175rem; }
+.app-shell label:not(.app-choice) input, .app-shell label select, .app-shell label textarea { display: block; width: 100%; max-width: 36rem; margin-top: var(--app-label-control-gap); }
+/* Separate labels and wrapping labels share the same inner gap and outer rhythm. */
+.app-shell .app-field { margin: var(--app-density-field-y) 0; }
+.app-shell .app-field > label { margin: 0; }
+.app-shell .app-field > label[for] { margin-bottom: var(--app-label-control-gap); }
+.app-shell .app-field > :is(input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), select, textarea) { display: block; width: 100%; max-width: 36rem; }
 .app-shell label textarea { min-height: 6rem; max-width: 48rem; }
 .app-shell input[readonly]:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled),
 .app-shell textarea[readonly]:not(:disabled) { background: var(--app-table-group-surface); }
@@ -270,7 +275,7 @@
 .app-shell .history [data-history-url] { cursor: pointer; }
 .app-shell .history [data-history-url]:hover { background: var(--app-page); }
 .app-shell .plain-text { white-space: pre-wrap; }
-.app-sku-field { display: flex; align-items: center; border: 1px solid var(--app-field-border, #9393a3); border-radius: var(--app-field-radius); background: white; margin-top: .175rem; max-width: 36rem; overflow: hidden; }
+.app-sku-field { display: flex; align-items: center; border: 1px solid var(--app-field-border, #9393a3); border-radius: var(--app-field-radius); background: white; margin-top: var(--app-label-control-gap); max-width: 36rem; overflow: hidden; }
 .app-sku-field [data-sku-prefix]:not([hidden]) { display: flex; align-items: center; align-self: stretch; padding: 0 .65rem; background: #e5dfef; color: var(--app-text); font-weight: 400; flex-shrink: 0; }
 .app-shell label .app-sku-field input[name="sku_suffix"]:not([type="hidden"]) { min-width: 0; margin-top: 0; border: 0; border-radius: 0; outline: none; box-shadow: none; flex: 1; }
 .app-sku-field:focus-within { --app-field-border: var(--app-primary); outline: 3px solid var(--app-primary); outline-offset: -3px; }

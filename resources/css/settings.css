@@ -15,6 +15,7 @@
     --app-table-group-weight: 600;
     --app-detail-label-weight: 600;
     --app-field-radius: .375rem;
+    --app-label-control-gap: .175rem;
     --app-column-gap: 2rem;
     --app-flow-gap: 1rem;
     --app-column-min-small: 16rem;

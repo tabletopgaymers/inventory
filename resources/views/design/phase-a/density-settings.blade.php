@@ -28,6 +28,7 @@
     ],
     'Fields and buttons' => [
         '--app-density-field-y' => 'Field vertical margin',
+        '--app-label-control-gap' => 'Label / control gap',
         '--app-density-input-y' => 'Input/select vertical padding',
         'button' => 'Button padding',
         '--app-button-min-height' => 'Button minimum height — desktop',
