@@ -7,7 +7,7 @@
 @if($mode==='counts')<p>Counts are shared. Blank remains uncounted; zero is an explicit count. Saving progress permits incomplete allocations and unusual counts. Finalization requires every count, remaining no greater than brought and exact leftover allocations.</p>@endif
 @if($mode==='correction')<p class="warning">This changes the report only. Stock, cost, contributions and original posting stay unchanged. Use a separate inventory adjustment for an actual stock correction.</p>@endif
 @if($mode==='activate')<p>Activation moves the saved planned supplies once. Review the quantities below before confirming.</p>@endif
-</div><form method="post" action="{{ $base }}" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="work" value="{{ $token }}"><div class="app-content">
+</div><form class="app-panel-stack" method="post" action="{{ $base }}" data-request-form>@csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="work" value="{{ $token }}"><div class="app-content">
 @if($mode==='plan')
 <label>Event name<input name="name" required maxlength="255" value="{{ $values['name'] ?? '' }}"></label>
 <label>Venue<input data-optional name="venue" maxlength="255" value="{{ $values['venue'] ?? '' }}"></label>

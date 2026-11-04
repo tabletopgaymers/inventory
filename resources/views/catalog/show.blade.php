@@ -47,6 +47,5 @@
 @endforelse
 </tbody></table>
 </x-app.table-region>
-<p class="app-field-help">All retained {{ $kind === 'categories' ? 'collections in this category' : 'items in this collection' }} are listed, including inactive and archived records.</p>
 @endif
 @endsection

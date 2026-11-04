@@ -1,8 +1,10 @@
+import { mountTabs } from './workflow/tabs.js';
 import './app.js';
 
 (() => {
     const tabForm = document.getElementById('guide-tab-form');
     if (tabForm) {
+        tabForm.addEventListener('submit', event => event.preventDefault());
         const storageKey = 'style-guide:tab-form:v1';
         const carriers = ['US Postal', 'UPS', 'FedEx', 'Other'];
         const state = { status: 'New', name: '', source: '', destination: '', button_type: '', button_request: '', button_fulfilled: '', approved: false, signature: '', shippers: [] };
@@ -111,15 +113,11 @@ import './app.js';
         sync();
         renderShippers();
         const tabs = [...tabForm.querySelectorAll('[role="tab"]')];
-        const selectTab = selected => {
-            tabForm.querySelector('[data-tab-section-title]').textContent = selected.textContent;
-            tabs.forEach(tab => {
-                const active = tab === selected;
-                tab.setAttribute('aria-selected', String(active));
-                tab.tabIndex = active ? 0 : -1;
-                document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
-            });
-        };
+        const tabUI = mountTabs(tabForm, {
+            initialKey: new URL(location.href).searchParams.get('tab') || 'basic',
+            onChange: (key, tab) => { tabForm.querySelector('[data-tab-section-title]').textContent = tab.textContent; }
+        });
+        const selectTab = selected => tabUI.activate(selected.dataset.workflowTab);
         tabForm.querySelectorAll('[data-tab-action]').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.disabled) return;
@@ -134,42 +132,22 @@ import './app.js';
                 persist();
             });
         });
-        tabs.forEach((tab, index) => {
-            tab.addEventListener('click', () => selectTab(tab));
-            tab.addEventListener('keydown', event => {
-                let next;
-                if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
-                if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
-                if (event.key === 'Home') next = 0;
-                if (event.key === 'End') next = tabs.length - 1;
-                if (next === undefined) return;
-                event.preventDefault();
-                selectTab(tabs[next]);
-                tabs[next].focus();
-            });
-        });
+
     }
-    const origins = new WeakMap();
-    const decisionDialog = document.getElementById('guide-decision-dialog');
-    document.querySelectorAll('[data-guide-decision]').forEach(trigger => {
-        if (!decisionDialog) return;
-        trigger.addEventListener('click', () => {
-            origins.set(decisionDialog, trigger);
-            const action = trigger.dataset.guideDecisionLabel;
-            const unsaved = action === 'Leave without saving';
-            decisionDialog.querySelector('#guide-decision-title').textContent = unsaved ? 'Unsaved changes' : 'Confirm action';
-            decisionDialog.querySelector('#guide-decision-description').textContent = trigger.dataset.guideDecision;
-            decisionDialog.querySelector('#guide-decision-cancel').textContent = unsaved ? 'Keep editing' : 'Cancel';
-            const confirm = decisionDialog.querySelector('#guide-decision-confirm');
-            confirm.textContent = action;
-            confirm.className = unsaved ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
-            decisionDialog.showModal();
-        });
-    });
-    document.querySelector('[data-guide-decision-confirm]')?.addEventListener('click', () => {
-        const result = document.getElementById('guide-decision-result');
-        result.textContent = 'Preview confirmed. No records were changed and no navigation occurred.';
-        result.hidden = false;
+    const previewDecision = trigger => {
+        const action = trigger.dataset.guideDecisionLabel || trigger.dataset.guideRoleLabel || 'Disable account';
+        const message = trigger.dataset.guideDecision || trigger.dataset.guideRoleMessage
+            || 'Disabling an account will remove any existing roles and will prevent the user from signing in.';
+        window.appRequestDecision(message, () => {
+            const result = document.getElementById(trigger.hasAttribute('data-guide-decision') ? 'guide-decision-result' : 'guide-disable-result');
+            if (result) {
+                result.textContent = 'Preview confirmed. No records were changed and no navigation occurred.';
+                result.hidden = false;
+            }
+        }, trigger, action, true, action === 'Leave without saving' ? 'Unsaved changes' : 'Confirm action');
+    };
+    document.querySelectorAll('[data-guide-decision], [data-guide-open]').forEach(trigger => {
+        trigger.addEventListener('click', () => previewDecision(trigger));
     });
     const widthToggle = document.querySelector('[data-guide-width-toggle]');
     const columnPanel = document.getElementById('guide-column-panel');
@@ -178,35 +156,6 @@ import './app.js';
         columnPanel.classList.toggle('guide-column-panel--narrow', narrow);
         widthToggle.setAttribute('aria-pressed', String(narrow));
         widthToggle.textContent = narrow ? 'Show full-width panel' : 'Show narrow panel';
-    });
-    document.querySelectorAll('[data-guide-open]').forEach(trigger => {
-        const dialog = document.getElementById(trigger.dataset.guideOpen);
-        if (!dialog) return;
-        trigger.addEventListener('click', () => {
-            origins.set(dialog, trigger);
-            if (trigger.dataset.guideRoleLabel) {
-                dialog.querySelector('#guide-role-description').textContent = trigger.dataset.guideRoleMessage;
-                const confirm = dialog.querySelector('#guide-role-confirm');
-                confirm.textContent = trigger.dataset.guideRoleLabel;
-                confirm.className = trigger.dataset.guideRoleLabel.startsWith('Remove ') ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
-            }
-            dialog.showModal();
-        });
-    });
-    document.querySelectorAll('dialog.app-user-disable-dialog').forEach(dialog => {
-        dialog.addEventListener('close', () => origins.get(dialog)?.focus());
-        dialog.querySelectorAll('[data-guide-close]').forEach(button => {
-            button.addEventListener('click', () => {
-                dialog.close();
-                if (button.hasAttribute('data-guide-preview-confirm')) {
-                    const result = document.getElementById('guide-disable-result');
-                    if (result) {
-                        result.textContent = 'Preview confirmed. No account was changed.';
-                        result.hidden = false;
-                    }
-                }
-            });
-        });
     });
     const outputs = [...document.querySelectorAll('[data-guide-density][data-guide-measure]')];
     const samples = new Map();

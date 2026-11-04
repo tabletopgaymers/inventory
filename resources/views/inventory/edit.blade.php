@@ -1,14 +1,13 @@
 @extends('layout')
 @section('title', 'Edit inventory — '.$item->name)
 @section('content-sections')
-<div class="app-content">
-<p>New = Set + Adjust. Set is required; blank Adjust means zero. Only Save on the next page records changes.</p>
-</div>
-<form method="post" action="/inventory/items/{{ $item->id }}/preview" data-stock-editor data-dirty-warning 
+<form class="app-panel-stack" method="post" action="/inventory/items/{{ $item->id }}/preview" data-stock-editor data-dirty-warning
 @if($draft['reviewed'])data-pending-draft
 @endif>
 @csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="operation" value="{{ $token }}">
-<x-app.table-region label="Inventory quantity corrections" class="app-list-table-panel"><table class="stock-editor"><thead><tr><th>Location</th><th>Set</th><th>Adjust (optional)</th><th>Rationale (optional)</th><th class="number">Current</th><th class="number">New</th></tr></thead><tbody>
+<x-app.table-region label="Inventory quantity corrections" class="app-list-table-panel">
+<x-slot:header><p>New = Set + Adjust. Set is required; blank Adjust means zero. Only Save on the next page records changes.</p></x-slot:header>
+<table class="stock-editor"><thead><tr><th>Location</th><th>Set</th><th>Adjust (optional)</th><th>Rationale (optional)</th><th class="number">Current</th><th class="number">New</th></tr></thead><tbody>
 
 @foreach($locations as $location)
 <tr data-stock-row><th>{{ $location->name }}</th>
@@ -18,9 +17,12 @@
 <td class="number">{{ number_format($location->quantity) }}</td><td class="number"><span data-new aria-live="polite"></span></td></tr>
 
 @endforeach
-</tbody></table></x-app.table-region><div class="app-content">
+</tbody></table>
+<x-slot:footer>
 <div class="stock-total"><h3>Total available</h3><span aria-label="Current total">{{ number_format($locations->sum('quantity')) }}</span><span data-new-total aria-label="New total" aria-live="polite"></span></div>
 <div class="actions"><a class="discard" href="/inventory/items/{{ $item->id }}" data-discard>Cancel</a><button class="primary">Continue</button></div>
-</div></form>@vite('resources/js/inventory.js')
+</x-slot:footer>
+</x-app.table-region>
+</form>@vite('resources/js/inventory.js')
 
 @endsection

@@ -9,7 +9,7 @@
 </div>
 @foreach(['tab'=>'Primary specimen','second-tab'=>'Independent specimen'] as $parameter=>$specimen)
 @php($active = in_array(request($parameter), ['basic','material','review']) ? request($parameter) : 'basic')
-<div data-workflow-demo="{{ $parameter }}">
+<div class="app-panel-stack" data-workflow-demo="{{ $parameter }}">
     <x-workflow.tabs :prefix="$parameter" :label="$specimen" :active="$active" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review']" />
     @foreach(['basic'=>'Basic info','material'=>'Material','review'=>'Review'] as $key=>$title)
     <x-workflow.tab-panel class="app-content" :id="$parameter.'-panel-'.$key" :labelledby="$parameter.'-tab-'.$key" :active="$active === $key">
@@ -33,7 +33,7 @@
     <p>In editable quantity fields only, Enter/Down moves to the next editable visible field, Up moves back, and the value is selected. Read-only/disabled/hidden fields are skipped; no wrapping or submit occurs at the ends. Tab, modified keys and other fields retain native behavior.</p>
     <p>Import mountQuantityNavigation from resources/js/workflow/quantity-navigation.js. Supply root, resolveFields(input) returning the current intended column/group, and optional isBusy(). The module never parses values or sets editability. Delegation finds new rows at keydown time; repeated mounting returns the existing instance and destroy() removes its listener.</p>
 </div>
-<form data-quantity-demo>
+<form class="app-panel-stack" data-quantity-demo>
 <x-app.table-region label="Quantity navigation specimen" :nowrap="true" :quantity-fields="true" :separators="true" numeric="after-first">
     <x-slot:header><x-workflow.heading><h2>Quantity specimen</h2><button type="button" data-demo-add-row>Add sample row</button></x-workflow.heading></x-slot:header>
     <table><colgroup><col><col class="table-quantity-column"><col class="table-quantity-column"><col class="table-action-column"></colgroup>
@@ -69,7 +69,7 @@
 @vite('resources/js/workflow-demo.js')
 <x-app.guide-divider />
 <x-app.panel-stack>
-    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent gap, including across form boundaries. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
+    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent 12px section gap, including across form boundaries. The shared --app-section-gap token owns this spacing; it is independent of Display Density. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. The common page layout already stacks top-level content sections. Add a stack inside forms or tab sections that contain multiple panels. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
     <x-app.collapsible-panel title="Collapsible specimen"><p>One border surrounds the summary and this body.</p></x-app.collapsible-panel>
 </x-app.panel-stack>
 @endsection

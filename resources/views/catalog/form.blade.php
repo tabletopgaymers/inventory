@@ -36,7 +36,7 @@
 </details>
 @endif
 @if($record)
-<p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>
+@if($kind === 'storage_locations')<p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>@endif
 @if($kind === 'storage_locations' && $record->is_central)
 <p>Central must remain the distinguished active storage location.</p>
 @else

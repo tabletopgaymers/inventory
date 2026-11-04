@@ -2,23 +2,19 @@
 @section('title', 'Tab form')
 @section('intro', 'Demo values are retained in this browser. Switch tabs to work with different sections of one form.')
 @section('guide-content')
-<div class="app-content">
-    <form id="guide-tab-form" onsubmit="return false">
-        <div class="guide-tab-list" role="tablist" aria-label="Demo form sections">
-            @foreach(['Basic info', 'Material', 'Review', 'Fulfillment', 'Tracking'] as $label)
-            <button type="button" role="tab" id="guide-tab-{{ $loop->index }}" aria-controls="guide-tab-panel-{{ $loop->index }}" aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}">{{ $label }}</button>
-            @endforeach
-        </div>
+<form class="app-panel-stack" id="guide-tab-form">
+    <x-workflow.tabs prefix="guide-demo" label="Demo form sections" active="basic" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review','fulfillment'=>'Fulfillment','tracking'=>'Tracking']" />
         <p data-tab-storage-feedback role="status" hidden></p>
-        <div class="guide-tab-heading">
+        <div class="app-content">
+        <x-workflow.heading>
             <h2 data-tab-section-title>Basic info</h2>
             <select name="status" data-tab-field="status" aria-label="Status">
                 @foreach(['New', 'Draft', 'Requested', 'Accepted', 'Fulfilled', 'Completed'] as $status)
                 <option value="{{ $status }}">{{ $status }}</option>
                 @endforeach
             </select>
-        </div>
-        <section role="tabpanel" id="guide-tab-panel-0" aria-labelledby="guide-tab-0" tabindex="0">
+        </x-workflow.heading>
+        <section role="tabpanel" id="guide-demo-panel-basic" aria-labelledby="guide-demo-tab-basic" tabindex="0">
             <p data-tab-unavailable hidden></p>
             <div data-tab-content>
             @foreach(['name', 'source', 'destination'] as $field)
@@ -27,7 +23,7 @@
             </div>
             <div class="actions"><button type="button" data-tab-action="next">Next ▷</button></div>
         </section>
-        <section role="tabpanel" id="guide-tab-panel-1" aria-labelledby="guide-tab-1" tabindex="0" hidden>
+        <section role="tabpanel" id="guide-demo-panel-material" aria-labelledby="guide-demo-tab-material" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
             <div data-tab-content>
             @foreach(['button_type', 'button_request', 'button_fulfilled'] as $field)
@@ -36,7 +32,7 @@
             </div>
             <div class="actions"><button type="button" data-tab-action="review">Review</button></div>
         </section>
-        <section role="tabpanel" id="guide-tab-panel-2" aria-labelledby="guide-tab-2" tabindex="0" hidden>
+        <section role="tabpanel" id="guide-demo-panel-review" aria-labelledby="guide-demo-tab-review" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
             <div data-tab-content>
             <dl class="app-user-details">
@@ -49,7 +45,7 @@
             </div>
             <div class="actions"><button type="button" data-tab-action="submit">Submit</button></div>
         </section>
-        <section role="tabpanel" id="guide-tab-panel-3" aria-labelledby="guide-tab-3" tabindex="0" hidden>
+        <section role="tabpanel" id="guide-demo-panel-fulfillment" aria-labelledby="guide-demo-tab-fulfillment" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
             <div data-tab-content>
             @foreach(['button_type', 'button_request', 'button_fulfilled'] as $field)
@@ -58,7 +54,7 @@
             </div>
             <div class="actions"><button type="button" data-tab-action="accept">Accept</button></div>
         </section>
-        <section role="tabpanel" id="guide-tab-panel-4" aria-labelledby="guide-tab-4" tabindex="0" hidden>
+        <section role="tabpanel" id="guide-demo-panel-tracking" aria-labelledby="guide-demo-tab-tracking" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
             <div data-tab-content>
             <template data-tab-shipper-template>
@@ -76,6 +72,6 @@
             </div>
             <div class="actions"><button type="button" data-tab-action="ship">Ship</button></div>
         </section>
-    </form>
-</div>
+        </div>
+</form>
 @endsection

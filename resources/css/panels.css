@@ -1,6 +1,7 @@
+:root { --app-section-gap: 100px; }
 /* A stack owns section gaps across form/tab boundaries; child panels own only their padding. */
-.app-panel-stack { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
-.app-shell .app-panel-stack > :is(.app-content, .app-panel, .app-list-table-panel, .app-table-region, .app-collapsible-panel, .workflow-tab-panel, .error, form, section) { margin-block: 0; }
+.app-panel-stack { display: flex; flex-direction: column; gap: var(--app-section-gap); min-width: 0; }
+.app-shell .app-panel-stack > :not(dialog) { margin-block: 0; }
 
 .app-inline-group { display: flex; flex-wrap: wrap; gap: .5rem; }
 .app-summary { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: var(--app-density-field-y) 1rem; align-content: start; margin: 0; }
@@ -12,3 +13,6 @@
 .app-shell button.app-action-success:not(:disabled), .app-shell button.app-action-success:not(:disabled):hover { background: var(--color-success); color: var(--color-success-content); border-color: var(--color-success-content); }
 
 .app-shell .app-notice-dismiss { float: right; margin-inline-start: .75rem; padding: .1rem .35rem; font-size: .8rem; }
+
+.app-panel-stack[hidden] { display: none; }
+.app-panel-stack > .app-feedback-group:not(:has(> :not([hidden]))) { display: none; }

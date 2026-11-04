@@ -30,7 +30,9 @@
         @endif
     @endauth
     @hasSection('content-sections')
-        @yield('content-sections')
+        <x-app.panel-stack>
+            @yield('content-sections')
+        </x-app.panel-stack>
     @else
         <div class="app-content">@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
             @yield('content')

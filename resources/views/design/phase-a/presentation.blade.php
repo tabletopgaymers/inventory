@@ -5,9 +5,10 @@
 <nav class="app-section-nav" aria-label="On this page">
     <a href="#spacing">Spacing</a><a href="#titles">Titles</a><a href="#basic-panel">Basic panel</a><a href="#table-panel">Table panel</a><a href="#columns">Responsive columns</a><a href="#statuses">Status indicators</a>
 </nav>
-<section id="spacing" aria-labelledby="spacing-title">
+<section class="app-panel-stack" id="spacing" aria-labelledby="spacing-title">
 <div class="app-content">
     <h2 id="spacing-title">Spacing and display density</h2>
+    <p>Between sections, use the shared <code>app-panel-stack</code> (or <code>x-app.panel-stack</code>): its single <code>--app-section-gap: 12px</code> separates panels, tables, tab strips and collapsible sections. The page layout supplies the top-level stack; forms and unpadded tab sections containing several panels supply their own. Children have no added outer margins. Hidden sections take no space. Internal panel padding and field/table spacing still follow Display Density; the 12px section gap does not change.</p>
     <p>Users choose Compact, Standard or Spacious in their profile. Standard is the default. The shared density settings control panel padding, line height, field spacing and table-row spacing throughout the application.</p>
     <ul>
         <li>Use the shared font family and base font size; do not override them on individual pages or components.</li>
@@ -42,7 +43,7 @@
     </div>
 </section>
 <x-app.guide-divider />
-<section id="table-panel" aria-labelledby="table-panel-title">
+<section class="app-panel-stack" id="table-panel" aria-labelledby="table-panel-title">
     <h2 id="table-panel-title">Table panel</h2>
     <p>A table panel presents tabular information without outer padding. Search, filters and surrounding page actions are separate components. Optional header and footer slots can contain brief context or actions specifically associated with the table.</p>
     <h3>Plain table panel</h3>
@@ -89,7 +90,7 @@
     </div>
 </section>
 <x-app.guide-divider />
-<section id="statuses" aria-labelledby="statuses-title">
+<section class="app-panel-stack" id="statuses" aria-labelledby="statuses-title">
     <h2 id="statuses-title">Status indicators</h2>
     <div class="app-content">
         <p>Status badges combine a short text label with a color. Use the established workflow states; color supplements the label and never replaces it.</p>

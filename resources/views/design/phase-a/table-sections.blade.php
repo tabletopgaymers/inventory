@@ -3,7 +3,7 @@
 @section('intro', 'Optional sections supported by the shared table-panel component.')
 @section('guide-content')
 <p>Plain table panels remain the default. This optional layout combines a small table-specific header or footer with the table, under one outer border. It can replace a small adjacent panel whose only purpose is to describe or act on that table.</p>
-<div class="guide-table-stack">
+<div class="app-panel-stack">
 <div class="app-content">
     <p>The catalog groups items by category and collection. Use consistent names so records are easy to find.</p>
 </div>

@@ -1,5 +1,5 @@
-<div class="section-heading" id="guide-user"><h2>Sample Administrator</h2><a class="button" href="#profile-example">Edit</a></div>
-<div class="app-content">
+<div class="app-content" id="guide-user">
+<x-workflow.heading><h2>Sample Administrator</h2><a class="button" href="#profile-example">Edit</a></x-workflow.heading>
     <div class="app-columns app-columns-two app-columns-trim">
     <div>
     <dl class="app-user-details">
@@ -28,7 +28,7 @@ Illustrative address</dd>
         <div class="inline"><button type="button" id="guide-padding-button" data-guide-open="guide-role-dialog" data-guide-role-label="Remove admin" data-guide-role-message="Remove the admin role from Sample Administrator?">Remove admin</button></div>
         <div class="inline"><button type="button" data-guide-open="guide-role-dialog" data-guide-role-label="Remove manager" data-guide-role-message="Remove the manager role from Sample Administrator?">Remove manager</button></div>
         <div class="inline"><button type="button" data-guide-open="guide-role-dialog" data-guide-role-label="Remove procurement" data-guide-role-message="Remove the procurement role from Sample Administrator?">Remove procurement</button></div>
-        <div class="inline app-user-disable-action"><button type="button" class="discard" data-guide-open="guide-disable-dialog" aria-haspopup="dialog" aria-controls="guide-disable-dialog">Disable account</button></div>
+        <div class="inline app-user-disable-action"><button type="button" class="discard" data-guide-open="guide-disable-dialog" aria-haspopup="dialog">Disable account</button></div>
     </div>
     <p id="guide-disable-result" class="notice" role="status" hidden></p>
 </div>

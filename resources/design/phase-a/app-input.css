@@ -146,10 +146,10 @@
 @media (prefers-reduced-motion: reduce) { [aria-busy="true"] .app-search-spinner { animation: none; } }
 .app-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 0.375rem .75rem; }
 .app-content, .app-panel { background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--app-radius); padding: var(--app-density-panel-y) 1.5rem; min-width: 0; }
-.app-content + .app-content { margin-top: .75rem; }
+
 .app-content > :first-child, .app-panel > :first-child { margin-top: 0; }
 .app-content > :last-child, .app-panel > :last-child { margin-bottom: 0; }
-.app-panel + .app-panel { margin-top: 0.625rem; }
+
 .app-panel h2 { margin-top: 0; }
 .app-section-nav, .app-shell nav[aria-label="Catalog sections"] { display: flex; flex-wrap: wrap; gap: 0.25rem .5rem; border-bottom: 1px solid var(--app-border); padding-bottom: 0.5rem; margin-bottom: 0.625rem; }
 .app-section-nav a, .app-shell nav[aria-label="Catalog sections"] a { padding: 0.2rem .75rem; border-radius: .375rem; text-decoration: none; color: var(--app-muted); }
@@ -195,7 +195,7 @@
 .app-shell details:not(.app-account) > summary { padding: 0.375rem 1rem; font-weight: 600; cursor: pointer; }
 .app-shell details:not(.app-account) > :not(summary) { margin-left: 1rem; margin-right: 1rem; }
 .app-shell .active-filter > summary { background: #5b21b612; }
-.app-shell details.app-collapsible-panel { background: var(--app-surface); border-radius: var(--app-radius); margin: .75rem 0; }
+.app-shell details.app-collapsible-panel { background: var(--app-surface); border-radius: var(--app-radius); margin: 0; }
 .app-shell details.app-collapsible-panel > summary { padding: var(--app-density-panel-y) 1.5rem; }
 .app-shell details.app-collapsible-panel > summary > h2 { display: inline; margin: 0; }
 .app-shell details.app-starting-inventory { width: 100%; }
@@ -267,7 +267,7 @@
 .app-shell .app-list-table-panel td.number,
 .app-shell .app-list-table-panel th.number { white-space: normal; }
 .app-shell .app-list-table-panel + .download-bar { position: static; background: transparent; }
-.app-shell .app-list-table-panel + .app-content { margin-top: .75rem; }
+
 /* Optional table sections leave the plain table-region branch unchanged. */
 .app-shell .app-table-panel-sections { border: 1px solid var(--app-border); border-radius: var(--app-radius); overflow: hidden; }
 .app-table-panel-header, .app-table-panel-footer { padding: var(--app-density-panel-y) .8rem; }

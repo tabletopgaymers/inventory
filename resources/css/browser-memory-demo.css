@@ -1,4 +1,4 @@
-.memory-demo-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 1rem; align-items: start; }
+.memory-demo-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--app-section-gap); align-items: start; }
 .memory-demo-columns > * { min-width: 0; }
 .memory-demo-combobox { position: relative; }
 .memory-demo-combobox input { width: 100%; box-sizing: border-box; padding-inline-end: 2.5rem; }

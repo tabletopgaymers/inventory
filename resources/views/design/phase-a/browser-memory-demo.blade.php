@@ -1,9 +1,12 @@
 @extends('design.phase-a.layout')
 @section('title', 'Browser Memory Demo')
-@section('guide-notice')Catalog and inventory snapshots are reused for up to 15 minutes across pages using this cache. Selected item IDs and location are remembered separately for each signed-in user. No catalog records or inventory are changed.@endsection
+@section('guide-notice-in-panel', 'true')
 @section('guide-content')
 @vite(['resources/css/browser-memory-demo.css', 'resources/js/browser-memory-demo.js'])
+<div class="app-content">
+<p>Catalog and inventory snapshots are reused for up to 15 minutes across pages using this cache. Selected item IDs and location are remembered separately for each signed-in user. No catalog records or inventory are changed.</p>
 <p class="app-field-help" data-memory-snapshot>Loading catalog and inventory…</p>
+</div>
 <div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your saved selections have been kept. <button type="button" data-memory-retry>Try again</button></div>
 <x-app.panel-stack>
 <div class="memory-demo-columns" data-memory-demo data-user-id="{{ auth()->id() }}" data-catalog-url="/style-guide/browser-memory-demo/data">

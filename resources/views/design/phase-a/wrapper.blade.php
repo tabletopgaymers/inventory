@@ -10,5 +10,4 @@
     <p>Role controls align left and Disable account aligns right. The preview modal changes no account.</p>
     <p><a href="/style-guide/examples#users">Return to complete examples</a>.</p>
 </div>
-@include('design.phase-a.disable-preview')
 @endsection
