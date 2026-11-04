@@ -19,8 +19,8 @@ export function mountUnsavedChanges(root, { isDirty, isBusy = () => false,
         isLeaving: () => leaving,
         allowDeparture: () => { leaving = true; },
         confirm(proceed, { origin = document.activeElement, text = message,
-            actionLabel = 'Leave without saving', title = 'Unsaved changes' } = {}) {
-            window.appRequestDecision(text, () => { leaving = true; proceed(); }, origin, actionLabel, true, title);
+            actionLabel = 'Leave without saving', title = 'Unsaved changes', cancelLabel, variant = 'danger', onCancel } = {}) {
+            window.appRequestDecision({title, message:text, origin, confirmLabel:actionLabel, cancelLabel:cancelLabel || (actionLabel === 'Leave without saving' ? 'Keep editing' : 'Cancel'), variant, onCancel, onConfirm:() => { leaving = true; proceed(); }});
         },
         destroy() {
             window.removeEventListener('beforeunload', beforeUnload);

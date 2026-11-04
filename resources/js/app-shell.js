@@ -1,3 +1,4 @@
+import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
 (() => {
     // Preview only a committed selection in the viewer's own profile; Save persists it.
     const density = document.querySelector('#profile-form select[data-density-preview]');
@@ -96,43 +97,16 @@
     const guards = [];
     const approved = new WeakSet();
     const inFlight = new WeakSet();
-    let panel;
     window.appNavigationGuards = guards;
-    window.appRequestDecision = (message, proceed, origin, actionLabel = 'Confirm action', modal = false, title = null) => {
-        const drawer = document.getElementById('app-nav-dialog');
-        if (drawer?.open) {
-            drawer.addEventListener('close', () => window.appRequestDecision(message, proceed, document.getElementById('app-nav-open'), actionLabel, modal, title), { once: true });
-            drawer.close();
-            return;
-        }
-        if (panel) { panel.focus(); return; }
-        const restore = origin || document.activeElement;
-        panel = document.createElement(modal ? 'dialog' : 'section');
-        panel.className = modal ? 'app-user-disable-dialog' : 'warning'; panel.tabIndex = -1;
-        panel.dataset.noticeDismissible = 'false';
-        if (!modal) panel.setAttribute('role', 'region');
-        const decisionTitle = title || (modal ? 'Unsaved changes' : 'Confirm action');
-        panel.setAttribute('aria-label', decisionTitle);
-        const heading = document.createElement('h2'); heading.textContent = decisionTitle;
-        const text = document.createElement('p'); text.textContent = message;
-        const actions = document.createElement('div'); actions.className = 'actions';
-        const stay = document.createElement('button'); stay.type = 'button'; stay.textContent = modal ? 'Keep editing' : 'Keep editing / cancel action';
-        const accept = document.createElement('button'); accept.type = 'button'; accept.textContent = actionLabel; accept.className = modal ? 'app-user-disable-confirm' : 'discard';
-        const close = () => { if (modal) panel.close(); panel.remove(); panel = undefined; };
-        const cancel = () => { close(); if (restore?.isConnected) restore.focus(); };
-        stay.addEventListener('click', cancel);
-        accept.addEventListener('click', () => { close(); proceed(); });
-        panel.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); cancel(); } });
-        if (modal) panel.addEventListener('cancel', event => { event.preventDefault(); cancel(); });
-        actions.append(stay, accept); panel.append(heading, text, actions);
-        (modal ? document.body : (origin?.closest('form') || document.querySelector('.app-content') || document.querySelector('main'))).append(panel);
-        if (modal) { panel.showModal(); stay.focus(); }
-        else panel.focus();
-    };
+    window.appRequestDecision = mountConfirmationDialog();
+    const confirmDeparture = (guard, proceed, origin) => window.appRequestDecision({
+        title:'Unsaved changes', message:guard.message, origin,
+        cancelLabel:'Keep editing', confirmLabel:'Leave without saving', variant:'danger', onConfirm:proceed
+    });
     window.appNavigate = (href, origin) => {
         const guard = guards.find(candidate => candidate.shouldWarn(origin));
         const leave = () => { guard?.onLeave?.(); window.location.assign(href); };
-        if (guard) window.appRequestDecision(guard.message, leave, origin, 'Leave without saving', guard.modal);
+        if (guard) confirmDeparture(guard, leave, origin);
         else leave();
     };
     document.addEventListener('submit', event => {
@@ -146,9 +120,9 @@
         }
         event.preventDefault();
         const form = button.form;
-        window.appRequestDecision(button.dataset.confirm, () => {
+        window.appRequestDecision({message:button.dataset.confirm, origin:button, confirmLabel:button.textContent.trim(), variant:'danger', onConfirm:() => {
             approved.add(button); form.requestSubmit(button); approved.delete(button);
-        }, button, button.textContent.trim());
+        }});
     }, true);
     document.addEventListener('click', event => {
         const link = event.target.closest('a[href]');
@@ -158,7 +132,7 @@
         const guard = guards.find(candidate => candidate.shouldWarn(link));
         if (!guard) return;
         event.preventDefault();
-        window.appRequestDecision(guard.message, () => { guard.onLeave?.(); window.location.assign(link.href); }, link, 'Leave without saving', guard.modal);
+        confirmDeparture(guard, () => { guard.onLeave?.(); window.location.assign(link.href); }, link);
     }, true);
 })();
 

@@ -45,7 +45,7 @@
 @if($record->state === 'archived')
 <x-app.action type="submit" name="action" value="restore">Restore</x-app.action>
 @else
-<x-app.action variant="danger" href="{{ $actionBase }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="catalog-archive-dialog">Archive</x-app.action>
+<x-app.action variant="danger" href="{{ $actionBase }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="app-confirmation-dialog">Archive</x-app.action>
 <x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'unverified' ? 'Verify supplier' : ($record->state === 'active' ? 'Deactivate' : 'Activate') }}</x-app.action>
 @endif
 </div>

@@ -54,5 +54,6 @@
     <x-app.navigation label="Mobile navigation" presentation="mobile" />
 </dialog>
 @endif
+<x-app.confirmation-dialog />
 </body>
 </html>

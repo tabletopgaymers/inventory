@@ -138,13 +138,13 @@ import './app.js';
         const action = trigger.dataset.guideDecisionLabel || trigger.dataset.guideRoleLabel || 'Disable account';
         const message = trigger.dataset.guideDecision || trigger.dataset.guideRoleMessage
             || 'Disabling an account will remove any existing roles and will prevent the user from signing in.';
-        window.appRequestDecision(message, () => {
+        window.appRequestDecision({message, origin:trigger, confirmLabel:action, title:action === 'Leave without saving' ? 'Unsaved changes' : 'Confirm action', cancelLabel:action === 'Leave without saving' ? 'Keep editing' : 'Cancel', variant:action === 'Apply setting' || action.startsWith('Grant ') ? 'primary' : 'danger', onConfirm:() => {
             const result = document.getElementById(trigger.hasAttribute('data-guide-decision') ? 'guide-decision-result' : 'guide-disable-result');
             if (result) {
                 result.textContent = 'Preview confirmed. No records were changed and no navigation occurred.';
                 result.hidden = false;
             }
-        }, trigger, action, true, action === 'Leave without saving' ? 'Unsaved changes' : 'Confirm action');
+        }});
     };
     document.querySelectorAll('[data-guide-decision], [data-guide-open]').forEach(trigger => {
         trigger.addEventListener('click', () => previewDecision(trigger));
