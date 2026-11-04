@@ -2,7 +2,7 @@
 @section('title', $record->name)
 @section('title-status')<x-app.status-badge :status="ucfirst($record->state)" />@endsection
 @section('page-actions')
-@if($canManage)<a class="button" href="/catalog/{{ $kind }}/{{ $record->id }}/edit">Edit</a>@endif
+@if($canManage)<x-app.action  href="/catalog/{{ $kind }}/{{ $record->id }}/edit">Edit</x-app.action>@endif
 @endsection
 @section('content-sections')
 <div class="app-content">
@@ -37,7 +37,7 @@
         @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format($children->count()) }}</a></dd>@endif
     </x-app.detail-list>
 </div>
-@if($kind === 'categories' && $canManage)<div class="app-actions"><a class="button app-new-action" href="/catalog/collections/create?category={{ $record->id }}">＋ New</a></div>@endif
+@if($kind === 'categories' && $canManage)<div class="app-actions"><x-app.action variant="new"  href="/catalog/collections/create?category={{ $record->id }}">＋ New</x-app.action></div>@endif
 @if(in_array($kind, ['categories', 'collections']))
 <x-app.table-region :label="$kind === 'categories' ? 'Collections in category' : 'Items in collection'" class="app-list-table-panel" id="catalog-child-table">
 <table class="catalog-table"><thead><tr><th>{{ $kind === 'categories' ? 'Collections' : 'Name' }}</th>@if($kind === 'categories')<th>Description</th>@endif<th>{{ $kind === 'categories' ? 'SKU Prefix' : 'SKU' }}</th>@if($kind === 'categories')<th class="number">Entries</th>@endif<th>Status</th></tr></thead><tbody>

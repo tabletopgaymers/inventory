@@ -32,8 +32,8 @@
     <div class="app-heading-row app-heading-row-page app-page-heading"><div class="app-title-row"><h3>Inventory</h3></div></div>
     <h3>Titles with status and actions</h3>
     <p>Place record status immediately after the title and key actions on the right. Show only actions available to the user; keep the primary action last. Section examples below use lower-level headings to preserve the page hierarchy.</p>
-    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><a class="button" href="/style-guide/forms">Edit</a></div></div>
-    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><button type="button">Cancel</button><button type="button" class="primary">Save</button></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><x-app.action  href="/style-guide/forms">Edit</x-app.action></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><x-app.action type="button">Cancel</x-app.action><x-app.action variant="primary" type="button" >Save</x-app.action></div></div>
 </section>
 <x-app.guide-divider />
 <section id="basic-panel" aria-labelledby="basic-panel-title">
@@ -83,7 +83,7 @@
     <p><strong>Standard: columns.</strong> Use <code>app-columns</code> for related groups. Each direct child stays together when stacked, in source order. Default minimum width is 20rem; use <code>app-columns-small</code> for 16rem or <code>app-columns-wide</code> for 22rem. Use <code>app-columns-two</code> for two columns above 64rem, one below; <code>app-columns-three</code> for three/two/one columns at 64rem and 40rem. <code>app-columns-fields</code> fills field widths; <code>app-columns-trim</code> removes outer label margins within grouped columns. Keep related fields inside one child rather than interleaving them.</p>
     <p><strong>Standard: flowing fields.</strong> Use <code>app-field-flow</code> for content-sized label/control units that wrap and align along their bottoms, such as Purchase charges and Relocation tracking. Each direct label contains its own control. Use <code>app-field-flow-separated</code> when repeating rows need a trailing field gap. Domain styles may set specific field widths, but must not duplicate the wrapping layout.</p>
     <p>Both foundations live in <code>resources/css/layouts.css</code>, use the viewer’s density for vertical gaps, and share a 2rem column gap or 1rem flowing-field gap. Preserve reading order and grouped sections when choosing a variant.</p>
-    <div class="app-actions"><button type="button" data-guide-width-toggle aria-controls="guide-column-panel" aria-pressed="false">Show narrow panel</button></div>
+    <div class="app-actions"><x-app.action type="button" data-guide-width-toggle aria-controls="guide-column-panel" aria-pressed="false">Show narrow panel</x-app.action></div>
     <div class="app-content" id="guide-column-panel">
         <div class="app-columns app-columns-small">
             <section><h3>Collection</h3><p>Pronoun ribbons</p><p>Category: Ribbon</p><a href="#table-panel">View the sample table</a></section>

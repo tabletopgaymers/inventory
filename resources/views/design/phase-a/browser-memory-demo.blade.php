@@ -7,7 +7,7 @@
 <p>Catalog and inventory snapshots are reused for up to 15 minutes across pages using this cache. Selected item IDs and location are remembered separately for each signed-in user. No catalog records or inventory are changed.</p>
 <p class="app-field-help" data-memory-snapshot>Loading catalog and inventory…</p>
 </div>
-<div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your saved selections have been kept. <button type="button" data-memory-retry>Try again</button></div>
+<div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your saved selections have been kept. <x-app.action type="button" data-memory-retry>Try again</x-app.action></div>
 <x-app.panel-stack>
 <div class="memory-demo-columns" data-memory-demo data-user-id="{{ auth()->id() }}" data-catalog-url="/style-guide/browser-memory-demo/data">
     <section class="app-content">
@@ -16,7 +16,7 @@
             <label for="memory-search">Item, collection or category</label>
             <div class="memory-demo-combobox">
                 <input id="memory-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="memory-suggestions" autocomplete="off" spellcheck="false" disabled>
-                <button type="button" class="memory-demo-clear" aria-label="Clear search" title="Clear search" hidden>✕</button>
+                <x-app.action control="clear" type="button" class="memory-demo-clear" aria-label="Clear search" title="Clear search" hidden>✕</x-app.action>
                 <ul id="memory-suggestions" class="memory-demo-suggestions" role="listbox" aria-label="Matching catalog entries" hidden></ul>
             </div>
         </form>

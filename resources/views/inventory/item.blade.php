@@ -4,7 +4,7 @@
 @if($catalogReady)<x-app.status-badge :status="ucfirst($state)" />@endif
 @endsection
 @section('page-actions')
-@if($catalogReady && $canCorrect)<a class="button" href="{{ $itemEditUrl }}">Edit</a>@endif
+@if($catalogReady && $canCorrect)<x-app.action  href="{{ $itemEditUrl }}">Edit</x-app.action>@endif
 @endsection
 @section('content-sections')
 <div class="app-content app-record-content">
@@ -34,7 +34,7 @@
 <x-slot:header>
 <x-app.heading-row variant="table" class="app-table-panel-toolbar">
 <h2 class="app-heading-flush">Locations</h2>
-@if($canCorrect)<div class="app-actions"><a class="button" href="/inventory/items/{{ $item->id }}/edit">Edit inventory</a></div>@endif
+@if($canCorrect)<div class="app-actions"><x-app.action  href="/inventory/items/{{ $item->id }}/edit">Edit inventory</x-app.action></div>@endif
 </x-app.heading-row>
 </x-slot:header>
 <table><thead><tr><th>Location</th><th class="number">Available</th></tr></thead><tbody>

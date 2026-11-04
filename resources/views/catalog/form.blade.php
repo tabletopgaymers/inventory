@@ -2,8 +2,8 @@
 @php($singular = \App\Support\CatalogRecords::SINGULAR[$kind])
 @section('title', $record ? 'Edit '.$singular.' - '.$record->name : 'New '.$singular)
 @section('page-actions')
-<x-app.action variant="discard" href="{{ $record ? $recordBase.$record->id : $indexUrl }}">Cancel</x-app.action>
-<button type="submit" class="primary app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></button>
+<x-app.action variant="secondary" href="{{ $record ? $recordBase.$record->id : $indexUrl }}">Cancel</x-app.action>
+<x-app.action variant="primary" type="submit" class="app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('title-status')
 @if($record)<x-app.status-badge :status="ucfirst($record->state)" />@endif

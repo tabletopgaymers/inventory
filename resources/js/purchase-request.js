@@ -211,7 +211,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         const row = document.createElement('tr'); row.dataset.materialLine = '';
         if (id) { row.dataset.itemRow = ''; row.dataset.itemId = id; row.dataset.name = name; row.dataset.group = group; }
         const action = document.createElement('td'); const remove = cell('button','✕');
-        remove.type = 'button'; remove.className = 'material-remove'; remove.dataset.materialRemove = '';
+        remove.type = 'button'; remove.className = 'app-action app-action-secondary app-control app-control-delete material-remove'; remove.dataset.materialRemove = '';
         remove.setAttribute('aria-label', `Remove ${id ? name : 'Other item'}`); remove.title = `Remove ${id ? name : 'Other item'}`; action.append(remove);
         const item = document.createElement('td'); item.className = 'app-grouped-item';
         if (id) item.textContent = name;

@@ -170,7 +170,7 @@ import './app.js';
             samples.set(density, { sample, panel });
         }
     }
-    const colorKeys = ['primary','page','surface','text-color','muted-color','border-color','danger-color','table-heading-color','table-group-color'];
+    const colorKeys = ['primary','page','surface','text-color','muted-color','border-color','danger-color','table-heading-color','table-group-color','--app-control-delete-color','--app-control-clear-color'];
     const colorAsHex = color => {
         if (color.startsWith('#')) return color.toLowerCase();
         const channels = color.match(/[\d.]+/g);

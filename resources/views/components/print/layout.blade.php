@@ -5,6 +5,6 @@
     <title>{{ $documentTitle ?? $title }}</title>
     @vite(['resources/css/print.css', 'resources/js/print.js'])
 </head><body class="print-page"><main>
-    <div class="print-title"><h1>{{ $title }}</h1><button type="button" data-print-document>Print</button></div>
+    <div class="print-title"><h1>{{ $title }}</h1><x-app.action type="button" size="small" data-print-document>Print</x-app.action></div>
     {{ $slot }}
 </main></body></html>

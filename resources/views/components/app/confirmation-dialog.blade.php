@@ -2,7 +2,7 @@
     <h2 id="app-confirmation-title" data-confirmation-title>Confirm action</h2>
     <p id="app-confirmation-message" data-confirmation-message></p>
     <div class="actions">
-        <button type="button" data-confirmation-cancel autofocus>Cancel</button>
-        <button type="button" data-confirmation-continue>Continue</button>
+        <x-app.action type="button" data-confirmation-cancel autofocus>Cancel</x-app.action>
+        <x-app.action type="button" data-confirmation-continue>Continue</x-app.action>
     </div>
 </dialog>

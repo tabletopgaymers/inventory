@@ -1,3 +1,4 @@
+@import './actions.css';
 /* Standalone print entry: no application framework/reset or density imports. */
 body { font-family: system-ui, sans-serif; color: #000; margin: 1.5rem; }
 main { max-width: 65rem; margin: auto; }
@@ -25,5 +26,4 @@ th, td { padding: .35rem .5rem; text-align: left; }
 .print-item { padding-left: 1rem; border-left: 1pt solid #000; border-bottom: 1pt solid #000; }
 thead { display: table-header-group; break-inside: avoid; }
 tr { break-inside: avoid; }
-button { padding: .15rem .5rem; font: inherit; font-size: .8rem; }
 @media print { @page { margin: .5in; } body { margin: 0; } button, .print-screen-only { display: none; } }

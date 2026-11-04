@@ -6,13 +6,11 @@
 .app-panel-stack { display: flex; flex-direction: column; gap: var(--app-section-gap); min-width: 0; }
 .app-shell .app-panel-stack > :not(dialog) { margin-block: 0; }
 
-.app-inline-group { display: flex; flex-wrap: wrap; gap: .5rem; }
+.app-inline-group { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .app-shell .app-heading-flush, .app-shell .app-table-panel-copy { margin: 0; }
 
 .app-shell .app-choice-disabled { color: var(--app-muted); }
-.app-shell button.app-action-success:not(:disabled), .app-shell button.app-action-success:not(:disabled):hover { background: var(--color-success); color: var(--color-success-content); border-color: var(--color-success-content); }
 
-.app-shell .app-notice-dismiss { float: right; margin-inline-start: .75rem; padding: .1rem .35rem; font-size: .8rem; }
 
 .app-panel-stack[hidden] { display: none; }
 .app-panel-stack > .app-feedback-group:not(:has(> :not([hidden]))) { display: none; }

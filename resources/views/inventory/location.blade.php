@@ -2,7 +2,7 @@
 @section('title', $location->name.' inventory')
 @section('title-status')<x-app.status-badge :status="ucfirst($location->state)" />@endsection
 @section('page-actions')
-@if($canManage)<a class="button" href="/catalog/storage_locations/{{ $location->id }}/edit">Edit</a>@endif
+@if($canManage)<x-app.action  href="/catalog/storage_locations/{{ $location->id }}/edit">Edit</x-app.action>@endif
 @endsection
 @section('content-sections')
 <div class="app-content">

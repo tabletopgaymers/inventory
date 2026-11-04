@@ -6,8 +6,8 @@
 @endphp
 @section('title', $ownProfile ? 'My profile' : 'Edit profile: '.$profileUser->displayName())
 @section('page-actions')
-<a class="button discard" href="{{ $profileUrl }}">Discard</a>
-<button type="submit" class="primary" form="profile-form">Save</button>
+<x-app.action variant="danger"  href="{{ $profileUrl }}">Discard</x-app.action>
+<x-app.action variant="primary" type="submit"  form="profile-form">Save</x-app.action>
 @endsection
 @section('content')
 <form id="profile-form" method="post" action="{{ $profileUrl }}">@csrf<input type="hidden" name="_deliberate" value="1">

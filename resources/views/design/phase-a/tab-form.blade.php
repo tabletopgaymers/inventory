@@ -21,7 +21,7 @@
             <label>{{ $field }}<input type="text" name="{{ $field }}" data-tab-field="{{ $field }}"></label>
             @endforeach
             </div>
-            <div class="actions"><button type="button" data-tab-action="next">Next ▷</button></div>
+            <div class="actions"><x-app.action type="button" data-tab-action="next">Next ▷</x-app.action></div>
         </section>
         <section role="tabpanel" id="guide-demo-panel-material" aria-labelledby="guide-demo-tab-material" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
@@ -30,7 +30,7 @@
             <label>{{ $field }}<input type="text" name="request_{{ $field }}" data-tab-field="{{ $field }}" @readonly($field === 'button_fulfilled')></label>
             @endforeach
             </div>
-            <div class="actions"><button type="button" data-tab-action="review">Review</button></div>
+            <div class="actions"><x-app.action type="button" data-tab-action="review">Review</x-app.action></div>
         </section>
         <section role="tabpanel" id="guide-demo-panel-review" aria-labelledby="guide-demo-tab-review" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
@@ -43,7 +43,7 @@
             <label class="app-choice"><input type="checkbox" name="approved" data-tab-field="approved"> approved</label>
             <label>signature<input type="text" name="signature" data-tab-field="signature"></label>
             </div>
-            <div class="actions"><button type="button" data-tab-action="submit">Submit</button></div>
+            <div class="actions"><x-app.action type="button" data-tab-action="submit">Submit</x-app.action></div>
         </section>
         <section role="tabpanel" id="guide-demo-panel-fulfillment" aria-labelledby="guide-demo-tab-fulfillment" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
@@ -52,7 +52,7 @@
             <label>{{ $field }}<input type="text" name="fulfillment_{{ $field }}" data-tab-field="{{ $field }}" @readonly($field !== 'button_fulfilled')></label>
             @endforeach
             </div>
-            <div class="actions"><button type="button" data-tab-action="accept">Accept</button></div>
+            <div class="actions"><x-app.action type="button" data-tab-action="accept">Accept</x-app.action></div>
         </section>
         <section role="tabpanel" id="guide-demo-panel-tracking" aria-labelledby="guide-demo-tab-tracking" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
@@ -64,13 +64,13 @@
                         <option>US Postal</option><option>UPS</option><option>FedEx</option><option>Other</option>
                     </select></label>
                     <label>tracker<input type="text" data-shipper-tracker></label>
-                    <button type="button" data-shipper-delete>Delete shipper</button>
+                    <x-app.action type="button" data-shipper-delete>Delete shipper</x-app.action>
                 </fieldset>
             </template>
             <div data-tab-shippers></div>
-            <button type="button" data-tab-add-shipper>Add shipper</button>
+            <x-app.action type="button" data-tab-add-shipper>Add shipper</x-app.action>
             </div>
-            <div class="actions"><button type="button" data-tab-action="ship">Ship</button></div>
+            <div class="actions"><x-app.action type="button" data-tab-action="ship">Ship</x-app.action></div>
         </section>
         </div>
 </form>

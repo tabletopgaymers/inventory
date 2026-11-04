@@ -5,7 +5,7 @@
 @section('title', $collection ? 'Items in '.$collection->name : ($category ? 'Collections in '.$category->name : $kinds[$kind]))
 @if($canManage)
 @section('page-actions')
-<a class="button app-new-action" href="/catalog/{{ $kind }}/create" title="Create {{ \App\Support\CatalogRecords::SINGULAR[$kind] }}">＋ New</a>
+<x-app.action variant="new"  href="/catalog/{{ $kind }}/create" title="Create {{ \App\Support\CatalogRecords::SINGULAR[$kind] }}">＋ New</x-app.action>
 @endsection
 @endif
 @section('content-sections')

@@ -1,18 +1,18 @@
 @extends('layout')
 @section('title', 'Inventory')
 @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
-@section('page-actions')<a class="button app-new-action" href="/inventory/items/create">＋ New</a>@endsection
+@section('page-actions')<x-app.action variant="new"  href="/inventory/items/create">＋ New</x-app.action>@endsection
 @endif
 @section('content-sections')
 <div class="app-content">
 <form method="post" action="/inventory/search" id="inventory-search">@csrf
 <input type="hidden" name="context" value="{{ $token }}"><input type="hidden" name="scroll" value="{{ $scroll }}"><input type="hidden" name="destination" value="">
-<div class="search-actions"><label>Search inventory<input name="search" maxlength="255" value="{{ old('search', $pending['search']) }}"></label><button name="action" value="search" class="primary" aria-busy="false">Search<span class="app-search-spinner" aria-hidden="true"></span></button><span class="sr-only" role="status" data-search-status></span><button name="action" value="show_all">Show all</button><button name="action" value="reset">Reset</button></div>
+<div class="search-actions"><label>Search inventory<input name="search" maxlength="255" value="{{ old('search', $pending['search']) }}"></label><x-app.action variant="primary" type="submit" name="action" value="search"  aria-busy="false">Search<span class="app-search-spinner" aria-hidden="true"></span></x-app.action><span class="sr-only" role="status" data-search-status></span><x-app.action type="submit" name="action" value="show_all">Show all</x-app.action><x-app.action type="submit" name="action" value="reset">Reset</x-app.action></div>
 <details id="inventory-filters"><summary>Filters <span id="filter-summary"></span></summary>
 <fieldset><legend>Collections</legend><div class="collection-checklist">@foreach($collections as $collection)<label class="app-choice"><input type="checkbox" name="collections[]" value="{{ $collection->id }}" @checked(in_array($collection->id, old('collections', $pending['collections'])))>{{ $collection->category_name }} : {{ $collection->name }}</label>@endforeach</div></fieldset>
 <div class="location-filters"><fieldset><legend>Locations</legend>@foreach($allColumns as $key=>$column)@if($column['kind']==='storage')<label class="app-choice"><input type="checkbox" name="columns[]" value="{{ $key }}" @checked(in_array($key, old('columns', $pending['columns'])))>{{ $column['name'] }}@if($column['unavailable'] ?? false) (unavailable — remove this saved selection before searching)@endif @if($column['state'] !== 'active') ({{ $column['state'] }})@endif</label>@endif @endforeach</fieldset>
 <fieldset><legend>Events, In Transit and Ordered</legend>@foreach($allColumns as $key=>$column)@if($column['kind']!=='storage')<label class="app-choice"><input type="checkbox" name="columns[]" value="{{ $key }}" @checked(in_array($key, old('columns', $pending['columns'])))>{{ $column['name'] }}</label>@endif @endforeach</fieldset></div>
-<label class="app-choice"><input type="checkbox" name="include_inactive" value="1" @checked(old('include_inactive', $pending['include_inactive']))>Include inactive zero-stock items</label><button type="button" id="clear-filters">Clear filters</button>
+<label class="app-choice"><input type="checkbox" name="include_inactive" value="1" @checked(old('include_inactive', $pending['include_inactive']))>Include inactive zero-stock items</label><x-app.action type="button" id="clear-filters">Clear filters</x-app.action>
 </details></form>
 @if(collect($allColumns)->contains(fn ($column) => $column['unavailable'] ?? false))<p class="warning" role="status">A saved location selection is unavailable. Your saved criteria are retained; remove the unavailable selection explicitly before searching. Existing results retain their submitted columns.</p>@endif
 <p id="pending-notice" class="warning" hidden>Search settings changed — select Search to update results.</p><p id="preference-error" class="error" role="alert" hidden></p>
@@ -25,6 +25,6 @@
 <tr><td class="app-grouped-item"><a data-browse-link href="/inventory/items/{{ $row['id'] }}">{{ $row['name'] }}</a></td><td class="number">{{ $row['available'] ? number_format($row['available']) : '—' }}</td>@foreach($result['columns'] as $key=>$column)<td class="number">{{ $row['values'][$key] ? number_format($row['values'][$key]) : '—' }}</td>@endforeach</tr>
 @empty<tr><td colspan="{{ 2+count($result['columns'] ?? []) }}">{{ $result === null ? 'Search inventory or choose Show all.' : 'No items match. Change your search or filters, then select Search, or choose Show all.' }}</td></tr>@endforelse
 </tbody></table></x-app.table-region>
-<div class="actions download-bar">@if(!empty($result['rows']))<a class="button" href="/inventory/results/{{ $token }}/csv">Download CSV</a>@else<button disabled>Download CSV</button>@endif</div>
+<div class="actions download-bar">@if(!empty($result['rows']))<x-app.action  href="/inventory/results/{{ $token }}/csv">Download CSV</x-app.action>@else<x-app.action type="submit" :disabled="true">Download CSV</x-app.action>@endif</div>
 <script type="application/json" id="browse-state">@json(['submitted'=>$submitted,'scroll'=>$scroll])</script>@vite('resources/js/inventory-browse.js')
 @endsection

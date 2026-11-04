@@ -35,7 +35,11 @@
 <section id="buttons" aria-labelledby="buttons-title">
 <div class="app-content">
     <h2 id="buttons-title">Buttons</h2>
-    <div class="actions app-user-actions"><button type="button" class="primary">Save</button><a class="button" href="#fields">Edit</a><button type="button" class="app-new-action">＋ New</button><button type="button" class="discard">Discard</button><button type="button" disabled>Unavailable</button></div>
+    <p>All application actions use <code>x-app.action</code>, whether they submit a form or navigate through an <code>href</code>. The default is a neutral, non-submitting button. Set <code>type="submit"</code> for submission; preserve the action's name, value, form and behavior attributes.</p>
+    <p>Supported variants: <code>secondary</code> (default), <code>primary</code>, <code>danger</code> (outlined destructive action), <code>destructive</code> (filled final confirmation), <code>new</code> (green creation), and <code>changed</code> (pending replacement). Use <code>size="small"</code> for compact actions. Cancel is neutral; Discard is danger. Save progress retains its shared clean/dirty/busy states.</p>
+    <div class="app-actions"><x-app.action variant="changed">Replace supplier</x-app.action><x-app.action variant="destructive">Confirm removal</x-app.action><x-app.action size="small">Print</x-app.action><x-app.action control="delete" aria-label="Remove sample item">✕</x-app.action><x-app.action control="clear" aria-label="Clear sample search">✕</x-app.action></div>
+    <p>Icon controls use <code>control="delete|clear|dismiss|filter"</code> and an accessible label. Their color, size, weight and spacing are defined once in <code>resources/css/actions.css</code>, including <code>--app-control-delete-color</code>, <code>--app-control-delete-size</code> and <code>--app-control-delete-weight</code>. Dynamic JavaScript controls use the same <code>app-action app-control app-control-delete</code> classes. Workflow tabs use the same action foundation with their existing shared tab styling.</p>
+    <div class="actions app-user-actions"><x-app.action variant="primary" type="button" >Save</x-app.action><x-app.action  href="#fields">Edit</x-app.action><x-app.action variant="new" type="button" >＋ New</x-app.action><x-app.action variant="danger" type="button" >Discard</x-app.action><x-app.action type="button" :disabled="true">Unavailable</x-app.action></div>
     <p>Use primary buttons for Create and Save, a neutral action for Edit and a green ＋ New action to open a creation form. Give destructive actions explicit labels. One disabled example is sufficient to show the shared unavailable appearance.</p>
 </div>
 </section>
@@ -54,13 +58,13 @@
     </ul>
     <p class="app-field-help">Catalog New and Edit forms use this process for Categories, Collections, Items, Locations, Suppliers, Purposes and Programs.</p>
     <div class="actions app-user-actions">
-        <button type="button">Cancel</button>
-        <button type="button" class="primary app-save-progress">Create</button>
-        <button type="button" class="primary app-save-progress app-save-dirty" aria-label="Create with unsaved changes">Create</button>
-        <button type="button" class="primary app-save-progress" disabled aria-busy="true">Creating… <span class="app-search-spinner" aria-hidden="true"></span></button>
-        <button type="button" class="primary app-save-progress">Save</button>
-        <button type="button" class="primary app-save-progress app-save-dirty" aria-label="Save with unsaved changes">Save</button>
-        <button type="button" class="primary app-save-progress" disabled aria-busy="true">Saving… <span class="app-search-spinner" aria-hidden="true"></span></button>
+        <x-app.action type="button">Cancel</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress">Create</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress app-save-dirty" aria-label="Create with unsaved changes">Create</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress" :disabled="true" aria-busy="true">Creating… <span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress">Save</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress app-save-dirty" aria-label="Save with unsaved changes">Save</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress" :disabled="true" aria-busy="true">Saving… <span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
     </div>
     <p class="app-field-help">Create and Save retain their labels when edits are unsaved; the changed appearance identifies pending work. Busy examples stay disabled until the record view loads. These are visual examples only.</p>
     <h3>Save progress</h3>
@@ -73,11 +77,11 @@
         <li>Use the unsaved-changes modal before leaving unsaved work. Longer confirmations belong on a Review page.</li>
     </ul>
     <div class="actions app-user-actions">
-        <button type="button" class="primary app-save-progress">Save progress</button>
-        <button type="button" class="primary app-save-progress app-save-dirty">Save progress — unsaved</button>
-        <button type="button" class="primary app-save-progress" disabled aria-busy="true">Saving… <span class="app-search-spinner" aria-hidden="true"></span></button>
-        <button type="button" class="primary app-save-progress" disabled>Save progress — unavailable</button>
-        <button type="button" class="primary app-save-progress app-save-dirty" disabled>Save progress — unsaved and unavailable</button>
+        <x-app.action variant="primary" type="button" class="app-save-progress">Save progress</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress app-save-dirty">Save progress — unsaved</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress" :disabled="true" aria-busy="true">Saving… <span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress" :disabled="true">Save progress — unavailable</x-app.action>
+        <x-app.action variant="primary" type="button" class="app-save-progress app-save-dirty" :disabled="true">Save progress — unsaved and unavailable</x-app.action>
     </div>
     <p class="app-field-help">Purchase and Relocation use these states for saved work, unsaved edits, a save in progress, unavailable saving and unsaved work that cannot currently be saved. These examples do not run a save.</p>
     <p>For both processes, validation failures retain entered values, restore the available controls and show an error summary above the form with field-specific feedback. A save is successful only after the server confirms it.</p>

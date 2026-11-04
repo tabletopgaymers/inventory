@@ -11,7 +11,7 @@
 @include('design.phase-a.user-example')
 <x-app.guide-divider />
 <div class="app-content" id="profile-example">
-<x-workflow.heading><h2>Profile editing</h2><div class="app-actions"><button type="button" class="discard">Discard</button><button type="button" class="primary">Save</button></div></x-workflow.heading>
+<x-workflow.heading><h2>Profile editing</h2><div class="app-actions"><x-app.action variant="danger" type="button" >Discard</x-app.action><x-app.action variant="primary" type="button" >Save</x-app.action></div></x-workflow.heading>
     <div class="app-columns app-columns-two app-columns-trim">
     <div>
     <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
@@ -33,7 +33,7 @@
 </div>
 <x-app.guide-divider />
 <div class="app-content" id="search">
-    <x-workflow.heading><h2>Inventory search</h2><a class="button app-new-action" href="#supporting">＋ New</a></x-workflow.heading>
+    <x-workflow.heading><h2>Inventory search</h2><x-app.action variant="new"  href="#supporting">＋ New</x-app.action></x-workflow.heading>
     <fieldset class="app-entry-fieldset" disabled>
     <x-app.inventory-search :definition="['filters'=>[], 'hiddenFilters'=>[], 'defaults'=>['search'=>'','collections'=>[],'columns'=>[]], 'columnGroups'=>['locations'=>[]]]" endpoint="/style-guide/inventory-search/results?profile=full" instance="example-inventory-search" :script="false" />
     </fieldset>
@@ -63,16 +63,16 @@
     <p>Workflow navigation sits outside the content panels. Save progress preserves edits; submission and final confirmation are separate actions. These sample controls do not save.</p>
 </div>
 <x-workflow.steps label="Sample purchase steps">
-    @foreach(['Basic info','Material','Review','Procurement','Order','Order charges','Order review'] as $label)<a class="button" href="#requests" @if($label==='Material') aria-current="page" @endif>{{ $label }}</a>@endforeach
+    @foreach(['Basic info','Material','Review','Procurement','Order','Order charges','Order review'] as $label)<x-app.action  href="#requests" :aria-current="$label === 'Material' ? 'page' : null">{{ $label }}</x-app.action>@endforeach
 </x-workflow.steps>
 <x-app.table-region class="app-list-table-panel" label="Sample requested purchase material">
-<x-slot:header><x-workflow.heading><h2>Requested material</h2><button type="button" class="primary" disabled>Next ▷</button></x-workflow.heading></x-slot:header>
+<x-slot:header><x-workflow.heading><h2>Requested material</h2><x-app.action variant="primary" type="button"  :disabled="true">Next ▷</x-app.action></x-workflow.heading></x-slot:header>
 <table><thead><tr><th>Item</th><th class="table-numeric">Qty</th><th class="table-numeric">Est. unit price</th><th class="table-numeric">Est. total</th></tr></thead><tbody><tr class="group-row"><th colspan="4">Other items</th></tr><tr><td class="app-grouped-item">Sample display stand</td><td class="table-numeric">2</td><td class="table-numeric">1.25</td><td class="table-numeric">2.50</td></tr></tbody></table>
 <x-slot:footer><p>Catalog and Other items remain on the request. Procurement records actual order costs separately; receiving requires a final confirmation.</p></x-slot:footer>
 </x-app.table-region>
 <div class="app-content"><h2>Sample relocation</h2><p>The same navigation component presents the relocation stages. Stage availability and quantity editing remain workflow rules.</p></div>
 <x-workflow.steps label="Sample relocation steps">
-    @foreach(['Basic info','Material','Review','Fulfillment','Tracking','Ship','Reconcile','Confirmation'] as $label)<a class="button" href="#requests" @if($label==='Material') aria-current="page" @endif>{{ $label }}</a>@endforeach
+    @foreach(['Basic info','Material','Review','Fulfillment','Tracking','Ship','Reconcile','Confirmation'] as $label)<x-app.action  href="#requests" :aria-current="$label === 'Material' ? 'page' : null">{{ $label }}</x-app.action>@endforeach
 </x-workflow.steps>
 <x-app.guide-divider />
 <x-app.table-region id="counts" class="app-list-table-panel" label="Sample count worksheet"><x-slot:header><h2>Counts and printable information</h2></x-slot:header><table><thead><tr><th>Item</th><th class="number">Expected</th><th>Counted units</th></tr></thead><tbody><tr class="collection-heading"><th colspan="3">Ribbon : Pronoun</th></tr><tr><td class="app-grouped-item">They/Them</td><td class="number">250</td><td><input inputmode="numeric" aria-label="Counted units for They/Them · Pronoun · SKU SAMPLE-THEY" value="0"></td></tr></tbody></table></x-app.table-region>
@@ -83,7 +83,7 @@
 <x-app.guide-divider />
 <div class="app-content" id="supporting">
     <h2>Catalog and event variants</h2>
-    <x-workflow.heading><h3>Catalog · Collections</h3><a class="button app-new-action" href="#supporting">＋ New</a></x-workflow.heading>
+    <x-workflow.heading><h3>Catalog · Collections</h3><x-app.action variant="new"  href="#supporting">＋ New</x-app.action></x-workflow.heading>
     </div>
 <x-app.table-region class="app-list-table-panel" label="Sample catalog collection"><table><thead><tr><th>Collection</th><th>Category</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun</td><td>Ribbon</td><td><x-app.status-badge status="Active" /></td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">

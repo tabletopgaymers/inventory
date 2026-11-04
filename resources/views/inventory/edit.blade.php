@@ -20,7 +20,7 @@
 </tbody></table>
 <x-slot:footer>
 <div class="stock-total"><h3>Total available</h3><span aria-label="Current total">{{ number_format($locations->sum('quantity')) }}</span><span data-new-total aria-label="New total" aria-live="polite"></span></div>
-<div class="actions"><a class="discard" href="/inventory/items/{{ $item->id }}" data-discard>Cancel</a><button class="primary">Continue</button></div>
+<div class="actions"><x-app.action variant="danger"  href="/inventory/items/{{ $item->id }}" data-discard>Cancel</x-app.action><x-app.action variant="primary" type="submit" >Continue</x-app.action></div>
 </x-slot:footer>
 </x-app.table-region>
 </form>@vite('resources/js/inventory.js')

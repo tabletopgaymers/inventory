@@ -38,7 +38,8 @@ export function mountConfirmationDialog() {
         message.textContent = options.message || '';
         cancelButton.textContent = options.cancelLabel || 'Cancel';
         continueButton.textContent = options.confirmLabel || 'Continue';
-        continueButton.className = options.variant === 'danger' ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
+        continueButton.classList.toggle('app-action-destructive', options.variant === 'danger');
+        continueButton.classList.toggle('app-action-primary', options.variant !== 'danger');
         dialog.showModal();
         cancelButton.focus();
         return true;

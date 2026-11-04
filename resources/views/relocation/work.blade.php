@@ -19,7 +19,7 @@
         <p data-material-search-feedback class="warning" role="status" hidden></p>
     </div>
     <x-workflow.tab-panel class="app-content" id="relocation-panel-basic" labelledby="relocation-tab-basic" :active="$step === 'basic'">
-        <x-workflow.heading><h2>Basic info</h2><button type="submit" name="action" value="next" class="primary" data-basic-next @disabled(!$editable)>Next ▷</button></x-workflow.heading>
+        <x-workflow.heading><h2>Basic info</h2><x-app.action variant="primary" type="submit" name="action" value="next"  data-basic-next :disabled="!$editable">Next ▷</x-app.action></x-workflow.heading>
         <fieldset class="app-entry-fieldset" data-basic-fields>
         <label>Title<input id="relocation-title" name="title" required maxlength="255" value="{{ old('title', $work['title']) }}" @readonly(!$editable && !($manager && $status === 'Accepted'))></label>
         @foreach(['source_location_id' => 'Source', 'destination_location_id' => 'Destination'] as $field => $label)
@@ -48,7 +48,7 @@
                 </x-slot:header>
                 <div data-material-results>@include('relocation.search-results', ['results' => [], 'searched' => false, 'sourceName' => $locations->firstWhere('id', (int) $work['source_location_id'])?->name ?: 'Source', 'destinationName' => $locations->firstWhere('id', (int) $work['destination_location_id'])?->name ?: 'Destination'])</div>
                 <x-slot:footer>
-                    <x-app.heading-row variant="table" class="app-table-panel-toolbar material-add-actions"><div class="app-actions"><button type="button" class="primary" data-material-add-selected @disabled(!$editable)>Add selected</button></div></x-app.heading-row>
+                    <x-app.heading-row variant="table" class="app-table-panel-toolbar material-add-actions"><div class="app-actions"><x-app.action variant="primary" type="button"  data-material-add-selected :disabled="!$editable">Add selected</x-app.action></div></x-app.heading-row>
                 </x-slot:footer>
             </x-app.table-region>
         </div>
@@ -59,7 +59,7 @@
         <div class="app-content">
             <x-workflow.heading>
                 <h2>Review relocation request</h2>
-                <button type="submit" name="action" value="submit" class="primary" data-relocation-submit disabled>Submit</button>
+                <x-app.action variant="primary" type="submit" name="action" value="submit"  data-relocation-submit :disabled="true">Submit</x-app.action>
             </x-workflow.heading>
             <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
@@ -75,7 +75,7 @@
         <template data-review-group><tr class="group-row"><th colspan="4"></th></tr></template>
     </x-workflow.tab-panel>
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-fulfillment" labelledby="relocation-tab-fulfillment" :active="$step === 'fulfillment'">
-        <div class="app-content" data-fulfillment-accept-panel @if(!in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif><x-workflow.heading><h2>Fulfillment</h2><button type="submit" name="action" value="accept" class="primary" data-relocation-accept @disabled(!$manager || $status !== 'Requested')>Accept</button></x-workflow.heading>
+        <div class="app-content" data-fulfillment-accept-panel @if(!in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif><x-workflow.heading><h2>Fulfillment</h2><x-app.action variant="primary" type="submit" name="action" value="accept"  data-relocation-accept :disabled="!$manager || $status !== 'Requested'">Accept</x-app.action></x-workflow.heading>
             <p data-fulfillment-unavailable @if(!in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif>{{ $status === 'Requested' ? 'Must Accept First' : 'Not available' }}</p>
         </div>
         <div class="app-panel-stack" data-fulfillment-content @if(in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif>
@@ -91,7 +91,7 @@
             <div class="app-content">
             <fieldset class="app-entry-fieldset" data-tracking-fields @disabled(!$manager || $status === 'Cancelled')>
                 <div data-tracking-lines></div>
-                <button type="button" data-tracking-add>Add package</button>
+                <x-app.action type="button" data-tracking-add>Add package</x-app.action>
             </fieldset>
             </div>
         </div>
@@ -100,7 +100,7 @@
                 <label>Name<input data-tracking-name maxlength="255"></label>
                 <label>Shipper<select data-tracking-carrier><option value="">Choose a shipper</option><option value="USPS">US Postal</option><option value="UPS">UPS</option><option value="FedEx">FedEx</option><option value="Other">Other</option></select></label>
                 <label>Tracking (optional)<input data-tracking-number maxlength="255"></label>
-                <button type="button" class="material-remove" data-tracking-remove aria-label="Delete package">✕</button>
+                <x-app.action control="delete" type="button" class="material-remove" data-tracking-remove aria-label="Delete package">✕</x-app.action>
             </div>
         </template>
         <template data-tracking-saved-row><tr><td><strong data-saved-package-name></strong></td><td data-saved-shipper></td><td data-saved-tracker></td></tr></template>
@@ -108,7 +108,7 @@
     </x-workflow.tab-panel>
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-ship" labelledby="relocation-tab-ship" :active="$step === 'ship'">
         <div class="app-content">
-            <x-workflow.heading><h2>Review shipment</h2><button type="submit" name="action" value="ship" class="primary" data-relocation-ship @disabled(!$manager || $status !== 'Accepted')>Ship</button></x-workflow.heading>
+            <x-workflow.heading><h2>Review shipment</h2><x-app.action variant="primary" type="submit" name="action" value="ship"  data-relocation-ship :disabled="!$manager || $status !== 'Accepted'">Ship</x-app.action></x-workflow.heading>
             <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                 <dt>{{ $label }}</dt><dd class="plain-text" data-ship-field="{{ $field }}">—</dd>
@@ -133,7 +133,7 @@
     </x-workflow.tab-panel>
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-reconcile" labelledby="relocation-tab-reconcile" :active="$step === 'reconcile'">
         <div class="app-content" data-reconcile-receive-panel @if(in_array($status, ['Received', 'Completed'])) hidden @endif>
-            <x-workflow.heading><h2>Reconcile</h2><button type="submit" name="action" value="receive" class="primary" data-relocation-receive @disabled(!$manager || $status !== 'Fulfilled')>Receive</button></x-workflow.heading>
+            <x-workflow.heading><h2>Reconcile</h2><x-app.action variant="primary" type="submit" name="action" value="receive"  data-relocation-receive :disabled="!$manager || $status !== 'Fulfilled'">Receive</x-app.action></x-workflow.heading>
             <p data-reconcile-unavailable>{{ $status === 'Fulfilled' ? 'Acknowledge receipt to enter the quantities actually received.' : 'Not available until shipped.' }}</p>
         </div>
         <div class="app-panel-stack" data-reconcile-content @if(!in_array($status, ['Received', 'Completed'])) hidden @endif>
@@ -145,7 +145,7 @@
         <p class="app-content" data-confirmation-unavailable @if(in_array($status, ['Received', 'Completed'])) hidden @endif>Receive the shipment before confirming its contents.</p>
         <div class="app-panel-stack" data-confirmation-content @if(!in_array($status, ['Received', 'Completed'])) hidden @endif>
             <div class="app-content">
-                <x-workflow.heading><h2>Confirmation</h2><button type="submit" name="action" value="complete" class="primary" data-relocation-complete @disabled(!$manager || $status !== 'Received')>Complete</button></x-workflow.heading>
+                <x-workflow.heading><h2>Confirmation</h2><x-app.action variant="primary" type="submit" name="action" value="complete"  data-relocation-complete :disabled="!$manager || $status !== 'Received'">Complete</x-app.action></x-workflow.heading>
                 <x-app.detail-list variant="content" >
                     @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                     <dt>{{ $label }}</dt><dd class="plain-text" data-confirmation-field="{{ $field }}">—</dd>

@@ -13,7 +13,7 @@
             <h2 id="guide-table-section-title">Ribbon collections</h2>
             <p class="app-field-help">All retained collections in this category.</p>
         </div>
-        <div class="app-actions"><a class="button app-new-action" href="#guide-table-preview">＋ New</a></div>
+        <div class="app-actions"><x-app.action variant="new"  href="#guide-table-preview">＋ New</x-app.action></div>
     </x-app.heading-row></x-slot:header>
 
         <table><thead><tr><th>Collection</th><th>Description</th><th>SKU prefix</th><th>Status</th></tr></thead><tbody>
@@ -24,7 +24,7 @@
 
     <x-slot:footer><x-app.heading-row variant="table" class="app-table-panel-toolbar">
         <p class="app-field-help app-table-panel-copy">3 collections · 2 active · 1 inactive</p>
-        <div class="app-actions"><button type="button">Download CSV</button></div>
+        <div class="app-actions"><x-app.action type="button">Download CSV</x-app.action></div>
     </x-app.heading-row></x-slot:footer>
 </x-app.table-region>
 <div class="app-content">

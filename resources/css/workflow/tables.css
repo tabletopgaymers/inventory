@@ -19,6 +19,4 @@
 .app-shell .table-variance-negative { color: var(--app-danger); }
 .app-shell .table-negative { color: var(--app-danger); }
 .app-shell .table-row-error > td { background: var(--app-error-surface); color: var(--app-danger); }
-.app-shell button.material-remove { color: #b91c1c; background: transparent; border: 0; padding: .125rem .25rem; font-weight: 700; }
-.app-shell button.material-remove:hover { background: transparent; }
 .app-material-add-actions { justify-content: flex-end; }

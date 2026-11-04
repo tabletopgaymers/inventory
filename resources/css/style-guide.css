@@ -24,3 +24,6 @@
 .guide-color-danger-color { background: var(--app-danger); }
 .guide-color-table-heading-color { background: var(--app-table-heading-surface); }
 .guide-color-table-group-color { background: var(--app-table-group-surface); }
+
+.guide-color---app-control-delete-color { background: var(--app-control-delete-color); }
+.guide-color---app-control-clear-color { background: var(--app-control-clear-color); }

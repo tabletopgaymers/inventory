@@ -199,7 +199,7 @@ import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
         if (existing) return;
         const dismiss = document.createElement('button');
         dismiss.type = 'button';
-        dismiss.className = 'app-notice-dismiss';
+        dismiss.className = 'app-action app-action-secondary app-control app-control-dismiss app-notice-dismiss';
         dismiss.textContent = '✕';
         dismiss.setAttribute('aria-label', 'Dismiss notification');
         dismiss.title = 'Dismiss notification';

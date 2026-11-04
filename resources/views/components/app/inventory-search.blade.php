@@ -20,9 +20,9 @@
 <div {{ $attributes->class(['inventory-search-controls']) }} id="{{ $instance }}" data-inventory-search data-endpoint="{{ $endpoint }}">
 <div class="search-actions">
 <label>Search inventory<input type="search" data-is-text maxlength="255" value="{{ $defaults['search'] }}"></label>
-<button type="button" class="primary" data-is-action="search" aria-busy="false">Search<span class="app-search-spinner" aria-hidden="true"></span></button>
-<button type="button" data-is-action="all" aria-busy="false">Show all<span class="app-search-spinner" aria-hidden="true"></span></button>
-<button type="button" data-is-action="reset">Reset</button>
+<x-app.action variant="primary" type="button"  data-is-action="search" aria-busy="false">Search<span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
+<x-app.action type="button" data-is-action="all" aria-busy="false">Show all<span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
+<x-app.action type="button" data-is-action="reset">Reset</x-app.action>
 </div>
 @if($visible)
 <details data-is-filters>
@@ -46,7 +46,7 @@
 @endif
 </div>
 @if(in_array('inactive', $visible, true))<label class="app-choice"><input type="checkbox" data-is-inactive @checked($defaults['include_inactive'])>Include inactive zero-stock items</label>@endif
-<div class="inventory-search-filter-actions"><button type="button" data-is-action="clear">Clear filters</button></div>
+<div class="inventory-search-filter-actions"><x-app.action type="button" data-is-action="clear">Clear filters</x-app.action></div>
 </details>
 @endif
 <p class="app-field-help" data-is-pending hidden>Search settings changed — select Search to update results.</p>

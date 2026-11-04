@@ -13,7 +13,7 @@
     <x-workflow.tabs :prefix="$parameter" :label="$specimen" :active="$active" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review']" />
     @foreach(['basic'=>'Basic info','material'=>'Material','review'=>'Review'] as $key=>$title)
     <x-workflow.tab-panel class="app-content" :id="$parameter.'-panel-'.$key" :labelledby="$parameter.'-tab-'.$key" :active="$active === $key">
-        <x-workflow.heading><h2>{{ $specimen }}: {{ $title }}</h2><button type="button" disabled>Sample action</button></x-workflow.heading>
+        <x-workflow.heading><h2>{{ $specimen }}: {{ $title }}</h2><x-app.action type="button" :disabled="true">Sample action</x-app.action></x-workflow.heading>
         <p>This is {{ $title }}. Its disabled action demonstrates caller-controlled availability.</p>
     </x-workflow.tab-panel>
     @endforeach
@@ -22,8 +22,8 @@
 <div class="app-content"><h2>Heading and action rows</h2><p>Use <code>x-app.heading-row</code> with <code>variant="page"</code>, <code>"section"</code> or <code>"table"</code>. One foundation owns alignment and wrapping in <code>resources/css/headings.css</code>. Page rows preserve H1/status and the top-level action grid; section rows preserve density-based trailing spacing; table rows support flexible description/footer copy. Existing <code>x-app.page-heading</code> and <code>x-workflow.heading</code> delegate to this foundation. Keep domain titles, actions and permissions in callers. These internal row gaps are separate from the density-based gap between panels.</p></div>
 <div class="app-content"><h2>Linked steps</h2><p>Use x-workflow.steps for pages that navigate to server routes. Supply ordinary links and aria-current="page" on the current one. They share tab styling but retain link semantics and native keyboard behavior.</p></div>
 <x-workflow.steps label="Linked step specimen">
-    <a class="button" href="/style-guide/workflow" aria-current="page">Workflow components</a>
-    <a class="button" href="/style-guide/forms">Forms</a>
+    <x-app.action  href="/style-guide/workflow" aria-current="page">Workflow components</x-app.action>
+    <x-app.action  href="/style-guide/forms">Forms</x-app.action>
 </x-workflow.steps>
 <div class="app-content"><h2>Agent usage</h2><p>Import mountTabs from resources/js/workflow/tabs.js in the domain Vite entry. Pass the form/root, initialKey and an onChange callback for domain refreshes. Use queryParam when independent widgets share a page. activate(key) supports Next and error links; destroy() removes listeners. Repeated mounting returns the existing instance. Never use tab styling to infer permission, persistence or validation rules.</p></div>
 <div class="app-content"><h2>Asset ownership</h2><p>The common shell loads resources/css/app.css (existing theme, then shared workflow rules). Purchase and Relocation include their resources/css domain stylesheet and resources/js domain entry once using Vite; print has independent entries. No page-specific inline workflow stylesheet or old public/purchase.css is needed. Shared modules are imported explicitly, not auto-initialized again globally. Font Awesome remains demo-only. The shell, Save progress shortcut and search controls now also use Vite. Dependent page entries import the same cached app bootstrap before using shell APIs; shared search has one module and mount registry. Legacy plural and unused historical public assets are retained outside the active migration.</p><p>For programmatic tab changes immediately after a save, activate(key, {allowDisabled:true}) can bypass temporary busy-disabled buttons when the caller has already authorized the transition. Ordinary clicks/keyboard retain disabled checks. Preserve domain refresh ordering and dirty-section bookkeeping.</p></div>
@@ -36,7 +36,7 @@
 </div>
 <form class="app-panel-stack" data-quantity-demo>
 <x-app.table-region label="Quantity navigation specimen" :nowrap="true" :quantity-fields="true" :separators="true" numeric="after-first">
-    <x-slot:header><x-workflow.heading><h2>Quantity specimen</h2><button type="button" data-demo-add-row>Add sample row</button></x-workflow.heading></x-slot:header>
+    <x-slot:header><x-workflow.heading><h2>Quantity specimen</h2><x-app.action type="button" data-demo-add-row>Add sample row</x-app.action></x-workflow.heading></x-slot:header>
     <table><colgroup><col><col class="table-quantity-column"><col class="table-quantity-column"><col class="table-action-column"></colgroup>
         <thead><tr><th>Item</th><th class="table-heading-center">Requested</th><th class="table-heading-center" colspan="2">Fulfilled</th></tr></thead>
         <tbody>
@@ -56,7 +56,7 @@
 <div class="app-content">
     <h2>Unsaved changes</h2>
     <p>Type in this field, then follow any normal site link. The shared shell opens one confirmation modal; Keep editing or Escape preserves the field and restores focus. Leave without saving navigates once. Browser reload/close uses the native browser warning. Reset demo clears its dirty state. Nothing is saved.</p>
-    <form data-unsaved-demo><label>Unsaved demo text<input></label><button type="reset">Reset demo</button> <a href="/style-guide/forms">Leave for Forms</a></form>
+    <form data-unsaved-demo><label>Unsaved demo text<input></label><x-app.action type="reset">Reset demo</x-app.action> <a href="/style-guide/forms">Leave for Forms</a></form>
     <p>Import mountUnsavedChanges from resources/js/workflow/unsaved-changes.js; supply root, isDirty(), optional isBusy() and message. The application shell is required. The caller owns dirty state and clears only its successfully saved section. confirm(callback, options) uses the shell modal for deliberate actions; allowDeparture() suppresses the unload warning for an accepted server submission; isLeaving() prevents recursive confirmations, and destroy() unregisters listeners/guard. Optional text/title/actionLabel/origin retain the caller's action wording and focus target.</p>
     <p>The shell's optional guard.onLeave callback prevents a second native warning after an approved link departure. Existing guards without it retain their behavior. Field qualifiers, error/notice styling and Ctrl/Cmd+S continue using the existing shared shell/shortcut assets; domain validation messages and save responses remain caller-owned.</p>
 </div>

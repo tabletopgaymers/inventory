@@ -1,8 +1,8 @@
 @extends('layout')
 @section('title', 'Adjust unit cost - '.$item->name)
 @section('page-actions')
-<x-app.action variant="discard" href="{{ $itemUrl }}">Cancel</x-app.action>
-<button type="submit" class="primary app-save-progress" form="cost-form" data-catalog-save aria-busy="false"><span data-save-label>Save</span><span class="app-search-spinner" aria-hidden="true"></span></button>
+<x-app.action variant="secondary" href="{{ $itemUrl }}">Cancel</x-app.action>
+<x-app.action variant="primary" type="submit" class="app-save-progress" form="cost-form" data-catalog-save aria-busy="false"><span data-save-label>Save</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('content-sections')
 <div data-catalog-save-feedback role="status" hidden></div>

@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Relocation requests')
 @section('page-actions')
-<a class="button app-new-action" href="/relocation/new">＋ New</a>
+<x-app.action variant="new"  href="/relocation/new">＋ New</x-app.action>
 @endsection
 @section('content-sections')
 <x-app.table-region label="Relocation requests" class="app-list-table-panel">

@@ -7,7 +7,7 @@
     <h2>Vite asset check</h2>
     <p class="vite-demo-swatch">A purple border and pale purple background confirm the demo CSS loaded.</p>
     <p data-vite-status role="status">Waiting for Vite JavaScript.</p>
-    <button type="button">Increment counter</button>
+    <x-app.action type="button">Increment counter</x-app.action>
     <p>Count: <output data-vite-count aria-live="polite">0</output></p>
     <p>No data is saved. Reloading resets the counter.</p>
     <h3>Locally hosted Font Awesome Free</h3>

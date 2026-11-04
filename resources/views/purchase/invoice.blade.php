@@ -41,7 +41,7 @@
 <section class="purchase-step app-panel-stack" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
 <div class="app-content app-record-content purchase-panel"><x-workflow.heading><h2>{{ $section==='order' && $mode==='receipt' ? 'Receipt details' : $heading }}</h2>
 @if(!$readonly)
-@if(isset($next[$section]))<button name="action" value="next" class="primary">Next ▷</button>@elseif($section===$reviewTab)<button name="action" value="confirm" class="primary" @disabled(!$preview || count($reviewErrors)>0 || ($mode==='receipt' && !($preview['can_confirm'] ?? false)))>{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</button>@endif
+@if(isset($next[$section]))<x-app.action variant="primary" type="submit" name="action" value="next" >Next ▷</x-app.action>@elseif($section===$reviewTab)<x-app.action variant="primary" type="submit" name="action" value="confirm"  :disabled="!$preview || count($reviewErrors)>0 || ($mode==='receipt' && !($preview['can_confirm'] ?? false))">{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</x-app.action>@endif
 @endif
 </x-workflow.heading>
 @if($section==='order')
@@ -58,7 +58,7 @@
 </x-app.detail-list>
 @if(!$readonly)<p class="notice" data-supplier-verification @if($actualSupplier?->state!=='unverified') hidden @endif>This supplier needs explicit verification before Record order. <a data-supplier-review href="/catalog/suppliers/{{ $actualSupplier?->id }}/edit">Review and verify supplier</a></p>@endif
 </fieldset>
-@if(!$readonly && $row->status!=='Draft')<div class="app-inline-group"><button name="action" value="replace_vendor" data-replace-vendor data-original-supplier="{{ $row->supplier_id ?: $requestedSupplier?->id }}" disabled>Replace supplier</button><label class="app-choice"><input type="checkbox" name="delete_unused_vendor" value="1" disabled> Remove the original supplier if unused</label></div><p class="app-field-help">Replacement preserves the submitted and current supplier details in a permanent note. Used or shared suppliers are retained.</p>@endif
+@if(!$readonly && $row->status!=='Draft')<div class="app-inline-group"><x-app.action type="submit" name="action" value="replace_vendor" data-replace-vendor data-original-supplier="{{ $row->supplier_id ?: $requestedSupplier?->id }}" :disabled="true">Replace supplier</x-app.action><label class="app-choice"><input type="checkbox" name="delete_unused_vendor" value="1" disabled> Remove the original supplier if unused</label></div><p class="app-field-help">Replacement preserves the submitted and current supplier details in a permanent note. Used or shared suppliers are retained.</p>@endif
 <label>Procurer<input value="{{ $values['procurer_name'] ?? auth()->user()->displayName() }}" readonly></label>
 @foreach(['ordered_date'=>'Ordered','shipped_date'=>'Shipped'] as $field=>$label)<label>{{ $label }}<input id="purchase-{{ $field }}" type="date" name="{{ $field }}" value="{{ $values[$field] ?? '' }}" @readonly($readonly)></label>@endforeach
 @if($mode==='order')<input type="hidden" name="received_date" value="{{ $values['received_date'] ?? '' }}">@endif
@@ -77,10 +77,10 @@
 <p class="app-field-help">These delivery details belong to this purchase. Changes do not update the user or storage location.</p>
 </div></div>
 </fieldset>
-@if(!$readonly && $mode==='order' && $row->status==='Ordered')<p>Mark shipped records the date and status; it does not move stock.</p><button name="action" value="ship">Mark shipped</button>@endif
+@if(!$readonly && $mode==='order' && $row->status==='Ordered')<p>Mark shipped records the date and status; it does not move stock.</p><x-app.action type="submit" name="action" value="ship">Mark shipped</x-app.action>@endif
 @elseif($section==='invoice' || $section==='receive')
 <p>{{ $section==='receive' ? 'Verify the actual delivery and final invoice. Saving does not add stock.' : 'Enter the actual supplier invoice. Requested quantities remain a reference.' }}</p>
-@if($section==='receive' && $mode==='receipt')<label>Receiver<input value="{{ $values['receiver_name'] ?? ($readonly ? '—' : auth()->user()->displayName()) }}" readonly></label><label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">Receipt details</a> · <a href="{{ $base }}?tab=charges&mode=receipt">Receipt charges</a></p>@if($receiptStale && !$readonly)<button name="action" value="reconcile_receipt">Reconcile with updated order</button>@endif @endif
+@if($section==='receive' && $mode==='receipt')<label>Receiver<input value="{{ $values['receiver_name'] ?? ($readonly ? '—' : auth()->user()->displayName()) }}" readonly></label><label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">Receipt details</a> · <a href="{{ $base }}?tab=charges&mode=receipt">Receipt charges</a></p>@if($receiptStale && !$readonly)<x-app.action type="submit" name="action" value="reconcile_receipt">Reconcile with updated order</x-app.action>@endif @endif
 @elseif($section==='charges')
 @include('purchase.partials.charges')
 @elseif($section==='order-review' || $section==='confirmation')
@@ -117,11 +117,11 @@
 @endif
 </section>
 @endforeach
-@if(!$readonly && $mode==='receipt')<div class="app-content purchase-panel"><button name="action" value="cancel_receipt">Cancel receiving</button></div>@endif
+@if(!$readonly && $mode==='receipt')<div class="app-content purchase-panel"><x-app.action type="submit" name="action" value="cancel_receipt">Cancel receiving</x-app.action></div>@endif
 </form>
-<x-app.collapsible-panel title="Permanent notes"><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><button>Add note</button></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
+<x-app.collapsible-panel title="Permanent notes"><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><x-app.action type="submit">Add note</x-app.action></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
-<x-app.collapsible-panel title="Other actions"><div class="app-inline-group">@if(!$readonly && $mode==='order')<button type="submit" form="purchase-invoice-form" name="action" value="discard_order">Discard order draft</button>@endif<form class="app-inline-group" method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<button name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</button>@endif <button name="action" value="cancel">Cancel purchase</button></form></div></x-app.collapsible-panel>
+<x-app.collapsible-panel title="Other actions"><div class="app-inline-group">@if(!$readonly && $mode==='order')<x-app.action type="submit" form="purchase-invoice-form" name="action" value="discard_order">Discard order draft</x-app.action>@endif<form class="app-inline-group" method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<x-app.action type="submit" name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</x-app.action>@endif <x-app.action type="submit" name="action" value="cancel">Cancel purchase</x-app.action></form></div></x-app.collapsible-panel>
 @endif
 
 </x-app.panel-stack>
