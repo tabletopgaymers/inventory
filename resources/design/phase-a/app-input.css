@@ -343,8 +343,6 @@
   .app-shell .app-main { max-width: none; }
   .app-shell .table-wrap { overflow: visible; max-height: none; }
   .app-shell table:not(.catalog-table), .app-shell table.stock-editor { min-width: 0; }
-  .app-shell thead { display: table-header-group; }
-  .app-shell tr { break-inside: avoid; }
   .app-shell .inventory-results thead th, .app-shell .inventory-results tr > th:first-child, .app-shell .inventory-results td.app-grouped-item { position: static; }
   .app-shell .download-bar, .app-shell #inventory-search, .app-shell #pending-notice { display: none; }
 }

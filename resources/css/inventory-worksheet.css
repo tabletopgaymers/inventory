@@ -1,5 +1,2 @@
-/* Standalone worksheet: deliberately excludes application UI styles. */
-@import './worksheet-base.css';
+/* Document-specific columns; the shared print layout supplies the frame/actions. */
 @import './inventory-print.css';
-
-@import './actions.css';
