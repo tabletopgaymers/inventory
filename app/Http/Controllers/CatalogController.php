@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\BaselineProbe;
 use App\Support\CatalogRecords;
+use App\Support\PurchaseSupplierReturn;
 use App\Support\StockNumbers;
 use App\Support\StockPosting;
 use Illuminate\Database\QueryException;
@@ -102,7 +103,7 @@ class CatalogController
             ? $service->records('collections')->where('category_id', $record)->values()
             : ($kind === 'collections' ? $service->records('items', naturalNames: true)->where('collection_id', $record)->values() : collect());
 
-        return view('catalog.show', [
+        return view('catalog.show', PurchaseSupplierReturn::context($request, $kind) + [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
             'canManage' => $this->canMaintain($request, $kind, $record),
         ]);
@@ -116,7 +117,7 @@ class CatalogController
 
         $inventoryContext = $kind === 'items' && $request->is('inventory/*');
         $actionBase = $inventoryContext ? '/inventory/items/'.$record.'/details' : '/catalog/'.$kind.'/'.$record;
-        return view('catalog.archive', ['kind' => $kind, 'record' => $row, 'label' => CatalogRecords::KINDS[$kind], 'actionBase' => $actionBase, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind]);
+        return view('catalog.archive', PurchaseSupplierReturn::context($request, $kind) + ['kind' => $kind, 'record' => $row, 'label' => CatalogRecords::KINDS[$kind], 'actionBase' => $actionBase, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind]);
     }
 
     public function form(Request $request, string $kind, ?int $record = null)
@@ -135,7 +136,7 @@ class CatalogController
 
         $inventoryContext = $kind === 'items' && $request->is('inventory/*');
         $recordBase = $inventoryContext ? '/inventory/items/' : CatalogRecords::viewBase($kind);
-        $context = ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
+        $context = PurchaseSupplierReturn::context($request, $kind) + ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
         $context['startingLocations'] = $kind === 'items' && !$record ? $service->records('storage_locations')->where('state', 'active')->values() : collect();
         return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
     }
@@ -340,10 +341,12 @@ class CatalogController
         $message = ucfirst(CatalogRecords::SINGULAR[$kind]).($record ? ' saved.' : ' created.');
         if ($request->expectsJson()) {
             $request->session()->flash('success', $message);
-            return response()->json(['id' => (int) $id]);
+            $returnQuery = PurchaseSupplierReturn::context($request, $kind)['purchaseReturnQuery'];
+            return response()->json(['id' => (int) $id] + ($returnQuery !== ''
+                ? ['redirect' => CatalogRecords::viewUrl($kind, (int)$id).$returnQuery] : []));
         }
         $destination = $kind === 'items' && $request->is('inventory/*') ? '/inventory/items/'.$id : CatalogRecords::viewUrl($kind, (int) $id);
-        return redirect($destination)->with('success', $message);
+        return redirect($destination.PurchaseSupplierReturn::context($request, $kind)['purchaseReturnQuery'])->with('success', $message);
     }
 
     public function lifecycle(Request $request, string $kind, int $record)
@@ -372,7 +375,7 @@ class CatalogController
             }
         }, 3);
 
-        if ($kind === 'suppliers') return redirect(CatalogRecords::viewUrl($kind, $record))->with('success', 'Supplier status updated; request history retained.');
+        if ($kind === 'suppliers') return redirect(CatalogRecords::viewUrl($kind, $record).PurchaseSupplierReturn::context($request, $kind)['purchaseReturnQuery'])->with('success', 'Supplier status updated; request history retained.');
 
         return back()->with('success', 'Lifecycle updated; associated records and inventory retained.');
     }

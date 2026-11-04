@@ -2,7 +2,8 @@
 @section('title', $record->name)
 @section('title-status')<x-app.status-badge :status="ucfirst($record->state)" />@endsection
 @section('page-actions')
-@if($canManage)<x-app.action  href="/catalog/{{ $kind }}/{{ $record->id }}/edit">Edit</x-app.action>@endif
+@if($purchaseReturnUrl)<x-app.action href="{{ $purchaseReturnUrl }}">Return to purchase</x-app.action>@endif
+@if($canManage)<x-app.action  href="/catalog/{{ $kind }}/{{ $record->id }}/edit{{ $purchaseReturnQuery }}">Edit</x-app.action>@endif
 @endsection
 @section('content-sections')
 <div class="app-content">

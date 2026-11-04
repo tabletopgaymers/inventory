@@ -65,10 +65,21 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         const notice = panel.querySelector('[data-supplier-verification]');
         if (notice) {
             notice.hidden = info.state !== 'unverified';
-            notice.querySelector('[data-supplier-review]').href = `/catalog/suppliers/${supplierChoice.value}/edit`;
+            const review = notice.querySelector('[data-supplier-review]');
+            review.dataset.reviewUrl = `/catalog/suppliers/${supplierChoice.value}/edit?${new URLSearchParams({purchase_work:review.dataset.purchaseWork})}`;
         }
     });
     updateSupplierAction();
+    form.querySelector('[data-supplier-review]')?.addEventListener('click', async event => {
+        if (progress.isBusy()) return;
+        const button = event.currentTarget;
+        if (dirty) {
+            const saved = await progress.save();
+            if (!saved || dirty) return;
+        }
+        navigation.allowDeparture();
+        window.location.assign(button.dataset.reviewUrl);
+    });
     const deliveryChoice = form.querySelector('[data-delivery-choice]');
     const deliveryFields = ['name', 'address', 'email', 'phone'];
     const deliveryDrafts = new Map();

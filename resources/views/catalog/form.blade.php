@@ -2,7 +2,8 @@
 @php($singular = \App\Support\CatalogRecords::SINGULAR[$kind])
 @section('title', $record ? 'Edit '.$singular.' - '.$record->name : 'New '.$singular)
 @section('page-actions')
-<x-app.action variant="secondary" href="{{ $record ? $recordBase.$record->id : $indexUrl }}">Cancel</x-app.action>
+@if($purchaseReturnUrl)<x-app.action href="{{ $purchaseReturnUrl }}">Return to purchase</x-app.action>@endif
+<x-app.action variant="secondary" href="{{ $record ? $recordBase.$record->id.$purchaseReturnQuery : $indexUrl }}">Cancel</x-app.action>
 <x-app.action variant="primary" type="submit" class="app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('title-status')
@@ -40,12 +41,12 @@
 @if($kind === 'storage_locations' && $record->is_central)
 <p>Central must remain the distinguished active storage location.</p>
 @else
-<form method="post" action="{{ $actionBase }}/lifecycle">@csrf
+<form method="post" action="{{ $actionBase }}/lifecycle{{ $purchaseReturnQuery }}">@csrf
 <div class="actions">
 @if($record->state === 'archived')
 <x-app.action type="submit" name="action" value="restore">Restore</x-app.action>
 @else
-<x-app.action variant="danger" href="{{ $actionBase }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="app-confirmation-dialog">Archive</x-app.action>
+<x-app.action variant="danger" href="{{ $actionBase }}/archive{{ $purchaseReturnQuery }}" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="app-confirmation-dialog">Archive</x-app.action>
 <x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'unverified' ? 'Verify supplier' : ($record->state === 'active' ? 'Deactivate' : 'Activate') }}</x-app.action>
 @endif
 </div>

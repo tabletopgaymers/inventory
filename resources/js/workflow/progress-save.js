@@ -41,9 +41,7 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
 // Purchase adapter: one progress endpoint, generation-based dirty clearing.
 export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, canSave = () => true, getGeneration = () => 0 }) {
     const controller = createProgressController(form, {onBusy});
-    form.addEventListener('submit', async event => {
-        if ((event.submitter?.value || 'save') !== 'save') return;
-        event.preventDefault();
+    const saveProgress = async () => {
         if (controller.isBusy()) return;
         if (!canSave()) {
             showNotice(feedback, 'Wait for the catalog search to finish before saving.', 'warning');
@@ -56,6 +54,12 @@ export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, 
             onError: result => showNotice(feedback, Object.values(result.errors || {}).flat().join(' ') || result.message || 'Progress could not be saved. Your entered values are retained.', 'error')
         });
         if (saved) onSaved(saved, {unchanged:generation === getGeneration()});
+        return saved;
+    };
+    form.addEventListener('submit', event => {
+        if ((event.submitter?.value || 'save') !== 'save') return;
+        event.preventDefault();
+        void saveProgress();
     });
-    return controller;
+    return { ...controller, save: saveProgress };
 }
