@@ -3,7 +3,7 @@
     <x-slot:header>
         <div class="app-table-panel-toolbar">
             <p class="app-table-panel-copy">Available inventory by category and collection.</p>
-            <div class="app-actions"><button type="button" class="app-new-action">+ New</button></div>
+            <div class="app-actions"><button type="button" class="app-new-action">＋ New</button></div>
         </div>
     </x-slot:header>
 @endif

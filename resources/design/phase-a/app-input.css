@@ -74,7 +74,8 @@
 .app-shell .app-relocation-steps li { margin: 0; }
 .app-relocation-steps li + li::before { content: "→"; margin-right: .5rem; }
 .app-save-progress { margin-left: auto; white-space: nowrap; }
-.app-shell button.primary.app-save-dirty { background: var(--app-danger); border-color: var(--app-danger); color: white; }
+.app-shell button.app-save-progress:not(.app-save-dirty):not(:disabled) { background: var(--app-surface); color: var(--app-text); border-color: var(--app-border); }
+.app-shell button.app-save-progress.app-save-dirty:not(:disabled) { background: var(--app-danger); border-color: var(--app-danger); color: white; }
 .app-save-progress .app-search-spinner { width: 0; margin-left: 0; border-width: 0; }
 .app-save-progress[aria-busy="true"] .app-search-spinner { width: 1rem; margin-left: .5rem; border-width: 2px; }
 .app-shell :focus-visible { outline: 3px solid var(--app-primary); outline-offset: 3px; }
@@ -180,7 +181,7 @@
 .app-shell input[readonly]:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not(:disabled),
 .app-shell textarea[readonly]:not(:disabled) { background: #f4f2f8; }
 /* Keep disabled controls readable across field and button variants. */
-.app-shell :is(input, select, textarea, button):disabled:not(.app-save-progress) {
+.app-shell :is(input, select, textarea, button):disabled {
   background-color: #e5e7eb !important; color: #000 !important; -webkit-text-fill-color: #000 !important;
   border-color: #767676 !important; opacity: 1 !important; cursor: default; accent-color: #000;
 }
@@ -198,10 +199,6 @@
 .app-shell details.app-collapsible-panel > summary { padding: var(--app-density-panel-y) 1.5rem; }
 .app-shell details.app-collapsible-panel > summary > h2 { display: inline; margin: 0; }
 .app-shell details.app-starting-inventory { width: 100%; }
-.app-shell .app-starting-inventory .app-catalog-item-columns { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--app-density-field-y) 2rem; }
-.app-shell .app-starting-inventory .app-catalog-item-columns > label { margin: 0; min-width: 0; }
-@media (max-width: 64rem) { .app-shell .app-starting-inventory .app-catalog-item-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 40rem) { .app-shell .app-starting-inventory .app-catalog-item-columns { grid-template-columns: minmax(0, 1fr); } }
 .app-shell details.app-collapsible-panel > .app-collapsible-panel-body { margin: 0; padding: 0 1.5rem var(--app-density-panel-y); }
 .app-field-help { font-size: .875rem; color: var(--app-muted); }
 .app-field-error { color: var(--app-danger); }
@@ -311,15 +308,9 @@
 .app-shell .app-user-details dt { font-weight: 700; }
 .app-shell .app-user-details dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .app-shell .app-user-details .app-user-address { white-space: pre-wrap; }
-.app-profile-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem 2rem; }
-.app-profile-columns > div { min-width: 0; }
-.app-shell .app-profile-columns .app-user-details { margin: 0; }
-.app-shell .app-profile-columns label:first-child { margin-top: 0; }
-.app-shell .app-profile-columns label:last-child { margin-bottom: 0; }
 .app-profile-confirmation { font-weight: 500; margin-top: .5rem; }
 .app-confirmation-status { font-weight: 700; }
 .app-confirmation-unconfirmed { color: var(--app-danger); }
-@media (max-width: 64rem) { .app-profile-columns { grid-template-columns: minmax(0,1fr); } }
 .app-shell .actions.app-user-actions { justify-content: flex-start; margin: 0; }
 .app-shell .app-user-actions > .inline { display: flex; margin: 0; }
 .app-shell .app-user-actions .app-user-disable-action { margin-left: auto; }
@@ -337,9 +328,6 @@
 .app-shell .history [data-history-url] { cursor: pointer; }
 .app-shell .history [data-history-url]:hover { background: var(--app-page); }
 .app-shell .plain-text { white-space: pre-wrap; }
-.app-catalog-item-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: .75rem 2rem; }
-.app-catalog-item-columns > div { min-width: 0; }
-.app-shell .app-catalog-item-columns > div > label:first-child { margin-top: 0; }
 .app-sku-field { display: flex; align-items: center; border: 1px solid var(--app-field-border, #9393a3); border-radius: .375rem; background: white; margin-top: .175rem; max-width: 36rem; overflow: hidden; }
 .app-sku-field [data-sku-prefix]:not([hidden]) { display: flex; align-items: center; align-self: stretch; padding: 0 .65rem; background: #e5dfef; color: var(--app-text); font-weight: 400; flex-shrink: 0; }
 .app-shell label .app-sku-field input[name="sku_suffix"]:not([type="hidden"]) { min-width: 0; margin-top: 0; border: 0; border-radius: 0; outline: none; box-shadow: none; flex: 1; }

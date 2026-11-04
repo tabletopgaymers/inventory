@@ -139,7 +139,7 @@ class PurchaseRequestBasics
     {
         if (! self::isOtherVendor($values)) return $values;
         $name = trim($values['vendor_name']);
-        if ($name === '') throw ValidationException::withMessages(['vendor_name' => 'Enter the vendor name.']);
+        if ($name === '') throw ValidationException::withMessages(['vendor_name' => 'Enter the supplier name.']);
         if ($id = (int) ($values['vendor_other_id'] ?? 0)) {
             $record = DB::table('catalog_references')->where('id', $id)->where('kind', 'suppliers')->lockForUpdate()->first();
             if (! $record || $record->state !== 'unverified') throw ValidationException::withMessages(['vendor_choice' => 'This supplier is no longer unverified. Reopen the request to load its current details.']);

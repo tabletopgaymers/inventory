@@ -1,6 +1,4 @@
 /* Domain-specific rules; shared workflow presentation is imported by app.css. */
-.purchase-fields{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}
-.purchase-fields label{display:flex;flex-direction:column;gap:.35rem}
 .app-shell .purchase-table{overflow-x:auto;max-width:100%;min-width:0;box-sizing:border-box}
 .purchase-step,[data-purchase-invoice]{min-width:0;max-width:100%}
 .purchase-step[hidden]{display:none}

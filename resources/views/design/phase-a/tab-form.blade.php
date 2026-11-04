@@ -25,7 +25,7 @@
             <label>{{ $field }}<input type="text" name="{{ $field }}" data-tab-field="{{ $field }}"></label>
             @endforeach
             </div>
-            <div class="actions"><button type="button" data-tab-action="next">Next ></button></div>
+            <div class="actions"><button type="button" data-tab-action="next">Next ▷</button></div>
         </section>
         <section role="tabpanel" id="guide-tab-panel-1" aria-labelledby="guide-tab-1" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>

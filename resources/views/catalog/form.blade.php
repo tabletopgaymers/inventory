@@ -29,7 +29,7 @@
 <details class="app-collapsible-panel app-starting-inventory">
 <summary><h2>Set starting inventory</h2></summary>
 <div class="app-collapsible-panel-body">
-<div class="app-catalog-item-columns">
+<div class="app-columns app-columns-three">
 @foreach($startingLocations as $location)<label>{{ $location->name }}<input type="text" inputmode="numeric" form="catalog-form" name="starting_inventory[{{ $location->id }}]" aria-label="Starting quantity at {{ $location->name }}" value="{{ old('starting_inventory.'.$location->id) }}"></label>@endforeach
 </div>
 </div>

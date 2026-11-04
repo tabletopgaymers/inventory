@@ -18,7 +18,7 @@
 <x-app.guide-divider />
 <div class="section-heading" id="profile-example"><h2>Profile editing</h2><div class="app-actions"><button type="button" class="discard">Discard</button><button type="button" class="primary">Save</button></div></div>
 <div class="app-content">
-    <div class="app-profile-columns">
+    <div class="app-columns app-columns-two app-columns-trim">
     <div>
     <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
     <label>Elevated roles<input readonly value="admin, manager, procurement"></label>
@@ -39,7 +39,7 @@
 </div>
 <x-app.guide-divider />
 <div class="app-content" id="search">
-    <div class="section-heading"><h2>Inventory search</h2><a class="button app-new-action" href="#supporting">+New</a></div>
+    <div class="section-heading"><h2>Inventory search</h2><a class="button app-new-action" href="#supporting">＋ New</a></div>
     <div class="search-actions"><label>Search inventory<input type="search" placeholder="Item or collection"></label><button type="button">Search</button><button type="button">Show all</button><button type="button">Reset</button></div>
     </div>
 <x-app.table-region class="app-list-table-panel" label="Sample inventory results"><table><thead><tr><th>Item</th><th class="number">Units</th><th class="number">Unit cost</th></tr></thead><tbody>
@@ -67,7 +67,7 @@
     <label>If these are new items, describe them with their quantities here.<textarea rows="2">New display stands, quantity 2.</textarea></label>
     <p>Request → Items → plain Review. Title is required; description-only requests need no catalog lines. Requester and preparation use the same requested items.</p>
     <p class="app-field-help">Review has plain values with Cancel request / Submit request at the bottom, without Notes or preparation/invoice actions. Saving does not submit or post stock.</p>
-    <div class="actions"><button type="button">Back: Request</button><button type="button" class="primary">Next: Review</button></div>
+    <div class="actions"><button type="button">Back: Request</button><button type="button" class="primary">Next ▷</button></div>
     <h3>Relocation progress</h3><nav aria-label="Sample relocation progress"><ol class="app-relocation-steps"><li><a href="#requests">Locations</a></li><li><strong aria-current="step">ITEMS</strong></li><li>Review</li></ol></nav>
     <p>Show the active step in bold capitals, prior reachable steps as links and future steps as plain text. Submitted workflows add their existing fulfillment stages.</p>
     <h3>Purchase order and receipt previews</h3>
@@ -88,7 +88,7 @@
 <x-app.guide-divider />
 <div class="app-content" id="supporting">
     <h2>Catalog and event variants</h2>
-    <div class="section-heading"><h3>Catalog · Collections</h3><a class="button app-new-action" href="#supporting">+New</a></div>
+    <div class="section-heading"><h3>Catalog · Collections</h3><a class="button app-new-action" href="#supporting">＋ New</a></div>
     </div>
 <x-app.table-region class="app-list-table-panel" label="Sample catalog collection"><table><thead><tr><th>Collection</th><th>Category</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun</td><td>Ribbon</td><td><span class="status-badge active">Active</span></td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">

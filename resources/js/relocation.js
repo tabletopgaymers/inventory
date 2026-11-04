@@ -1,3 +1,6 @@
+import { createProgressController } from './workflow/progress-save.js';
+import { showNotice } from './workflow/notices.js';
+import { setSaveDirty } from './workflow/save-button.js';
 import './app.js';
 
 import { mountTabs } from './workflow/tabs.js';
@@ -13,6 +16,7 @@ import './inventory-search-controls.js';
     let dirty = false;
     const dirtySections = new Set();
     let busy = false;
+    const progress = createProgressController(form, {onBusy: value => { busy = value; }});
     let refreshReview = () => {};
     let refreshShipment = () => {};
     let refreshBalances = () => {};
@@ -40,7 +44,7 @@ import './inventory-search-controls.js';
     const controls = () => [...form.querySelectorAll('input:not([type="hidden"]), select, textarea')];
     const markDirty = section => {
         dirtySections.add(section || (activeTab() === 'reconcile' ? 'reconciliation' : activeTab() === 'tracking' ? 'tracking' : form.dataset.status === 'Accepted' ? (activeTab() === 'basic' ? 'basic' : 'fulfillment') : 'request'));
-        dirty = true; save.classList.add('app-save-dirty'); refreshReview(); refreshShipment(); refreshReconcile(); refreshConfirmation();
+        dirty = true; setSaveDirty(save, true); refreshReview(); refreshShipment(); refreshReconcile(); refreshConfirmation();
     };
     const materialRows = form.querySelector('[data-material-lines]');
     const results = form.querySelector('[data-material-results]');
@@ -707,7 +711,6 @@ import './inventory-search-controls.js';
         if (completing) requestedRows().forEach(row => {
             data.set(`reconciliation[${row.dataset.materialItem}]`, row.querySelector('[data-material-received]').value);
         });
-        const disabledBeforeSave = new Map(controls().map(control => [control, control.disabled]));
         data.set('action', printing ? 'save' : action);
         // Reserve the new tab during the click so saving can finish before navigation.
         const printWindow = printing ? window.open('', '_blank') : null;
@@ -718,20 +721,10 @@ import './inventory-search-controls.js';
             printWindow.document.body.textContent = 'Saving progress before opening the packing sheet…';
         }
         clearErrors();
-        busy = true;
-        controls().forEach(control => { control.disabled = true; });
-        [...form.querySelectorAll('button'), save].forEach(button => { button.disabled = true; });
-        save.setAttribute('aria-busy', 'true');
-        save.querySelector('[data-save-label]').textContent = 'Saving…';
-        try {
-            const endpoint = form.getAttribute('action') + (receiving ? '/receive' : completing ? '/complete' : reconciliationSave ? '/reconciliation' : shipping ? '/ship' : accepting ? '/accept' : basicSave ? '/basic' : fulfillmentSave ? '/fulfillment' : trackingSave ? '/tracking' : '');
-            const response = await fetch(endpoint, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
-            const result = (response.headers.get('content-type') || '').includes('application/json') ? await response.json() : {};
+        const endpoint = form.getAttribute('action') + (receiving ? '/receive' : completing ? '/complete' : reconciliationSave ? '/reconciliation' : shipping ? '/ship' : accepting ? '/accept' : basicSave ? '/basic' : fulfillmentSave ? '/fulfillment' : trackingSave ? '/tracking' : '');
+        await progress.run({endpoint, payload: data,
+            onSaved: async result => {
             feedback.hidden = false;
-            if (!response.ok || result.saved !== true) {
-                showErrors(result, reconciliationSave ? 'reconciliation' : basicSave ? 'basic' : trackingSave || (shipping && Object.keys(result.errors || {}).some(name => name.startsWith('tracking.'))) ? 'tracking' : action);
-                return;
-            }
             Object.entries(result.values || {}).forEach(([name, value]) => {
                 if (!basicSave && dirtySections.has('basic') && ['title', 'details'].includes(name)) return;
                 form.elements.namedItem(name).value = value ?? '';
@@ -772,8 +765,9 @@ import './inventory-search-controls.js';
             feedback.className = 'notice'; feedback.setAttribute('role', 'status'); feedback.textContent = receiving ? 'Receipt acknowledged. Enter the quantities actually received.' : completing ? 'Relocation completed.' : shipping ? 'Request shipped.' : action === 'submit' ? 'Request submitted.' : accepting ? 'Request accepted.' : trackingSave ? 'Tracking saved.' : 'Progress saved.';
             if (!receiving) dirtySections.delete(reconciliationSave || completing ? 'reconciliation' : trackingSave || shipping ? 'tracking' : basicSave ? 'basic' : fulfillmentSave ? 'fulfillment' : 'request');
             if (shipping) dirtySections.delete('shipping');
-            dirty = dirtySections.size > 0; save.classList.toggle('app-save-dirty', dirty);
+            dirty = dirtySections.size > 0; setSaveDirty(save, dirty);
             if (dirty) feedback.textContent += ' Changes on another tab are still unsaved.';
+            showNotice(feedback, feedback.textContent, dirty ? 'warning' : 'success');
             if (action === 'next') showTab(tabs[1]);
             if (action === 'submit') showTab(tabs[2]);
             if (accepting) showTab(tabs[3]);
@@ -789,20 +783,18 @@ import './inventory-search-controls.js';
                 }
                 printReady = true;
             }
-        } catch {
-            feedback.hidden = false; feedback.className = 'error';
-            feedback.textContent = 'Progress could not be saved. Your entered values are retained; try again.';
-        } finally {
-            if (printWindow && !printReady && !printWindow.closed) printWindow.close();
-            busy = false;
-            controls().forEach(control => { control.disabled = disabledBeforeSave.get(control) ?? false; });
-            [...form.querySelectorAll('button'), save].forEach(button => { button.disabled = false; });
-            updateMaterialChoices();
-            lockSubmittedForm();
-            refreshReview();
-            refreshWorkflow();
-            save.setAttribute('aria-busy', 'false'); save.querySelector('[data-save-label]').textContent = 'Save progress';
-        }
+            },
+            onError: result => {
+                showErrors(result, reconciliationSave ? 'reconciliation' : basicSave ? 'basic' : trackingSave || (shipping && Object.keys(result.errors || {}).some(name => name.startsWith('tracking.'))) ? 'tracking' : action);
+            },
+            onFinally: () => {
+                if (printWindow && !printReady && !printWindow.closed) printWindow.close();
+                updateMaterialChoices();
+                lockSubmittedForm();
+                refreshReview();
+                refreshWorkflow();
+            }
+        });
     });
     mountUnsavedChanges(form, { isDirty: () => dirty, isBusy: () => busy });
 })();

@@ -17,6 +17,6 @@
 </div><section @if($step !== 'items') hidden @endif>
 @include('requests.purchase-catalog', ['planning' => false, 'catalogEditable' => true, 'tablePanel' => true])
 </section>
-<div class="app-content"><div class="actions">@if($step === 'items')<button name="action" value="request" formnovalidate>Back: request</button>@endif<a class="discard" href="{{ $row ? '/purchases/'.$row->id : '/purchases' }}">Leave request</a><button name="action" value="{{ $step === 'request' ? 'items' : 'review' }}" class="primary" formnovalidate>{{ $step === 'request' ? 'Next: items' : 'Next: review' }}</button></div>
+<div class="app-content"><div class="actions">@if($step === 'items')<button name="action" value="request" formnovalidate>Back: request</button>@endif<a class="discard" href="{{ $row ? '/purchases/'.$row->id : '/purchases' }}">Leave request</a><button name="action" value="{{ $step === 'request' ? 'items' : 'review' }}" class="primary" formnovalidate>Next ▷</button></div>
 </div></form><script src="/requests.js?v=purchase-wizard-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

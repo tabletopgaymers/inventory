@@ -213,7 +213,7 @@
     const selector = '.notice, .warning, .error, .app-notice-dismissible';
     const update = banner => {
         const existing = banner.querySelector(':scope > button.app-notice-dismiss');
-        const eligible = banner.matches('.notice, .warning') && !banner.closest('.error')
+        const eligible = banner.matches('.notice, .warning, .error')
             && banner.dataset.noticeDismissible !== 'false';
         const hasContent = [...banner.childNodes].some(node => node !== existing && node.textContent.trim());
         if (!eligible || !hasContent) {

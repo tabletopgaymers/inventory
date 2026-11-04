@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-/** Purchase-specific contact snapshots and auditable vendor replacement. */
+/** Purchase-specific contact snapshots and auditable supplier replacement. */
 class PurchaseProcurement
 {
     public const FIELDS = ['delivery_choice','delivery_name','delivery_address','delivery_email','delivery_phone'];
@@ -38,15 +38,15 @@ class PurchaseProcurement
     {
         if (!$id) return;
         $row = DB::table('catalog_references')->where('kind','suppliers')->where('id',$id)->lockForUpdate()->first();
-        if (!$row || (!in_array($row->state,['active','unverified'],true) && $id !== $retained)) throw ValidationException::withMessages(['supplier_id'=>'Choose an active or Unverified vendor.']);
+        if (!$row || (!in_array($row->state,['active','unverified'],true) && $id !== $retained)) throw ValidationException::withMessages(['supplier_id'=>'Choose an active or Unverified supplier.']);
     }
 
     public static function complete(object $row, array $values, bool $receipt=false): array
     {
         $supplier=RequestValues::id($values['supplier_id'] ?? null,'supplier_id');
-        if (!$supplier) throw ValidationException::withMessages(['supplier_id'=>'Choose and verify the actual vendor in Procurement.']);
+        if (!$supplier) throw ValidationException::withMessages(['supplier_id'=>'Choose and verify the actual supplier in Procurement.']);
         RequestValues::association('suppliers',$supplier,$receipt?$row->supplier_id:null,'supplier_id',!$receipt);
-        if ((self::vendorSnapshot($supplier)['state'] ?? null)==='unverified') throw ValidationException::withMessages(['supplier_id'=>'Verify the vendor before continuing.']);
+        if ((self::vendorSnapshot($supplier)['state'] ?? null)==='unverified') throw ValidationException::withMessages(['supplier_id'=>'Verify the supplier before continuing.']);
         $delivery=[];
         foreach (self::FIELDS as $field) $delivery[$field]=RequestValues::text($values[$field] ?? null,$field,$field==='delivery_address'?5000:255,in_array($field,['delivery_choice','delivery_name','delivery_address'],true)) ?? '';
         $choice=$delivery['delivery_choice']; $type=null; $source=null;
@@ -85,7 +85,7 @@ class PurchaseProcurement
             $header = RequestStock::header('purchase',$id);
             $choice = $header['request_basics']['vendor_choice'] ?? '';
             $oldId = $row->supplier_id ?: (str_starts_with($choice,'supplier:') ? (int)substr($choice,9) : null);
-            if (!$oldId || (int)$oldId === $replacement) throw ValidationException::withMessages(['supplier_id'=>'Choose a different replacement vendor.']);
+            if (!$oldId || (int)$oldId === $replacement) throw ValidationException::withMessages(['supplier_id'=>'Choose a different replacement supplier.']);
             foreach (array_unique([(int)$oldId,$replacement]) as $vendorId) DB::table('catalog_references')->where('id',$vendorId)->where('kind','suppliers')->lockForUpdate()->firstOrFail();
             RequestValues::association('suppliers',$replacement,null,'supplier_id',true);
             $old = self::vendorSnapshot((int)$oldId); $new = self::vendorSnapshot($replacement);
@@ -101,14 +101,14 @@ class PurchaseProcurement
             }
             $removed = $delete && !$reason;
             $submitted = $header['submitted_request']['vendor_snapshot'] ?? array_intersect_key($header['submitted_request']['values'] ?? [],array_flip(['vendor_name','vendor_website','vendor_contact','vendor_email','vendor_phone']));
-            $note = 'Submitted vendor details: '.json_encode($submitted,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\nCurrent vendor details: ".json_encode($old,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\n".$actor->displayName().($removed ? ' removed this unused vendor' : ' replaced this vendor on this request (record retained'.($reason ? ': '.$reason : '').')').' and selected '.$new['name'].'.';
+            $note = 'Submitted supplier details: '.json_encode($submitted,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\nCurrent supplier details: ".json_encode($old,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)."\n".$actor->displayName().($removed ? ' removed this unused supplier' : ' replaced this supplier on this request (record retained'.($reason ? ': '.$reason : '').')').' and selected '.$new['name'].'.';
             // Preserve complete Unicode details without exceeding the existing TEXT column.
             $part = 1;
             do {
                 $chunk = mb_strcut($note,0,50000,'UTF-8');
                 $note = substr($note,strlen($chunk));
                 DB::table('purchase_request_notes')->insert(['purchase_request_id'=>$id,'actor_id'=>$actorId,'actor_name'=>$actor->displayName(),
-                    'body'=>($part > 1 ? 'Vendor replacement details (continued): ' : '').$chunk,'occurred_at'=>now('UTC')]);
+                    'body'=>($part > 1 ? 'Supplier replacement details (continued): ' : '').$chunk,'occurred_at'=>now('UTC')]);
                 $part++;
             } while ($note !== '');
             DB::table('purchase_requests')->where('id',$id)->update(['supplier_id'=>$replacement,'suggested_merchant'=>$new['name']]);

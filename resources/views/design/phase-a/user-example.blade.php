@@ -1,6 +1,6 @@
 <div class="section-heading" id="guide-user"><h2>Sample Administrator</h2><a class="button" href="#profile-example">Edit</a></div>
 <div class="app-content">
-    <div class="app-profile-columns">
+    <div class="app-columns app-columns-two app-columns-trim">
     <div>
     <dl class="app-user-details">
         <dt>First name</dt><dd>Sample</dd>

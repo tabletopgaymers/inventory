@@ -11,7 +11,7 @@
 @hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
 @php($historyContext = is_string($browse) && \Illuminate\Support\Str::isUuid($browse) ? ['browse' => $browse] : [])
 @if($catalogReady)
-<div class="app-catalog-item-columns">
+<div class="app-columns app-columns-wide app-columns-trim">
 <div><dl class="app-user-details">
 <dt>Name</dt><dd>{{ $item->name }}</dd>
 <dt>Collection</dt><dd><a href="/catalog/categories/{{ $item->category_id }}">{{ $item->category_name }}</a> : <a href="/catalog/collections/{{ $item->collection_id }}">{{ $item->collection_name }}</a></dd>

@@ -1,0 +1,1 @@
+<button type="submit" name="action" value="save" {{ $attributes->class(['primary', 'app-save-progress']) }} data-save-shortcut aria-busy="false"><span data-save-label>Save progress</span><span class="app-search-spinner" aria-hidden="true"></span></button>

@@ -2,7 +2,7 @@
     $itemCollections = $collections->filter(fn ($entry) => $entry->state === 'active' || $record?->collection_id === $entry->id)
         ->sort(fn ($a, $b) => strcasecmp($a->category_name, $b->category_name) ?: strcasecmp($a->name, $b->name) ?: ($a->id <=> $b->id));
 @endphp
-<div class="app-catalog-item-columns">
+<div class="app-columns app-columns-wide app-columns-trim">
 <div>
 <label>Name<input name="name" required maxlength="255" value="{{ old('name', $record?->name) }}"></label>
 <label>Category<input type="text" readonly data-collection-category value=""></label>

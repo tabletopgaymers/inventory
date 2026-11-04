@@ -7,7 +7,7 @@
 @php($zone = is_string($user->time_zone) && in_array($user->time_zone, \App\Support\DisplayDates::zones(), true) ? $user->time_zone : \App\Support\DisplayDates::DEFAULT_ZONE)
 @php($ownUser = (int) auth()->id() === (int) $user->id)
 <div class="app-content">
-<div class="app-profile-columns">
+<div class="app-columns app-columns-two app-columns-trim">
 <div>
 <dl class="app-user-details">
     <dt>First name</dt><dd>{{ filled($user->first_name) ? $user->first_name : '—' }}</dd>

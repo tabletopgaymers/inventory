@@ -10,7 +10,7 @@
 <form id="cost-form" method="post" data-catalog-progress data-record-base="{{ dirname($itemUrl).'/' }}" data-save-mode="edit" data-save-dirty="{{ $errors->any() || session('error') ? 'true' : 'false' }}">
 @csrf
 <input type="hidden" name="operation" value="{{ old('operation', $token) }}">
-<div class="app-catalog-item-columns">
+<div class="app-columns app-columns-wide app-columns-trim">
 <div>
 <label>Current unit cost<input type="text" readonly value="{{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}"></label>
 <label>New unit cost<input name="unit_cost" required inputmode="decimal" value="{{ old('unit_cost', $item->unit_cost) }}"></label>

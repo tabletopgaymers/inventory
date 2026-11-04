@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Purchase requests')
 @section('page-actions')
-<a class="button app-new-action" href="/purchase/new" title="New purchase request">+New</a>
+<a class="button app-new-action" href="/purchase/new" title="New purchase request">＋ New</a>
 @endsection
 @section('content-sections')
 <x-app.table-region label="Purchase requests" class="app-list-table-panel">

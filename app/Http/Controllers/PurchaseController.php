@@ -290,8 +290,8 @@ class PurchaseController
                 'selected' => ['nullable','array','max:1000'], 'selected.*' => ['integer','distinct','min:1'],
                 'add_quantities' => ['nullable','array','max:1000'], 'add_quantities.*' => ['nullable','string','max:30'],
             ] + PurchaseRequestBasics::rules(array_replace($request->all(), ['vendor_other_id' => $work['vendor_other_id'] ?? ''])), [], [
-                'vendor_choice' => 'vendor or suggested source', 'delivery_choice' => 'delivery destination',
-                'vendor_name' => 'vendor name', 'delivery_name' => 'delivery name', 'delivery_address' => 'mailing address',
+                'vendor_choice' => 'supplier (existing or suggested)', 'delivery_choice' => 'delivery destination',
+                'vendor_name' => 'supplier name', 'delivery_name' => 'delivery name', 'delivery_address' => 'mailing address',
             ]);
             $action = $data['action'] ?? (isset($data['remove_other']) ? 'remove_other' : (isset($data['remove']) ? 'remove' : 'save'));
             $values = array_replace(PurchaseRequestBasics::defaults(), $work, array_intersect_key($data, array_flip(['title', ...PurchaseRequestBasics::FIELDS])));
@@ -447,7 +447,7 @@ class PurchaseController
     {
         $errors = [];
         $required = ['other_fees' => 'Other fees', 'discount' => 'Discount', 'tax' => 'Tax', 'shipping' => 'Shipping'];
-        if ($details) $required += ['title' => 'Title', 'supplier_id' => 'Vendor', 'delivery_choice'=>'Delivery destination','delivery_name'=>'Delivery name','delivery_address'=>'Mailing address', 'ordered_date' => 'Ordered date'];
+        if ($details) $required += ['title' => 'Title', 'supplier_id' => 'Supplier', 'delivery_choice'=>'Delivery destination','delivery_name'=>'Delivery name','delivery_address'=>'Mailing address', 'ordered_date' => 'Ordered date'];
         foreach ($required as $field => $label) {
             if (($values[$field] ?? '') === '') $errors[$field] = ['Complete '.$label.' before confirming.'];
         }
@@ -491,9 +491,14 @@ class PurchaseController
             if ($action === 'replace_vendor') {
                 abort_unless($mode==='order',422);
                 $replacement = RequestValues::id($request->input('supplier_id'),'supplier_id');
-                if (!$replacement) throw ValidationException::withMessages(['supplier_id'=>'Choose a replacement vendor.']);
-                $outcome = app(\App\Support\PurchaseProcurement::class)->replace((int)$request->user()->id,$row->id,$request->input('revision'),$replacement,$request->boolean('delete_unused_vendor'));
-                return redirect('/purchase/'.$row->id.'?tab=order')->with('success',$outcome['removed'] ? 'Vendor replaced; unused vendor removed and its details preserved in a permanent note.' : 'Vendor replaced; original record retained'.($outcome['reason'] ? ': '.$outcome['reason'] : '').'.');
+                if (!$replacement) throw ValidationException::withMessages(['supplier_id'=>'Choose a replacement supplier.']);
+                $outcome = DB::transaction(function () use ($request, $row, $replacement, $service) {
+                    $outcome = app(\App\Support\PurchaseProcurement::class)->replace((int)$request->user()->id,$row->id,$request->input('revision'),$replacement,$request->boolean('delete_unused_vendor'));
+                    $revision = DB::table('purchase_requests')->where('id',$row->id)->value('revision');
+                    $service->saveProgress((int)$request->user()->id,$row->id,$revision,$request->all(),'order');
+                    return $outcome;
+                }, 3);
+                return redirect('/purchase/'.$row->id.'?tab=order')->with('success',$outcome['removed'] ? 'Supplier replaced; unused supplier removed and its details preserved in a permanent note.' : 'Supplier replaced; original record retained'.($outcome['reason'] ? ': '.$outcome['reason'] : '').'.');
             }
             if ($action === 'cancel_receipt') {
                 abort_unless($mode==='receipt',422);

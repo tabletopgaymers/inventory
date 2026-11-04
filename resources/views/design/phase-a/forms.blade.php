@@ -35,8 +35,8 @@
 <section id="buttons" aria-labelledby="buttons-title">
 <div class="app-content">
     <h2 id="buttons-title">Buttons</h2>
-    <div class="actions app-user-actions"><button type="button" class="primary">Save</button><a class="button" href="#fields">Edit</a><button type="button" class="app-new-action">+ New</button><button type="button" class="discard">Discard</button><button type="button" disabled>Unavailable</button></div>
-    <p>Use primary buttons for Create and Save, a neutral action for Edit and a green + New action to open a creation form. Give destructive actions explicit labels. One disabled example is sufficient to show the shared unavailable appearance.</p>
+    <div class="actions app-user-actions"><button type="button" class="primary">Save</button><a class="button" href="#fields">Edit</a><button type="button" class="app-new-action">＋ New</button><button type="button" class="discard">Discard</button><button type="button" disabled>Unavailable</button></div>
+    <p>Use primary buttons for Create and Save, a neutral action for Edit and a green ＋ New action to open a creation form. Give destructive actions explicit labels. One disabled example is sufficient to show the shared unavailable appearance.</p>
 </div>
 </section>
 <x-app.guide-divider />

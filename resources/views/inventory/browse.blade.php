@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Inventory')
 @if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
-@section('page-actions')<a class="button app-new-action" href="/inventory/items/create">+ New</a>@endsection
+@section('page-actions')<a class="button app-new-action" href="/inventory/items/create">＋ New</a>@endsection
 @endif
 @section('content-sections')
 <div class="app-content">

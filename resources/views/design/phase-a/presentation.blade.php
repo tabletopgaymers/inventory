@@ -77,9 +77,12 @@
 <section id="columns" aria-labelledby="columns-title">
     <h2 id="columns-title">Responsive columns</h2>
     <p>A panel can arrange related information in two or more columns when there is room, then stack them as its available width narrows. The toggle changes only this example.</p>
+    <p><strong>Standard: columns.</strong> Use <code>app-columns</code> for related groups. Each direct child stays together when stacked, in source order. Default minimum width is 20rem; use <code>app-columns-small</code> for 16rem or <code>app-columns-wide</code> for 22rem. Use <code>app-columns-two</code> for two columns above 64rem, one below; <code>app-columns-three</code> for three/two/one columns at 64rem and 40rem. <code>app-columns-fields</code> fills field widths; <code>app-columns-trim</code> removes outer label margins within grouped columns. Keep related fields inside one child rather than interleaving them.</p>
+    <p><strong>Standard: flowing fields.</strong> Use <code>app-field-flow</code> for content-sized label/control units that wrap and align along their bottoms, such as Purchase charges and Relocation tracking. Each direct label contains its own control. Use <code>app-field-flow-separated</code> when repeating rows need a trailing field gap. Domain styles may set specific field widths, but must not duplicate the wrapping layout.</p>
+    <p>Both foundations live in <code>resources/css/layouts.css</code>, use the viewer’s density for vertical gaps, and share a 2rem column gap or 1rem flowing-field gap. Preserve reading order and grouped sections when choosing a variant.</p>
     <div class="app-actions"><button type="button" data-guide-width-toggle aria-controls="guide-column-panel" aria-pressed="false">Show narrow panel</button></div>
     <div class="app-content" id="guide-column-panel">
-        <div class="app-detail-grid guide-column-grid">
+        <div class="app-columns app-columns-small">
             <section><h3>Collection</h3><p>Pronoun ribbons</p><p>Category: Ribbon</p><a href="#table-panel">View the sample table</a></section>
             <section><h3>Inventory</h3><p>370 available</p><p>300 at Central</p><p>Review quantities before requesting a relocation.</p></section>
         </div>

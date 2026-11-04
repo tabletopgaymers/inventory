@@ -85,7 +85,7 @@ class PurchaseFulfillment
                     $positive[$key]=$line;
                 }
             }
-            if ($positive===[]) throw ValidationException::withMessages(['lines'=>'No items were received. Cancel the purchase after resolving the outcome with the vendor.']);
+            if ($positive===[]) throw ValidationException::withMessages(['lines'=>'No items were received. Cancel the purchase after resolving the outcome with the supplier.']);
             $costing=app(PurchaseCosting::class)->calculate(array_replace($values,['lines'=>$positive]));
             $this->validateCatalogLines($id,$actorId,$costing['lines'],'receipt');
             $received=array_replace($received,$costing['lines']);
@@ -129,7 +129,7 @@ class PurchaseFulfillment
             if ($clean['delivery_type']==='storage') foreach ($clean['lines'] as $line) if ($line['item_id']) $new[$line['item_id']]=$line['quantity'];
             $original=$row->supplier_id ?: (str_starts_with($header['request_basics']['vendor_choice'] ?? '', 'supplier:')?(int)substr($header['request_basics']['vendor_choice'],9):null);
             if ($original && (int)$original !== (int)$clean['supplier_id']) {
-                // A different actual vendor always leaves evidence, even without optional deletion.
+                // A different actual supplier always leaves evidence, even without optional deletion.
                 app(PurchaseProcurement::class)->replace($actorId,$id,$row->revision,$clean['supplier_id'],false);
                 $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
                 $header=RequestStock::header('purchase',$id);

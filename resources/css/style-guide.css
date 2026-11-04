@@ -15,7 +15,6 @@
     #guide-table-preview p.app-table-panel-copy { margin: 0; }
     #guide-table-preview table { min-width: 32rem; }
 #guide-column-panel { width: 100%; }
-.guide-column-grid { row-gap: 1rem; }
 .guide-table-stack { display: grid; gap: .75rem; }
 
 .guide-column-panel--narrow { max-width: 24rem; }

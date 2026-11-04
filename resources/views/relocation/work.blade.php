@@ -2,7 +2,7 @@
 @section('title', 'Relocation request')
 @section('title-status')<span data-relocation-status class="status-badge">{{ $status }}</span>@endsection
 @section('page-actions')
-<button type="submit" form="relocation-form" name="action" value="save" class="primary app-save-progress" data-relocation-save data-save-shortcut @disabled(!$editable)><span data-save-label>Save progress</span><span class="app-search-spinner" aria-hidden="true"></span></button>
+<x-workflow.save-progress form="relocation-form" :disabled="!$editable" data-relocation-save />
 @endsection
 @section('content-sections')
 @vite(['resources/css/relocation.css', 'resources/js/relocation.js'])
@@ -19,7 +19,7 @@
         <p data-material-search-feedback class="warning" role="status" hidden></p>
     </div>
     <x-workflow.tab-panel class="app-content" id="relocation-panel-basic" labelledby="relocation-tab-basic" :active="$step === 'basic'">
-        <x-workflow.heading><h2>Basic info</h2><button type="submit" name="action" value="next" class="primary" data-basic-next @disabled(!$editable)>Next &gt;</button></x-workflow.heading>
+        <x-workflow.heading><h2>Basic info</h2><button type="submit" name="action" value="next" class="primary" data-basic-next @disabled(!$editable)>Next ▷</button></x-workflow.heading>
         <fieldset class="app-entry-fieldset" data-basic-fields>
         <label>Title<input id="relocation-title" name="title" required maxlength="255" value="{{ old('title', $work['title']) }}" @readonly(!$editable && !($manager && $status === 'Accepted'))></label>
         @foreach(['source_location_id' => 'Source', 'destination_location_id' => 'Destination'] as $field => $label)
@@ -96,7 +96,7 @@
             </div>
         </div>
         <template data-tracking-row>
-            <div class="tracking-editor-row">
+            <div class="app-field-flow app-field-flow-separated">
                 <label>Name<input data-tracking-name maxlength="255"></label>
                 <label>Shipper<select data-tracking-carrier><option value="">Choose a shipper</option><option value="USPS">US Postal</option><option value="UPS">UPS</option><option value="FedEx">FedEx</option><option value="Other">Other</option></select></label>
                 <label>Tracking (optional)<input data-tracking-number maxlength="255"></label>

@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Events')
 @section('page-actions')
-@if($canManage)<a class="button app-new-action" href="/events/new" title="Create event">+New</a>@endif
+@if($canManage)<a class="button app-new-action" href="/events/new" title="Create event">＋ New</a>@endif
 @endsection
 @section('content-sections')
 <p>Plan supplies, reconcile shared counts and finalize an event once. Planning moves no stock.</p>
