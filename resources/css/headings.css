@@ -16,3 +16,4 @@
 .app-shell .app-heading-row :is(h2, h3) { margin: 0; }
 .app-heading-row .app-actions { margin: 0; }
 .app-table-panel-copy { flex: 1 1 18rem; min-width: 0; }
+.app-heading-row.app-material-add-actions { justify-content: flex-end; }

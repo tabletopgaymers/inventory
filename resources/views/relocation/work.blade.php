@@ -48,7 +48,7 @@
                 </x-slot:header>
                 <div data-material-results>@include('relocation.search-results', ['results' => [], 'searched' => false, 'sourceName' => $locations->firstWhere('id', (int) $work['source_location_id'])?->name ?: 'Source', 'destinationName' => $locations->firstWhere('id', (int) $work['destination_location_id'])?->name ?: 'Destination'])</div>
                 <x-slot:footer>
-                    <x-app.heading-row variant="table" class="app-table-panel-toolbar material-add-actions"><div class="app-actions"><x-app.action variant="primary" type="button"  data-material-add-selected :disabled="!$editable">Add selected</x-app.action></div></x-app.heading-row>
+                    <x-app.heading-row variant="table" class="app-table-panel-toolbar app-material-add-actions"><div class="app-actions"><x-app.action variant="primary" type="button"  data-material-add-selected :disabled="!$editable">Add selected</x-app.action></div></x-app.heading-row>
                 </x-slot:footer>
             </x-app.table-region>
         </div>

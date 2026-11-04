@@ -19,4 +19,3 @@
 .app-shell .table-variance-negative { color: var(--app-danger); }
 .app-shell .table-negative { color: var(--app-danger); }
 .app-shell .table-row-error > td { background: var(--app-error-surface); color: var(--app-danger); }
-.app-material-add-actions { justify-content: flex-end; }

@@ -1,5 +1,4 @@
 /* Domain layout/column choices only; generic table and tab rules live in workflow/. */
-#relocation-form .material-add-actions { justify-content: flex-end; }
 #relocation-form .relocation-review-table .projection-value { width: 7%; padding-left: .35rem; padding-right: .35rem; }
 #relocation-form .relocation-review-table td.review-requested { width: 8%; }
 #relocation-form [data-shipping-label] { font-weight: inherit; margin: 0; }
