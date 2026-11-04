@@ -1,3 +1,4 @@
+import { createAction } from './actions.js';
 import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
 (() => {
     // Preview only a committed selection in the viewer's own profile; Save persists it.
@@ -197,9 +198,9 @@ import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
         }
         if (!banner.classList.contains('app-notice-dismissible')) banner.classList.add('app-notice-dismissible');
         if (existing) return;
-        const dismiss = document.createElement('button');
+        const dismiss = createAction({ control: 'dismiss' });
         dismiss.type = 'button';
-        dismiss.className = 'app-action app-action-secondary app-control app-control-dismiss app-notice-dismiss';
+        dismiss.classList.add('app-notice-dismiss');
         dismiss.textContent = '✕';
         dismiss.setAttribute('aria-label', 'Dismiss notification');
         dismiss.title = 'Dismiss notification';

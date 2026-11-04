@@ -165,8 +165,7 @@ import './app.js';
             sample.className = 'app-shell guide-density-probe'; sample.dataset.density = density;
             sample.setAttribute('aria-hidden', 'true'); sample.inert = true;
             const panel = document.createElement('div'); panel.className = 'app-panel';
-            const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Sample';
-            panel.append(button); sample.append(panel); document.body.append(sample);
+            sample.append(panel); document.body.append(sample);
             samples.set(density, { sample, panel });
         }
     }

@@ -55,5 +55,6 @@
 </dialog>
 @endif
 <x-app.confirmation-dialog />
+<x-app.action-templates />
 </body>
 </html>
