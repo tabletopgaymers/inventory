@@ -1,3 +1,5 @@
+@import './actions.css';
+@import './print-tables.css';
 /* Standalone print entry: no application framework/reset or density imports. */
 body { font-family: system-ui, sans-serif; color: #000; margin: 1.5rem; }
 main { max-width: 65rem; margin: auto; }
@@ -9,21 +11,17 @@ h1 { font-size: 1.4rem; }
 .print-details dd { margin: 0; overflow-wrap: anywhere; }
 .print-notes { margin: 0; min-width: 0; border: 1pt solid #000; padding: .35rem .5rem; }
 .print-notes p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+table { border-collapse: separate; }
 .print-collection { break-inside: auto; }
 .print-collection > td { padding: 0; }
 col.print-quantity-column { width: 15%; }
-th, td { padding: .35rem .5rem; text-align: left; }
-.print-quantity { width: 15%; border-left: 1pt solid #000; border-bottom: 1pt solid #000; height: 2rem; text-align: right; }
-.print-quantity:last-child { border-right: 1pt solid #000; }
-.print-group-row th { background: #eee; border-left: 1pt solid #000; border-right: 1pt solid #000; border-bottom: 1pt solid #000; }
-.print-material > thead th { border-top: 1pt solid #000; border-bottom: 1pt solid #000; }
-.print-material > thead th:first-child { border-left: 1pt solid #000; }
-.print-material > thead th:last-child { border-right: 1pt solid #000; }
-.print-material > tbody > tr:not(.print-collection) > td { border: 1pt solid #000; border-top: 0; }
+.print-quantity { width: 15%; border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); height: 2rem; text-align: right; }
+.print-quantity:last-child { border-right: var(--app-print-table-border); }
+.print-group-row th { background: var(--app-print-table-group-surface); border-left: var(--app-print-table-border); border-right: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
+.print-material > thead th { border-top: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
+.print-material > thead th:first-child { border-left: var(--app-print-table-border); }
+.print-material > thead th:last-child { border-right: var(--app-print-table-border); }
+.print-material > tbody > tr:not(.print-collection) > td { border: var(--app-print-table-border); border-top: 0; }
 .print-quantity-heading { text-align: right; }
-.print-item { padding-left: 1rem; border-left: 1pt solid #000; border-bottom: 1pt solid #000; }
-thead { display: table-header-group; break-inside: avoid; }
-tr { break-inside: avoid; }
-button { padding: .15rem .5rem; font: inherit; font-size: .8rem; }
+.print-item { padding-left: var(--app-print-table-item-padding); border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
 @media print { @page { margin: .5in; } body { margin: 0; } button, .print-screen-only { display: none; } }

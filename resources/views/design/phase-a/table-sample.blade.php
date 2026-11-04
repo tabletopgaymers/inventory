@@ -1,10 +1,10 @@
 <x-app.table-region :label="$tableLabel" :class="$tablePanel ? 'app-list-table-panel' : ''">
 @if($tableSections ?? false)
     <x-slot:header>
-        <div class="app-table-panel-toolbar">
+        <x-app.heading-row variant="table" class="app-table-panel-toolbar">
             <p class="app-table-panel-copy">Available inventory by category and collection.</p>
-            <div class="app-actions"><button type="button" class="app-new-action">+ New</button></div>
-        </div>
+            <div class="app-actions"><x-app.action variant="new" type="button" >＋ New</x-app.action></div>
+        </x-app.heading-row>
     </x-slot:header>
 @endif
 <table><thead><tr><th>Item</th><th class="number">Available</th><th class="number">Central</th></tr></thead><tbody>
@@ -16,10 +16,10 @@
 </tbody></table>
 @if($tableSections ?? false)
     <x-slot:footer>
-        <div class="app-table-panel-toolbar">
+        <x-app.heading-row variant="table" class="app-table-panel-toolbar">
             <p class="app-field-help app-table-panel-copy">3 items · Fictional quantities for this example.</p>
-            <div class="app-actions"><button type="button">Download CSV</button></div>
-        </div>
+            <div class="app-actions"><x-app.action type="button">Download CSV</x-app.action></div>
+        </x-app.heading-row>
     </x-slot:footer>
 @endif
 </x-app.table-region>

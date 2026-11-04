@@ -1,8 +1,11 @@
+import { updateStatusBadge } from './status-badges.js';
+import { mountTabs } from './workflow/tabs.js';
 import './app.js';
 
 (() => {
     const tabForm = document.getElementById('guide-tab-form');
     if (tabForm) {
+        tabForm.addEventListener('submit', event => event.preventDefault());
         const storageKey = 'style-guide:tab-form:v1';
         const carriers = ['US Postal', 'UPS', 'FedEx', 'Other'];
         const state = { status: 'New', name: '', source: '', destination: '', button_type: '', button_request: '', button_fulfilled: '', approved: false, signature: '', shippers: [] };
@@ -111,15 +114,11 @@ import './app.js';
         sync();
         renderShippers();
         const tabs = [...tabForm.querySelectorAll('[role="tab"]')];
-        const selectTab = selected => {
-            tabForm.querySelector('[data-tab-section-title]').textContent = selected.textContent;
-            tabs.forEach(tab => {
-                const active = tab === selected;
-                tab.setAttribute('aria-selected', String(active));
-                tab.tabIndex = active ? 0 : -1;
-                document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
-            });
-        };
+        const tabUI = mountTabs(tabForm, {
+            initialKey: new URL(location.href).searchParams.get('tab') || 'basic',
+            onChange: (key, tab) => { tabForm.querySelector('[data-tab-section-title]').textContent = tab.textContent; }
+        });
+        const selectTab = selected => tabUI.activate(selected.dataset.workflowTab);
         tabForm.querySelectorAll('[data-tab-action]').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.disabled) return;
@@ -134,42 +133,22 @@ import './app.js';
                 persist();
             });
         });
-        tabs.forEach((tab, index) => {
-            tab.addEventListener('click', () => selectTab(tab));
-            tab.addEventListener('keydown', event => {
-                let next;
-                if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
-                if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
-                if (event.key === 'Home') next = 0;
-                if (event.key === 'End') next = tabs.length - 1;
-                if (next === undefined) return;
-                event.preventDefault();
-                selectTab(tabs[next]);
-                tabs[next].focus();
-            });
-        });
+
     }
-    const origins = new WeakMap();
-    const decisionDialog = document.getElementById('guide-decision-dialog');
-    document.querySelectorAll('[data-guide-decision]').forEach(trigger => {
-        if (!decisionDialog) return;
-        trigger.addEventListener('click', () => {
-            origins.set(decisionDialog, trigger);
-            const action = trigger.dataset.guideDecisionLabel;
-            const unsaved = action === 'Leave without saving';
-            decisionDialog.querySelector('#guide-decision-title').textContent = unsaved ? 'Unsaved changes' : 'Confirm action';
-            decisionDialog.querySelector('#guide-decision-description').textContent = trigger.dataset.guideDecision;
-            decisionDialog.querySelector('#guide-decision-cancel').textContent = unsaved ? 'Keep editing' : 'Cancel';
-            const confirm = decisionDialog.querySelector('#guide-decision-confirm');
-            confirm.textContent = action;
-            confirm.className = unsaved ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
-            decisionDialog.showModal();
-        });
-    });
-    document.querySelector('[data-guide-decision-confirm]')?.addEventListener('click', () => {
-        const result = document.getElementById('guide-decision-result');
-        result.textContent = 'Preview confirmed. No records were changed and no navigation occurred.';
-        result.hidden = false;
+    const previewDecision = trigger => {
+        const action = trigger.dataset.guideDecisionLabel || trigger.dataset.guideRoleLabel || 'Disable account';
+        const message = trigger.dataset.guideDecision || trigger.dataset.guideRoleMessage
+            || 'Disabling an account will remove any existing roles and will prevent the user from signing in.';
+        window.appRequestDecision({message, origin:trigger, confirmLabel:action, title:action === 'Leave without saving' ? 'Unsaved changes' : 'Confirm action', cancelLabel:action === 'Leave without saving' ? 'Keep editing' : 'Cancel', variant:action === 'Apply setting' || action.startsWith('Grant ') ? 'primary' : 'danger', onConfirm:() => {
+            const result = document.getElementById(trigger.hasAttribute('data-guide-decision') ? 'guide-decision-result' : 'guide-disable-result');
+            if (result) {
+                result.textContent = 'Preview confirmed. No records were changed and no navigation occurred.';
+                result.hidden = false;
+            }
+        }});
+    };
+    document.querySelectorAll('[data-guide-decision], [data-guide-open]').forEach(trigger => {
+        trigger.addEventListener('click', () => previewDecision(trigger));
     });
     const widthToggle = document.querySelector('[data-guide-width-toggle]');
     const columnPanel = document.getElementById('guide-column-panel');
@@ -179,34 +158,8 @@ import './app.js';
         widthToggle.setAttribute('aria-pressed', String(narrow));
         widthToggle.textContent = narrow ? 'Show full-width panel' : 'Show narrow panel';
     });
-    document.querySelectorAll('[data-guide-open]').forEach(trigger => {
-        const dialog = document.getElementById(trigger.dataset.guideOpen);
-        if (!dialog) return;
-        trigger.addEventListener('click', () => {
-            origins.set(dialog, trigger);
-            if (trigger.dataset.guideRoleLabel) {
-                dialog.querySelector('#guide-role-description').textContent = trigger.dataset.guideRoleMessage;
-                const confirm = dialog.querySelector('#guide-role-confirm');
-                confirm.textContent = trigger.dataset.guideRoleLabel;
-                confirm.className = trigger.dataset.guideRoleLabel.startsWith('Remove ') ? 'app-user-disable-confirm' : 'app-user-role-grant-confirm';
-            }
-            dialog.showModal();
-        });
-    });
-    document.querySelectorAll('dialog.app-user-disable-dialog').forEach(dialog => {
-        dialog.addEventListener('close', () => origins.get(dialog)?.focus());
-        dialog.querySelectorAll('[data-guide-close]').forEach(button => {
-            button.addEventListener('click', () => {
-                dialog.close();
-                if (button.hasAttribute('data-guide-preview-confirm')) {
-                    const result = document.getElementById('guide-disable-result');
-                    if (result) {
-                        result.textContent = 'Preview confirmed. No account was changed.';
-                        result.hidden = false;
-                    }
-                }
-            });
-        });
+    document.querySelector('[data-guide-status-choice]')?.addEventListener('change', event => {
+        updateStatusBadge(document.querySelector('[data-guide-status-preview]'), event.target.value);
     });
     const outputs = [...document.querySelectorAll('[data-guide-density][data-guide-measure]')];
     const samples = new Map();
@@ -216,25 +169,78 @@ import './app.js';
             sample.className = 'app-shell guide-density-probe'; sample.dataset.density = density;
             sample.setAttribute('aria-hidden', 'true'); sample.inert = true;
             const panel = document.createElement('div'); panel.className = 'app-panel';
-            const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Sample';
-            panel.append(button); sample.append(panel); document.body.append(sample);
-            samples.set(density, { sample, panel, button });
+            sample.append(panel); document.body.append(sample);
+            samples.set(density, { sample, panel });
         }
     }
+    const colorKeys = ['primary','page','surface','text-color','muted-color','border-color','danger-color','table-heading-color','table-group-color','--app-control-delete-color','--app-control-clear-color','--app-disabled-surface','--app-disabled-text','--app-disabled-border'];
+    const colorAsHex = color => {
+        if (color.startsWith('#')) return color.toLowerCase();
+        const channels = color.match(/[\d.]+/g);
+        if (!channels || channels.length < 3) return color;
+        const rgb = channels.slice(0, 3).map(value => Math.round(Number(value)).toString(16).padStart(2, '0')).join('');
+        const alpha = channels.length > 3 && Number(channels[3]) < 1
+            ? Math.round(Number(channels[3]) * 255).toString(16).padStart(2, '0') : '';
+        return '#' + rgb + alpha;
+    };
     const updateMeasurements = () => {
         for (const output of outputs) {
-            const { sample, panel, button } = samples.get(output.dataset.guideDensity);
+            const { sample, panel } = samples.get(output.dataset.guideDensity);
             const style = getComputedStyle(sample);
             const key = output.dataset.guideMeasure;
+            const token = name => style.getPropertyValue(name).trim();
             const values = {
+                'font-family': token('--app-font-family'),
+                'body-weight': token('--app-body-weight'),
+                'page-title-weight': token('--app-page-title-weight'),
+                'table-heading-weight': token('--app-table-heading-weight'),
+                'table-group-weight': token('--app-table-group-weight'),
+                'field-radius': token('--app-field-radius'),
+                'detail-label-weight': token('--app-detail-label-weight'),
+                'detail-value-style': 'Inherits body typography',
+                'text-color': token('--app-text'),
+                'muted-color': token('--app-muted'),
+                'border-color': token('--app-border'),
+                'danger-color': token('--app-danger'),
+                'table-heading-color': token('--app-table-heading-surface'),
+                'table-group-color': token('--app-table-group-surface'),
+                'column-gap': token('--app-column-gap'),
+                'flow-gap': token('--app-flow-gap'),
+                'page-heading-gap': token('--app-page-heading-gap'),
+                'section-heading-gap': token('--app-section-heading-gap'),
+                'table-heading-gap': token('--app-table-heading-gap'),
+                'column-widths': ['--app-column-min-small','--app-column-min-default','--app-column-min-wide'].map(token).join(' / '),
+                'column-breakpoints': ['--breakpoint-columns-wide','--breakpoint-columns-narrow'].map(token).join(' / '),
                 panel: getComputedStyle(panel).padding,
-                button: getComputedStyle(button).padding,
-                body: style.fontSize + ' / line height ' + style.lineHeight,
-                primary: style.getPropertyValue('--app-primary').trim(),
-                page: style.backgroundColor,
-                surface: getComputedStyle(panel).backgroundColor,
+                button: token('--app-button-padding-y') + ' ' + token('--app-button-padding-x'),
+                'body-size': token('--app-font-size'),
+                'body-line-height': token('--app-density-line-height') + '× (' + style.lineHeight + ')',
+                primary: token('--app-primary'),
+                page: token('--app-page'),
+                surface: token('--app-surface'),
             };
             output.textContent = key.startsWith('--') ? style.getPropertyValue(key).trim() : values[key];
+            if (colorKeys.includes(key)) {
+                output.textContent = colorAsHex(output.textContent);
+                const swatch = document.createElement('span');
+                swatch.className = `guide-color-swatch guide-color-${key}`;
+                swatch.setAttribute('aria-hidden', 'true');
+                output.prepend(swatch, ' ');
+            }
+        }
+        // Fixed status and merged cells derive from the loaded preset values.
+        const rows = new Set(outputs.map(output => output.closest('tr')));
+        for (const row of rows) {
+            const cells = [...row.querySelectorAll('[data-guide-measure]')];
+            const fixed = cells.every(cell => cell.textContent === cells[0].textContent);
+            cells[0].colSpan = fixed ? cells.length : 1;
+            cells.forEach((cell, index) => { cell.hidden = fixed && index > 0; });
+            let note = row.querySelector('[data-guide-fixed-note]');
+            if (fixed && !note) {
+                note = document.createElement('span'); note.dataset.guideFixedNote = '';
+                note.className = 'app-field-help'; note.textContent = ' (Fixed)'; row.querySelector('th').append(note);
+            }
+            if (!fixed) note?.remove();
         }
     };
     updateMeasurements();

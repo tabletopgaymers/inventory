@@ -1,0 +1,16 @@
+/* One labeled-value foundation. Values inherit the surrounding body typography. */
+.app-details {
+    --app-detail-label-width: fit-content(45%);
+    display: grid;
+    grid-template-columns: var(--app-detail-label-width) minmax(0, 1fr);
+    gap: var(--app-density-detail-gap) 1rem;
+    align-content: start;
+    margin: 0;
+    min-width: 0;
+}
+.app-details-fixed { --app-detail-label-width: 11rem; }
+.app-details-compact { --app-detail-label-width: 6rem; }
+.app-details-stacked { grid-template-columns: minmax(0, 1fr); }
+.app-details > dt { margin: 0; font-weight: var(--app-detail-label-weight); overflow-wrap: anywhere; }
+.app-details > dd { margin: 0; min-width: 0; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: theme(--breakpoint-detail-stack)) { .app-details { grid-template-columns: minmax(0, 1fr); } }

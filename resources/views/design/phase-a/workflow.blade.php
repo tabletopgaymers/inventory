@@ -9,20 +9,21 @@
 </div>
 @foreach(['tab'=>'Primary specimen','second-tab'=>'Independent specimen'] as $parameter=>$specimen)
 @php($active = in_array(request($parameter), ['basic','material','review']) ? request($parameter) : 'basic')
-<div data-workflow-demo="{{ $parameter }}">
+<div class="app-panel-stack" data-workflow-demo="{{ $parameter }}">
     <x-workflow.tabs :prefix="$parameter" :label="$specimen" :active="$active" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review']" />
     @foreach(['basic'=>'Basic info','material'=>'Material','review'=>'Review'] as $key=>$title)
     <x-workflow.tab-panel class="app-content" :id="$parameter.'-panel-'.$key" :labelledby="$parameter.'-tab-'.$key" :active="$active === $key">
-        <x-workflow.heading><h2>{{ $specimen }}: {{ $title }}</h2><button type="button" disabled>Sample action</button></x-workflow.heading>
+        <x-workflow.heading><h2>{{ $specimen }}: {{ $title }}</h2><x-app.action type="button" :disabled="true">Sample action</x-app.action></x-workflow.heading>
         <p>This is {{ $title }}. Its disabled action demonstrates caller-controlled availability.</p>
     </x-workflow.tab-panel>
     @endforeach
 </div>
 @endforeach
+<div class="app-content"><h2>Heading and action rows</h2><p>Use <code>x-app.heading-row</code> with <code>variant="page"</code>, <code>"section"</code> or <code>"table"</code>. One foundation owns alignment and wrapping in <code>resources/css/headings.css</code>. Page rows preserve H1/status and the top-level action grid; section rows preserve density-based trailing spacing; table rows support flexible description/footer copy. Existing <code>x-app.page-heading</code> and <code>x-workflow.heading</code> delegate to this foundation. Keep domain titles, actions and permissions in callers. These internal row gaps are separate from the density-based gap between panels.</p></div>
 <div class="app-content"><h2>Linked steps</h2><p>Use x-workflow.steps for pages that navigate to server routes. Supply ordinary links and aria-current="page" on the current one. They share tab styling but retain link semantics and native keyboard behavior.</p></div>
 <x-workflow.steps label="Linked step specimen">
-    <a class="button" href="/style-guide/workflow" aria-current="page">Workflow components</a>
-    <a class="button" href="/style-guide/forms">Forms</a>
+    <x-app.action  href="/style-guide/workflow" aria-current="page">Workflow components</x-app.action>
+    <x-app.action  href="/style-guide/forms">Forms</x-app.action>
 </x-workflow.steps>
 <div class="app-content"><h2>Agent usage</h2><p>Import mountTabs from resources/js/workflow/tabs.js in the domain Vite entry. Pass the form/root, initialKey and an onChange callback for domain refreshes. Use queryParam when independent widgets share a page. activate(key) supports Next and error links; destroy() removes listeners. Repeated mounting returns the existing instance. Never use tab styling to infer permission, persistence or validation rules.</p></div>
 <div class="app-content"><h2>Asset ownership</h2><p>The common shell loads resources/css/app.css (existing theme, then shared workflow rules). Purchase and Relocation include their resources/css domain stylesheet and resources/js domain entry once using Vite; print has independent entries. No page-specific inline workflow stylesheet or old public/purchase.css is needed. Shared modules are imported explicitly, not auto-initialized again globally. Font Awesome remains demo-only. The shell, Save progress shortcut and search controls now also use Vite. Dependent page entries import the same cached app bootstrap before using shell APIs; shared search has one module and mount registry. Legacy plural and unused historical public assets are retained outside the active migration.</p><p>For programmatic tab changes immediately after a save, activate(key, {allowDisabled:true}) can bypass temporary busy-disabled buttons when the caller has already authorized the transition. Ordinary clicks/keyboard retain disabled checks. Preserve domain refresh ordering and dirty-section bookkeeping.</p></div>
@@ -33,9 +34,9 @@
     <p>In editable quantity fields only, Enter/Down moves to the next editable visible field, Up moves back, and the value is selected. Read-only/disabled/hidden fields are skipped; no wrapping or submit occurs at the ends. Tab, modified keys and other fields retain native behavior.</p>
     <p>Import mountQuantityNavigation from resources/js/workflow/quantity-navigation.js. Supply root, resolveFields(input) returning the current intended column/group, and optional isBusy(). The module never parses values or sets editability. Delegation finds new rows at keydown time; repeated mounting returns the existing instance and destroy() removes its listener.</p>
 </div>
-<form data-quantity-demo>
+<form class="app-panel-stack" data-quantity-demo>
 <x-app.table-region label="Quantity navigation specimen" :nowrap="true" :quantity-fields="true" :separators="true" numeric="after-first">
-    <x-slot:header><x-workflow.heading><h2>Quantity specimen</h2><button type="button" data-demo-add-row>Add sample row</button></x-workflow.heading></x-slot:header>
+    <x-slot:header><x-workflow.heading><h2>Quantity specimen</h2><x-app.action type="button" data-demo-add-row>Add sample row</x-app.action></x-workflow.heading></x-slot:header>
     <table><colgroup><col><col class="table-quantity-column"><col class="table-quantity-column"><col class="table-action-column"></colgroup>
         <thead><tr><th>Item</th><th class="table-heading-center">Requested</th><th class="table-heading-center" colspan="2">Fulfilled</th></tr></thead>
         <tbody>
@@ -55,21 +56,22 @@
 <div class="app-content">
     <h2>Unsaved changes</h2>
     <p>Type in this field, then follow any normal site link. The shared shell opens one confirmation modal; Keep editing or Escape preserves the field and restores focus. Leave without saving navigates once. Browser reload/close uses the native browser warning. Reset demo clears its dirty state. Nothing is saved.</p>
-    <form data-unsaved-demo><label>Unsaved demo text<input></label><button type="reset">Reset demo</button> <a href="/style-guide/forms">Leave for Forms</a></form>
+    <form data-unsaved-demo><label>Unsaved demo text<input></label><x-app.action type="reset">Reset demo</x-app.action> <a href="/style-guide/forms">Leave for Forms</a></form>
     <p>Import mountUnsavedChanges from resources/js/workflow/unsaved-changes.js; supply root, isDirty(), optional isBusy() and message. The application shell is required. The caller owns dirty state and clears only its successfully saved section. confirm(callback, options) uses the shell modal for deliberate actions; allowDeparture() suppresses the unload warning for an accepted server submission; isLeaving() prevents recursive confirmations, and destroy() unregisters listeners/guard. Optional text/title/actionLabel/origin retain the caller's action wording and focus target.</p>
     <p>The shell's optional guard.onLeave callback prevents a second native warning after an approved link departure. Existing guards without it retain their behavior. Field qualifiers, error/notice styling and Ctrl/Cmd+S continue using the existing shared shell/shortcut assets; domain validation messages and save responses remain caller-owned.</p>
 </div>
 <div class="app-content">
     <h2>Standalone print documents</h2>
     <p><a href="/style-guide/print" target="_blank" rel="noopener">Open printable specimen</a>. This uses the real x-print.layout and x-print.header, including an empty Notes box and enough fictional rows to inspect pagination.</p>
-    <p>x-print.layout accepts title and optional document-title; its default slot owns document content. It loads only resources/css/print.css and resources/js/print.js, never the application framework or density styles. x-print.header accepts an ordered label/value map, notes and optional notes-label. Metadata uses one-third width, the always-present outlined notes box two-thirds; Notes has an accessible label and no visible heading.</p>
+    <p>x-print.layout accepts title, optional document-title, body-class and an optional styles array for document-specific Vite CSS entries; its default slot owns document content. It supplies the shared centered 65rem page, title and small top-right Print button. Both the Relocation pick-sheet and Inventory count worksheet use it. It loads resources/css/print.css and resources/js/print.js, never the application framework or density styles. x-print.header accepts an ordered label/value map, notes and optional notes-label. Metadata uses one-third width, the always-present outlined notes box two-thirds; Notes has an accessible label and no visible heading.</p>
     <p>Caller-defined tables use print-material, print-collection, print-group-row, print-item, print-quantity-column, print-quantity and print-quantity-heading. Preserve the outer column-header thead and nested collection theads to retain the existing page-repeat behavior and single border edges. Widths/labels/data and empty-state rows remain caller-owned. Standalone print uses fixed spacing, black 1pt borders and half-inch print margins. print-screen-only hides specimen instructions when printing.</p>
+    <p>Shared print-table styling lives in <code>resources/css/print-tables.css</code>, imported by the application and standalone print entries. It uses this specimen's compact spacing, 12pt table type, 1pt black borders and grey collection headings. Header repetition and row break protection share the same owner. Document margins, column widths and the packing sheet's nested collection continuation remain document-specific.</p>
     <p>Relocation still saves progress before opening its packing view in a new tab. That persistence behavior belongs to its workflow script; the shared Print button only invokes browser printing. No save, navigation or auto-print policy is embedded in the shared print layout.</p>
 </div>
 @vite('resources/js/workflow-demo.js')
 <x-app.guide-divider />
 <x-app.panel-stack>
-    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent gap, including across form boundaries. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
+    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent density-based section gap (10px Compact, 12px Standard, 14px Spacious), including across form boundaries. The shared --app-section-gap token owns this spacing; it follows Display Density. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. The common page layout already stacks top-level content sections. Add a stack inside forms or tab sections that contain multiple panels. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
     <x-app.collapsible-panel title="Collapsible specimen"><p>One border surrounds the summary and this body.</p></x-app.collapsible-panel>
 </x-app.panel-stack>
 @endsection

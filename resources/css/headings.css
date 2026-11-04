@@ -1,0 +1,19 @@
+/* One heading/action row foundation; variants retain established spacing. */
+.app-heading-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--app-heading-row-gap, 1rem);
+    min-width: 0;
+}
+.app-heading-row-page { --app-heading-row-gap: var(--app-page-heading-gap); margin: .375rem 0 .5rem; }
+.app-shell .app-heading-row-page.app-heading-with-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.app-shell .app-heading-row-page h1 { font-size: 1.5rem; line-height: 1.125; margin: 0; font-weight: var(--app-page-title-weight); }
+.app-heading-row-page p { margin: .25rem 0 0; }
+.app-heading-row-section { --app-heading-row-gap: var(--app-section-heading-gap); margin-bottom: var(--app-density-field-y); }
+.app-heading-row-table { --app-heading-row-gap: var(--app-table-heading-gap); }
+.app-shell .app-heading-row :is(h2, h3) { margin: 0; }
+.app-heading-row .app-actions { margin: 0; }
+.app-table-panel-copy { flex: 1 1 18rem; min-width: 0; }
+.app-heading-row.app-material-add-actions { justify-content: flex-end; }

@@ -2,14 +2,14 @@
 @section('title', $location->name.' inventory')
 @section('title-status')<x-app.status-badge :status="ucfirst($location->state)" />@endsection
 @section('page-actions')
-@if($canManage)<a class="button" href="/catalog/storage_locations/{{ $location->id }}/edit">Edit</a>@endif
+@if($canManage)<x-app.action  href="/catalog/storage_locations/{{ $location->id }}/edit">Edit</x-app.action>@endif
 @endsection
 @section('content-sections')
 <div class="app-content">
-    <dl class="app-user-details"><dt>Description</dt><dd>{{ $location->description ?: '—' }}</dd><dt>Mailing address</dt><dd class="plain-text">{{ $location->mailing_address ?: '—' }}</dd></dl>
+    <x-app.detail-list variant="content" ><dt>Description</dt><dd>{{ $location->description ?: '—' }}</dd><dt>Mailing address</dt><dd class="plain-text">{{ $location->mailing_address ?: '—' }}</dd></x-app.detail-list>
 </div>
-<h2>Inventory</h2>
 <x-app.table-region label="Location inventory" class="app-list-table-panel">
+<x-slot:header><h2>Inventory</h2></x-slot:header>
 <table><thead><tr><th>Item</th><th class="number">At this location</th><th class="number">Available (all storage)</th></tr></thead><tbody>
 @php
     $group = null;

@@ -44,36 +44,21 @@ document.querySelectorAll('[data-unsaved], [data-catalog-progress]').forEach(for
 
 (() => {
     const trigger = document.querySelector('[data-catalog-archive-trigger]');
-    const dialog = document.getElementById('catalog-archive-dialog');
     const form = document.getElementById('catalog-archive-form');
-    const cancel = document.getElementById('catalog-archive-cancel');
-    const confirm = document.getElementById('catalog-archive-confirm');
-    if (!trigger || !dialog || !form || !cancel || !confirm || typeof dialog.showModal !== 'function') return;
-
-    let submitting = false;
-    // Capture before the shell's link-navigation guard; the modal explains unsaved edits.
+    if (!trigger || !form) return;
+    let approved = false, submitting = false;
     window.addEventListener('click', event => {
         if (!event.target.closest('[data-catalog-archive-trigger]') || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        if (document.querySelector('[data-catalog-progress][data-save-busy="true"]')) return;
-        if (!submitting && !dialog.open) dialog.showModal();
+        if (submitting || document.querySelector('[data-catalog-progress][data-save-busy="true"]')) return;
+        window.appRequestDecision({title:form.dataset.archiveTitle,
+            message:'The record, associated records, inventory and earlier history will be retained. This changes only the selected record. Restoration returns it to Inactive; activation is a separate action. Any unsaved edits will not be saved.',
+            origin:trigger, confirmLabel:'Archive', variant:'danger',
+            onConfirm:() => { approved = true; form.requestSubmit(); approved = false; }});
     }, true);
-    cancel.addEventListener('click', () => dialog.close());
-    dialog.addEventListener('cancel', event => { if (submitting) event.preventDefault(); });
-    dialog.addEventListener('close', () => trigger.focus());
     form.addEventListener('submit', event => {
-        if (submitting || !dialog.open || event.submitter !== confirm) {
-            event.preventDefault();
-            return;
-        }
+        if (submitting || !approved) { event.preventDefault(); return; }
         submitting = true;
-        cancel.disabled = true;
-        confirm.disabled = true;
     });
-    window.addEventListener('pageshow', () => {
-        submitting = false;
-        cancel.disabled = false;
-        confirm.disabled = false;
-        if (dialog.open) dialog.close();
-    });
+    window.addEventListener('pageshow', () => { submitting = false; });
 })();

@@ -5,20 +5,23 @@
 <nav class="app-section-nav" aria-label="On this page">
     <a href="#spacing">Spacing</a><a href="#titles">Titles</a><a href="#basic-panel">Basic panel</a><a href="#table-panel">Table panel</a><a href="#columns">Responsive columns</a><a href="#statuses">Status indicators</a>
 </nav>
-<section id="spacing" aria-labelledby="spacing-title">
+<section class="app-panel-stack" id="spacing" aria-labelledby="spacing-title">
 <div class="app-content">
     <h2 id="spacing-title">Spacing and display density</h2>
+    <p>Between sections, use the shared <code>app-panel-stack</code> (or <code>x-app.panel-stack</code>): its single <code>--app-section-gap</code> (Compact 10px, Standard 12px, Spacious 14px) separates panels, tables, tab strips and collapsible sections. The page layout supplies the top-level stack; forms and unpadded tab sections containing several panels supply their own. Children have no added outer margins. Hidden sections take no space. Panel gaps, internal panel padding and field/table spacing follow Display Density.</p>
     <p>Users choose Compact, Standard or Spacious in their profile. Standard is the default. The shared density settings control panel padding, line height, field spacing and table-row spacing throughout the application.</p>
     <ul>
         <li>Use the shared font family and base font size; do not override them on individual pages or components.</li>
-        <li>Use density variables for vertical spacing instead of independent padding or margin values.</li>
+        <li>Use density variables for internal vertical spacing, except the explicitly fixed settings listed below. Use the shared section-gap token between panels.</li>
         <li>Keep consistent panel padding and align action groups with related information. Buttons retain their internal padding.</li>
         <li>Use the shared heading hierarchy; do not enlarge ordinary text to create headings.</li>
         <li>Let content grow with the page. Avoid internal vertical scrolling for table results.</li>
         <li>Display density belongs to the viewer; print worksheets retain their established spacing.</li>
     </ul>
+    <h3>CSS units</h3>
+    <p>Use <code>rem</code> for font sizes, spacing and layout dimensions, including responsive breakpoints. Use <code>px</code> for borders, focus strokes, shadows and other fine visual details. Panel/section gaps are an explicit pixel-based exception: 10px Compact, 12px Standard, 14px Spacious. Retain viewport units, percentages, content-relative units such as <code>ch</code>/<code>em</code>, and physical print units where they serve the component. Browser-measured positioning and accessibility/offscreen utility geometry can remain pixels.</p>
     <h3>Settings</h3>
-    <p class="app-field-help">This table reads the loaded stylesheet for all three presets. Relative values remain in rem; rendered measurements use pixels at the current viewport and zoom. Your saved density is unchanged.</p>
+    <p class="app-field-help">This table reads shared CSS tokens for all three presets. Breakpoints are compiled from those same theme tokens; fixed rows and merged cells are detected automatically. The panel-padding and line-height pixel figures are rendered measurements. Relative values remain in rem; rendered measurements use pixels at the current viewport and zoom. Your saved density is unchanged.</p>
 </div>
 @include('design.phase-a.density-settings')
 </section>
@@ -26,11 +29,11 @@
 <section id="titles" aria-labelledby="titles-title">
     <h2 id="titles-title">Titles</h2>
     <p>A page title identifies the page or record. A simple title needs no status or actions.</p>
-    <div class="app-page-heading"><div class="app-title-row"><h3>Inventory</h3></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading"><div class="app-title-row"><h3>Inventory</h3></div></div>
     <h3>Titles with status and actions</h3>
     <p>Place record status immediately after the title and key actions on the right. Show only actions available to the user; keep the primary action last. Section examples below use lower-level headings to preserve the page hierarchy.</p>
-    <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><a class="button" href="/style-guide/forms">Edit</a></div></div>
-    <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><button type="button">Cancel</button><button type="button" class="primary">Save</button></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><x-app.action  href="/style-guide/forms">Edit</x-app.action></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><x-app.action type="button">Cancel</x-app.action><x-app.action variant="primary" type="button" >Save</x-app.action></div></div>
 </section>
 <x-app.guide-divider />
 <section id="basic-panel" aria-labelledby="basic-panel-title">
@@ -42,10 +45,11 @@
     </div>
 </section>
 <x-app.guide-divider />
-<section id="table-panel" aria-labelledby="table-panel-title">
+<section class="app-panel-stack" id="table-panel" aria-labelledby="table-panel-title">
     <h2 id="table-panel-title">Table panel</h2>
     <p>A table panel presents tabular information without outer padding. Search, filters and surrounding page actions are separate components. Optional header and footer slots can contain brief context or actions specifically associated with the table.</p>
     <h3>Plain table panel</h3>
+    <p>All panel and table frames use the shared <code>--app-radius: 8px</code>. Plain tables and tables with optional sections have the same frame and an inner horizontally scrolling body; headers and footers stay outside that scroll region. Tables grow vertically with the page. Field, button, badge and tab shapes remain separate controls.</p>
     @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Plain grouped inventory table'])
     <h3>Table panel with optional header and footer</h3>
     <p>Use a header, a footer, both or neither. Their content is unrestricted: headings, descriptions and buttons are examples, not requirements. Omitted slots create no empty sections. Header and footer padding aligns with table cells; the table keeps square internal corners within the rounded outer panel.</p>
@@ -77,20 +81,30 @@
 <section id="columns" aria-labelledby="columns-title">
     <h2 id="columns-title">Responsive columns</h2>
     <p>A panel can arrange related information in two or more columns when there is room, then stack them as its available width narrows. The toggle changes only this example.</p>
-    <div class="app-actions"><button type="button" data-guide-width-toggle aria-controls="guide-column-panel" aria-pressed="false">Show narrow panel</button></div>
+    <p><strong>Standard: columns.</strong> Use <code>app-columns</code> for related groups. Each direct child stays together when stacked, in source order. Default minimum width is 20rem; use <code>app-columns-small</code> for 16rem or <code>app-columns-wide</code> for 22rem. Use <code>app-columns-two</code> for two columns above 64rem, one below; <code>app-columns-three</code> for three/two/one columns at 64rem and 40rem. <code>app-columns-fields</code> fills field widths; <code>app-columns-trim</code> removes outer label margins within grouped columns. Keep related fields inside one child rather than interleaving them.</p>
+    <p><strong>Standard: flowing fields.</strong> Use <code>app-field-flow</code> for content-sized label/control units that wrap and align along their bottoms, such as Purchase charges and Relocation tracking. Each direct label contains its own control. Use <code>app-field-flow-separated</code> when repeating rows need a trailing field gap. Domain styles may set specific field widths, but must not duplicate the wrapping layout.</p>
+    <p>Both foundations live in <code>resources/css/layouts.css</code>, use the viewer’s density for vertical gaps, and share a 2rem column gap or 1rem flowing-field gap. Preserve reading order and grouped sections when choosing a variant.</p>
+    <div class="app-actions"><x-app.action type="button" data-guide-width-toggle aria-controls="guide-column-panel" aria-pressed="false">Show narrow panel</x-app.action></div>
     <div class="app-content" id="guide-column-panel">
-        <div class="app-detail-grid guide-column-grid">
+        <div class="app-columns app-columns-small">
             <section><h3>Collection</h3><p>Pronoun ribbons</p><p>Category: Ribbon</p><a href="#table-panel">View the sample table</a></section>
             <section><h3>Inventory</h3><p>370 available</p><p>300 at Central</p><p>Review quantities before requesting a relocation.</p></section>
         </div>
     </div>
 </section>
 <x-app.guide-divider />
-<section id="statuses" aria-labelledby="statuses-title">
+<section class="app-content"><h2>Read-only labeled values</h2><p>Use <code>x-app.detail-list</code> for labeled values. Labels are semibold (600); values inherit normal body typography. The shared <code>resources/css/details.css</code> owns density-based row gaps, multiline values, long-text wrapping and stacking below 48rem. Default/content labels fit within 45% of the list; <code>variant="fixed"</code> uses 11rem labels, <code>"compact"</code> uses 6rem and <code>"stacked"</code> always places values below labels. Keep each label/value pair in source order. Do not add domain-specific typography rules.</p><x-app.detail-list><dt>Label</dt><dd>Normal body text</dd><dt>Mailing address</dt><dd>Recipient name
+Street address
+Locality and postal details</dd></x-app.detail-list></section>
+<x-app.guide-divider />
+<section class="app-panel-stack" id="statuses" aria-labelledby="statuses-title">
     <h2 id="statuses-title">Status indicators</h2>
     <div class="app-content">
         <p>Status badges combine a short text label with a color. Use the established workflow states; color supplements the label and never replaces it.</p>
-        <div class="app-inline-group">@foreach(['Draft','Request','Requested','Active','Ordered','Shipped','Receiving','Received','Finalized','Complete','Cancelled','Inactive','Archived'] as $status)<x-app.status-badge :status="$status" />@endforeach</div>
+        <div class="app-inline-group">@foreach(array_map('ucfirst', array_keys(config('status-badges.statuses'))) as $status)<x-app.status-badge :status="$status" />@endforeach</div>
+        <p>The central mapping is <code>config/status-badges.php</code>. All badges use <code>x-app.status-badge</code>; client updates use <code>updateStatusBadge</code> from <code>resources/js/status-badges.js</code>, reading the same mapping supplied by the shell. An optional label changes wording without changing the underlying status (for example, a corrected final report). Unknown statuses retain the configured pending fallback.</p>
+        <label>Preview status<select data-guide-status-choice>@foreach(array_keys(config('status-badges.statuses')) as $status)<option value="{{ ucfirst($status) }}">{{ ucfirst($status) }}</option>@endforeach</select></label>
+        <x-app.status-badge status="New" data-guide-status-preview />
         <p>Place status beside a record title and in a dedicated table column. A workflow's editing step does not create a new business status.</p>
         <div class="app-title-row"><h3>Sample collection</h3><x-app.status-badge status="Active" /></div>
     </div>

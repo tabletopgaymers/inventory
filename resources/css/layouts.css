@@ -1,0 +1,30 @@
+/* Responsive foundations. DOM child order is reading/stacking order. */
+.app-columns {
+    --app-column-min: var(--app-column-min-default);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--app-column-min)), 1fr));
+    gap: var(--app-density-field-y) var(--app-column-gap);
+    align-items: start;
+    min-width: 0;
+}
+.app-columns > * { min-width: 0; }
+.app-columns-small { --app-column-min: var(--app-column-min-small); }
+.app-columns-wide { --app-column-min: var(--app-column-min-wide); }
+.app-columns-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app-columns-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: theme(--breakpoint-columns-wide)) {
+    .app-columns-two { grid-template-columns: minmax(0, 1fr); }
+    .app-columns-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: theme(--breakpoint-columns-narrow)) { .app-columns-three { grid-template-columns: minmax(0, 1fr); } }
+.app-shell .app-columns-trim > div > label:first-child { margin-top: 0; }
+.app-shell .app-columns-trim > div > label:last-child { margin-bottom: 0; }
+.app-shell .app-columns-three > label { margin: 0; }
+/* Field groups can opt into filling their column without stretching checkboxes. */
+.app-shell .app-columns-fields :is(label:not(.app-choice), .app-field) > :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea, .app-sku-field) { width: 100%; max-width: 100%; box-sizing: border-box; }
+
+/* Content-sized field/label units wrap together, aligned at the bottom. */
+.app-field-flow { display: flex; flex-wrap: wrap; align-items: end; gap: var(--app-density-field-y) var(--app-flow-gap); min-width: 0; }
+.app-shell .app-field-flow > label { display: flex; flex-direction: column; margin: 0; max-width: 100%; }
+.app-shell .app-field-flow select { width: auto; }
+.app-field-flow-separated { margin-bottom: var(--app-density-field-y); }

@@ -34,7 +34,7 @@
 @if($step === 'items')<button name="action" value="locations" formnovalidate>Back: locations</button>@endif
 <a class="discard" href="{{ $row ? '/relocations/'.$row->id : '/relocations' }}">Discard changes</a>
 
-@if($step === 'locations')<button name="action" value="items" class="primary" formnovalidate>Next: items</button>@elseif(!$row || $row->status === 'Draft')<button name="action" value="review" class="primary" formnovalidate>Next: review</button>@endif
+@if($step === 'locations')<button name="action" value="items" class="primary" formnovalidate>Next ▷</button>@elseif(!$row || $row->status === 'Draft')<button name="action" value="review" class="primary" formnovalidate>Next ▷</button>@endif
 </div>
 </div></form><script src="/requests.js?v=relocation-progress-1-sentence-case-1-pending-notice-1" defer></script>
 @endsection

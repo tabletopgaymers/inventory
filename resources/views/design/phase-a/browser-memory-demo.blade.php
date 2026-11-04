@@ -1,21 +1,25 @@
 @extends('design.phase-a.layout')
 @section('title', 'Browser Memory Demo')
-@section('guide-notice')Catalog and inventory snapshots are reused for up to 15 minutes across pages using this cache. Selected item IDs and location are remembered separately for each signed-in user. No catalog records or inventory are changed.@endsection
+@section('guide-notice-in-panel', 'true')
 @section('guide-content')
 @vite(['resources/css/browser-memory-demo.css', 'resources/js/browser-memory-demo.js'])
+<div class="app-content">
+<p>Catalog and inventory snapshots are reused for up to 15 minutes across pages using this cache. Selected item IDs and location are remembered separately for each signed-in user. No catalog records or inventory are changed.</p>
 <p class="app-field-help" data-memory-snapshot>Loading catalog and inventory…</p>
-<div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your saved selections have been kept. <button type="button" data-memory-retry>Try again</button></div>
+</div>
+<div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your saved selections have been kept. <x-app.action type="button" data-memory-retry>Try again</x-app.action></div>
 <x-app.panel-stack>
 <div class="memory-demo-columns" data-memory-demo data-user-id="{{ auth()->id() }}" data-catalog-url="/style-guide/browser-memory-demo/data">
     <section class="app-content">
         <h2 class="app-heading-flush">Search</h2>
         <form data-memory-search role="search">
-            <label for="memory-search">Item, collection or category</label>
+            <x-app.field label="Item, collection or category" for="memory-search">
             <div class="memory-demo-combobox">
                 <input id="memory-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="memory-suggestions" autocomplete="off" spellcheck="false" disabled>
-                <button type="button" class="memory-demo-clear" aria-label="Clear search" title="Clear search" hidden>✕</button>
+                <x-app.action control="clear" type="button" class="memory-demo-clear" aria-label="Clear search" title="Clear search" hidden>✕</x-app.action>
                 <ul id="memory-suggestions" class="memory-demo-suggestions" role="listbox" aria-label="Matching catalog entries" hidden></ul>
             </div>
+            </x-app.field>
         </form>
         <p class="app-field-help">Search names, including an item's category and collection. Choose a match or press Enter to add the first match. A category or collection adds all its items. Already selected items are included only once.</p>
         <p role="status" data-memory-status></p>

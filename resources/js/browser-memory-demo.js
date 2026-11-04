@@ -1,3 +1,4 @@
+import { createAction } from './actions.js';
 import './app.js';
 import { loadCatalogSnapshot, CATALOG_MAX_AGE_MS } from './catalog-snapshot.js';
 
@@ -111,8 +112,8 @@ async function mountDemo(root) {
                 group = collection.id;
                 const row = document.createElement('tr'), heading = textCell('th', `${categories.get(collection.category_id)?.name ?? 'Category'} : ${collection.name}`);
                 row.className = 'group-row'; heading.colSpan = 3; heading.scope = 'rowgroup';
-                const action = document.createElement('th'), remove = document.createElement('button');
-                remove.type = 'button'; remove.className = 'material-remove'; remove.textContent = '✕';
+                const action = document.createElement('th'), remove = createAction({ control: 'delete' });
+                remove.type = 'button'; remove.classList.add('material-remove'); remove.textContent = '✕';
                 remove.dataset.memoryRemoveCollection = collection.id;
                 remove.setAttribute('aria-label', `Remove collection ${categories.get(collection.category_id)?.name ?? 'Category'} : ${collection.name}`);
                 action.append(remove); row.append(action, heading); body.append(row);
@@ -121,8 +122,8 @@ async function mountDemo(root) {
             name.className = 'app-grouped-item';
             const quantity = textCell('td', locations.has(selectedLocationId) ? Number(inventory.get(`${item.id}:${selectedLocationId}`) ?? 0).toLocaleString() : '—');
             quantity.className = 'table-numeric'; row.dataset.memoryItem = item.id;
-            const action = document.createElement('td'), remove = document.createElement('button');
-            remove.type = 'button'; remove.className = 'material-remove'; remove.textContent = '✕';
+            const action = document.createElement('td'), remove = createAction({ control: 'delete' });
+            remove.type = 'button'; remove.classList.add('material-remove'); remove.textContent = '✕';
             remove.dataset.memoryRemove = item.id; remove.setAttribute('aria-label', `Remove ${item.name}`); action.append(remove);
             row.append(action, name, textCell('td', item.sku), quantity); body.append(row);
         });

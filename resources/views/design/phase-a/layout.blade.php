@@ -17,11 +17,13 @@
     <a href="/style-guide/wrapper" @if(request()->is('style-guide/wrapper')) aria-current="page" @endif>Application frame</a>
     @endif
 </nav>
+@unless($__env->hasSection('guide-notice-in-panel'))
 @hasSection('guide-notice')
 <p class="app-field-help">@yield('guide-notice')</p>
 @else
 <p class="app-field-help">@yield('intro') Sample controls use fictional data and do not save records. The surrounding app navigation works normally.</p>
 @endif
+@endunless
 @yield('guide-content')
 @vite('resources/js/style-guide.js')
 @endsection

@@ -174,11 +174,11 @@ import './app.js';
         event.preventDefault();
         const target = event.target;
         const submitter = event.submitter;
-        window.appRequestDecision('Your edits have not been saved. Changing status will leave without saving those edits.', () => {
+        window.appRequestDecision({title:'Unsaved changes', message:'Your edits have not been saved. Changing status will leave without saving those edits.', origin:submitter, cancelLabel:'Keep editing', confirmLabel:'Leave without saving', variant:'danger', onConfirm:() => {
             approved.add(target);
             target.requestSubmit(submitter);
             approved.delete(target);
-        }, submitter, 'Leave without saving', true);
+        }});
     }, true);
     window.addEventListener('pageshow', () => {
         busy = false;

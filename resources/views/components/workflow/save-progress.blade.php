@@ -1,0 +1,1 @@
+<x-app.action variant="primary" type="submit" name="action" value="save" {{ $attributes->class(['app-save-progress']) }} data-save-shortcut aria-busy="false"><span data-save-label>Save progress</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>

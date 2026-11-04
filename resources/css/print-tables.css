@@ -1,0 +1,31 @@
+/* Shared print-table appearance, based on the Style Guide packing specimen.
+   Document layouts retain their page margins, columns and continuation structure. */
+:root {
+    --app-print-table-border: 1pt solid #000;
+    --app-print-table-padding: .35em .5em;
+    --app-print-table-group-surface: #eee;
+    --app-print-table-item-padding: 1em;
+    --app-print-table-font: system-ui, sans-serif;
+}
+:where(.print-page, .count-worksheet) table { width: 100%; table-layout: fixed; border-spacing: 0; font-family: var(--app-print-table-font); font-size: 12pt; }
+:where(.print-page, .count-worksheet) :is(th, td) { padding: var(--app-print-table-padding); text-align: left; }
+:where(.print-page, .count-worksheet) thead { display: table-header-group; break-inside: avoid; }
+:where(.print-page, .count-worksheet) tr { break-inside: avoid; }
+/* Flat print tables use collapsed grid lines; the packing document has its own
+   nested collection structure so its carefully joined edges remain separate. */
+.count-worksheet table { border-collapse: collapse; }
+.count-worksheet table :is(th, td) { border: var(--app-print-table-border); color: #000; }
+.count-worksheet table thead th { background: #fff; }
+.count-worksheet table thead th:not(:first-child) { text-align: right; }
+.count-worksheet table .collection-heading th { background: var(--app-print-table-group-surface); }
+.count-worksheet table :is(.number, .table-numeric) { text-align: right; }
+@media print {
+    .app-shell .app-main table { border-collapse: collapse; border-spacing: 0; color: #000; font-family: var(--app-print-table-font); font-size: 12pt; }
+    .app-shell .app-main table :is(th, td) { padding: var(--app-print-table-padding); border: var(--app-print-table-border); color: #000; background: #fff; }
+    .app-shell .app-main table :is(.collection-heading, .group-row) > :is(th, td) { background: var(--app-print-table-group-surface); }
+    .app-shell .app-main table .app-grouped-item { padding-left: var(--app-print-table-item-padding); }
+    .app-shell .app-main table a { color: inherit; text-decoration: none; }
+    .app-shell .app-main thead { display: table-header-group; break-inside: avoid; }
+    .app-shell .app-main tr { break-inside: avoid; }
+    .app-shell .app-main :is(.app-list-table-panel, .table-wrap) { border: 0; border-radius: 0; box-shadow: none; }
+}

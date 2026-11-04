@@ -1,0 +1,60 @@
+@import './control-states.css';
+/* Shared by Blade actions and dynamically created controls; standalone-print safe. */
+:root {
+    --app-button-padding-y: .225rem;
+    --app-button-padding-x: .9rem;
+    --app-button-min-height: 2rem;
+    --app-button-font-size: .9375rem;
+    --app-button-weight: 600;
+    --app-button-radius: .375rem;
+    --app-button-small-font-size: .8rem;
+    --app-button-small-padding: .15rem .5rem;
+    --app-action-new-color: #15803d;
+    --app-action-new-hover: #166534;
+    --app-action-primary-hover: #4c1d95;
+    --app-action-danger-hover: #991b1b;
+    --app-action-changed-surface: var(--color-success, #d1fae5);
+    --app-action-changed-color: var(--color-success-content, #065f46);
+    --app-control-delete-color: #b91c1c;
+    --app-control-delete-size: .9375rem;
+    --app-control-delete-weight: 700;
+    --app-control-delete-padding: .125rem .25rem;
+    --app-control-clear-color: var(--app-muted, #595965);
+    --app-control-clear-size: .9375rem;
+    --app-control-clear-weight: 600;
+    --app-control-dismiss-size: 1.5rem;
+    --app-control-dismiss-weight: 400;
+    --app-control-filter-size: 2rem;
+    --app-control-filter-trigger-size: 1.5rem;
+}
+/* Legacy selectors serve only excluded plural templates; metrics have one owner. */
+.app-action, .app-shell button:not(.app-action):not(.btn), .app-shell .button, .app-shell .actions > a.discard {
+    display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    min-height: var(--app-button-min-height); height: auto;
+    padding: var(--app-button-padding-y) var(--app-button-padding-x);
+    border: 1px solid var(--app-border, #d5d5df); border-radius: var(--app-button-radius);
+    background: var(--app-surface, #fff); color: var(--app-text, #231c2f); cursor: pointer;
+    font: inherit; font-size: var(--app-button-font-size); font-weight: var(--app-button-weight);
+    line-height: 1.2; text-align: center; text-decoration: none;
+}
+.app-action:hover { background: var(--app-page, #f5f5f8); text-decoration: none; }
+.app-action-primary, .app-shell button.primary, .app-shell .button.primary { background: var(--app-primary, #5b21b6); border-color: var(--app-primary, #5b21b6); color: #fff; }
+.app-action-primary:hover { background: var(--app-action-primary-hover); }
+.app-action-danger, .app-shell .discard { color: var(--app-danger, #b91c1c); border-color: var(--app-danger, #b91c1c); }
+.app-action-destructive { background: var(--app-danger, #b91c1c); border-color: var(--app-danger, #b91c1c); color: #fff; }
+.app-action-destructive:hover { background: var(--app-action-danger-hover); }
+.app-action-new, .app-shell .button.app-new-action { background: var(--app-action-new-color); border-color: var(--app-action-new-color); color: #fff; white-space: nowrap; }
+.app-action-new:hover, .app-shell .button.app-new-action:hover { background: var(--app-action-new-hover); border-color: var(--app-action-new-hover); }
+.app-action-changed, .app-action-changed:hover { background: var(--app-action-changed-surface); border-color: var(--app-action-changed-color); color: var(--app-action-changed-color); }
+.app-action-small { min-height: 0; padding: var(--app-button-small-padding); font-size: var(--app-button-small-font-size); }
+.app-action:disabled { background: var(--app-disabled-surface); border-color: var(--app-disabled-border); color: var(--app-disabled-text); cursor: default; opacity: 1; }
+.app-action:focus-visible { outline: 3px solid var(--app-primary, #5b21b6); outline-offset: 1px; }
+/* Special controls share a foundation and centrally configurable semantic tokens. */
+.app-action.app-control { min-height: 0; border: 0; background: transparent; box-shadow: none; }
+.app-action.app-control:hover { background: transparent; }
+.app-action.app-control-delete { padding: var(--app-control-delete-padding); color: var(--app-control-delete-color); font-size: var(--app-control-delete-size); font-weight: var(--app-control-delete-weight); line-height: inherit; }
+.app-action.app-control-clear { padding: 0 .5rem; color: var(--app-control-clear-color); font-size: var(--app-control-clear-size); font-weight: var(--app-control-clear-weight); }
+.app-action.app-control-clear:hover { color: var(--app-text, #231c2f); }
+.app-action.app-control-dismiss { padding: 0; width: var(--app-control-dismiss-size); height: var(--app-control-dismiss-size); border-radius: .25rem; color: inherit; font-size: inherit; font-weight: var(--app-control-dismiss-weight); line-height: 1; }
+.app-action.app-control-filter { width: var(--app-control-filter-size); height: var(--app-control-filter-size); padding: 0; border: 1px solid transparent; }
+.app-action.app-control-filter.app-action-primary { background: var(--app-primary, #5b21b6); border-color: var(--app-primary, #5b21b6); color: #fff; }

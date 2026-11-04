@@ -1,0 +1,16 @@
+/* One frame and scroll owner, regardless of optional header/footer slots. */
+.app-shell .app-table-panel {
+    position: relative; min-width: 0; max-width: 100%; box-sizing: border-box;
+    background: var(--app-surface); border: 1px solid var(--app-border);
+    border-radius: var(--app-radius); overflow: hidden; max-height: none; margin: 0;
+}
+.app-table-panel-header, .app-table-panel-footer { padding: var(--app-density-panel-y) .8rem; min-width: 0; }
+.app-table-panel-header > :first-child, .app-table-panel-footer > :first-child { margin-top: 0; }
+.app-table-panel-header > :last-child, .app-table-panel-footer > :last-child { margin-bottom: 0; }
+.app-table-panel-footer { border-top: 1px solid var(--app-border); }
+.app-table-panel-body { min-width: 0; max-width: 100%; overflow-x: auto; }
+.app-table-panel-body:focus-visible { outline: 2px solid var(--app-primary); outline-offset: -2px; }
+.app-shell .app-table-panel thead th { border-radius: 0; }
+@media print {
+    .app-shell .app-table-panel, .app-table-panel-body { overflow: visible; max-height: none; }
+}

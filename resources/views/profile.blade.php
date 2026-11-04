@@ -6,13 +6,13 @@
 @endphp
 @section('title', $ownProfile ? 'My profile' : 'Edit profile: '.$profileUser->displayName())
 @section('page-actions')
-<a class="button discard" href="{{ $profileUrl }}">Discard</a>
-<button type="submit" class="primary" form="profile-form">Save</button>
+<x-app.action variant="danger"  href="{{ $profileUrl }}">Discard</x-app.action>
+<x-app.action variant="primary" type="submit"  form="profile-form">Save</x-app.action>
 @endsection
 @section('content')
 <form id="profile-form" method="post" action="{{ $profileUrl }}">@csrf<input type="hidden" name="_deliberate" value="1">
 @if(!app(\App\Support\ProfilePreferences::class)->state(\Illuminate\Support\Facades\DB::connection())['ready'])<p class="warning">Profile saving is waiting for the contact/preferences migration. Your existing profile is retained.</p>@endif
-<div class="app-profile-columns">
+<div class="app-columns app-columns-two app-columns-trim">
 <div>
 <label>First name<input name="first_name" required maxlength="100" autocomplete="given-name" value="{{ old('first_name', $profileUser->first_name) }}"></label>
 <label>Last name<input name="last_name" required maxlength="100" autocomplete="family-name" value="{{ old('last_name', $profileUser->last_name) }}"></label>

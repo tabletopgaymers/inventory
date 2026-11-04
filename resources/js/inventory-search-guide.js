@@ -15,8 +15,7 @@ import './inventory-search-controls.js';
     };
     const link = (text, href) => { const element = node('a', text); element.href = href; return element; };
     const table = (data, output, plain) => {
-        const region = node('div', undefined, plain ? 'app-table-region table-wrap app-list-table-panel' : '');
-        if (plain) { region.setAttribute('role', 'region'); region.setAttribute('aria-label', 'Full inventory search results'); region.tabIndex = 0; }
+        const region = plain ? document.querySelector('[data-guide-search-table-frame]').content.firstElementChild.cloneNode(true) : node('div');
         const table = node('table');
         const head = node('thead'); const labels = node('tr');
         const columns = Object.entries(data.columns);
@@ -33,7 +32,7 @@ import './inventory-search-controls.js';
             body.append(tr);
         }
         if (!data.rows.length) { const row = node('tr'); const cell = node('td', 'No matching items.'); cell.colSpan = labels.children.length; row.append(cell); body.append(row); }
-        table.append(body); region.append(table); output.replaceChildren(region);
+        table.append(body); (plain ? region.querySelector('.app-table-panel-body') : region).append(table); output.replaceChildren(region);
     };
     const render = () => {
         if (!latest) { fullOutput.replaceChildren(node('p', 'Search inventory or choose Show all.')); return; }

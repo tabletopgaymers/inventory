@@ -1,8 +1,8 @@
 @extends('layout')
 @section('title', 'Adjust unit cost - '.$item->name)
 @section('page-actions')
-<x-app.action variant="discard" href="{{ $itemUrl }}">Cancel</x-app.action>
-<button type="submit" class="primary app-save-progress" form="cost-form" data-catalog-save aria-busy="false"><span data-save-label>Save</span><span class="app-search-spinner" aria-hidden="true"></span></button>
+<x-app.action variant="secondary" href="{{ $itemUrl }}">Cancel</x-app.action>
+<x-app.action variant="primary" type="submit" class="app-save-progress" form="cost-form" data-catalog-save aria-busy="false"><span data-save-label>Save</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('content-sections')
 <div data-catalog-save-feedback role="status" hidden></div>
@@ -10,7 +10,7 @@
 <form id="cost-form" method="post" data-catalog-progress data-record-base="{{ dirname($itemUrl).'/' }}" data-save-mode="edit" data-save-dirty="{{ $errors->any() || session('error') ? 'true' : 'false' }}">
 @csrf
 <input type="hidden" name="operation" value="{{ old('operation', $token) }}">
-<div class="app-catalog-item-columns">
+<div class="app-columns app-columns-wide app-columns-trim">
 <div>
 <label>Current unit cost<input type="text" readonly value="{{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}"></label>
 <label>New unit cost<input name="unit_cost" required inputmode="decimal" value="{{ old('unit_cost', $item->unit_cost) }}"></label>

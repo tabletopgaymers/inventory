@@ -1,0 +1,27 @@
+/* Shared authored values used by the application and live Settings reference. */
+@theme static {
+    --breakpoint-columns-wide: 64rem;
+    --breakpoint-columns-narrow: 40rem;
+    --breakpoint-detail-stack: 48rem;
+    --breakpoint-app-navigation: 50rem;
+}
+:root {
+    --app-radius: 8px;
+    --app-font-family: "Segoe UI", system-ui, sans-serif;
+    --app-font-size: 1rem;
+    --app-body-weight: 400;
+    --app-page-title-weight: 700;
+    --app-table-heading-weight: 700;
+    --app-table-group-weight: 600;
+    --app-detail-label-weight: 600;
+    --app-field-radius: .375rem;
+    --app-label-control-gap: .175rem;
+    --app-column-gap: 2rem;
+    --app-flow-gap: 1rem;
+    --app-column-min-small: 16rem;
+    --app-column-min-default: 20rem;
+    --app-column-min-wide: 22rem;
+    --app-page-heading-gap: .375rem .75rem;
+    --app-section-heading-gap: 1rem;
+    --app-table-heading-gap: .75rem 1.5rem;
+}

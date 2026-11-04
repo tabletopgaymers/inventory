@@ -1,3 +1,6 @@
+import { createAction } from './actions.js';
+import { setSaveDirty, setSaveBusy } from './workflow/save-button.js';
+import { mountNotices } from './workflow/notices.js';
 import './app.js';
 
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
@@ -8,6 +11,7 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
 (() => {
     const form = document.querySelector('[data-purchase-invoice]');
     if (!form) return;
+    mountNotices();
     const linkedField = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (linkedField && !linkedField.closest('[hidden]')) { linkedField.focus(); linkedField.select?.(); }
     let dirty = form.dataset.workspaceDirty==='true';
@@ -15,9 +19,9 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     const searchRoot=form.querySelector('[data-inventory-search]'), searchResults=form.querySelector('[data-purchase-search-results]');
     const pendingSelections=()=>Boolean(searchResults?.querySelector('[data-search-item-check]:checked')) || [...(searchResults?.querySelectorAll('[data-search-quantity]') || [])].some(input=>input.value.trim()!=='');
     const save = document.querySelector('[data-save-shortcut]');
-    save?.classList.toggle('app-save-dirty',dirty);
+    setSaveDirty(save, dirty);
     const markDirty = () => {
-        editGeneration++; dirty = true; save?.classList.add('app-save-dirty');
+        editGeneration++; dirty = true; setSaveDirty(save, true);
         form.querySelectorAll('[data-invoice-derived]').forEach(element => { element.hidden = true; });
         form.querySelectorAll('[data-derived-stale]').forEach(element => { element.hidden = false; });
     };
@@ -29,11 +33,53 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     const progress=mountProgressSave(form, {feedback:document.querySelector('[data-progress-feedback]'), canSave:()=>!searchRoot || !window.appInventorySearch.get(searchRoot)?.getState().busy, getGeneration:() => editGeneration, onSaved:(result, {unchanged}) => {
         document.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
         if (!unchanged) return;
-        dirty = false; save?.classList.remove('app-save-dirty');
+        dirty = false; setSaveDirty(save, false);
     }});
-    form.querySelector('[data-delivery-choice]')?.addEventListener('change', event => {
+    const replacementButton = form.querySelector('[data-replace-vendor]');
+    const supplierChoice = form.elements.supplier_id;
+    const removeSupplier = form.elements.delete_unused_vendor;
+    const updateSupplierAction = () => {
+        if (!replacementButton) return;
+        const available = Boolean(supplierChoice.value && replacementButton.dataset.originalSupplier && supplierChoice.value !== replacementButton.dataset.originalSupplier);
+        replacementButton.disabled = !available;
+        replacementButton.classList.toggle('app-action-changed', available);
+        removeSupplier.disabled = !available;
+        removeSupplier.closest('label').classList.toggle('app-choice-disabled', !available);
+        if (!available) removeSupplier.checked = false;
+    };
+    supplierChoice?.addEventListener('change', () => {
+        updateSupplierAction();
+        const panel = form.querySelector('[data-supplier-information]');
+        const details = panel.querySelector('[data-supplier-details]');
+        const info = JSON.parse(supplierChoice.selectedOptions[0]?.dataset.supplierInfo || 'null');
+        panel.hidden = !info;
+        details.replaceChildren();
+        if (!info) return;
+        [['state','Supplier status'],['website','Website'],['contact_name','Contact'],['email','Email'],['phone','Phone']].forEach(([key,label]) => {
+            if (!info[key]) return;
+            const term = document.createElement('dt'), value = document.createElement('dd');
+            term.textContent = label;
+            value.textContent = key === 'state' ? info[key][0].toUpperCase() + info[key].slice(1) : info[key];
+            details.append(term,value);
+        });
+        const notice = panel.querySelector('[data-supplier-verification]');
+        if (notice) {
+            notice.hidden = info.state !== 'unverified';
+            notice.querySelector('[data-supplier-review]').href = `/catalog/suppliers/${supplierChoice.value}/edit`;
+        }
+    });
+    updateSupplierAction();
+    const deliveryChoice = form.querySelector('[data-delivery-choice]');
+    const deliveryFields = ['name', 'address', 'email', 'phone'];
+    const deliveryDrafts = new Map();
+    let previousDelivery = deliveryChoice?.value;
+    deliveryChoice?.addEventListener('change', event => {
+        // Keep purchase-specific edits when switching away and back, including OTHER.
+        deliveryDrafts.set(previousDelivery, Object.fromEntries(deliveryFields.map(field => [field, form.elements[`delivery_${field}`].value])));
         const option = event.target.selectedOptions[0];
-        ['name','address','email','phone'].forEach(field => { form.elements[`delivery_${field}`].value = option.dataset[field] || ''; });
+        const values = deliveryDrafts.get(event.target.value) || option.dataset;
+        deliveryFields.forEach(field => { form.elements[`delivery_${field}`].value = values[field] || ''; });
+        previousDelivery = event.target.value;
         form.elements.receiving_location_id.value = event.target.value.startsWith('location:') ? event.target.value.slice(9) : '';
     });
     form.addEventListener('submit', event => {
@@ -55,8 +101,8 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         }
         if (event.submitter?.value === 'replace_vendor' && !navigation.isLeaving()) {
             event.preventDefault(); const button = event.submitter;
-            navigation.confirm(() => form.requestSubmit(button), {origin:button,title:'Replace vendor?',actionLabel:'Replace vendor',
-                text:'Replace the vendor with the selected vendor and preserve its details in a permanent note? If removal is selected, only an unused, unshared vendor will be deleted. Other unsaved invoice changes will not be saved.'});
+            navigation.confirm(() => form.requestSubmit(button), {origin:button,title:'Replace supplier?',actionLabel:'Replace supplier',
+                text:'Replace the supplier with the selected supplier and preserve its details in a permanent note? If removal is selected, only an unused, unshared supplier will be deleted. Your other pending order edits will also be saved.'});
             return;
         }
         if (event.submitter?.value === 'cancel_receipt' && !navigation.isLeaving()) {
@@ -132,13 +178,13 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         const key=crypto.randomUUID(),row=document.createElement('tr');row.dataset.invoiceLine='';row.dataset.lineKey=key;row.dataset.group=item?`${item.category} : ${item.collection}`:'Other items';
         const td=()=>document.createElement('td');
         const field=(name,value)=>{const input=document.createElement('input');input.name=`lines[${key}][${name}]`;input.value=value;return input;};
-        const action=td(),remove=document.createElement('button');remove.type='button';remove.className='material-remove';remove.dataset.removeInvoice='';remove.textContent='✕';remove.setAttribute('aria-label',`Remove ${item?.name || 'Other item'}`);action.append(remove);
+        const action=td(),remove=createAction({control:'delete'});remove.type='button';remove.classList.add('material-remove');remove.dataset.removeInvoice='';remove.textContent='✕';remove.setAttribute('aria-label',`Remove ${item?.name || 'Other item'}`);action.append(remove);
         const description=td();description.className='app-grouped-item';const name=field('description',item?.name || '');name.dataset.invoiceDescription='';name.maxLength=500;name.readOnly=Boolean(item);name.setAttribute('aria-label','Item description');description.append(name);
         [['item_id',item?.id || '', 'invoiceItem'],['group_label',row.dataset.group,'invoiceGroup'],['source_request_key','','sourceRequestKey']].forEach(([key,value,hook])=>{const input=field(key,value);input.type='hidden';input.dataset[hook]='';description.append(input);});
         if(!item)description.append(form.querySelector('[data-catalog-link-template]').content.cloneNode(true));
         const requested=td();requested.textContent='—';requested.className='table-numeric';row.append(action,description,requested);
         ['quantity','unit','cost','fee'].forEach(key=>{const cell=td(),input=field(key,key==='quantity'?quantity:key==='unit'?(item?.unit_price || ''):key==='fee'?'0.00':'');input.dataset.invoiceField=key;input.id=`purchase-line-${row.dataset.lineKey}-${key}`;input.inputMode=key==='quantity'?'numeric':'decimal';input.setAttribute('aria-label',`${key[0].toUpperCase()+key.slice(1)} for ${item?.name || 'Other item'}`);cell.append(input);row.append(cell);});
-        const total=td();total.dataset.lineTotal='';total.className='table-numeric';total.textContent='—';const actions=td(),basis=field('basis','unit');basis.type='hidden';basis.dataset.lineBasis='';const recalculate=document.createElement('button');recalculate.type='button';recalculate.dataset.recalculate='';recalculate.textContent='Recalculate';actions.append(basis,recalculate);row.append(total,actions);body.append(row);calculate(row,'unit');return row;
+        const total=td();total.dataset.lineTotal='';total.className='table-numeric';total.textContent='—';const actions=td(),basis=field('basis','unit');basis.type='hidden';basis.dataset.lineBasis='';const recalculate=createAction();recalculate.type='button';recalculate.dataset.recalculate='';recalculate.textContent='Recalculate';actions.append(basis,recalculate);row.append(total,actions);body.append(row);calculate(row,'unit');return row;
     };
     form.querySelector('[data-add-other]')?.addEventListener('click',()=>{if(progress.isBusy() || invoiceRows().length>=1000)return;const row=append({});regroup();markDirty();row.querySelector('[data-invoice-description]').focus();});
     body?.addEventListener('click',event=>{const remove=event.target.closest('[data-remove-invoice]');if(!remove || progress.isBusy())return;remove.closest('[data-invoice-line]').remove();regroup();markDirty();});

@@ -1,3 +1,7 @@
+import { updateStatusBadge } from './status-badges.js';
+import { createAction } from './actions.js';
+import { setSaveDirty, setSaveBusy } from './workflow/save-button.js';
+import { mountNotices } from './workflow/notices.js';
 import './app.js';
 
 import { mountTabs } from './workflow/tabs.js';
@@ -10,6 +14,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
     'use strict';
     const form = document.querySelector('#purchase-request-form');
     if (!form) return;
+    mountNotices();
     const searchRoot = form.querySelector('[data-inventory-search]');
     const rows = () => [...form.querySelectorAll('[data-item-row]')];
     const searchResults = form.querySelector('[data-purchase-search-results]');
@@ -21,7 +26,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
     let dirty = form.dataset.workspaceDirty === 'true';
     let editGeneration = 0;
     const save = document.querySelector('[data-save-shortcut]');
-    save.classList.toggle('app-save-dirty', dirty);
+    setSaveDirty(save, dirty);
     let saveBusy = false;
     let materialPicker;
     const navigation = mountUnsavedChanges(form, { isDirty: () => dirty || Boolean(pendingSelections()) });
@@ -75,22 +80,22 @@ import { mountProgressSave } from './workflow/progress-save.js';
             const input = form.elements[name];
             if (input && input.tagName !== 'SELECT') input.value = value ?? '';
         });
-        const vendor = form.elements.vendor_choice;
+        const supplier = form.elements.vendor_choice;
         const choice = result.values?.vendor_choice;
-        if (choice && ![...vendor.options].some(option => option.value === choice)) vendor.add(new Option(result.values.vendor_name || 'Vendor',choice));
-        [...vendor.options].forEach(option => {
+        if (choice && ![...supplier.options].some(option => option.value === choice)) supplier.add(new Option(result.values.vendor_name || 'Supplier',choice));
+        [...supplier.options].forEach(option => {
             option.dataset.other = String(Boolean(result.other_vendor_id) && option.value === `supplier:${result.other_vendor_id}`);
             if (option.dataset.other === 'true') {
                 option.textContent = `OTHER: ${result.values.vendor_name}`;
-                vendor.append(option);
+                supplier.append(option);
             }
         });
-        if (choice) vendor.value = choice;
+        if (choice) supplier.value = choice;
         form.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
         document.querySelectorAll('form input[name="revision"]').forEach(input => { input.value = result.revision; });
-        document.querySelector('.status-badge').textContent = result.status;
+        updateStatusBadge(document.querySelector('[data-purchase-status]'), result.status);
         form.querySelector('[data-fulfillment-links]').hidden = false;
-        dirty = false; save.classList.remove('app-save-dirty');
+        dirty = false; setSaveDirty(save, false);
         updateBasicChoices(); updateReview();
     }});
     const updateReview = () => {
@@ -99,9 +104,9 @@ import { mountProgressSave } from './workflow/progress-save.js';
         const requireBasic = (name, text) => {
             if (!form.elements[name].value.trim()) messages.push({text,tab:'basic',input:form.elements[name]});
         };
-        requireBasic('vendor_choice', 'Choose a vendor or suggested source in Basic info.');
+        requireBasic('vendor_choice', 'Choose a supplier (existing or suggested) in Basic info.');
         requireBasic('delivery_choice', 'Choose where to deliver the purchase in Basic info.');
-        if (isOtherChoice(form.elements.vendor_choice)) requireBasic('vendor_name', 'Enter the other vendor’s name in Basic info.');
+        if (isOtherChoice(form.elements.vendor_choice)) requireBasic('vendor_name', 'Enter the other supplier’s name in Basic info.');
         if (form.elements.delivery_choice.value === 'other') {
             requireBasic('delivery_name', 'Enter the delivery name in Basic info.');
             requireBasic('delivery_address', 'Enter the mailing address in Basic info.');
@@ -109,7 +114,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         ['vendor','delivery'].forEach(kind => {
             const email = form.elements[`${kind}_email`];
             if (isOtherChoice(form.elements[`${kind}_choice`]) && email.validity.typeMismatch) {
-                messages.push({text:`Enter a valid ${kind === 'vendor' ? 'vendor' : 'delivery'} email in Basic info.`,tab:'basic',input:email});
+                messages.push({text:`Enter a valid ${kind === 'vendor' ? 'supplier' : 'delivery'} email in Basic info.`,tab:'basic',input:email});
             }
         });
         form.querySelectorAll('[data-review]').forEach(el => { el.textContent = form.elements[el.dataset.review].value || '—'; });
@@ -168,7 +173,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         updateReview();
     } });
     form.querySelector('[data-material-next]').addEventListener('click',event => { event.preventDefault(); showTab('review'); });
-    const markDirty = () => { editGeneration++; dirty = true; save.classList.add('app-save-dirty'); updateBasicChoices(); updateMaterialTotals(); updateReview(); };
+    const markDirty = () => { editGeneration++; dirty = true; setSaveDirty(save, true); updateBasicChoices(); updateMaterialTotals(); updateReview(); };
     const changed = event => {
         if (searchRoot?.contains(event.target) || searchResults?.contains(event.target)) return;
         if(event.target.name==='delivery_choice')materialPicker?.invalidateDestination();
@@ -207,8 +212,8 @@ import { mountProgressSave } from './workflow/progress-save.js';
     const appendMaterial = ({id, name='', group='', quantity='', unit='', key}) => {
         const row = document.createElement('tr'); row.dataset.materialLine = '';
         if (id) { row.dataset.itemRow = ''; row.dataset.itemId = id; row.dataset.name = name; row.dataset.group = group; }
-        const action = document.createElement('td'); const remove = cell('button','✕');
-        remove.type = 'button'; remove.className = 'material-remove'; remove.dataset.materialRemove = '';
+        const action = document.createElement('td'); const remove = createAction({ control: 'delete', text: '✕' });
+        remove.type = 'button'; remove.classList.add('material-remove'); remove.dataset.materialRemove = '';
         remove.setAttribute('aria-label', `Remove ${id ? name : 'Other item'}`); remove.title = `Remove ${id ? name : 'Other item'}`; action.append(remove);
         const item = document.createElement('td'); item.className = 'app-grouped-item';
         if (id) item.textContent = name;

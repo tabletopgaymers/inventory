@@ -2,8 +2,8 @@
 @php($singular = \App\Support\CatalogRecords::SINGULAR[$kind])
 @section('title', $record ? 'Edit '.$singular.' - '.$record->name : 'New '.$singular)
 @section('page-actions')
-<x-app.action variant="discard" href="{{ $record ? $recordBase.$record->id : $indexUrl }}">Cancel</x-app.action>
-<button type="submit" class="primary app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></button>
+<x-app.action variant="secondary" href="{{ $record ? $recordBase.$record->id : $indexUrl }}">Cancel</x-app.action>
+<x-app.action variant="primary" type="submit" class="app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('title-status')
 @if($record)<x-app.status-badge :status="ucfirst($record->state)" />@endif
@@ -29,14 +29,14 @@
 <details class="app-collapsible-panel app-starting-inventory">
 <summary><h2>Set starting inventory</h2></summary>
 <div class="app-collapsible-panel-body">
-<div class="app-catalog-item-columns">
+<div class="app-columns app-columns-three">
 @foreach($startingLocations as $location)<label>{{ $location->name }}<input type="text" inputmode="numeric" form="catalog-form" name="starting_inventory[{{ $location->id }}]" aria-label="Starting quantity at {{ $location->name }}" value="{{ old('starting_inventory.'.$location->id) }}"></label>@endforeach
 </div>
 </div>
 </details>
 @endif
 @if($record)
-<p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>
+@if($kind === 'storage_locations')<p>Status changes apply only to this record; associated records, stock and earlier history are retained.</p>@endif
 @if($kind === 'storage_locations' && $record->is_central)
 <p>Central must remain the distinguished active storage location.</p>
 @else
@@ -45,7 +45,7 @@
 @if($record->state === 'archived')
 <x-app.action type="submit" name="action" value="restore">Restore</x-app.action>
 @else
-<x-app.action variant="danger" href="{{ $actionBase }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="catalog-archive-dialog">Archive</x-app.action>
+<x-app.action variant="danger" href="{{ $actionBase }}/archive" data-catalog-archive-trigger aria-haspopup="dialog" aria-controls="app-confirmation-dialog">Archive</x-app.action>
 <x-app.action type="submit" name="action" value="{{ $record->state === 'active' ? 'inactivate' : 'activate' }}">{{ $record->state === 'unverified' ? 'Verify supplier' : ($record->state === 'active' ? 'Deactivate' : 'Activate') }}</x-app.action>
 @endif
 </div>

@@ -2,26 +2,24 @@
 @section('title', 'Search inventory')
 @section('guide-notice')This page searches current development inventory. Searches are read-only: they do not save records, change stock or overwrite saved search preferences.@endsection
 @section('guide-content')
+<div class="app-content">
+<h2>All filters · separate controls and results</h2>
 <p>The search controls are independent of panels and results. The same result data can drive a table, cards, list or selection form. Neither example loads results until Search or Show all.</p>
 <p>Search matches Item, Collection and Category names, following the existing inventory search behavior.</p>
-<h2>All filters · separate controls and results</h2>
-<div class="app-content">
 <x-app.inventory-search :definition="$fullDefinition" endpoint="/style-guide/inventory-search/results?profile=full" instance="guide-search-full" />
 <p class="app-field-help">Location and source choices select balance columns, rather than restricting matching items. Available always totals all storage; events, In Transit and Ordered remain separate.</p>
-</div>
 <div class="app-actions"><label>Display results<select id="guide-search-format"><option value="table">Table</option><option value="cards">Cards</option><option value="list">List</option></select></label></div>
+</div>
 <div id="guide-search-full-results" class="guide-search-results" aria-live="polite"><p>Search inventory or choose Show all.</p></div>
-<details><summary>Returned data</summary><pre id="guide-search-json" class="guide-search-data">No search submitted.</pre></details>
-<x-app.guide-divider />
-<h2>Configured filters · controls inside a table header</h2>
-<p>Only Collections is visible. Locations remains enabled but hidden and fixed to Central by the server. Events, In Transit, Ordered and inactive-item options are removed. This example returns active items only.</p>
+<x-app.collapsible-panel title="Returned data"><pre id="guide-search-json" class="guide-search-data">No search submitted.</pre></x-app.collapsible-panel>
 <x-app.table-region label="Configured inventory search results" class="app-list-table-panel">
 <x-slot:header>
+<h2>Configured filters · controls inside a table header</h2>
+<p>Only Collections is visible. Locations remains enabled but hidden and fixed to Central by the server. Events, In Transit, Ordered and inactive-item options are removed. This example returns active items only.</p>
 <x-app.inventory-search :definition="$pickerDefinition" endpoint="/style-guide/inventory-search/results?profile=picker" instance="guide-search-picker" />
 </x-slot:header>
 <div id="guide-search-picker-results" class="guide-search-results" aria-live="polite"><table><thead><tr><th>Item</th><th>SKU</th><th class="number">Central</th></tr></thead><tbody><tr><td colspan="3">Search inventory or choose Show all.</td></tr></tbody></table></div>
 </x-app.table-region>
-<x-app.guide-divider />
 <details class="app-collapsible-panel">
 <summary><h2>Using the component</h2></summary>
 <div class="app-collapsible-panel-body">
@@ -52,7 +50,6 @@ return response()-&gt;json($search-&gt;search($request, $config));</code></pre>
 <p class="app-field-help">Existing searches are unchanged. This prototype does not implement saved criteria, export, item selection, stock posting or return-scroll restoration; those belong to the caller.</p>
 </div>
 </details>
-<x-app.guide-divider />
 <x-app.table-region label="Existing search integration assessment" class="app-list-table-panel">
 <x-slot:header>
 <h2>Existing searches and potential replacement</h2>
@@ -68,5 +65,6 @@ return response()-&gt;json($search-&gt;search($request, $config));</code></pre>
 <p>No existing search has been replaced. Read-only Item/Location displays also reuse inventory queries, but are not interactive search boxes.</p>
 </x-slot:footer>
 </x-app.table-region>
+<template data-guide-search-table-frame><x-app.table-region label="Full inventory search results" /></template>
 @vite('resources/js/inventory-search-guide.js')
 @endsection

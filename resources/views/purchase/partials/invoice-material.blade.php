@@ -5,7 +5,7 @@
 @foreach($items as $item)
 @php($key=$item['id']) @php($line=$values['lines'][$key])
 @if($group!==$item['group'])@php($group=$item['group'])<tr class="group-row"><th colspan="9" scope="rowgroup">{{ $group }}</th></tr>@endif
-<tr data-invoice-line data-line-key="{{ $key }}" data-group="{{ $group }}" @class(['table-row-error'=>collect(array_keys($reviewErrors))->contains(fn($field)=>str_starts_with($field,'lines.'.$key.'.'))])><td>@if(!$readonly)<button type="button" data-remove-invoice class="material-remove" aria-label="Remove {{ $item['name'] }}">✕</button>@endif</td><td class="app-grouped-item">
+<tr data-invoice-line data-line-key="{{ $key }}" data-group="{{ $group }}" @class(['table-row-error'=>collect(array_keys($reviewErrors))->contains(fn($field)=>str_starts_with($field,'lines.'.$key.'.'))])><td>@if(!$readonly)<x-app.action control="delete" type="button" data-remove-invoice class="material-remove" aria-label="Remove {{ $item['name'] }}">✕</x-app.action>@endif</td><td class="app-grouped-item">
 <input id="purchase-line-{{ $key }}-description" name="lines[{{ $key }}][description]" value="{{ $item['name'] }}" maxlength="500" data-invoice-description aria-label="Item description" @readonly($readonly || $item['item_id'])>
 <input type="hidden" name="lines[{{ $key }}][item_id]" value="{{ $item['item_id'] }}" data-invoice-item>
 <input type="hidden" name="lines[{{ $key }}][group_label]" value="{{ $group }}" data-invoice-group>
@@ -13,7 +13,7 @@
 @if(!$readonly && !$item['item_id'])@include('purchase.partials.catalog-link')@endif
 </td><td class="table-numeric">{{ $mode==='receipt' ? ($ordered[$key] ?? 0) : ($requestMaterial[$line['source_request_key'] ?? '']['quantity'] ?? $requested[$item['item_id']] ?? '—') }}</td>
 @foreach(['quantity','unit','cost','fee'] as $field)<td><input id="purchase-line-{{ $key }}-{{ $field }}" name="lines[{{ $key }}][{{ $field }}]" data-invoice-field="{{ $field }}" aria-label="{{ ucfirst($field) }} for {{ $item['name'] }}" inputmode="{{ $field==='quantity' ? 'numeric' : 'decimal' }}" value="{{ $line[$field] ?? '' }}" @readonly($readonly)></td>@endforeach
-<td data-line-total class="table-numeric">—</td><td><input type="hidden" name="lines[{{ $key }}][basis]" value="{{ $line['basis'] ?? 'unit' }}" data-line-basis>@if(!$readonly)<button type="button" data-recalculate>Recalculate</button>@endif</td></tr>
+<td data-line-total class="table-numeric">—</td><td><input type="hidden" name="lines[{{ $key }}][basis]" value="{{ $line['basis'] ?? 'unit' }}" data-line-basis>@if(!$readonly)<x-app.action type="button" data-recalculate>Recalculate</x-app.action>@endif</td></tr>
 @endforeach
 @if(!$items)<tr><td colspan="9">No order material selected.</td></tr>@endif
 </tbody></table></x-app.table-region>

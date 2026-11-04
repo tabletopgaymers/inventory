@@ -3,7 +3,7 @@
 @section('title', $kind === 'purchase' ? 'Purchase requests' : 'Relocation requests')
 
 @section('page-actions')
-<a class="button app-new-action" href="{{ $kind === 'purchase' ? '/purchases/new' : '/relocations/new' }}" title="New {{ $kind }} request">+New</a>
+<a class="button app-new-action" href="{{ $kind === 'purchase' ? '/purchases/new' : '/relocations/new' }}" title="New {{ $kind }} request">＋ New</a>
 @endsection
 
 @section('content-sections')

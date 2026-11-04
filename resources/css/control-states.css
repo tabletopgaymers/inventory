@@ -1,0 +1,6 @@
+/* Shared by application fields/actions and standalone print actions. */
+:root {
+    --app-disabled-surface: #e5e7eb;
+    --app-disabled-text: #000000;
+    --app-disabled-border: #767676;
+}

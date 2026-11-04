@@ -1,7 +1,15 @@
 /* Existing theme and app rules stay in one source during incremental extraction. */
 @import '../design/phase-a/app-input.css';
+@import './settings.css';
+@import './actions.css';
+@import './status-badges.css';
 @import './workflow/navigation.css';
 @import './workflow/tables.css';
 @import './panels.css';
+@import './table-panels.css';
+@import './layouts.css';
+@import './headings.css';
+@import './details.css';
 @import './inventory-search-controls.css';
 @import './save-progress-shortcut.css';
+@import './print-tables.css';

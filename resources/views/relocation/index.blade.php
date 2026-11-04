@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Relocation requests')
 @section('page-actions')
-<a class="button app-new-action" href="/relocation/new">+New</a>
+<x-app.action variant="new"  href="/relocation/new">＋ New</x-app.action>
 @endsection
 @section('content-sections')
 <x-app.table-region label="Relocation requests" class="app-list-table-panel">
@@ -15,7 +15,7 @@
                 <td>{{ $row->source_name ?: '—' }}</td>
                 <td>{{ $row->destination_name ?: '—' }}</td>
                 <td>{{ \App\Support\DisplayDates::date($row->updated_at) }}</td>
-                <td><span class="status-badge request-status {{ strtolower($row->status) }}">{{ $row->status }}</span></td>
+                <td><x-app.status-badge :status="$row->status" /></td>
             </tr>
             @empty
             <tr><td colspan="6">No relocation requests yet.</td></tr>

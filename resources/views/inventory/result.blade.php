@@ -10,7 +10,7 @@
 </div>
 @include('inventory.history', ['entries' => $history, 'preview' => false])
 <div class="app-content app-record-content">
-<div class="actions"><a class="button primary" href="/inventory/items/{{ $group->item_id }}">OK</a></div>
+<div class="actions"><x-app.action variant="primary"  href="/inventory/items/{{ $group->item_id }}">OK</x-app.action></div>
 
 </div>
 @endsection
