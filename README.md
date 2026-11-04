@@ -51,17 +51,21 @@ style-guide.css owns guide-only presentation. Static page style blocks/attribute
 belong in shared or scoped resource CSS, including presentation formerly written
 by guide JavaScript. Serialized JSON state remains data, not executable styling.
 
-Standalone Relocation print uses x-print.layout/header with print.css/print.js.
-Inventory count worksheets use inventory-worksheet.css (worksheet-base then
-inventory-print) and independent location-counts.js. Neither imports app CSS/JS.
-Event report CSS remains an explicit page entry. Keep print output isolated.
+Standalone Relocation print and Inventory count worksheets use x-print.layout/header
+with print.css/print.js. Count worksheets add inventory-worksheet.css, which imports
+inventory-print.css. Neither standalone view loads app CSS/JS. Event reports use
+their explicit event-report.css entry; events.js imports shared print.js and app.js
+for the normal application page. Keep print geometry isolated.
 
-Remaining public sources are intentionally retained legacy/historical assets:
-old purchase/relocation progress and invoice scripts, request-workflow.css and
-requests-print.css; baseline.css and design/phase-a wrapper/evaluation assets.
-Old plural routes/templates are retired references with no functional guarantee;
-do not add compatibility copies for their references to moved files. Historical
-archive/removal is deferred. The nested evaluation package is not the application
+Purchase and Relocation use singular `/purchase` and `/relocation` routes. The
+old plural routes/controllers/views and their exclusive public progress, invoice
+and print assets have been removed; retired URLs reach the authenticated 404.
+Shared Purchase services and request/fulfillment tables still support current
+workflows. Events has its own resources/js/events.js entry, replacing requests.js.
+Do not restore compatibility assets or old-record-only handlers.
+
+Remaining historical public sources are baseline.css and design/phase-a
+wrapper/evaluation assets. The nested evaluation package is not the application
 build; its directory also contains the ACTIVE app-input.css source, which must
 remain. Font Awesome Free is locally built in its demo with its license retained;
 it is not loaded site-wide.

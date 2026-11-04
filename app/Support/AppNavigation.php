@@ -29,8 +29,6 @@ class AppNavigation
             ['href' => '/purchase', 'label' => 'Purchases NEW', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],
             ['href' => '/catalog', 'label' => 'Catalog', 'active' => request()->is('catalog', 'catalog/*'), 'children' => $catalog],
             ['href' => '/users', 'label' => 'Users', 'active' => request()->is('users', 'users/*'), 'children' => []],
-            ['href' => '/relocations', 'label' => 'Relocations OLD', 'active' => request()->is('relocations', 'relocations/*'), 'children' => []],
-            ['href' => '/purchases', 'label' => 'Purchases OLD', 'active' => request()->is('purchases', 'purchases/*'), 'children' => []],
         ];
     }
 }

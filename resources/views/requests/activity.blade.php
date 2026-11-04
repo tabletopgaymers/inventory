@@ -1,1 +1,0 @@
-<h2>Activity</h2><ol class="request-activity">@forelse($activity as $event)<li><strong>{{ $event->action }}</strong> · {{ $event->actor_name }} · <time>{{ \App\Support\DisplayDates::timestamp($event->occurred_at) }}</time></li>@empty<li>No activity.</li>@endforelse</ol>

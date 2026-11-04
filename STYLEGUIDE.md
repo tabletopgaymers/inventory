@@ -1,7 +1,7 @@
 # Living presentation guide
 
 The local application uses `resources/views/layout.blade.php`, anonymous Blade
-components in `resources/views/components/app/` and `public/app.css`.
+components in `resources/views/components/app/` and Vite `resources/css/app.css`.
 Design Phase B follows Chameleon's D-224 component contract and the approved
 D-222/D-223 frame, purple palette and system typography. This is a local candidate;
 no remote design publication is claimed. Do not copy prototype behavior or fixtures.
@@ -11,20 +11,21 @@ no remote design publication is claimed. Do not copy prototype behavior or fixtu
 - Purple identifies navigation and primary actions; Cancel/Discard remains red. Forms retain existing validation and notices.
 - Desktop uses the approved 14rem sidebar and flexible working area. Below 64rem a native modal drawer provides navigation, with close/Escape, contained focus and focus return. The sidebar remains available without supported dialog/JavaScript. Account disclosure supports keyboard, Escape and outside dismissal. Tables use a named, focusable horizontal scroll region; forms and actions wrap on narrow screens.
 - Optional workflow previews, when available, open in a separate tab with an explicit sample-data/no-application-effect explanation. Working pages do not carry preview links.
-- Print clears page backgrounds and hides the working shell/actions. Dedicated count/packing worksheets load the unchanged pre-adoption `public/worksheet-base.css` plus their original print CSS, preserving paper geometry, repeated headers, Findings and blank Sent. They do not load application Td styling. Keyboard focus retains the shared visible outline.
+- Print clears page backgrounds and hides the working shell/actions. Relocation pick sheets and Inventory count worksheets use the shared x-print.layout/header and resources/css/print.css with print-tables.css. Inventory adds inventory-worksheet.css → inventory-print.css. Event reports retain event-report.css and use the shared print.js control through events.js. Retired plural packing views and worksheet-base.css are removed; do not restore public compatibility copies.
 
 ## Stable local presentation boundary
 
-Build application CSS with `npm run build:app` in `resources/design/phase-a/`, using
-the installed pinned Tailwind/CLI 4.3.3 and daisyUI 5.7.47. `app-input.css` explicitly
-scans working views and writes only `public/app.css`. Existing guide input/build,
-guide outputs, dependency versions and lockfile remain separate and unchanged.
+Build application CSS/JS with `npm run build` at the application root, or use
+`npm run dev` alongside Herd. The shell loads resources/css/app.css and
+resources/js/app.js through Vite. app.css imports the active app-input.css theme;
+edit sources rather than public/build output. The nested phase-a evaluation
+package is not the application asset build.
 
 Components: `shell`, `navigation`, `page-heading`, `panel`, `action`, `field`,
 `status-badge`, `table-region`. Internal Td utilities belong to components;
 `app-*` semantic classes and `--app-*` tokens are the shared appearance boundary.
 Page controls retain their names, validation, form routes, CSRF and business JS
-identifiers. Shell-only behavior is in `public/app-shell.js`, with unique
+identifiers. Shell-only behavior is in `resources/js/app-shell.js`, with unique
 `app-nav-open`, `app-nav-dialog`, `app-nav-close` hooks. No frontend runtime added.
 
 Tokens map to the Td app theme: page #f5f5f7, surface white, border #d5d5df,

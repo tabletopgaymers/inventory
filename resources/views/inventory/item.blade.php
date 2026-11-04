@@ -8,7 +8,7 @@
 @endsection
 @section('content-sections')
 <div class="app-content app-record-content">
-@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
+
 @php($historyContext = is_string($browse) && \Illuminate\Support\Str::isUuid($browse) ? ['browse' => $browse] : [])
 @if($catalogReady)
 <div class="app-columns app-columns-wide app-columns-trim">

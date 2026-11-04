@@ -2,7 +2,7 @@
 @section('title', $row->name.' — Review '.($draft['workflowMode']==='finalize' ? 'finalization' : $mode))
 @section('content-sections')
 <div class="app-content app-record-content">
-@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
+
 @if($draft['workflowMode']==='finalize')<p class="warning">Finalization is irreversible. Confirm posts distribution and moves all leftovers directly once. This event cannot reopen.</p>@elseif($mode==='correction')<p class="warning">Confirm changes the flagged report and adds an immutable correction log. It does not move stock, change Unit cost or rewrite original history.</p>@else<p>Review moves no stock. Confirm posts these actual supplies once.</p>@endif
 @php($review=$draft['review'])
 @if(isset($review['supplies']))<p>Actual movement date: {{ isset($review['actual_date']) ? \App\Support\DisplayDates::businessDate($review['actual_date']) : 'Unknown' }}</p></div>
@@ -15,6 +15,6 @@
 <x-app.table-region label="Report-only changes" class="app-list-table-panel"><table><thead><tr><th>Item</th><th>Brought before → after</th><th>Remaining before → after</th><th>Distributed before → after</th></tr></thead><tbody>@foreach($review['report'] as $item=>$line)@php($before=$review['before'][$item])<tr><th>{{ $line['item'] }}<small class="app-item-sku">{{ $line['sku'] }}</small></th><td>{{ number_format($before['brought']) }} → {{ number_format($line['brought']) }}</td><td>{{ number_format($before['remaining']) }} → {{ number_format($line['remaining']) }}</td><td>{{ number_format($before['distributed']) }} → {{ number_format($line['distributed']) }}</td></tr>@endforeach</tbody></table></x-app.table-region>
 <div class="app-content app-record-content">@if($review['explanation'])<p>{{ $review['explanation'] }}</p>@endif @endif
 <div class="actions"><x-app.action variant="danger"  href="/events/{{ $row->id }}">Discard changes</x-app.action><x-app.action href="{{ $base }}?work={{ $token }}">Keep editing</x-app.action><form method="post" action="{{ $base }}/confirm/{{ $token }}">@csrf<input type="hidden" name="_deliberate" value="1"><x-app.action variant="primary" type="submit"  data-confirm="{{ $draft['workflowMode']==='finalize' ? 'Finalize this event once? This cannot be undone or reopened.' : 'Confirm these reviewed changes?' }}">{{ $draft['workflowMode']==='finalize' ? 'Finalize event irreversibly' : 'Confirm '.$mode }}</x-app.action></form></div>
-@vite('resources/js/requests.js')
+@vite('resources/js/events.js')
 </div>
 @endsection

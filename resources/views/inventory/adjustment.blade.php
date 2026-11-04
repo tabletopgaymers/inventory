@@ -2,7 +2,7 @@
 @section('title', 'Inventory adjustment - '.$group->item_name)
 @section('content-sections')
 <div class="app-content app-record-content">
-@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
+
 <div class="app-columns app-columns-small">
 <div><x-app.detail-list variant="content" >
 <dt>Item</dt><dd><a href="/inventory/items/{{ $group->item_id }}">{{ $group->item_name }}</a></dd>

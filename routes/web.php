@@ -55,9 +55,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/relocation/work/{token}/reconciliation', [RelocationController::class, 'saveReconciliation'])->block(120, 10);
     Route::post('/relocation/work/{token}/complete', [RelocationController::class, 'complete'])->block(120, 10);
     Route::get('/relocation/{id}', [RelocationController::class, 'show'])->whereNumber('id')->block(120, 10);
-    foreach (['purchases', 'relocations'] as $page) {
-        Route::get('/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
-    }
     foreach (['location-counts'] as $page) {
         Route::get('/inventory/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
     }
@@ -79,8 +76,6 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/phase-five.php';
-
-require __DIR__.'/phase-six.php';
 
 require __DIR__.'/phase-eight.php';
 

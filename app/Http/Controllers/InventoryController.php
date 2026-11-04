@@ -104,7 +104,7 @@ class InventoryController
         }
         if ($schema['fulfillmentReady']) {
             $requestHistory = DB::table('request_stock_entries')->where('item_id', $item)->get()->map(function ($entry) {
-                $entry->request_url = $entry->purchase_request_id !== null ? '/purchase/'.$entry->purchase_request_id : '/relocations/'.$entry->relocation_request_id;
+                $entry->request_url = $entry->purchase_request_id !== null ? '/purchase/'.$entry->purchase_request_id : '/relocation/'.$entry->relocation_request_id;
 
                 return $entry;
             });

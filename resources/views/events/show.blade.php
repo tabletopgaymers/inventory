@@ -3,7 +3,7 @@
 @section('title-status')<x-app.status-badge :status="$row->status" />@endsection
 @section('content-sections')
 <div class="app-content app-record-content">
-@hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
+
 <p><a href="/events">Back to events</a></p>
 @if($data['venue'] ?? null)<p>Venue: {{ $data['venue'] }}</p>@endif
 @if($data['notes'] ?? null)<p class="plain-text">{{ $data['notes'] }}</p>@endif

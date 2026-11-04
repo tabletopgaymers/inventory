@@ -40,10 +40,7 @@ class PurchaseFulfillment
     public function expected(object $row, array $header): array
     {
         if (!in_array($row->status,['Ordered','Shipped'],true)) return [];
-        if (isset($header['ordered_quantities'])) return $header['ordered_quantities'];
-        // Historical orders predate explicit destination types; their nonnull location means storage.
-        if (!$row->receiving_location_id) return [];
-        return DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$row->id)->whereNotNull('item_id')->pluck('quantity','item_id')->map(fn($qty)=>(int)$qty)->all();
+        return $header['ordered_quantities'] ?? [];
     }
 
     public function recordedOrder(int $id): array
@@ -156,16 +153,6 @@ class PurchaseFulfillment
         },3);
     }
 
-    private function preparationLines(int $id): array
-    {
-        $lines = [];
-        foreach (DB::table('purchase_request_lines')->where('purchase_request_id', $id)->orderBy('id')->get() as $line) {
-            $lines[$line->item_id] = ['quantity' => (int) $line->quantity, 'estimate' => $line->estimate];
-        }
-
-        return $lines;
-    }
-
     public function data(int $id): array
     {
         $row = DB::table('purchase_requests')->where('id', $id)->firstOrFail();
@@ -176,50 +163,10 @@ class PurchaseFulfillment
                 'group_label' => $line->group_label, 'source_request_key' => $line->source_request_key,
                 'quantity' => $line->quantity, 'unit' => $line->unit, 'cost' => PurchaseCosting::dollars((int) $line->cost), 'fee' => PurchaseCosting::dollars((int) $line->fee)];
         }
-        if ($lines !== [] && in_array($row->status, ['Draft', 'Request'], true) && !isset($header['order_operation'])) {
-            // Only later preparation edits override retained actual invoice values.
-            // Unchanged requested quantities must not replace distinct actual units.
-            $current = $this->preparationLines($id);
-            $baseline = $header['preparation_baseline'] ?? $current;
-            foreach ($baseline as $item => $before) {
-                if (! isset($current[$item])) {
-                    unset($lines[$item]);
-                }
-            }
-            foreach ($current as $item => $prepared) {
-                $before = $baseline[$item] ?? null;
-                if ($before === $prepared) {
-                    continue;
-                }
-                $line = $lines[$item] ?? ['quantity' => $prepared['quantity'], 'unit' => '0', 'cost' => '0.00', 'fee' => '0.00'];
-                if ($before === null || $before['quantity'] !== $prepared['quantity']) {
-                    $line['quantity'] = $prepared['quantity'];
-                }
-                if ($before === null || $before['estimate'] !== $prepared['estimate']) {
-                    $line['cost'] = (string) BigDecimal::of($prepared['estimate'] ?? 0)->toScale(2, RoundingMode::HalfUp);
-                    $line['unit'] = $line['quantity'] > 0 ? (string) BigDecimal::of($line['cost'])->dividedBy($line['quantity'], 12, RoundingMode::HalfUp) : '0';
-                } else {
-                    $line['cost'] = (string) BigDecimal::of($line['unit'])->multipliedBy($line['quantity'])->toScale(2, RoundingMode::HalfUp);
-                }
-                $lines[$item] = $line;
-            }
-        }
-        if ($lines === [] && ! isset($header['order_operation'])) {
-            foreach (DB::table('purchase_request_lines')->where('purchase_request_id', $id)->orderBy('id')->get() as $line) {
-                $cost = (string) BigDecimal::of($line->estimate ?? 0)->toScale(2, RoundingMode::HalfUp);
-                $lines[$line->item_id] = ['quantity' => $line->quantity, 'unit' => $line->quantity > 0 ? (string) BigDecimal::of($cost)->dividedBy($line->quantity, 12, RoundingMode::HalfUp) : '0', 'cost' => $cost, 'fee' => '0.00'];
-            }
-        }
-
         unset($header['purchase_progress']);
         $header = array_replace($header, ['title' => $row->title ?? '', 'supplier_id' => $row->supplier_id ?? '', 'receiving_location_id' => $row->receiving_location_id ?? '']);
         if (!$header['supplier_id'] && str_starts_with($header['request_basics']['vendor_choice'] ?? '', 'supplier:')) $header['supplier_id'] = substr($header['request_basics']['vendor_choice'],9);
         $delivery = $header['submitted_request']['delivery_snapshot'] ?? PurchaseProcurement::delivery($header['request_basics'] ?? []);
-        if ($row->status==='Received' && !isset($header['delivery_choice']) && $row->receiving_location_id) {
-            $delivery=array_replace(array_fill_keys(PurchaseProcurement::FIELDS,''),['delivery_choice'=>'location:'.$row->receiving_location_id,'delivery_name'=>'Storage location #'.$row->receiving_location_id]);
-            $header['legacy_delivery']=true;
-        }
-        if (($delivery['delivery_choice'] ?? '') === '' && $row->receiving_location_id) $delivery = PurchaseProcurement::delivery(['delivery_choice'=>'location:'.$row->receiving_location_id]);
         foreach (PurchaseProcurement::FIELDS as $field) $header[$field] ??= $delivery[$field];
 
         return $header + ['ordered_date' => $row->planned_date ?? '',

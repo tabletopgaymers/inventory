@@ -27,8 +27,7 @@
     --app-control-filter-size: 2rem;
     --app-control-filter-trigger-size: 1.5rem;
 }
-/* Legacy selectors serve only excluded plural templates; metrics have one owner. */
-.app-action, .app-shell button:not(.app-action):not(.btn), .app-shell .button, .app-shell .actions > a.discard {
+.app-action {
     display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
     min-height: var(--app-button-min-height); height: auto;
     padding: var(--app-button-padding-y) var(--app-button-padding-x);
@@ -38,13 +37,13 @@
     line-height: 1.2; text-align: center; text-decoration: none;
 }
 .app-action:hover { background: var(--app-page, #f5f5f8); text-decoration: none; }
-.app-action-primary, .app-shell button.primary, .app-shell .button.primary { background: var(--app-primary, #5b21b6); border-color: var(--app-primary, #5b21b6); color: #fff; }
+.app-action-primary { background: var(--app-primary, #5b21b6); border-color: var(--app-primary, #5b21b6); color: #fff; }
 .app-action-primary:hover { background: var(--app-action-primary-hover); }
-.app-action-danger, .app-shell .discard { color: var(--app-danger, #b91c1c); border-color: var(--app-danger, #b91c1c); }
+.app-action-danger { color: var(--app-danger, #b91c1c); border-color: var(--app-danger, #b91c1c); }
 .app-action-destructive { background: var(--app-danger, #b91c1c); border-color: var(--app-danger, #b91c1c); color: #fff; }
 .app-action-destructive:hover { background: var(--app-action-danger-hover); }
-.app-action-new, .app-shell .button.app-new-action { background: var(--app-action-new-color); border-color: var(--app-action-new-color); color: #fff; white-space: nowrap; }
-.app-action-new:hover, .app-shell .button.app-new-action:hover { background: var(--app-action-new-hover); border-color: var(--app-action-new-hover); }
+.app-action-new { background: var(--app-action-new-color); border-color: var(--app-action-new-color); color: #fff; white-space: nowrap; }
+.app-action-new:hover { background: var(--app-action-new-hover); border-color: var(--app-action-new-hover); }
 .app-action-changed, .app-action-changed:hover { background: var(--app-action-changed-surface); border-color: var(--app-action-changed-color); color: var(--app-action-changed-color); }
 .app-action-small { min-height: 0; padding: var(--app-button-small-padding); font-size: var(--app-button-small-font-size); }
 .app-action:disabled { background: var(--app-disabled-surface); border-color: var(--app-disabled-border); color: var(--app-disabled-text); cursor: default; opacity: 1; }
