@@ -10,6 +10,8 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseFulfillment
 {
+    public const ZERO_RECEIVED_MESSAGE = 'No items were received. Cancel the purchase after resolving the outcome with the supplier.';
+
     public function validateCatalogLines(int $id, int $actor, array $lines, string $mode='order'): void
     {
         $retained = DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$id)->whereNotNull('item_id')->pluck('item_id')->map(fn($item)=>(int)$item)->all();
@@ -82,7 +84,7 @@ class PurchaseFulfillment
                     $positive[$key]=$line;
                 }
             }
-            if ($positive===[]) throw ValidationException::withMessages(['lines'=>'No items were received. Cancel the purchase after resolving the outcome with the supplier.']);
+            if ($positive===[]) throw ValidationException::withMessages(['lines'=>self::ZERO_RECEIVED_MESSAGE]);
             $costing=app(PurchaseCosting::class)->calculate(array_replace($values,['lines'=>$positive]));
             $this->validateCatalogLines($id,$actorId,$costing['lines'],'receipt');
             $received=array_replace($received,$costing['lines']);

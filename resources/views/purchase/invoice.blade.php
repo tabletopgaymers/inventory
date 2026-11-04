@@ -30,7 +30,11 @@
     elseif($mode==='receipt' && in_array($field,['source_order_operation','revision'])) { $targetTab='receive';$targetId='app-main'; }
     elseif($field==='order') { $targetTab='order-review';$targetMode='order';$targetId='app-main'; }
 @endphp
-@foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$targetMode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
+@foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$targetMode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif
+@if($tab==='confirmation' && $mode==='receipt' && !$readonly && $procurement && in_array($row->status,['Ordered','Shipped']) && $message===\App\Support\PurchaseFulfillment::ZERO_RECEIVED_MESSAGE)
+<div class="app-inline-group" data-invoice-derived><x-app.action type="submit" form="purchase-transition-form" name="action" value="cancel">Cancel purchase</x-app.action><span>Cancel receiving only discards receiving work and keeps the purchase open.</span></div>
+@endif
+</li>@endforeach
 @endforeach
 </ul></div>@endif
 <form class="app-panel-stack" id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice data-workspace-dirty="{{ $invoiceDirty ? 'true' : 'false' }}" novalidate>
@@ -120,7 +124,7 @@
 </form>
 <x-app.collapsible-panel title="Permanent notes"><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><x-app.action type="submit">Add note</x-app.action></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
-<x-app.collapsible-panel title="Other actions"><div class="app-inline-group">@if(!$readonly && $mode==='order')<x-app.action type="submit" form="purchase-invoice-form" name="action" value="discard_order">Discard order draft</x-app.action>@endif<form class="app-inline-group" method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<x-app.action type="submit" name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</x-app.action>@endif <x-app.action type="submit" name="action" value="cancel">Cancel purchase</x-app.action></form></div></x-app.collapsible-panel>
+<x-app.collapsible-panel title="Other actions"><div class="app-inline-group">@if(!$readonly && $mode==='order')<x-app.action type="submit" form="purchase-invoice-form" name="action" value="discard_order">Discard order draft</x-app.action>@endif<form id="purchase-transition-form" class="app-inline-group" method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<x-app.action type="submit" name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</x-app.action>@endif <x-app.action type="submit" name="action" value="cancel">Cancel purchase</x-app.action></form></div></x-app.collapsible-panel>
 @endif
 
 </x-app.panel-stack>

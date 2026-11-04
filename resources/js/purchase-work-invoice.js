@@ -131,7 +131,8 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         if (navigation.isLeaving()) return;
         if (other.matches('[data-confirm-transition]')) {
             event.preventDefault();const button=event.submitter;
-            navigation.confirm(()=>other.requestSubmit(button),{origin:button,title:'Confirm status change',actionLabel:'Continue',text:'Continue with this status change?'+(dirty?' Unsaved invoice edits will not be saved.':'')});
+            const cancelling = button?.value === 'cancel';
+            navigation.confirm(()=>other.requestSubmit(button),{origin:button,title:cancelling?'Cancel purchase?':'Confirm status change',actionLabel:cancelling?'Cancel purchase':'Continue',text:(cancelling?'Cancel this purchase after resolving the outcome with the supplier? This clears its Ordered quantities without adding stock or changing catalog Unit Cost. Cancelled purchases cannot be reopened.':'Continue with this status change?')+(dirty?' Unsaved invoice edits will not be saved.':'')});
             return;
         }
         if (!dirty) { navigation.allowDeparture(); return; }
