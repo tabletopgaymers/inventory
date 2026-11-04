@@ -6,7 +6,7 @@
 @hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
 <p><a href="/events">Back to events</a></p>
 @if($data['venue'] ?? null)<p>Venue: {{ $data['venue'] }}</p>@endif
-@if($data['notes'] ?? null)<p class="app-plain-text">{{ $data['notes'] }}</p>@endif
+@if($data['notes'] ?? null)<p class="plain-text">{{ $data['notes'] }}</p>@endif
 <p>Default leftover destination: {{ $destinations[$data['default_destination'] ?? ''] ?? 'Not selected or currently unavailable' }}</p>
 <div class="actions">
 @if($canManage && $row->status==='Planning')<a href="/events/{{ $row->id }}/work/plan">Edit planning</a><a class="primary" href="/events/{{ $row->id }}/work/activate">Review activation</a>@endif
