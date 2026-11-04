@@ -1,6 +1,6 @@
 @extends('layout')
 @section('title', $row->name.' — Final report')
-@section('title-status')<span class="status-badge request-status received">{{ $data['corrected'] ? 'Finalized · Corrected report' : 'Finalized' }}</span>@endsection
+@section('title-status')<x-app.status-badge status="Finalized" :label="$data['corrected'] ? 'Finalized · Corrected report' : 'Finalized'" />@endsection
 @section('content-sections')
 <div class="app-content app-record-content">
 @hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif

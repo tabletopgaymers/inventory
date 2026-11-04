@@ -1,6 +1,6 @@
 @extends('layout')
 @section('title', 'Relocation request')
-@section('title-status')<span data-relocation-status class="status-badge">{{ $status }}</span>@endsection
+@section('title-status')<x-app.status-badge :status="$status" data-relocation-status />@endsection
 @section('page-actions')
 <x-workflow.save-progress form="relocation-form" :disabled="!$editable" data-relocation-save />
 @endsection

@@ -14,7 +14,7 @@
                 <td><a href="/purchase/{{ $row->id }}">{{ $row->title ?: 'Untitled request' }}</a></td>
                 <td>{{ trim($row->first_name.' '.$row->last_name) ?: 'Account '.$row->owner_id }}</td>
                 <td>{{ \App\Support\DisplayDates::date($row->updated_at) }}</td>
-                <td><span class="status-badge request-status {{ strtolower($row->status) }}">{{ $row->status }}</span></td>
+                <td><x-app.status-badge :status="$row->status" /></td>
             </tr>
             @empty
             <tr><td colspan="5">No purchase requests yet.</td></tr>

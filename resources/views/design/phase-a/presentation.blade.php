@@ -100,7 +100,10 @@ Locality and postal details</dd></x-app.detail-list></section>
     <h2 id="statuses-title">Status indicators</h2>
     <div class="app-content">
         <p>Status badges combine a short text label with a color. Use the established workflow states; color supplements the label and never replaces it.</p>
-        <div class="app-inline-group">@foreach(['Draft','Request','Requested','Active','Ordered','Shipped','Receiving','Received','Finalized','Complete','Cancelled','Inactive','Archived'] as $status)<x-app.status-badge :status="$status" />@endforeach</div>
+        <div class="app-inline-group">@foreach(array_map('ucfirst', array_keys(config('status-badges.statuses'))) as $status)<x-app.status-badge :status="$status" />@endforeach</div>
+        <p>The central mapping is <code>config/status-badges.php</code>. All badges use <code>x-app.status-badge</code>; client updates use <code>updateStatusBadge</code> from <code>resources/js/status-badges.js</code>, reading the same mapping supplied by the shell. An optional label changes wording without changing the underlying status (for example, a corrected final report). Unknown statuses retain the configured pending fallback.</p>
+        <label>Preview status<select data-guide-status-choice>@foreach(array_keys(config('status-badges.statuses')) as $status)<option value="{{ ucfirst($status) }}">{{ ucfirst($status) }}</option>@endforeach</select></label>
+        <x-app.status-badge status="New" data-guide-status-preview />
         <p>Place status beside a record title and in a dedicated table column. A workflow's editing step does not create a new business status.</p>
         <div class="app-title-row"><h3>Sample collection</h3><x-app.status-badge status="Active" /></div>
     </div>

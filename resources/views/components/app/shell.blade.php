@@ -56,5 +56,6 @@
 @endif
 <x-app.confirmation-dialog />
 <x-app.action-templates />
+<x-app.status-badge-config />
 </body>
 </html>

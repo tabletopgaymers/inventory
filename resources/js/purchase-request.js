@@ -1,3 +1,4 @@
+import { updateStatusBadge } from './status-badges.js';
 import { createAction } from './actions.js';
 import { setSaveDirty, setSaveBusy } from './workflow/save-button.js';
 import { mountNotices } from './workflow/notices.js';
@@ -92,7 +93,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         if (choice) supplier.value = choice;
         form.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
         document.querySelectorAll('form input[name="revision"]').forEach(input => { input.value = result.revision; });
-        document.querySelector('.status-badge').textContent = result.status;
+        updateStatusBadge(document.querySelector('[data-purchase-status]'), result.status);
         form.querySelector('[data-fulfillment-links]').hidden = false;
         dirty = false; setSaveDirty(save, false);
         updateBasicChoices(); updateReview();

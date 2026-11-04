@@ -1,3 +1,4 @@
+import { updateStatusBadge } from './status-badges.js';
 import { createProgressController } from './workflow/progress-save.js';
 import { showNotice } from './workflow/notices.js';
 import { setSaveDirty } from './workflow/save-button.js';
@@ -759,7 +760,7 @@ import './inventory-search-controls.js';
                 requestedRows().forEach(row => { row.dataset.sourceBalance = ''; row.dataset.destinationBalance = ''; });
                 await refreshBalances();
             }
-            document.querySelector('[data-relocation-status]').textContent = result.status;
+            updateStatusBadge(document.querySelector('[data-relocation-status]'), result.status);
             if (result.status !== 'Draft') form.dataset.editable = 'false';
             form.querySelectorAll('[data-stage-placeholder]').forEach(message => { message.textContent = 'This section will be added in a later step.'; });
             feedback.className = 'notice'; feedback.setAttribute('role', 'status'); feedback.textContent = receiving ? 'Receipt acknowledged. Enter the quantities actually received.' : completing ? 'Relocation completed.' : shipping ? 'Request shipped.' : action === 'submit' ? 'Request submitted.' : accepting ? 'Request accepted.' : trackingSave ? 'Tracking saved.' : 'Progress saved.';

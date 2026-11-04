@@ -1,6 +1,6 @@
 @extends('layout')
 @section('title', 'Purchase request')
-@section('title-status')<span class="status-badge">{{ $row->status ?? 'New' }}</span>@endsection
+@section('title-status')<x-app.status-badge :status="$row->status ?? 'New'" data-purchase-status />@endsection
 @section('page-actions')
 <x-workflow.save-progress form="purchase-request-form" :disabled="!$editable" />
 @endsection

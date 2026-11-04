@@ -1,3 +1,4 @@
+import { updateStatusBadge } from './status-badges.js';
 import { mountTabs } from './workflow/tabs.js';
 import './app.js';
 
@@ -156,6 +157,9 @@ import './app.js';
         columnPanel.classList.toggle('guide-column-panel--narrow', narrow);
         widthToggle.setAttribute('aria-pressed', String(narrow));
         widthToggle.textContent = narrow ? 'Show full-width panel' : 'Show narrow panel';
+    });
+    document.querySelector('[data-guide-status-choice]')?.addEventListener('change', event => {
+        updateStatusBadge(document.querySelector('[data-guide-status-preview]'), event.target.value);
     });
     const outputs = [...document.querySelectorAll('[data-guide-density][data-guide-measure]')];
     const samples = new Map();
