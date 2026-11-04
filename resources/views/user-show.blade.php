@@ -9,23 +9,23 @@
 <div class="app-content">
 <div class="app-columns app-columns-two app-columns-trim">
 <div>
-<dl class="app-user-details">
+<x-app.detail-list variant="content" >
     <dt>First name</dt><dd>{{ filled($user->first_name) ? $user->first_name : '—' }}</dd>
     <dt>Last name</dt><dd>{{ filled($user->last_name) ? $user->last_name : '—' }}</dd>
     <dt>Elevated roles</dt><dd>{{ implode(', ', array_diff($user->roles(), ['basic'])) ?: 'None' }}</dd>
     <dt>Microsoft account</dt><dd>{{ filled($user->provider_email) ? $user->provider_email : '—' }}</dd>
     <dt>TG email</dt><dd>{{ filled($user->contact_email) ? $user->contact_email : '—' }}</dd>
     <dt>TG email confirmation</dt><dd><strong @class(['app-confirmation-status', 'app-confirmation-unconfirmed' => !$user->validContact()])>{{ $user->validContact() ? 'Confirmed' : 'Not confirmed' }}</strong></dd>
-</dl>
+</x-app.detail-list>
 </div>
 <div>
-<dl class="app-user-details">
+<x-app.detail-list variant="content" >
     <dt>Personal email</dt><dd>{{ filled($user->personal_email) ? $user->personal_email : '—' }}</dd>
     <dt>Mobile number</dt><dd>{{ filled($user->mobile_number) ? $user->mobile_number : '—' }}</dd>
     <dt>Mailing address</dt><dd class="app-user-address">{{ filled($user->mailing_address) ? $user->mailing_address : '—' }}</dd>
     <dt>Time zone</dt><dd>{{ $zone }}</dd>
     <dt>Display density</dt><dd>{{ \App\Models\User::DISPLAY_DENSITIES[$user->display_density ?? 'standard'] ?? 'Standard' }}</dd>
-</dl>
+</x-app.detail-list>
 </div>
 </div>
 @if(auth()->user()->hasRole('admin') && count(array_intersect($user->roles(), ['admin', 'manager', 'procurement'])) && ! $user->validContact())

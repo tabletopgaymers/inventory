@@ -167,23 +167,77 @@ import './app.js';
             const panel = document.createElement('div'); panel.className = 'app-panel';
             const button = document.createElement('button'); button.type = 'button'; button.textContent = 'Sample';
             panel.append(button); sample.append(panel); document.body.append(sample);
-            samples.set(density, { sample, panel, button });
+            samples.set(density, { sample, panel });
         }
     }
+    const colorKeys = ['primary','page','surface','text-color','muted-color','border-color','danger-color','table-heading-color','table-group-color'];
+    const colorAsHex = color => {
+        if (color.startsWith('#')) return color.toLowerCase();
+        const channels = color.match(/[\d.]+/g);
+        if (!channels || channels.length < 3) return color;
+        const rgb = channels.slice(0, 3).map(value => Math.round(Number(value)).toString(16).padStart(2, '0')).join('');
+        const alpha = channels.length > 3 && Number(channels[3]) < 1
+            ? Math.round(Number(channels[3]) * 255).toString(16).padStart(2, '0') : '';
+        return '#' + rgb + alpha;
+    };
     const updateMeasurements = () => {
         for (const output of outputs) {
-            const { sample, panel, button } = samples.get(output.dataset.guideDensity);
+            const { sample, panel } = samples.get(output.dataset.guideDensity);
             const style = getComputedStyle(sample);
             const key = output.dataset.guideMeasure;
+            const token = name => style.getPropertyValue(name).trim();
             const values = {
+                'font-family': token('--app-font-family'),
+                'body-weight': token('--app-body-weight'),
+                'page-title-weight': token('--app-page-title-weight'),
+                'table-heading-weight': token('--app-table-heading-weight'),
+                'table-group-weight': token('--app-table-group-weight'),
+                'field-radius': token('--app-field-radius'),
+                'detail-label-weight': token('--app-detail-label-weight'),
+                'detail-value-style': 'Inherits body typography',
+                'text-color': token('--app-text'),
+                'muted-color': token('--app-muted'),
+                'border-color': token('--app-border'),
+                'danger-color': token('--app-danger'),
+                'table-heading-color': token('--app-table-heading-surface'),
+                'table-group-color': token('--app-table-group-surface'),
+                'column-gap': token('--app-column-gap'),
+                'flow-gap': token('--app-flow-gap'),
+                'page-heading-gap': token('--app-page-heading-gap'),
+                'section-heading-gap': token('--app-section-heading-gap'),
+                'table-heading-gap': token('--app-table-heading-gap'),
+                'column-widths': ['--app-column-min-small','--app-column-min-default','--app-column-min-wide'].map(token).join(' / '),
+                'column-breakpoints': ['--breakpoint-columns-wide','--breakpoint-columns-narrow'].map(token).join(' / '),
                 panel: getComputedStyle(panel).padding,
-                button: getComputedStyle(button).padding,
-                body: style.fontSize + ' / line height ' + style.lineHeight,
-                primary: style.getPropertyValue('--app-primary').trim(),
-                page: style.backgroundColor,
-                surface: getComputedStyle(panel).backgroundColor,
+                button: token('--app-button-padding-y') + ' ' + token('--app-button-padding-x'),
+                'body-size': token('--app-font-size'),
+                'body-line-height': token('--app-density-line-height') + '× (' + style.lineHeight + ')',
+                primary: token('--app-primary'),
+                page: token('--app-page'),
+                surface: token('--app-surface'),
             };
             output.textContent = key.startsWith('--') ? style.getPropertyValue(key).trim() : values[key];
+            if (colorKeys.includes(key)) {
+                output.textContent = colorAsHex(output.textContent);
+                const swatch = document.createElement('span');
+                swatch.className = `guide-color-swatch guide-color-${key}`;
+                swatch.setAttribute('aria-hidden', 'true');
+                output.prepend(swatch, ' ');
+            }
+        }
+        // Fixed status and merged cells derive from the loaded preset values.
+        const rows = new Set(outputs.map(output => output.closest('tr')));
+        for (const row of rows) {
+            const cells = [...row.querySelectorAll('[data-guide-measure]')];
+            const fixed = cells.every(cell => cell.textContent === cells[0].textContent);
+            cells[0].colSpan = fixed ? cells.length : 1;
+            cells.forEach((cell, index) => { cell.hidden = fixed && index > 0; });
+            let note = row.querySelector('[data-guide-fixed-note]');
+            if (fixed && !note) {
+                note = document.createElement('span'); note.dataset.guideFixedNote = '';
+                note.className = 'app-field-help'; note.textContent = ' (Fixed)'; row.querySelector('th').append(note);
+            }
+            if (!fixed) note?.remove();
         }
     };
     updateMeasurements();

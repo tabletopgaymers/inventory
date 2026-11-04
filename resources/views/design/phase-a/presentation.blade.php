@@ -8,18 +8,20 @@
 <section class="app-panel-stack" id="spacing" aria-labelledby="spacing-title">
 <div class="app-content">
     <h2 id="spacing-title">Spacing and display density</h2>
-    <p>Between sections, use the shared <code>app-panel-stack</code> (or <code>x-app.panel-stack</code>): its single <code>--app-section-gap: 12px</code> separates panels, tables, tab strips and collapsible sections. The page layout supplies the top-level stack; forms and unpadded tab sections containing several panels supply their own. Children have no added outer margins. Hidden sections take no space. Internal panel padding and field/table spacing still follow Display Density; the 12px section gap does not change.</p>
+    <p>Between sections, use the shared <code>app-panel-stack</code> (or <code>x-app.panel-stack</code>): its single <code>--app-section-gap</code> (Compact 10px, Standard 12px, Spacious 14px) separates panels, tables, tab strips and collapsible sections. The page layout supplies the top-level stack; forms and unpadded tab sections containing several panels supply their own. Children have no added outer margins. Hidden sections take no space. Panel gaps, internal panel padding and field/table spacing follow Display Density.</p>
     <p>Users choose Compact, Standard or Spacious in their profile. Standard is the default. The shared density settings control panel padding, line height, field spacing and table-row spacing throughout the application.</p>
     <ul>
         <li>Use the shared font family and base font size; do not override them on individual pages or components.</li>
-        <li>Use density variables for vertical spacing instead of independent padding or margin values.</li>
+        <li>Use density variables for internal vertical spacing, except the explicitly fixed settings listed below. Use the shared section-gap token between panels.</li>
         <li>Keep consistent panel padding and align action groups with related information. Buttons retain their internal padding.</li>
         <li>Use the shared heading hierarchy; do not enlarge ordinary text to create headings.</li>
         <li>Let content grow with the page. Avoid internal vertical scrolling for table results.</li>
         <li>Display density belongs to the viewer; print worksheets retain their established spacing.</li>
     </ul>
+    <h3>CSS units</h3>
+    <p>Use <code>rem</code> for font sizes, spacing and layout dimensions, including responsive breakpoints. Use <code>px</code> for borders, focus strokes, shadows and other fine visual details. Panel/section gaps are an explicit pixel-based exception: 10px Compact, 12px Standard, 14px Spacious. Retain viewport units, percentages, content-relative units such as <code>ch</code>/<code>em</code>, and physical print units where they serve the component. Browser-measured positioning and accessibility/offscreen utility geometry can remain pixels.</p>
     <h3>Settings</h3>
-    <p class="app-field-help">This table reads the loaded stylesheet for all three presets. Relative values remain in rem; rendered measurements use pixels at the current viewport and zoom. Your saved density is unchanged.</p>
+    <p class="app-field-help">This table reads shared CSS tokens for all three presets. Breakpoints are compiled from those same theme tokens; fixed rows and merged cells are detected automatically. The panel-padding and line-height pixel figures are rendered measurements. Relative values remain in rem; rendered measurements use pixels at the current viewport and zoom. Your saved density is unchanged.</p>
 </div>
 @include('design.phase-a.density-settings')
 </section>
@@ -27,11 +29,11 @@
 <section id="titles" aria-labelledby="titles-title">
     <h2 id="titles-title">Titles</h2>
     <p>A page title identifies the page or record. A simple title needs no status or actions.</p>
-    <div class="app-page-heading"><div class="app-title-row"><h3>Inventory</h3></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading"><div class="app-title-row"><h3>Inventory</h3></div></div>
     <h3>Titles with status and actions</h3>
     <p>Place record status immediately after the title and key actions on the right. Show only actions available to the user; keep the primary action last. Section examples below use lower-level headings to preserve the page hierarchy.</p>
-    <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><a class="button" href="/style-guide/forms">Edit</a></div></div>
-    <div class="app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><button type="button">Cancel</button><button type="button" class="primary">Save</button></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><a class="button" href="/style-guide/forms">Edit</a></div></div>
+    <div class="app-heading-row app-heading-row-page app-page-heading app-heading-with-actions"><div class="app-title-row"><h3>Edit collection - Pronoun ribbons</h3><x-app.status-badge status="Active" /></div><div class="app-actions"><button type="button">Cancel</button><button type="button" class="primary">Save</button></div></div>
 </section>
 <x-app.guide-divider />
 <section id="basic-panel" aria-labelledby="basic-panel-title">
@@ -89,6 +91,10 @@
         </div>
     </div>
 </section>
+<x-app.guide-divider />
+<section class="app-content"><h2>Read-only labeled values</h2><p>Use <code>x-app.detail-list</code> for labeled values. Labels are semibold (600); values inherit normal body typography. The shared <code>resources/css/details.css</code> owns density-based row gaps, multiline values, long-text wrapping and stacking below 48rem. Default/content labels fit within 45% of the list; <code>variant="fixed"</code> uses 11rem labels, <code>"compact"</code> uses 6rem and <code>"stacked"</code> always places values below labels. Keep each label/value pair in source order. Do not add domain-specific typography rules.</p><x-app.detail-list><dt>Label</dt><dd>Normal body text</dd><dt>Mailing address</dt><dd>Recipient name
+Street address
+Locality and postal details</dd></x-app.detail-list></section>
 <x-app.guide-divider />
 <section class="app-panel-stack" id="statuses" aria-labelledby="statuses-title">
     <h2 id="statuses-title">Status indicators</h2>

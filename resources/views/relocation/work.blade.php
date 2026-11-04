@@ -48,7 +48,7 @@
                 </x-slot:header>
                 <div data-material-results>@include('relocation.search-results', ['results' => [], 'searched' => false, 'sourceName' => $locations->firstWhere('id', (int) $work['source_location_id'])?->name ?: 'Source', 'destinationName' => $locations->firstWhere('id', (int) $work['destination_location_id'])?->name ?: 'Destination'])</div>
                 <x-slot:footer>
-                    <div class="app-table-panel-toolbar material-add-actions"><div class="app-actions"><button type="button" class="primary" data-material-add-selected @disabled(!$editable)>Add selected</button></div></div>
+                    <x-app.heading-row variant="table" class="app-table-panel-toolbar material-add-actions"><div class="app-actions"><button type="button" class="primary" data-material-add-selected @disabled(!$editable)>Add selected</button></div></x-app.heading-row>
                 </x-slot:footer>
             </x-app.table-region>
         </div>
@@ -61,11 +61,11 @@
                 <h2>Review relocation request</h2>
                 <button type="submit" name="action" value="submit" class="primary" data-relocation-submit disabled>Submit</button>
             </x-workflow.heading>
-            <dl class="app-user-details">
+            <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                 <dt>{{ $label }}</dt><dd class="plain-text" data-review-field="{{ $field }}">—</dd>
                 @endforeach
-            </dl>
+            </x-app.detail-list>
         </div>
         <x-app.table-region label="Requested material review" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
             <x-slot:header><h2>Requested material</h2></x-slot:header>
@@ -109,7 +109,7 @@
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-ship" labelledby="relocation-tab-ship" :active="$step === 'ship'">
         <div class="app-content">
             <x-workflow.heading><h2>Review shipment</h2><button type="submit" name="action" value="ship" class="primary" data-relocation-ship @disabled(!$manager || $status !== 'Accepted')>Ship</button></x-workflow.heading>
-            <dl class="app-user-details">
+            <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                 <dt>{{ $label }}</dt><dd class="plain-text" data-ship-field="{{ $field }}">—</dd>
                 @endforeach
@@ -121,7 +121,7 @@
                     <input type="date" id="relocation-shipping-date" name="shipping_date" value="{{ $shippingDate }}" data-shipping-date required @readonly(!$manager || $status !== 'Accepted') @if(in_array($status, ['Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>
                     <span data-shipping-date-display aria-labelledby="relocation-shipping-label" @if(!in_array($status, ['Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>{{ $shippingDate ? \Illuminate\Support\Carbon::parse($shippingDate)->format('d M Y') : '—' }}</span>
                 </dd>
-            </dl>
+            </x-app.detail-list>
         </div>
         <x-app.table-region label="Shipment material review" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
             <x-slot:header><h2>Material</h2></x-slot:header>
@@ -146,7 +146,7 @@
         <div class="app-panel-stack" data-confirmation-content @if(!in_array($status, ['Received', 'Completed'])) hidden @endif>
             <div class="app-content">
                 <x-workflow.heading><h2>Confirmation</h2><button type="submit" name="action" value="complete" class="primary" data-relocation-complete @disabled(!$manager || $status !== 'Received')>Complete</button></x-workflow.heading>
-                <dl class="app-user-details">
+                <x-app.detail-list variant="content" >
                     @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                     <dt>{{ $label }}</dt><dd class="plain-text" data-confirmation-field="{{ $field }}">—</dd>
                     @endforeach
@@ -154,7 +154,7 @@
                     <dt>Requested</dt><dd data-confirmation-requested-date>{{ $requestedDate ?? '—' }}</dd>
                     <dt>Fulfiller</dt><dd data-confirmation-fulfiller>{{ $fulfillerName }}</dd>
                     <dt data-confirmation-shipping-label>Shipping</dt><dd data-confirmation-shipping-date>—</dd>
-                </dl>
+                </x-app.detail-list>
             </div>
             <x-app.table-region label="Reconciliation confirmation" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
                 <x-slot:header><h2>Material</h2></x-slot:header>

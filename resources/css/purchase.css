@@ -6,7 +6,6 @@
 
 .purchase-add{display:flex;flex-wrap:wrap;align-items:end;gap:1rem}
 .purchase-add label{margin:0}
-.purchase-review dd{white-space:pre-wrap}
 .app-shell .purchase-material input[data-estimated-unit]{width:12ch}
 .app-shell .purchase-material input[data-other-description],.app-shell .purchase-material input[data-invoice-description]{width:100%;min-width:22rem;text-align:left}
 .purchase-material-value-column{width:4%}

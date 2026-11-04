@@ -12,3 +12,15 @@
 
 .guide-column-panel--narrow { max-width: 24rem; }
 .guide-density-probe { position: fixed; left: -10000px; visibility: hidden; pointer-events: none; min-height: 0; }
+
+
+.guide-color-swatch { display: inline-block; width: 1.15em; height: 1.15em; border: 2px solid #808080; border-radius: .2em; vertical-align: middle; }
+.guide-color-primary { background: var(--app-primary); }
+.guide-color-page { background: var(--app-page); }
+.guide-color-surface { background: var(--app-surface); }
+.guide-color-text-color { background: var(--app-text); }
+.guide-color-muted-color { background: var(--app-muted); }
+.guide-color-border-color { background: var(--app-border); }
+.guide-color-danger-color { background: var(--app-danger); }
+.guide-color-table-heading-color { background: var(--app-table-heading-surface); }
+.guide-color-table-group-color { background: var(--app-table-group-surface); }

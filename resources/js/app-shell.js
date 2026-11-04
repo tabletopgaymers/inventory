@@ -48,7 +48,7 @@ import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
     const close = document.getElementById('app-nav-close');
     const account = document.getElementById('app-account');
     const main = document.getElementById('app-main');
-    const narrow = window.matchMedia('(width < 800px)');
+    const narrow = window.matchMedia(`(width < ${getComputedStyle(document.documentElement).getPropertyValue('--breakpoint-app-navigation').trim()})`);
     if (drawer && trigger && typeof drawer.showModal === 'function') {
         document.body.classList.add('app-navigation-ready');
         const sync = () => {

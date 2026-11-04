@@ -52,10 +52,10 @@
 <label>Title<input id="purchase-title" name="title" value="{{ $values['title'] ?? $row->title }}" @readonly($readonly)></label>
 <label>Supplier<select id="purchase-supplier_id" name="supplier_id" @disabled($readonly)><option value="">Choose a supplier</option>@foreach($suppliers as $choice)@if(in_array($choice->state,['active','unverified']) || (string)$choice->id===(string)($values['supplier_id'] ?? ''))<option value="{{ $choice->id }}" data-supplier-info="{{ json_encode(['state'=>$choice->state,'website'=>$choice->website,'contact_name'=>$choice->contact_name,'email'=>$choice->email,'phone'=>$choice->phone]) }}" @selected((string)($values['supplier_id'] ?? '')===(string)$choice->id)>{{ $choice->name }}{{ $choice->state==='unverified' ? ' (Unverified)' : '' }}</option>@endif @endforeach</select></label>
 <fieldset data-supplier-information @if(!$actualSupplier) hidden @endif><legend>Supplier information</legend>
-<dl class="app-summary" data-supplier-details>
+<x-app.detail-list variant="content"  data-supplier-details>
 @if($actualSupplier)<dt>Supplier status</dt><dd>{{ ucfirst($actualSupplier->state) }}</dd>@foreach(['website'=>'Website','contact_name'=>'Contact','email'=>'Email','phone'=>'Phone'] as $field=>$label)@if($actualSupplier->$field)<dt>{{ $label }}</dt><dd>{{ $actualSupplier->$field }}</dd>@endif @endforeach
 @endif
-</dl>
+</x-app.detail-list>
 @if(!$readonly)<p class="notice" data-supplier-verification @if($actualSupplier?->state!=='unverified') hidden @endif>This supplier needs explicit verification before Record order. <a data-supplier-review href="/catalog/suppliers/{{ $actualSupplier?->id }}/edit">Review and verify supplier</a></p>@endif
 </fieldset>
 @if(!$readonly && $row->status!=='Draft')<div class="app-inline-group"><button name="action" value="replace_vendor" data-replace-vendor data-original-supplier="{{ $row->supplier_id ?: $requestedSupplier?->id }}" disabled>Replace supplier</button><label class="app-choice"><input type="checkbox" name="delete_unused_vendor" value="1" disabled> Remove the original supplier if unused</label></div><p class="app-field-help">Replacement preserves the submitted and current supplier details in a permanent note. Used or shared suppliers are retained.</p>@endif
@@ -84,13 +84,13 @@
 @elseif($section==='charges')
 @include('purchase.partials.charges')
 @elseif($section==='order-review' || $section==='confirmation')
-<dl class="purchase-review"><dt>Title</dt><dd>{{ $values['title'] ?? $row->title }}</dd><dt>Supplier</dt><dd>{{ $preview['vendor_snapshot']['name'] ?? $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Deliver to</dt><dd>{{ $values['delivery_name'] ?? '—' }}</dd><dt>Mailing address</dt><dd>{{ $values['delivery_address'] ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></dl>
+<x-app.detail-list variant="content" ><dt>Title</dt><dd>{{ $values['title'] ?? $row->title }}</dd><dt>Supplier</dt><dd>{{ $preview['vendor_snapshot']['name'] ?? $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Deliver to</dt><dd>{{ $values['delivery_name'] ?? '—' }}</dd><dt>Mailing address</dt><dd>{{ $values['delivery_address'] ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></x-app.detail-list>
 @if($row->status==='Received')<p>Received is final. These are stored purchase values.</p>
 @elseif($mode==='order')<p>Recording the order changes Ordered quantities only for catalog items going to storage. Held stock and catalog Unit Cost do not change until final receipt.</p>
 @else<p>Final receipt clears this purchase’s Ordered quantities and applies the confirmed stock and Unit Cost effects.</p>@endif
 @if(!$preview)<p>Complete the invoice and required details before confirmation.</p>@endif
 @if($section==='order-review' && $preview)
-<h3>Ordered quantities</h3><dl class="purchase-review">@foreach($preview['lines'] as $line)<dt>{{ $line['description'] ?? $catalogItems->firstWhere('id',(int)($line['item_id'] ?? 0))?->name ?? 'Item' }}</dt><dd>{{ !empty($line['item_id']) && str_starts_with($values['delivery_choice'] ?? '', 'location:') ? number_format($line['quantity']).' Ordered' : 'No inventory quantity' }}</dd>@endforeach</dl>
+<h3>Ordered quantities</h3><x-app.detail-list variant="content" >@foreach($preview['lines'] as $line)<dt>{{ $line['description'] ?? $catalogItems->firstWhere('id',(int)($line['item_id'] ?? 0))?->name ?? 'Item' }}</dt><dd>{{ !empty($line['item_id']) && str_starts_with($values['delivery_choice'] ?? '', 'location:') ? number_format($line['quantity']).' Ordered' : 'No inventory quantity' }}</dd>@endforeach</x-app.detail-list>
 @endif
 @endif
 </div>

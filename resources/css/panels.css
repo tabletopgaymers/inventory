@@ -1,12 +1,12 @@
-:root { --app-section-gap: 100px; }
+:root { --app-section-gap: 12px; }
+.app-shell[data-density="compact"] { --app-section-gap: 10px; }
+.app-shell[data-density="standard"] { --app-section-gap: 12px; }
+.app-shell[data-density="spacious"] { --app-section-gap: 14px; }
 /* A stack owns section gaps across form/tab boundaries; child panels own only their padding. */
 .app-panel-stack { display: flex; flex-direction: column; gap: var(--app-section-gap); min-width: 0; }
 .app-shell .app-panel-stack > :not(dialog) { margin-block: 0; }
 
 .app-inline-group { display: flex; flex-wrap: wrap; gap: .5rem; }
-.app-summary { display: grid; grid-template-columns: fit-content(45%) minmax(0, 1fr); gap: var(--app-density-field-y) 1rem; align-content: start; margin: 0; }
-.app-summary dt { font-weight: 600; }
-.app-summary dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .app-shell .app-heading-flush, .app-shell .app-table-panel-copy { margin: 0; }
 
 .app-shell .app-choice-disabled { color: var(--app-muted); }

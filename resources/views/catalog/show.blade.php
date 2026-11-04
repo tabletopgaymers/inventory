@@ -6,7 +6,7 @@
 @endsection
 @section('content-sections')
 <div class="app-content">
-    <dl class="app-user-details">
+    <x-app.detail-list variant="content" >
         @if($kind === 'suppliers')
         @php
             $emailHref = $record->contact_name
@@ -35,7 +35,7 @@
         @if(in_array($kind, ['categories', 'collections']))<dt>Description</dt><dd>{{ $record->description ?: '—' }}</dd>@endif
         @if(!in_array($kind, ['categories', 'collections']))<dt>Notes</dt><dd class="plain-text">{{ $record->notes ?: '—' }}</dd>@endif
         @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format($children->count()) }}</a></dd>@endif
-    </dl>
+    </x-app.detail-list>
 </div>
 @if($kind === 'categories' && $canManage)<div class="app-actions"><a class="button app-new-action" href="/catalog/collections/create?category={{ $record->id }}">＋ New</a></div>@endif
 @if(in_array($kind, ['categories', 'collections']))

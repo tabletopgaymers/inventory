@@ -8,13 +8,13 @@
     <p>The catalog groups items by category and collection. Use consistent names so records are easy to find.</p>
 </div>
 <x-app.table-region id="guide-table-preview" label="Sample Ribbon collections">
-    <x-slot:header><div class="app-table-panel-toolbar">
+    <x-slot:header><x-app.heading-row variant="table" class="app-table-panel-toolbar">
         <div class="app-table-panel-copy">
             <h2 id="guide-table-section-title">Ribbon collections</h2>
             <p class="app-field-help">All retained collections in this category.</p>
         </div>
         <div class="app-actions"><a class="button app-new-action" href="#guide-table-preview">＋ New</a></div>
-    </div></x-slot:header>
+    </x-app.heading-row></x-slot:header>
 
         <table><thead><tr><th>Collection</th><th>Description</th><th>SKU prefix</th><th>Status</th></tr></thead><tbody>
             <tr><td><a href="#guide-table-preview">Pronoun</a></td><td>Pronoun identification ribbons</td><td>RPR</td><td><x-app.status-badge status="Active" /></td></tr>
@@ -22,10 +22,10 @@
             <tr><td><a href="#guide-table-preview">Legacy designs</a></td><td>Earlier ribbon designs</td><td>RLG</td><td><x-app.status-badge status="Inactive" /></td></tr>
         </tbody></table>
 
-    <x-slot:footer><div class="app-table-panel-toolbar">
+    <x-slot:footer><x-app.heading-row variant="table" class="app-table-panel-toolbar">
         <p class="app-field-help app-table-panel-copy">3 collections · 2 active · 1 inactive</p>
         <div class="app-actions"><button type="button">Download CSV</button></div>
-    </div></x-slot:footer>
+    </x-app.heading-row></x-slot:footer>
 </x-app.table-region>
 <div class="app-content">
     <p>Inactive collections remain available for reference. Their items and earlier history are retained.</p>

@@ -12,18 +12,18 @@
 @php($historyContext = is_string($browse) && \Illuminate\Support\Str::isUuid($browse) ? ['browse' => $browse] : [])
 @if($catalogReady)
 <div class="app-columns app-columns-wide app-columns-trim">
-<div><dl class="app-user-details">
+<div><x-app.detail-list variant="content" >
 <dt>Name</dt><dd>{{ $item->name }}</dd>
 <dt>Collection</dt><dd><a href="/catalog/categories/{{ $item->category_id }}">{{ $item->category_name }}</a> : <a href="/catalog/collections/{{ $item->collection_id }}">{{ $item->collection_name }}</a></dd>
 <dt>SKU</dt><dd>{{ $item->sku }}</dd>
 <dt>Variety</dt><dd>{{ $metadata?->variety ?? '—' }}</dd><dt>Purpose</dt><dd>{{ $purpose?->name ?? '—' }}</dd><dt>Programs</dt><dd>{{ $programs->pluck('name')->join(', ') ?: '—' }}</dd>
-</dl></div>
-<div><dl class="app-user-details">
+</x-app.detail-list></div>
+<div><x-app.detail-list variant="content" >
 <dt>Unit cost</dt><dd>{{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}@if($dailyReady && $canCost) (<a href="{{ $itemBase }}{{ $item->id }}/cost">adjust</a>)@endif</dd>
 @foreach(['in_person_ask'=>'In-person ask','online_ask'=>'Online ask','irs_fmv'=>'IRS Fair Market Value'] as $field=>$label)<dt>{{ $label }}</dt><dd>{{ $metadata?->$field === null ? '—' : '$'.\Brick\Math\BigDecimal::of($metadata->$field)->toScale(2, \Brick\Math\RoundingMode::HalfUp) }}</dd>@endforeach
 <dt>Bundle type</dt><dd>{{ $metadata?->bundle_type ?? '—' }}</dd><dt>Bundle quantity</dt><dd>{{ $metadata?->bundle_quantity === null ? '—' : number_format($metadata->bundle_quantity) }}</dd>
 <dt>Notes</dt><dd class="plain-text">{{ $metadata?->notes ?? '—' }}</dd>
-</dl></div>
+</x-app.detail-list></div>
 </div>
 @else
 <p>{{ $item->sku }} · {{ $item->category_name }} · {{ $item->collection_name }}</p>
@@ -32,10 +32,10 @@
 </div>
 <x-app.table-region label="Item quantities by location" class="app-list-table-panel">
 <x-slot:header>
-<div class="app-table-panel-toolbar">
+<x-app.heading-row variant="table" class="app-table-panel-toolbar">
 <h2 class="app-heading-flush">Locations</h2>
 @if($canCorrect)<div class="app-actions"><a class="button" href="/inventory/items/{{ $item->id }}/edit">Edit inventory</a></div>@endif
-</div>
+</x-app.heading-row>
 </x-slot:header>
 <table><thead><tr><th>Location</th><th class="number">Available</th></tr></thead><tbody>
 

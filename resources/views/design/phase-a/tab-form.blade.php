@@ -35,11 +35,11 @@
         <section role="tabpanel" id="guide-demo-panel-review" aria-labelledby="guide-demo-tab-review" tabindex="0" hidden>
             <p data-tab-unavailable hidden></p>
             <div data-tab-content>
-            <dl class="app-user-details">
+            <x-app.detail-list variant="content" >
                 @foreach(['name', 'source', 'destination', 'button_type', 'button_request', 'button_fulfilled'] as $field)
                 <dt>{{ $field }}</dt><dd data-tab-review="{{ $field }}">—</dd>
                 @endforeach
-            </dl>
+            </x-app.detail-list>
             <label class="app-choice"><input type="checkbox" name="approved" data-tab-field="approved"> approved</label>
             <label>signature<input type="text" name="signature" data-tab-field="signature"></label>
             </div>

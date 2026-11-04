@@ -92,14 +92,14 @@
 <x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">
 <div class="app-content"><x-workflow.heading><h2>Review purchase request</h2><button class="primary" type="submit" name="action" value="submit" data-submit-request @disabled(!$canSubmit || count($reviewErrors))>Submit</button></x-workflow.heading>
 <div class="app-columns app-columns-fields">
-<dl class="app-summary">
+<x-app.detail-list variant="content" >
 <dt>Title</dt><dd data-review="title">{{ $work['title'] ?: '—' }}</dd>
 <dt>Supplier</dt><dd data-review-choice="vendor" data-submitted-label="{{ $submittedLabels['vendor'] ?? '' }}"></dd>
-</dl>
-<dl class="app-summary">
+</x-app.detail-list>
+<x-app.detail-list variant="content" >
 <dt>Requestor</dt><dd>{{ $requesterName }}</dd>
 <dt>Deliver to</dt><dd data-review-choice="delivery" data-submitted-label="{{ $submittedLabels['delivery'] ?? '' }}"></dd>
-</dl>
+</x-app.detail-list>
 </div></div>
 <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material"><x-slot:header><h2>Requested material</h2></x-slot:header><table><thead><tr><th>Item</th><th class="table-heading-center table-quantity-column">Requested</th><th class="table-numeric purchase-material-value-column">Est. unit price</th><th class="table-numeric purchase-material-value-column">Est. total</th></tr></thead><tbody data-review-items></tbody></table></x-app.table-region>
 </x-workflow.tab-panel>

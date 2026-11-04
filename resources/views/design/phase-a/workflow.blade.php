@@ -19,6 +19,7 @@
     @endforeach
 </div>
 @endforeach
+<div class="app-content"><h2>Heading and action rows</h2><p>Use <code>x-app.heading-row</code> with <code>variant="page"</code>, <code>"section"</code> or <code>"table"</code>. One foundation owns alignment and wrapping in <code>resources/css/headings.css</code>. Page rows preserve H1/status and the top-level action grid; section rows preserve density-based trailing spacing; table rows support flexible description/footer copy. Existing <code>x-app.page-heading</code> and <code>x-workflow.heading</code> delegate to this foundation. Keep domain titles, actions and permissions in callers. These internal row gaps are separate from the density-based gap between panels.</p></div>
 <div class="app-content"><h2>Linked steps</h2><p>Use x-workflow.steps for pages that navigate to server routes. Supply ordinary links and aria-current="page" on the current one. They share tab styling but retain link semantics and native keyboard behavior.</p></div>
 <x-workflow.steps label="Linked step specimen">
     <a class="button" href="/style-guide/workflow" aria-current="page">Workflow components</a>
@@ -69,7 +70,7 @@
 @vite('resources/js/workflow-demo.js')
 <x-app.guide-divider />
 <x-app.panel-stack>
-    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent 12px section gap, including across form boundaries. The shared --app-section-gap token owns this spacing; it is independent of Display Density. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. The common page layout already stacks top-level content sections. Add a stack inside forms or tab sections that contain multiple panels. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
+    <div class="app-content"><h2>Panel composition</h2><p>Use x-app.panel-stack to give sections one consistent density-based section gap (10px Compact, 12px Standard, 14px Spacious), including across form boundaries. The shared --app-section-gap token owns this spacing; it follows Display Density. Apply app-panel-stack to existing forms or unpadded tab sections rather than nesting forms. The common page layout already stacks top-level content sections. Add a stack inside forms or tab sections that contain multiple panels. Stack children surrender their outer margins; hidden sections consume no gap.</p><p>For one collapsible section, use x-app.collapsible-panel with a title and body slot. The details element is the panel; do not wrap it in app-content. It preserves native summary and open behavior, with shared density padding.</p></div>
     <x-app.collapsible-panel title="Collapsible specimen"><p>One border surrounds the summary and this body.</p></x-app.collapsible-panel>
 </x-app.panel-stack>
 @endsection

@@ -4,18 +4,18 @@
 <div class="app-content app-record-content">
 @hasSection('relocation-progress')@yield('relocation-progress')@endif @hasSection('purchase-progress')@yield('purchase-progress')@endif
 <div class="app-columns app-columns-small">
-<div><dl class="app-user-details">
+<div><x-app.detail-list variant="content" >
 <dt>Item</dt><dd><a href="/inventory/items/{{ $group->item_id }}">{{ $group->item_name }}</a></dd>
 <dt>SKU</dt><dd>{{ $group->item_sku }}</dd>
-</dl></div>
-<div><dl class="app-user-details">
+</x-app.detail-list></div>
+<div><x-app.detail-list variant="content" >
 <dt>Category</dt><dd><a href="/catalog/categories/{{ $classification->category_id }}">{{ $classification->category_name }}</a></dd>
 <dt>Collection</dt><dd><a href="/catalog/collections/{{ $classification->collection_id }}">{{ $classification->collection_name }}</a></dd>
-</dl></div>
-<div><dl class="app-user-details">
+</x-app.detail-list></div>
+<div><x-app.detail-list variant="content" >
 <dt>Recorded by</dt><dd>{{ $group->actor_name }}</dd>
 <dt>Time recorded</dt><dd>{{ \App\Support\DisplayDates::timestamp($group->posted_at) }}</dd>
-</dl></div>
+</x-app.detail-list></div>
 </div>
 </div>
 <x-app.table-region label="Adjustment" class="app-list-table-panel"><table><thead><tr><th>Location</th><th class="number">Before</th><th class="number">After</th><th class="number">Change</th><th class="number">Unit cost</th><th>Rationale</th></tr></thead><tbody>

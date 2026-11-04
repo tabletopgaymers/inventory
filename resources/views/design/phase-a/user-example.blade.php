@@ -2,24 +2,24 @@
 <x-workflow.heading><h2>Sample Administrator</h2><a class="button" href="#profile-example">Edit</a></x-workflow.heading>
     <div class="app-columns app-columns-two app-columns-trim">
     <div>
-    <dl class="app-user-details">
+    <x-app.detail-list variant="content" >
         <dt>First name</dt><dd>Sample</dd>
         <dt>Last name</dt><dd>Administrator</dd>
         <dt>Elevated roles</dt><dd>admin, manager, procurement</dd>
         <dt>Microsoft account</dt><dd>sample@tabletopgaymers.org</dd>
         <dt>TG email</dt><dd>sample@tabletopgaymers.org</dd>
         <dt>TG email confirmation</dt><dd><strong class="app-confirmation-status">Confirmed</strong></dd>
-    </dl>
+    </x-app.detail-list>
     </div>
     <div>
-    <dl class="app-user-details">
+    <x-app.detail-list variant="content" >
         <dt>Personal email</dt><dd>sample@example.test</dd>
         <dt>Mobile number</dt><dd>—</dd>
         <dt>Mailing address</dt><dd class="app-user-address">Sample Administrator
 Illustrative address</dd>
         <dt>Time zone</dt><dd>America/Chicago</dd>
         <dt>Display density</dt><dd>Standard</dd>
-    </dl>
+    </x-app.detail-list>
     </div>
     </div>
 </div>

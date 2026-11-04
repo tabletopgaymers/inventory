@@ -51,7 +51,7 @@
 <div class="app-content" id="item">
     <div class="app-title-row"><h2>They/Them</h2><x-app.status-badge status="Active" /></div>
     <p>Ribbon : Pronoun</p>
-    <dl class="item-metadata"><dt>Variety</dt><dd>Sample ribbon</dd><dt>Purpose</dt><dd>Convention kit</dd><dt>Notes</dt><dd>Illustrative item metadata.</dd></dl>
+    <x-app.detail-list variant="fixed" ><dt>Variety</dt><dd>Sample ribbon</dd><dt>Purpose</dt><dd>Convention kit</dd><dt>Notes</dt><dd>Illustrative item metadata.</dd></x-app.detail-list>
     <h3>Recorded activity</h3></div>
 <x-app.table-region class="app-list-table-panel" label="Sample recorded activity"><table><thead><tr><th>Recorded</th><th>Action</th><th class="number">Units</th></tr></thead><tbody><tr><td>11 Oct 2026</td><td>Sample receipt</td><td class="number">250</td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">
@@ -92,7 +92,7 @@
 </div>
 <x-app.guide-divider />
 <div class="app-content" id="wrapper">
-    <h2>Current application frame</h2><p>This page already uses the actual header, account menu, navigation, environment box and footer. Desktop navigation begins at 800px; smaller widths use Menu.</p>
+    <h2>Current application frame</h2><p>This page already uses the actual header, account menu, navigation, environment box and footer. Desktop navigation begins at 50rem (800px at the default font size); smaller widths use Menu.</p>
     @if(request()->getHost() === 'tg-inventory-app.test')<p><a href="/style-guide/wrapper">Open the focused application-frame example</a>.</p>@endif
 </div>
 @endsection

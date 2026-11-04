@@ -15,5 +15,3 @@
     background: var(--app-workflow-selected); border-inline: 2px solid var(--app-primary); pointer-events: none;
 }
 .app-shell .workflow-tabs button, .app-shell .workflow-tabs a.button { border-bottom: 0; }
-.workflow-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: var(--app-density-field-y); }
-.app-shell .workflow-heading h2 { margin: 0; }
