@@ -1,6 +1,6 @@
             <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="app-list-table-panel">
                 <x-slot:header>
-                    <x-workflow.heading><h2 data-material-table-title>Requested material</h2><x-app.action variant="primary" type="button"  data-material-next>Next ▷</x-app.action><x-app.action type="submit" name="action" value="print" data-print-url="/relocation/work/{{ $token }}/print" data-fulfillment-print hidden>Print</x-app.action><x-app.action variant="primary" type="button"  data-reconcile-next hidden>Next ▷</x-app.action></x-workflow.heading>
+                    <x-workflow.heading><h2 data-material-table-title>Requested material</h2><x-app.action variant="primary" type="submit" name="action" value="next" data-next-tab="review" data-material-next>Next ▷</x-app.action><x-app.action type="submit" name="action" value="print" data-print-url="/relocation/work/{{ $token }}/print" data-fulfillment-print hidden>Print</x-app.action><x-app.action variant="primary" type="submit" name="action" value="next" data-next-tab="confirmation" data-reconcile-next hidden>Next ▷</x-app.action></x-workflow.heading>
                     <p data-material-empty @if(!empty($work['lines'])) hidden @endif>No material added yet.</p>
                     <p data-reconcile-progress hidden></p>
                 </x-slot:header>

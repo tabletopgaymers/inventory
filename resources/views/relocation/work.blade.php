@@ -19,7 +19,7 @@
         <p data-material-search-feedback class="warning" role="status" hidden></p>
     </div>
     <x-workflow.tab-panel class="app-content" id="relocation-panel-basic" labelledby="relocation-tab-basic" :active="$step === 'basic'">
-        <x-workflow.heading><h2>Basic info</h2><x-app.action variant="primary" type="submit" name="action" value="next"  data-basic-next :disabled="!$editable">Next ▷</x-app.action></x-workflow.heading>
+        <x-workflow.heading><h2>Basic info</h2><x-app.action variant="primary" type="submit" name="action" value="next"  data-basic-next data-next-tab="material" :disabled="!$editable">Next ▷</x-app.action></x-workflow.heading>
         <fieldset class="app-entry-fieldset" data-basic-fields>
         <label>Title<input id="relocation-title" name="title" required maxlength="255" value="{{ old('title', $work['title']) }}" @readonly(!$editable && !($manager && $status === 'Accepted'))></label>
         @foreach(['source_location_id' => 'Source', 'destination_location_id' => 'Destination'] as $field => $label)

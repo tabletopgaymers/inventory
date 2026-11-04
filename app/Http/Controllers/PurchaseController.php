@@ -334,8 +334,8 @@ class PurchaseController
             if (count($values['lines']) > 1000) throw ValidationException::withMessages(['lines' => 'Use up to 1,000 catalog items.']);
             $row = $work['id'] ? DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail() : null;
             abort_unless(! $row || ($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row)), 403);
-            // Add/remove and step navigation retain unfinished values in this workspace.
-            if (in_array($action, ['add', 'add_selected', 'remove', 'add_other', 'remove_other'], true) || ($action === 'next' && $data['tab'] !== 'basic')) {
+            // Add/remove retain working values; Next persists before advancing.
+            if (in_array($action, ['add', 'add_selected', 'remove', 'add_other', 'remove_other'], true)) {
                 $values['material_dirty'] = true;
                 $request->session()->put('purchase_workspace.'.$token, $values);
 
@@ -403,7 +403,7 @@ class PurchaseController
             if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => $values['id'], 'revision' => $values['revision'],
                 'status' => DB::table('purchase_requests')->where('id', $values['id'])->value('status'), 'values' => array_intersect_key($values, array_flip(['title', ...PurchaseRequestBasics::FIELDS])),
                 'other_vendor_id' => $values['vendor_other_id'] ?? '', 'message' => 'Progress saved.']);
-            return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? 'material' : $data['tab']))->with('success', $submit ? 'Request submitted. No stock or cost changed.' : 'Progress saved.');
+            return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? ($data['tab'] === 'basic' ? 'material' : 'review') : $data['tab']))->with('success', $submit ? 'Request submitted. No stock or cost changed.' : 'Progress saved.');
         });
     }
 
@@ -591,7 +591,7 @@ class PurchaseController
 
                 return redirect('/purchase/'.$row->id.'?tab=order')->with('success', 'Purchase marked Shipped.');
             }
-            if ($action === 'save') {
+            if (in_array($action, ['save', 'next'], true)) {
                 $saved = DB::transaction(function () use ($service, $request, $row, $values, $mode) {
                     $saved = $service->saveProgress((int) $request->user()->id, $row->id, $request->input('revision'), $values, $mode);
                     $header = RequestStock::header('purchase', $row->id);
@@ -613,7 +613,7 @@ class PurchaseController
             $tab = $request->input('tab');
             if ($action === 'next') $tab = $mode === 'receipt' ? 'confirmation' : match ($tab) { 'order' => 'invoice', 'invoice' => 'charges', default => 'order-review' };
 
-            return redirect('/purchase/work/'.$token.'?'.http_build_query(['tab' => $tab, 'mode' => $mode]))->with('success', $action === 'save' ? 'Progress saved. Stock and cost unchanged.' : null);
+            return redirect('/purchase/work/'.$token.'?'.http_build_query(['tab' => $tab, 'mode' => $mode]))->with('success', in_array($action, ['save', 'next'], true) ? 'Progress saved. Stock and cost unchanged.' : null);
         });
     }
 

@@ -36,12 +36,6 @@ import './inventory-search-controls.js';
         if (['material', 'review', 'ship', 'confirmation'].includes(tab.dataset.workflowTab)) refreshBalances();
     } });
     const showTab = tab => tabUI.activate(tab?.dataset.workflowTab, { allowDisabled: true });
-    form.querySelector('[data-material-next]').addEventListener('click', () => {
-        if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'review'));
-    });
-    form.querySelector('[data-reconcile-next]').addEventListener('click', () => {
-        if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'confirmation'));
-    });
     const controls = () => [...form.querySelectorAll('input:not([type="hidden"]), select, textarea')];
     const markDirty = section => {
         dirtySections.add(section || (activeTab() === 'reconcile' ? 'reconciliation' : activeTab() === 'tracking' ? 'tracking' : form.dataset.status === 'Accepted' ? (activeTab() === 'basic' ? 'basic' : 'fulfillment') : 'request'));
@@ -542,10 +536,10 @@ import './inventory-search-controls.js';
         printButton.disabled = busy;
         const reconcileNext = sharedTable.querySelector('[data-reconcile-next]');
         reconcileNext.hidden = policy.tab !== 'reconcile';
-        reconcileNext.disabled = busy;
+        reconcileNext.disabled = busy || !policy.received;
         const next = sharedTable.querySelector('[data-material-next]');
         next.hidden = policy.tab !== 'material';
-        next.disabled = busy;
+        next.disabled = busy || !policy.requested;
         sharedTable.querySelector('[role="region"]').setAttribute('aria-label', title);
         sharedTable.querySelectorAll('[data-material-only]').forEach(cell => { cell.hidden = policy.tab !== 'material'; });
         sharedTable.querySelectorAll('[data-fulfillment-only]').forEach(cell => { cell.hidden = policy.tab === 'material'; });
@@ -622,10 +616,10 @@ import './inventory-search-controls.js';
         feedback.hidden = true;
         feedback.removeAttribute('aria-label');
     };
-    const showErrors = (result, action = 'save') => {
+    const showErrors = (result, action = 'save', originTab = null) => {
         const materialError = Object.keys(result.errors || {}).some(name => name === 'lines' || name.startsWith('lines.'));
         const fulfillmentError = action === 'accept' || form.dataset.status === 'Accepted';
-        showTab(tabs[action === 'complete' ? 7 : ['receive', 'reconciliation'].includes(action) ? 6 : action === 'basic' ? 0 : action === 'ship' ? 5 : action === 'tracking' ? 4 : fulfillmentError ? 3 : action === 'submit' ? 2 : materialError ? 1 : 0]);
+        showTab(originTab ? tabs.find(tab => tab.dataset.workflowTab === originTab) : tabs[action === 'complete' ? 7 : ['receive', 'reconciliation'].includes(action) ? 6 : action === 'basic' ? 0 : action === 'ship' ? 5 : action === 'tracking' ? 4 : fulfillmentError ? 3 : action === 'submit' ? 2 : materialError ? 1 : 0]);
         feedback.hidden = false;
         feedback.className = 'error';
         feedback.setAttribute('role', 'alert');
@@ -674,6 +668,9 @@ import './inventory-search-controls.js';
         event.preventDefault();
         if (busy) return;
         const action = event.submitter?.value || 'save';
+        const originTab = action === 'next' ? activeTab() : null;
+        const saving = action === 'save' || action === 'next';
+        const nextTab = action === 'next' ? event.submitter?.dataset.nextTab : null;
         const printing = action === 'print';
         const printUrl = form.querySelector('[data-fulfillment-print]').dataset.printUrl;
         if (printing && !(activeTab() === 'fulfillment' && form.dataset.status === 'Accepted' && form.dataset.manager === 'true')) {
@@ -684,10 +681,10 @@ import './inventory-search-controls.js';
         const shipping = action === 'ship';
         const receiving = action === 'receive';
         const completing = action === 'complete';
-        const reconciliationSave = action === 'save' && activeTab() === 'reconcile' && form.dataset.status === 'Received';
-        const fulfillmentSave = (action === 'save' || printing) && form.dataset.status === 'Accepted' && form.querySelector('[aria-selected="true"]').dataset.workflowTab === 'fulfillment';
-        const basicSave = action === 'save' && form.dataset.status === 'Accepted' && activeTab() === 'basic';
-        const trackingSave = action === 'save' && activeTab() === 'tracking' && canEditTracking();
+        const reconciliationSave = saving && activeTab() === 'reconcile' && form.dataset.status === 'Received';
+        const fulfillmentSave = (saving || printing) && form.dataset.status === 'Accepted' && form.querySelector('[aria-selected="true"]').dataset.workflowTab === 'fulfillment';
+        const basicSave = saving && form.dataset.status === 'Accepted' && activeTab() === 'basic';
+        const trackingSave = saving && activeTab() === 'tracking' && canEditTracking();
         if (receiving ? form.dataset.manager !== 'true' || form.dataset.status !== 'Fulfilled' : completing ? form.dataset.manager !== 'true' || form.dataset.status !== 'Received' : shipping ? form.dataset.manager !== 'true' || form.dataset.status !== 'Accepted' : accepting ? form.dataset.manager !== 'true' || form.dataset.status !== 'Requested' : fulfillmentSave || basicSave || reconciliationSave ? form.dataset.manager !== 'true' : trackingSave ? !canEditTracking() : form.dataset.editable !== 'true') return;
         if (shipping && dirtySections.has('fulfillment')) {
             showTab(tabs[3]);
@@ -712,7 +709,7 @@ import './inventory-search-controls.js';
         if (completing) requestedRows().forEach(row => {
             data.set(`reconciliation[${row.dataset.materialItem}]`, row.querySelector('[data-material-received]').value);
         });
-        data.set('action', printing ? 'save' : action);
+        data.set('action', printing || action === 'next' ? 'save' : action);
         // Reserve the new tab during the click so saving can finish before navigation.
         const printWindow = printing ? window.open('', '_blank') : null;
         let printReady = false;
@@ -769,7 +766,7 @@ import './inventory-search-controls.js';
             dirty = dirtySections.size > 0; setSaveDirty(save, dirty);
             if (dirty) feedback.textContent += ' Changes on another tab are still unsaved.';
             showNotice(feedback, feedback.textContent, dirty ? 'warning' : 'success');
-            if (action === 'next') showTab(tabs[1]);
+            if (nextTab) showTab(tabs.find(tab => tab.dataset.workflowTab === nextTab));
             if (action === 'submit') showTab(tabs[2]);
             if (accepting) showTab(tabs[3]);
             if (receiving) showTab(tabs[6]);
@@ -786,7 +783,7 @@ import './inventory-search-controls.js';
             }
             },
             onError: result => {
-                showErrors(result, reconciliationSave ? 'reconciliation' : basicSave ? 'basic' : trackingSave || (shipping && Object.keys(result.errors || {}).some(name => name.startsWith('tracking.'))) ? 'tracking' : action);
+                showErrors(result, reconciliationSave ? 'reconciliation' : basicSave ? 'basic' : trackingSave || (shipping && Object.keys(result.errors || {}).some(name => name.startsWith('tracking.'))) ? 'tracking' : action, originTab);
             },
             onFinally: () => {
                 if (printWindow && !printReady && !printWindow.closed) printWindow.close();
