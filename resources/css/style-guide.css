@@ -27,3 +27,7 @@
 
 .guide-color---app-control-delete-color { background: var(--app-control-delete-color); }
 .guide-color---app-control-clear-color { background: var(--app-control-clear-color); }
+
+.guide-color---app-disabled-surface { background: var(--app-disabled-surface); }
+.guide-color---app-disabled-text { background: var(--app-disabled-text); }
+.guide-color---app-disabled-border { background: var(--app-disabled-border); }

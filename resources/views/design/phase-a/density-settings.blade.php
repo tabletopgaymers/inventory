@@ -63,6 +63,9 @@
         'field-radius' => 'Field corner radius',
     ],
     'Colors' => [
+        '--app-disabled-surface' => 'Disabled control background',
+        '--app-disabled-text' => 'Disabled control text',
+        '--app-disabled-border' => 'Disabled control border',
         'text-color' => 'Default text color',
         'muted-color' => 'Secondary text color',
         'border-color' => 'Panel / table border color',

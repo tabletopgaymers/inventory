@@ -15,6 +15,7 @@
     <label>Date field<input type="date" value="2026-10-11" required></label>
     <label>Account field<input id="guide-readonly-text" value="sample@example.test" readonly></label>
     <label>Value field (USD)<input id="guide-readonly-value" value="0.125" readonly></label>
+    <p>Disabled fields and actions share background, text and border colors from <code>resources/css/control-states.css</code>: <code>--app-disabled-surface</code>, <code>--app-disabled-text</code> and <code>--app-disabled-border</code>. These also apply to actions in standalone print views. Disabled controls retain their native unavailable behavior; read-only fields are a separate state.</p>
     <label>Disabled input<input value="Unavailable" disabled></label>
     <label>Disabled dropdown<select disabled><option>Sample storage</option></select></label>
     <label>Disabled text area<textarea rows="2" disabled>Saved details cannot be edited here.</textarea></label>

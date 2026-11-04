@@ -162,10 +162,10 @@
 .app-shell textarea[readonly]:not(:disabled) { background: var(--app-table-group-surface); }
 /* Keep disabled controls readable across field and button variants. */
 .app-shell :is(input, select, textarea, button):disabled {
-  background-color: #e5e7eb !important; color: #000 !important; -webkit-text-fill-color: #000 !important;
-  border-color: #767676 !important; opacity: 1 !important; cursor: default; accent-color: #000;
+  background-color: var(--app-disabled-surface) !important; color: var(--app-disabled-text) !important; -webkit-text-fill-color: var(--app-disabled-text) !important;
+  border-color: var(--app-disabled-border) !important; opacity: 1 !important; cursor: default; accent-color: var(--app-disabled-text);
 }
-.app-shell :is(input, textarea):disabled::placeholder { color: #000; opacity: 1; }
+.app-shell :is(input, textarea):disabled::placeholder { color: var(--app-disabled-text); opacity: 1; }
 .app-shell input[type="checkbox"], .app-shell input[type="radio"] { accent-color: var(--app-primary); width: 1.1rem; height: 1.1rem; margin-top: 0.1rem; flex-shrink: 0; }
 .app-shell label.app-choice { display: flex; gap: 0.3rem .6rem; align-items: flex-start; font-weight: 400; width: auto; height: auto; padding: 0; border: 0; border-radius: 0; box-shadow: none; aspect-ratio: auto; background: transparent; }
 .app-shell .app-choice.inline { display: inline-flex; margin: 0.2rem .85rem 0.2rem 0; }

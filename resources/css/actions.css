@@ -1,3 +1,4 @@
+@import './control-states.css';
 /* Shared by Blade actions and dynamically created controls; standalone-print safe. */
 :root {
     --app-button-padding-y: .225rem;
@@ -46,7 +47,7 @@
 .app-action-new:hover, .app-shell .button.app-new-action:hover { background: var(--app-action-new-hover); border-color: var(--app-action-new-hover); }
 .app-action-changed, .app-action-changed:hover { background: var(--app-action-changed-surface); border-color: var(--app-action-changed-color); color: var(--app-action-changed-color); }
 .app-action-small { min-height: 0; padding: var(--app-button-small-padding); font-size: var(--app-button-small-font-size); }
-.app-action:disabled { background: #e5e7eb; border-color: #767676; color: #000; cursor: default; opacity: 1; }
+.app-action:disabled { background: var(--app-disabled-surface); border-color: var(--app-disabled-border); color: var(--app-disabled-text); cursor: default; opacity: 1; }
 .app-action:focus-visible { outline: 3px solid var(--app-primary, #5b21b6); outline-offset: 1px; }
 /* Special controls share a foundation and centrally configurable semantic tokens. */
 .app-action.app-control { min-height: 0; border: 0; background: transparent; box-shadow: none; }
