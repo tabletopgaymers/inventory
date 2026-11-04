@@ -65,5 +65,6 @@ return response()-&gt;json($search-&gt;search($request, $config));</code></pre>
 <p>No existing search has been replaced. Read-only Item/Location displays also reuse inventory queries, but are not interactive search boxes.</p>
 </x-slot:footer>
 </x-app.table-region>
+<template data-guide-search-table-frame><x-app.table-region label="Full inventory search results" /></template>
 @vite('resources/js/inventory-search-guide.js')
 @endsection

@@ -6,6 +6,7 @@
     --breakpoint-app-navigation: 50rem;
 }
 :root {
+    --app-radius: 8px;
     --app-font-family: "Segoe UI", system-ui, sans-serif;
     --app-font-size: 1rem;
     --app-body-weight: 400;

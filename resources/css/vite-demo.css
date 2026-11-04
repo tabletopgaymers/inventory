@@ -6,6 +6,6 @@
     background: #f3eef9;
     color: #231c2f;
     padding: 1rem;
-    border-radius: .5rem;
+    border-radius: var(--app-radius);
     margin-bottom: 1rem;
 }

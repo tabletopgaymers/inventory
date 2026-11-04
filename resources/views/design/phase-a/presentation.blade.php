@@ -49,6 +49,7 @@
     <h2 id="table-panel-title">Table panel</h2>
     <p>A table panel presents tabular information without outer padding. Search, filters and surrounding page actions are separate components. Optional header and footer slots can contain brief context or actions specifically associated with the table.</p>
     <h3>Plain table panel</h3>
+    <p>All panel and table frames use the shared <code>--app-radius: 8px</code>. Plain tables and tables with optional sections have the same frame and an inner horizontally scrolling body; headers and footers stay outside that scroll region. Tables grow vertically with the page. Field, button, badge and tab shapes remain separate controls.</p>
     @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Plain grouped inventory table'])
     <h3>Table panel with optional header and footer</h3>
     <p>Use a header, a footer, both or neither. Their content is unrestricted: headings, descriptions and buttons are examples, not requirements. Omitted slots create no empty sections. Header and footer padding aligns with table cells; the table keeps square internal corners within the rounded outer panel.</p>

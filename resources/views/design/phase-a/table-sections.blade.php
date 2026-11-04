@@ -39,7 +39,8 @@
         <li>Header and footer slots accept any appropriate content. A heading, description or action button is optional; none is required by the component.</li>
         <li>Keep context brief. Put table-specific creation actions in the header and exports, counts or pagination in the footer.</li>
         <li>Keep larger instructions, search/filter controls and record-wide Edit/Save actions separate.</li>
-        <li>The outer panel owns the rounded corners. The table's internal edges and column-header band stay square.</li>
+        <li>Plain and sectioned tables use the same outer frame, with the shared 8px panel radius (<code>--app-radius</code>). The table's internal edges and column-header band stay square.</li>
+        <li>Every table has one <code>app-table-panel-body</code> scrolling region, even when no header or footer is supplied. Do not override scrolling or radius in domain styles.</li>
         <li>On narrow screens, text and actions wrap into separate rows. Only the table scrolls horizontally; its header and footer stay within the panel width.</li>
     </ul>
     <p class="app-field-help">This is a style-guide mockup with fictional records and inactive sample actions. The header and footer use shared component styles; sample content remains local to this guide.</p>
