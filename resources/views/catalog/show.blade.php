@@ -39,6 +39,7 @@
     </x-app.detail-list>
 </div>
 @if($kind === 'categories' && $canManage)<div class="app-actions"><x-app.action variant="new"  href="/catalog/collections/create?category={{ $record->id }}">＋ New</x-app.action></div>@endif
+@if($kind === 'collections' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/items/create?collection={{ $record->id }}">＋ New</x-app.action></div>@endif
 @if(in_array($kind, ['categories', 'collections']))
 <x-app.table-region :label="$kind === 'categories' ? 'Collections in category' : 'Items in collection'" class="app-list-table-panel" id="catalog-child-table">
 <table class="catalog-table"><thead><tr><th>{{ $kind === 'categories' ? 'Collections' : 'Name' }}</th>@if($kind === 'categories')<th>Description</th>@endif<th>{{ $kind === 'categories' ? 'SKU Prefix' : 'SKU' }}</th>@if($kind === 'categories')<th class="number">Entries</th>@endif<th>Status</th></tr></thead><tbody>

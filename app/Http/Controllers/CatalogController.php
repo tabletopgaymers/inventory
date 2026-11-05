@@ -128,9 +128,14 @@ class CatalogController
         $service = app(CatalogRecords::class);
         $row = $record ? $service->record($kind, $record) : null;
         $selectedCategory = null;
+        $selectedCollection = null;
         if ($kind === 'collections' && ! $record && $request->filled('category')) {
             $filter = $request->validate(['category' => ['required', 'integer', 'exists:categories,id']]);
             $selectedCategory = $service->record('categories', (int) $filter['category']);
+        }
+        if ($kind === 'items' && ! $record && $request->filled('collection')) {
+            $filter = $request->validate(['collection' => ['required', 'integer', 'exists:collections,id']]);
+            $selectedCollection = $service->record('collections', (int) $filter['collection']);
         }
         $metadata = $kind === 'items' && $record ? DB::table('item_metadata')->where('item_id', $record)->first() : null;
 
@@ -138,6 +143,7 @@ class CatalogController
         $recordBase = $inventoryContext ? '/inventory/items/' : CatalogRecords::viewBase($kind);
         $context = PurchaseSupplierReturn::context($request, $kind) + ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
         $context['startingLocations'] = $kind === 'items' && !$record ? $service->records('storage_locations')->where('state', 'active')->values() : collect();
+        $context['selectedCollection'] = $selectedCollection;
         return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
     }
 

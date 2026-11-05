@@ -15,7 +15,8 @@
 <form id="catalog-form" method="post" data-catalog-progress data-record-base="{{ $recordBase }}" data-save-mode="{{ $record ? 'edit' : 'create' }}" data-save-dirty="{{ $errors->any() || session('error') ? 'true' : 'false' }}">@csrf
 @if($kind !== 'items')<label>Name<input name="name" required maxlength="255" value="{{ old('name', $record?->name) }}"></label>@endif
 @if($kind === 'collections')
-<label>Category<select name="category_id" required>@if(!$record)<option value="" @selected(!old('category_id'))>– select –</option>@endif @foreach($categories as $category)@if($category->state === 'active' || $record?->category_id === $category->id)<option value="{{ $category->id }}" @selected(old('category_id', $record?->category_id) == $category->id)>{{ $category->name }} ({{ $category->state }})</option>@endif @endforeach</select></label>
+@php($categoryValue = old('category_id', $record?->category_id ?? $selectedCategory?->id))
+<label>Category<select name="category_id" required>@if(!$record)<option value="" @selected(!$categoryValue)>– select –</option>@endif @foreach($categories as $category)@if($category->state === 'active' || $record?->category_id === $category->id)<option value="{{ $category->id }}" @selected($categoryValue == $category->id)>{{ $category->name }} ({{ $category->state }})</option>@endif @endforeach</select></label>
 <label>SKU prefix<input name="sku_prefix" required maxlength="50" pattern="[A-Za-z0-9_-]+" value="{{ old('sku_prefix', $record ? rtrim($record->sku_prefix, '-') : null) }}"></label>
 @if($record)<p>Changing the prefix updates existing item SKUs. The separator hyphen is added automatically; historical records retain their recorded SKUs.</p>@endif
 @endif
