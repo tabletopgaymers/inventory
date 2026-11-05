@@ -3,7 +3,7 @@
 @section('subtitle'){{ $work['title'] }}@endsection
 @section('title-status')<x-app.status-badge :status="$status" data-relocation-status />@endsection
 @section('page-actions')
-<x-workflow.save-progress form="relocation-form" :disabled="!$editable" data-relocation-save />
+<x-workflow.save-progress form="relocation-form" :disabled="!$editable" :hidden="!$editable || !in_array($step, ['basic','material'])" data-relocation-save />
 @endsection
 @section('content-sections')
 @vite(['resources/css/relocation.css', 'resources/js/relocation.js'])

@@ -165,6 +165,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
             paragraph.append(link); return paragraph;
         }));
         errors.hidden = form.dataset.editable!=='true' || form.dataset.tab !== 'review' || !messages.length;
+        save.hidden = form.dataset.editable !== 'true' || form.dataset.tab === 'review';
         form.querySelector('[data-submit-request]').disabled = form.dataset.canSubmit !== 'true' || messages.length > 0;
     };
     const showTab = tab => tabUI.activate(tab);

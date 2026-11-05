@@ -3,7 +3,7 @@
 @section('subtitle'){{ $values['title'] ?? $row->title }}@endsection
 @section('title-status')<x-app.status-badge :status="$row->status" />@endsection
 @section('page-actions')
-@if($editable)<x-workflow.save-progress form="purchase-invoice-form" :disabled="$receiptStale ?? false" />@endif
+@if($editable && in_array($tab, $mode==='receipt' ? ['receive','charges'] : ['order','invoice','charges'], true))<x-workflow.save-progress form="purchase-invoice-form" :disabled="$receiptStale ?? false" />@endif
 @endsection
 @section('content-sections')
 @php
