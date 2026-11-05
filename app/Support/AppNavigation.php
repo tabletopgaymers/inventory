@@ -25,7 +25,7 @@ class AppNavigation
                 ['href' => '/inventory/location-counts', 'label' => 'Location Counts', 'current' => request()->is('inventory/location-counts', 'inventory/location-counts/*')],
             ]],
             ['href' => '/relocation', 'label' => 'Relocations', 'active' => request()->is('relocation', 'relocation/*'), 'children' => []],
-            ['href' => '/events', 'label' => 'Events', 'active' => request()->is('events', 'events/*'), 'children' => []],
+            ['href' => '/events', 'label' => 'Events (dev)', 'active' => request()->is('events', 'events/*'), 'children' => []],
             ['href' => '/purchase', 'label' => 'Purchases', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],
             ['href' => '/catalog', 'label' => 'Catalog', 'active' => request()->is('catalog', 'catalog/*'), 'children' => $catalog],
             ['href' => '/users', 'label' => 'Users', 'active' => request()->is('users', 'users/*'), 'children' => []],

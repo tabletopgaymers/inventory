@@ -87,6 +87,7 @@ class RelocationController
 
     public function print(Request $request, string $token)
     {
+        $stage = $request->validate(['stage' => ['nullable', 'in:fulfillment,reconcile']])['stage'] ?? 'fulfillment';
         $work = $this->workspace($request, $token);
         abort_unless($work['id'], 404);
         $row = DB::table('relocation_requests')->where('id', $work['id'])->firstOrFail();
@@ -94,6 +95,8 @@ class RelocationController
 
         return view('relocation.print', [
             'row' => $row, 'lines' => $lines,
+            'reconciliation' => $stage === 'reconcile',
+            'received' => $stage === 'reconcile' ? DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $row->id)->pluck('received', 'item_id')->all() : [],
             'requestedDate' => $this->requestedDate((int) $row->id),
             'items' => app(RequestCatalog::class)->rows($lines->keys()->map(fn ($id) => (int) $id)->all(), (int) $row->source_location_id, (int) $row->destination_location_id, naturalNames: true),
             'sourceName' => DB::table('storage_locations')->where('id', $row->source_location_id)->value('name'),

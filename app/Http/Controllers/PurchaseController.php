@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\CatalogRecords;
 use App\Support\PurchaseCosting;
+use App\Support\PurchaseInvoiceLines;
 use App\Support\PurchaseFulfillment;
 use App\Support\PurchaseProgress;
 use App\Support\PurchaseRequests;
@@ -196,12 +197,13 @@ class PurchaseController
                     if ($editable) $preview=$service->receiptReview((int)$request->user()->id,$row->id,$invoice['revision'],$values);
                     else $reviewErrors=['receipt'=>['Procurement handles receiving confirmation.']];
                 } elseif ($mode === 'order') {
-                    if ($row->status !== 'Received') $this->invoiceComplete($values, $tab !== 'charges', $mode);
-                    $preview=$tab !== 'charges' && $editable ? $service->orderReview((int)$request->user()->id,$row->id,$invoice['revision'],$values) : app(PurchaseCosting::class)->calculate($values);
+                    if ($tab === 'charges' && $row->status !== 'Received') $preview = $this->chargesPreview($values, $mode);
+                    else {
+                        if ($row->status !== 'Received') $this->invoiceComplete($values, true, $mode);
+                        $preview=$editable ? $service->orderReview((int)$request->user()->id,$row->id,$invoice['revision'],$values) : app(PurchaseCosting::class)->calculate($values);
+                    }
                 } else {
-                    $charged=$values;
-                    foreach ($charged['lines'] as $key=>$line) if (RequestValues::quantity($line['quantity'],'lines.'.$key.'.quantity')===0) unset($charged['lines'][$key]);
-                    $preview=app(PurchaseCosting::class)->calculate($charged);
+                    $preview = $this->chargesPreview($values, $mode);
                 }
             } catch (ValidationException $e) {
                 $reviewErrors = $e->errors();
@@ -437,10 +439,20 @@ class PurchaseController
         return $header;
     }
 
+    private function chargesPreview(array $values, string $mode): array
+    {
+        if ($mode === 'order') $this->invoiceComplete($values, false, $mode);
+        else foreach ($values['lines'] as $key => $line) {
+            if (RequestValues::quantity($line['quantity'], 'lines.'.$key.'.quantity') === 0) unset($values['lines'][$key]);
+        }
+
+        return app(PurchaseCosting::class)->calculate($values);
+    }
+
     private function invoiceComplete(array $values, bool $details = true, string $mode = 'order'): void
     {
         $errors = [];
-        $required = ['other_fees' => 'Other fees', 'discount' => 'Discount', 'tax' => 'Tax', 'shipping' => 'Shipping'];
+        $required = ['other_fees' => 'Shared fees', 'discount' => 'Discount', 'tax' => 'Tax', 'shipping' => 'Shipping'];
         if ($details) $required += ['title' => 'Title', 'supplier_id' => 'Supplier', 'delivery_choice'=>'Delivery destination','delivery_name'=>'Delivery name','delivery_address'=>'Mailing address', 'ordered_date' => 'Ordered date'];
         foreach ($required as $field => $label) {
             if (($values[$field] ?? '') === '') $errors[$field] = ['Complete '.$label.' before confirming.'];
@@ -607,8 +619,23 @@ class PurchaseController
                 $work['invoices'][$mode]['saved_values']=PurchaseProgress::invoice($saved['values']);
                 $work['invoices'][$mode]['dirty']=false;
                 $request->session()->put('purchase_workspace.'.$token, $work);
-                if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => $row->id, 'revision' => $saved['revision'],
-                    'status' => $row->status, 'values' => $saved['values'], 'message' => 'Progress saved. Stock and cost unchanged.']);
+                if ($request->expectsJson()) {
+                    $allocationPreview = null;
+                    if ($request->input('tab') === 'charges') {
+                        try {
+                            $preview = $this->chargesPreview($saved['values'], $mode);
+                            $allocationPreview = ['html' => view('purchase.partials.acquisition-breakdown', [
+                                'preview' => $preview, 'items' => PurchaseInvoiceLines::rows($saved['values']['lines']),
+                            ])->render(), 'errors' => []];
+                        } catch (ValidationException $e) {
+                            $allocationPreview = ['html' => '', 'errors' => $e->errors()];
+                        }
+                    }
+
+                    return response()->json(['saved' => true, 'id' => $row->id, 'revision' => $saved['revision'],
+                        'status' => $row->status, 'values' => $saved['values'], 'allocationPreview' => $allocationPreview,
+                        'message' => 'Progress saved. Stock and cost unchanged.']);
+                }
             }
             $tab = $request->input('tab');
             if ($action === 'next') $tab = $mode === 'receipt' ? 'confirmation' : match ($tab) { 'order' => 'invoice', 'invoice' => 'charges', default => 'order-review' };

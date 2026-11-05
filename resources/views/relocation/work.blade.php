@@ -1,4 +1,9 @@
 @extends('layout')
+@php
+    $stepLabels = config('relocation-workflow.tabs');
+    $panelLabels = config('relocation-workflow.panels');
+    $buttonLabels = config('relocation-workflow.buttons');
+@endphp
 @section('title', 'Relocation request')
 @section('subtitle'){{ $work['title'] }}@endsection
 @section('title-status')<x-app.status-badge :status="$status" data-relocation-status />@endsection
@@ -9,8 +14,9 @@
 @vite(['resources/css/relocation.css', 'resources/js/relocation.js'])
 <form class="app-panel-stack" id="relocation-form" method="post" action="/relocation/work/{{ $token }}" novalidate data-manager="{{ $manager ? 'true' : 'false' }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-status="{{ $status }}" data-can-submit="{{ $submitter ? 'true' : 'false' }}" data-initial-step="{{ $step }}" data-saved="{{ $work['id'] ? 'true' : 'false' }}">
     @csrf
+    <script type="application/json" data-relocation-panel-labels>@json($panelLabels)</script>
     <input type="hidden" name="revision" value="{{ $work['revision'] }}">
-    <x-workflow.tabs prefix="relocation" label="Relocation sections" :active="$step" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review','fulfillment'=>'Fulfillment','tracking'=>'Tracking','ship'=>'Ship','reconcile'=>'Reconcile','confirmation'=>'Confirmation']" />
+    <x-workflow.tabs prefix="relocation" label="Relocation sections" :active="$step" :tabs="$stepLabels" />
     <div data-relocation-feedback role="status" tabindex="-1" hidden></div>
     <div data-review-errors class="error" role="alert" hidden></div>
     <div data-ship-errors class="error" role="alert" hidden></div>
@@ -20,7 +26,7 @@
         <p data-material-search-feedback class="warning" role="status" hidden></p>
     </div>
     <x-workflow.tab-panel class="app-content" id="relocation-panel-basic" labelledby="relocation-tab-basic" :active="$step === 'basic'">
-        <x-workflow.heading><h2>Basic info</h2><x-app.action variant="primary" type="submit" name="action" value="next"  data-basic-next data-next-tab="material" :disabled="!$editable">Next ▷</x-app.action></x-workflow.heading>
+        <x-workflow.heading><h2>{{ $panelLabels['basic'] }}</h2><x-app.action variant="primary" type="submit" name="action" value="next"  data-basic-next data-next-tab="material" :disabled="!$editable">{{ $buttonLabels['basic'] }}</x-app.action></x-workflow.heading>
         <fieldset class="app-entry-fieldset" data-basic-fields>
         <label>Title<input id="relocation-title" name="title" required maxlength="255" value="{{ old('title', $work['title']) }}" @readonly(!$editable && !($manager && $status === 'Accepted'))></label>
         @foreach(['source_location_id' => 'Source', 'destination_location_id' => 'Destination'] as $field => $label)
@@ -59,8 +65,8 @@
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-review" labelledby="relocation-tab-review" :active="$step === 'review'">
         <div class="app-content">
             <x-workflow.heading>
-                <h2>Review relocation request</h2>
-                <x-app.action variant="primary" type="submit" name="action" value="submit"  data-relocation-submit :disabled="true">Submit</x-app.action>
+                <h2>{{ $panelLabels['review'] }}</h2>
+                <x-app.action variant="primary" type="submit" name="action" value="submit"  data-relocation-submit :disabled="true">{{ $buttonLabels['review'] }}</x-app.action>
             </x-workflow.heading>
             <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
@@ -76,7 +82,7 @@
         <template data-review-group><tr class="group-row"><th colspan="4"></th></tr></template>
     </x-workflow.tab-panel>
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-fulfillment" labelledby="relocation-tab-fulfillment" :active="$step === 'fulfillment'">
-        <div class="app-content" data-fulfillment-accept-panel @if(!in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif><x-workflow.heading><h2>Fulfillment</h2><x-app.action variant="primary" type="submit" name="action" value="accept"  data-relocation-accept :disabled="!$manager || $status !== 'Requested'">Accept</x-app.action></x-workflow.heading>
+        <div class="app-content" data-fulfillment-accept-panel @if(!in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif><x-workflow.heading><h2>{{ $panelLabels['fulfillment'] }}</h2><x-app.action variant="primary" type="submit" name="action" value="accept"  data-relocation-accept :disabled="!$manager || $status !== 'Requested'">Accept</x-app.action></x-workflow.heading>
             <p data-fulfillment-unavailable @if(!in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif>{{ $status === 'Requested' ? 'Must Accept First' : 'Not available' }}</p>
         </div>
         <div class="app-panel-stack" data-fulfillment-content @if(in_array($status, ['New', 'Draft', 'Requested'])) hidden @endif>
@@ -85,31 +91,9 @@
         </div>
 
     </x-workflow.tab-panel>
-    <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-tracking" labelledby="relocation-tab-tracking" :active="$step === 'tracking'">
-        <p class="app-content" data-tracking-unavailable @if(in_array($status, ['Accepted', 'Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>Not available</p>
-        <div class="app-panel-stack" data-tracking-content @if(!in_array($status, ['Accepted', 'Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>
-            <div class="app-content"><x-workflow.heading><h2>Saved tracking</h2><x-app.action variant="primary" type="submit" name="action" value="next" data-next-tab="ship" data-tracking-next :disabled="!$manager || $status === 'Cancelled'">Next ▷</x-app.action></x-workflow.heading><p data-tracking-empty>No tracking saved yet.</p><div class="tracking-saved-scroll"><table class="tracking-saved-table" aria-label="Saved tracking" hidden><tbody data-tracking-saved></tbody></table></div></div>
-            <div class="app-content">
-            <fieldset class="app-entry-fieldset" data-tracking-fields @disabled(!$manager || $status === 'Cancelled')>
-                <div data-tracking-lines></div>
-                <x-app.action type="button" data-tracking-add>Add package</x-app.action>
-            </fieldset>
-            </div>
-        </div>
-        <template data-tracking-row>
-            <div class="app-field-flow app-field-flow-separated">
-                <label>Name<input data-tracking-name maxlength="255"></label>
-                <label>Shipper<select data-tracking-carrier><option value="">Choose a shipper</option><option value="USPS">US Postal</option><option value="UPS">UPS</option><option value="FedEx">FedEx</option><option value="Other">Other</option></select></label>
-                <label>Tracking (optional)<input data-tracking-number maxlength="255"></label>
-                <x-app.action control="delete" type="button" class="material-remove" data-tracking-remove aria-label="Delete package">✕</x-app.action>
-            </div>
-        </template>
-        <template data-tracking-saved-row><tr><td><strong data-saved-package-name></strong></td><td data-saved-shipper></td><td data-saved-tracker></td></tr></template>
-        <script type="application/json" data-tracking-values>@json($tracking)</script>
-    </x-workflow.tab-panel>
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-ship" labelledby="relocation-tab-ship" :active="$step === 'ship'">
         <div class="app-content">
-            <x-workflow.heading><h2>Review shipment</h2><x-app.action variant="primary" type="submit" name="action" value="ship"  data-relocation-ship :disabled="!$manager || $status !== 'Accepted'">Ship</x-app.action></x-workflow.heading>
+            <x-workflow.heading><h2>{{ $panelLabels['ship'] }}</h2><x-app.action variant="primary" type="submit" name="action" value="ship"  data-relocation-ship :disabled="!$manager || $status !== 'Accepted'">{{ $buttonLabels['ship'] }}</x-app.action></x-workflow.heading>
             <div class="app-columns app-columns-two">
             <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
@@ -136,9 +120,31 @@
         <template data-ship-group><tr class="group-row"><th colspan="6"></th></tr></template>
         <div class="app-content relocation-shipping-information"><h2>Shipping information</h2><p data-tracking-empty>No tracking saved yet.</p><div class="tracking-saved-scroll"><table class="tracking-saved-table" aria-label="Shipping information" hidden><tbody data-tracking-saved></tbody></table></div></div>
     </x-workflow.tab-panel>
+    <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-tracking" labelledby="relocation-tab-tracking" :active="$step === 'tracking'">
+        <p class="app-content" data-tracking-unavailable @if(in_array($status, ['Accepted', 'Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>Not available</p>
+        <div class="app-panel-stack" data-tracking-content @if(!in_array($status, ['Accepted', 'Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>
+            <div class="app-content"><x-workflow.heading><h2>{{ $panelLabels['tracking'] }}</h2></x-workflow.heading><p data-tracking-empty>No tracking saved yet.</p><div class="tracking-saved-scroll"><table class="tracking-saved-table" aria-label="{{ $panelLabels['tracking'] }}" hidden><tbody data-tracking-saved></tbody></table></div></div>
+            <div class="app-content">
+            <fieldset class="app-entry-fieldset" data-tracking-fields @disabled(!$manager || $status === 'Cancelled')>
+                <div data-tracking-lines></div>
+                <x-app.action type="button" data-tracking-add>Add package</x-app.action>
+            </fieldset>
+            </div>
+        </div>
+        <template data-tracking-row>
+            <div class="app-field-flow app-field-flow-separated">
+                <label>Name<input data-tracking-name maxlength="255"></label>
+                <label>Shipper<select data-tracking-carrier><option value="">Choose a shipper</option><option value="USPS">US Postal</option><option value="UPS">UPS</option><option value="FedEx">FedEx</option><option value="Other">Other</option></select></label>
+                <label>Tracking (optional)<input data-tracking-number maxlength="255"></label>
+                <x-app.action control="delete" type="button" class="material-remove" data-tracking-remove aria-label="Delete package">✕</x-app.action>
+            </div>
+        </template>
+        <template data-tracking-saved-row><tr><td><strong data-saved-package-name></strong></td><td data-saved-shipper></td><td data-saved-tracker></td></tr></template>
+        <script type="application/json" data-tracking-values>@json($tracking)</script>
+    </x-workflow.tab-panel>
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-reconcile" labelledby="relocation-tab-reconcile" :active="$step === 'reconcile'">
         <div class="app-content" data-reconcile-receive-panel @if(in_array($status, ['Received', 'Completed'])) hidden @endif>
-            <x-workflow.heading><h2>Reconcile</h2><x-app.action variant="primary" type="submit" name="action" value="receive"  data-relocation-receive :disabled="!$manager || $status !== 'Fulfilled'">Receive</x-app.action></x-workflow.heading>
+            <x-workflow.heading><h2>{{ $panelLabels['reconcile'] }}</h2><x-app.action variant="primary" type="submit" name="action" value="receive"  data-relocation-receive :disabled="!$manager || $status !== 'Fulfilled'">Receive</x-app.action></x-workflow.heading>
             <p data-reconcile-unavailable>{{ $status === 'Fulfilled' ? 'Acknowledge receipt to enter the quantities actually received.' : 'Not available until shipped.' }}</p>
         </div>
         <div class="app-panel-stack" data-reconcile-content @if(!in_array($status, ['Received', 'Completed'])) hidden @endif>
@@ -150,7 +156,7 @@
         <p class="app-content" data-confirmation-unavailable @if(in_array($status, ['Received', 'Completed'])) hidden @endif>Receive the shipment before confirming its contents.</p>
         <div class="app-panel-stack" data-confirmation-content @if(!in_array($status, ['Received', 'Completed'])) hidden @endif>
             <div class="app-content">
-                <x-workflow.heading><h2>Confirmation</h2><x-app.action variant="primary" type="submit" name="action" value="complete"  data-relocation-complete :disabled="!$manager || $status !== 'Received'">Complete</x-app.action></x-workflow.heading>
+                <x-workflow.heading><h2>{{ $panelLabels['confirmation'] }}</h2><x-app.action variant="primary" type="submit" name="action" value="complete"  data-relocation-complete :disabled="!$manager || $status !== 'Received'">{{ $buttonLabels['confirmation'] }}</x-app.action></x-workflow.heading>
                 <div class="app-columns app-columns-two">
                 <x-app.detail-list variant="content" >
                     @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)

@@ -1,6 +1,6 @@
 import { createAction } from './actions.js';
 import { setSaveDirty, setSaveBusy } from './workflow/save-button.js';
-import { mountNotices } from './workflow/notices.js';
+import { mountNotices, showNotice } from './workflow/notices.js';
 import './app.js';
 
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
@@ -24,8 +24,7 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     setSaveDirty(save, dirty);
     const markDirty = () => {
         editGeneration++; dirty = true; setSaveDirty(save, true);
-        form.querySelectorAll('[data-invoice-derived]').forEach(element => { element.hidden = true; });
-        form.querySelectorAll('[data-derived-stale]').forEach(element => { element.hidden = false; });
+        form.querySelectorAll('[data-invoice-derived]:not([data-allocation-preview])').forEach(element => { element.hidden = true; });
     };
     const changed=event=>{if(!searchRoot?.contains(event.target) && !searchResults?.contains(event.target))markDirty();};
     form.addEventListener('input', changed);
@@ -36,6 +35,14 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         document.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
         if (!unchanged) return;
         dirty = false; setSaveDirty(save, false);
+        if (result.allocationPreview) {
+            const section = form.querySelector('[data-step="charges"]');
+            const template = document.createElement('template');
+            template.innerHTML = result.allocationPreview.html;
+            section.querySelector('[data-allocation-preview-host]').replaceChildren(template.content);
+            const errors = Object.values(result.allocationPreview.errors || {}).flat();
+            if (errors.length) showNotice(document.querySelector('[data-progress-feedback]'), 'Progress saved. Complete these values to calculate allocations: ' + errors.join(' '), 'warning');
+        }
     }});
     const replacementButton = form.querySelector('[data-replace-vendor]');
     const supplierChoice = form.elements.supplier_id;

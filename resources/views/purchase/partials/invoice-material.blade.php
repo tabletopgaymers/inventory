@@ -1,6 +1,6 @@
 <x-app.table-region label="Invoice material" class="app-list-table-panel purchase-table purchase-material" :nowrap="true" :quantity-fields="true" :separators="true" numeric="after-first">
 <table><colgroup><col class="table-action-column"><col>@for($column=0;$column<7;$column++)<col class="purchase-material-value-column">@endfor</colgroup>
-<thead><tr><th><span class="sr-only">Remove</span></th><th>Item</th><th>{{ $mode==='receipt' ? 'Ordered' : 'Requested' }}</th><th>{{ $mode==='receipt' ? 'Received' : 'Quantity' }}</th><th>Unit ($)</th><th>Cost ($)</th><th>Fee ($)</th><th>Line ($)</th><th><span class="sr-only">Recalculate</span></th></tr></thead><tbody data-invoice-body>
+<thead><tr><th><span class="sr-only">Remove</span></th><th>Item</th><th>{{ $mode==='receipt' ? 'Ordered' : 'Requested' }}</th><th>{{ $mode==='receipt' ? 'Received' : 'Quantity' }}</th><th>Unit</th><th>Cost</th><th>Fee</th><th>Line</th><th><span class="sr-only">Recalculate</span></th></tr></thead><tbody data-invoice-body>
 @php($group=null)
 @foreach($items as $item)
 @php($key=$item['id']) @php($line=$values['lines'][$key])
