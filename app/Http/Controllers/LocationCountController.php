@@ -16,7 +16,7 @@ class LocationCountController
 {
     private function ready(): void
     {
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['dailyInventoryReady'], 503, 'Location counts are not ready.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['dailyInventoryReady'], 503, 'Location counts are not ready.');
     }
 
     private function access(Request $request): void

@@ -11,7 +11,7 @@ class InventorySearchGuideController
 {
     private function ready(): void
     {
-        $state = app(BaselineProbe::class)->schemaState(DB::connection());
+        $state = app(BaselineProbe::class)->runtimeState(DB::connection());
         abort_unless($state['inventoryReady'] && $state['catalogReady'], 503, 'Inventory search is not ready.');
     }
 

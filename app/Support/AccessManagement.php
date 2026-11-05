@@ -85,7 +85,7 @@ class AccessManagement
             $user = User::findOrFail($userId);
             $ownProfile = (int) $actor->id === (int) $user->id;
             abort_unless($actor->enabled && ($ownProfile || $actor->hasRole('admin')), 403);
-            abort_unless(app(ProfilePreferences::class)->state(DB::connection())['ready'], 503, 'Profile preferences need guarded preparation. Your profile was not changed.');
+            abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['profilePreferencesReady'], 503, 'Profile preferences need guarded preparation. Your profile was not changed.');
             $address = $data['contact_email'] ?: null;
             $changed = $address !== $user->contact_email;
             $user->first_name = $data['first_name'];

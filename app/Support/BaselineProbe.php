@@ -8,7 +8,7 @@ use Throwable;
 
 class BaselineProbe
 {
-    public function inspect(bool $requireSessions = true): array
+    public function inspect(bool $requireSessions = true, bool $auditSchema = true): array
     {
         $result = [
             'ready' => false,
@@ -39,10 +39,14 @@ class BaselineProbe
             if ((int) $probe->probe !== 1) {
                 return $result;
             }
-            if ($requireSessions && ! $this->schemaState($database)['ready']) {
+            if ($requireSessions && ! ($auditSchema ? $this->schemaState($database) : $this->runtimeState($database))['ready']) {
                 $result['message'] = 'Session schema or migration state needs attention. Run the documented preparation step.';
 
                 return $result;
+            }
+            if ($requireSessions && ! $auditSchema) {
+                // Validate the real session table/columns without loading session data.
+                $database->table('sessions')->select(['id', 'user_id', 'ip_address', 'user_agent', 'payload', 'last_activity'])->limit(0)->get();
             }
             $result['ready'] = true;
             $result['message'] = 'Database check passed.';
@@ -52,6 +56,13 @@ class BaselineProbe
         }
 
         return $result;
+    }
+
+    public function runtimeState($database): array
+    {
+        return app()->runningInConsole()
+            ? $this->schemaState($database)
+            : app(RuntimeReadiness::class)->state($database);
     }
 
     public function schemaState($database): array

@@ -29,7 +29,7 @@ class PurchaseFulfillment
         return DB::transaction(function () use($actorId,$id,$revision,$values) {
             $actor=RequestValues::actor($actorId);
             abort_unless(RequestValues::manages($actor,'procurement'),403);
-            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'],503);
+            abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['fulfillmentReady'],503);
             $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
             abort_unless(in_array($row->status,['Draft','Request','Ordered','Shipped'],true),409);
             RequestValues::revision($revision,$row);
@@ -226,7 +226,7 @@ class PurchaseFulfillment
 
         return DB::transaction(function () use ($actorId, $id, $revision, $data, $mode) {
             $actor = RequestValues::actor($actorId);
-            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'], 503);
+            abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['fulfillmentReady'], 503);
             abort_unless(RequestValues::manages($actor, 'procurement'), 403);
             $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
             abort_unless($mode === 'receipt' ? in_array($row->status, ['Ordered', 'Shipped'], true) : in_array($row->status, ['Draft', 'Request', 'Ordered', 'Shipped'], true), 409);
@@ -328,7 +328,7 @@ class PurchaseFulfillment
         return DB::transaction(function () use($actorId,$id,$revision,$data,$operation) {
             $actor=RequestValues::actor($actorId);
             abort_unless(RequestValues::manages($actor,'procurement'),403);
-            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'],503);
+            abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['fulfillmentReady'],503);
             $row=DB::table('purchase_requests')->where('id',$id)->lockForUpdate()->firstOrFail();
             $header=RequestStock::header('purchase',$id);
             if (($header['receipt_operation'] ?? null)===$operation) {
@@ -370,7 +370,7 @@ class PurchaseFulfillment
         abort_unless(in_array($action, ['shipped', 'backward', 'cancel'], true), 422);
         DB::transaction(function () use ($actorId, $id, $revision, $action, $date) {
             $actor = RequestValues::actor($actorId);
-            abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['fulfillmentReady'], 503);
+            abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['fulfillmentReady'], 503);
             abort_unless(RequestValues::manages($actor, 'procurement'), 403);
             $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
             RequestValues::revision($revision, $row);

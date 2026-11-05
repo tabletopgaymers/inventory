@@ -17,7 +17,7 @@ class InventoryController
 {
     private function ready(): void
     {
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['inventoryReady'], 503, 'Inventory is not ready.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['inventoryReady'], 503, 'Inventory is not ready.');
     }
 
     private function correctionAccess(Request $request): void
@@ -55,7 +55,7 @@ class InventoryController
     public function show(Request $request, int $item)
     {
         $this->ready();
-        $schema = app(BaselineProbe::class)->schemaState(DB::connection());
+        $schema = app(BaselineProbe::class)->runtimeState(DB::connection());
         $catalogReady = $schema['catalogReady'];
         $dailyReady = $schema['dailyInventoryReady'];
         $extraBalances = [];

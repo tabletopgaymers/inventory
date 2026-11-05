@@ -13,7 +13,7 @@ class EventWorkflow
     {
         $actor = RequestValues::actor($id);
         abort_unless(RequestValues::manages($actor, 'manager'), 403);
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['eventsReady'], 503, 'Events need guarded preparation.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['eventsReady'], 503, 'Events need guarded preparation.');
 
         return $actor;
     }

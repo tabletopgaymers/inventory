@@ -11,7 +11,7 @@ trait RequestPageSupport
 {
     private function ready(): void
     {
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['requestsReady'], 503, 'Request intake needs guarded preparation.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['requestsReady'], 503, 'Request intake needs guarded preparation.');
     }
 
     private function identity(Request $request): void

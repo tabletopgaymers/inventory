@@ -18,7 +18,7 @@ class EventController
     private function ready(Request $request, bool $write = false): void
     {
         abort_unless($request->user()?->enabled, 403);
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['eventsReady'], 503, 'Events need guarded preparation.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['eventsReady'], 503, 'Events need guarded preparation.');
         if ($write) {
             abort_unless(RequestValues::manages($request->user(), 'manager'), 403);
         }
