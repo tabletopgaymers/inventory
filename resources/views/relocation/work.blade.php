@@ -12,14 +12,14 @@
 @endsection
 @section('content-sections')
 @vite(['resources/css/relocation.css', 'resources/js/relocation.js'])
-<form class="app-panel-stack" id="relocation-form" method="post" action="/relocation/work/{{ $token }}" novalidate data-manager="{{ $manager ? 'true' : 'false' }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-status="{{ $status }}" data-can-submit="{{ $submitter ? 'true' : 'false' }}" data-initial-step="{{ $step }}" data-saved="{{ $work['id'] ? 'true' : 'false' }}">
+<form class="app-panel-stack" id="relocation-form" method="post" action="/relocation/work/{{ $token }}" novalidate data-time-zone="{{ \App\Support\DisplayDates::effectiveZone() }}" data-manager="{{ $manager ? 'true' : 'false' }}" data-editable="{{ $editable ? 'true' : 'false' }}" data-status="{{ $status }}" data-can-submit="{{ $submitter ? 'true' : 'false' }}" data-initial-step="{{ $step }}" data-saved="{{ $work['id'] ? 'true' : 'false' }}">
     @csrf
     <script type="application/json" data-relocation-panel-labels>@json($panelLabels)</script>
     <input type="hidden" name="revision" value="{{ $work['revision'] }}">
-    <x-workflow.tabs prefix="relocation" label="Relocation sections" :active="$step" :tabs="$stepLabels" />
     <div data-relocation-feedback role="status" tabindex="-1" hidden></div>
     <div data-review-errors class="error" role="alert" hidden></div>
     <div data-ship-errors class="error" role="alert" hidden></div>
+    <x-workflow.tabs prefix="relocation" label="Relocation sections" :active="$step" :tabs="$stepLabels" />
     <div data-reconcile-errors class="error" role="alert" hidden></div>
     <div data-confirmation-errors class="error" role="alert" hidden></div>
     <div class="app-feedback-group" data-material-notifications @if($step !== 'material') hidden @endif>
@@ -104,7 +104,7 @@
                 <dt>Requester</dt><dd data-ship-requester>{{ $requesterName }}</dd>
                 <dt>Requested</dt><dd data-ship-requested-date>{{ $requestedDate ?? '—' }}</dd>
                 <dt>Fulfiller</dt><dd data-ship-fulfiller>{{ $fulfillerName }}</dd>
-                <dt><label id="relocation-shipping-label" for="relocation-shipping-date" data-shipping-label><span data-shipping-label-text>{{ now()->toDateString() > $shippingDate ? 'Shipped' : 'Shipping' }}</span></label></dt>
+                <dt><label id="relocation-shipping-label" for="relocation-shipping-date" data-shipping-label><span data-shipping-label-text>{{ now(\App\Support\DisplayDates::effectiveZone())->toDateString() > $shippingDate ? 'Shipped' : 'Shipping' }}</span></label></dt>
                 <dd class="app-inline-group">
                     <input type="date" id="relocation-shipping-date" name="shipping_date" value="{{ $shippingDate }}" data-shipping-date required @readonly(!$manager || $status !== 'Accepted') @if(in_array($status, ['Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>
                     <span data-shipping-date-display aria-labelledby="relocation-shipping-label" @if(!in_array($status, ['Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>{{ $shippingDate ? \Illuminate\Support\Carbon::parse($shippingDate)->format('d M Y') : '—' }}</span>

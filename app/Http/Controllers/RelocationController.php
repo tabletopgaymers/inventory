@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\CatalogRecords;
+use App\Support\DisplayDates;
 use App\Support\InventorySearch;
 use App\Support\RequestCatalog;
 use App\Support\RequestValues;
@@ -72,7 +73,7 @@ class RelocationController
             'requesterName' => $work['id'] ? (\App\Models\User::find($row->owner_id)?->displayName() ?? 'Unknown') : $request->user()->displayName(),
             'requestedDate' => $work['id'] ? $this->requestedDate((int) $work['id']) : null,
             'fulfillerName' => isset($shipment['shipment_actor']) ? ($shipment['shipment_actor_name'] ?? \App\Models\User::find($shipment['shipment_actor'])?->displayName() ?? 'Unknown') : (RequestValues::manages($request->user(), 'manager') ? $request->user()->displayName() : '—'),
-            'shippingDate' => $shipment['shipped_date'] ?? now()->toDateString(),
+            'shippingDate' => $shipment['shipped_date'] ?? now(DisplayDates::effectiveZone())->toDateString(),
             'completionDetails' => $this->completionDetails($shipment),
             'items' => app(CatalogRecords::class)->records('items'),
             'materialItems' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($work['lines'] ?? [])), $work['source_location_id'] ? (int) $work['source_location_id'] : null, $work['destination_location_id'] ? (int) $work['destination_location_id'] : null, naturalNames: true),
@@ -111,7 +112,7 @@ class RelocationController
             ->where('action', 'Status changed')->orderByDesc('id')->get(['current', 'occurred_at'])
             ->first(fn ($activity) => (json_decode($activity->current ?? '{}', true)['status'] ?? null) === 'Requested');
 
-        return $activity ? \Illuminate\Support\Carbon::parse($activity->occurred_at, 'UTC')->timezone(config('app.timezone'))->format('d M Y') : null;
+        return $activity ? DisplayDates::date($activity->occurred_at) : null;
     }
 
     private function completionDetails(array $shipment): array
@@ -346,7 +347,7 @@ class RelocationController
             abort_unless($row->status === 'Fulfilled', 409);
             RequestValues::revision($request->input('revision'), $row);
             $header = RequestStock::header('relocation', $row->id);
-            $header['received_date'] = now()->toDateString();
+            $header['received_date'] = now(DisplayDates::effectiveZone())->toDateString();
             $header['received_actor'] = (int) $actor->id;
             $header['received_actor_name'] = $actor->displayName();
             RequestStock::saveHeader('relocation', $row->id, $header);
@@ -426,7 +427,7 @@ class RelocationController
                 $header = RequestStock::header('relocation', $row->id);
                 $header['receipt_operation'] = $operation;
                 $header['receipt_actor'] = (int) $actor->id;
-                $header['completed_date'] = now()->toDateString();
+                $header['completed_date'] = now(DisplayDates::effectiveZone())->toDateString();
                 RequestStock::saveHeader('relocation', $row->id, $header);
                 RequestStock::changed('relocation', $row, $actor, 'Completed relocation', ['received' => $after], 'Completed');
             } elseif ($before !== $after) {

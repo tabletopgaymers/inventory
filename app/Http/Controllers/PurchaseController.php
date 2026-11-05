@@ -316,6 +316,7 @@ class PurchaseController
         foreach ($data['rows'] as &$item) {
             $cost = BigDecimal::of($costs[$item['id']] ?? 0);
             $item['unit_price'] = $cost->isPositive() ? (string) $cost->strippedOfTrailingZeros() : '';
+            $item['unit_price_display'] = $cost->isPositive() ? \App\Support\StockNumbers::displayCost((string) $cost) : null;
             if ($destination) $item['destination_quantity'] = (int) ($quantities[$item['id']] ?? 0);
         }
         unset($item);

@@ -48,7 +48,7 @@ export function mountPurchasePicker({root,results,feedback,button,getIds,getCoun
             const selection=document.createElement('td'); selection.className='app-grouped-item';
             const check=document.createElement('input'); check.type='checkbox'; check.dataset.searchItemCheck=''; check.setAttribute('aria-label',`Select ${item.name} · ${item.sku}`); selection.append(check);
             const name=cell('td',item.name); name.className='app-grouped-item';
-            const price=cell('td',item.unit_price || '—'); price.className='table-numeric';
+            const price=cell('td',item.unit_price_display ?? '—'); price.className='table-numeric';
             const quantity=document.createElement('td'); quantity.className='table-numeric';
             const input=document.createElement('input'); input.dataset.searchQuantity=''; input.maxLength=30; input.setAttribute('aria-label',`Request ${item.name} · ${item.sku}`); quantity.append(input);
             row.append(selection,name);
