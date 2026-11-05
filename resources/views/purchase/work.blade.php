@@ -1,8 +1,13 @@
 @extends('layout')
+@php($finished = in_array($row->status ?? 'New', ['Received','Cancelled'], true))
+@php($stepLabels = config('purchase-workflow.tabs'))
+@php($panelLabels = config('purchase-workflow.panels'))
+@php($buttonLabels = config('purchase-workflow.buttons'))
 @section('title', 'Purchase request')
+@section('subtitle'){{ $work['title'] }}@endsection
 @section('title-status')<x-app.status-badge :status="$row->status ?? 'New'" data-purchase-status />@endsection
 @section('page-actions')
-<x-workflow.save-progress form="purchase-request-form" :disabled="!$editable" />
+<x-workflow.save-progress form="purchase-request-form" :disabled="!$editable" :hidden="!$editable || $tab === 'review'" />
 @endsection
 @section('content-sections')
 @vite(['resources/css/purchase.css', 'resources/js/purchase-request.js'])
@@ -14,10 +19,10 @@
 <input type="hidden" name="revision" value="{{ $work['revision'] }}">
 <input type="hidden" name="tab" value="{{ $tab }}" data-current-tab>
 <div class="app-content" data-progress-feedback hidden></div>
-<x-workflow.tabs prefix="purchase" label="Purchase request steps" :active="$tab" :tabs="['basic'=>'Basic info','material'=>'Material','review'=>'Review']">
+<x-workflow.tabs prefix="purchase" label="Purchase request steps" :active="$tab" :tabs="array_intersect_key($stepLabels, array_flip(['basic','material','review']))">
 <nav class="workflow-tabs" aria-label="Purchase fulfillment steps" data-fulfillment-links @if(!$work['id']) hidden @endif>
-@foreach(['order'=>'Procurement','invoice'=>'Order','charges'=>'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'] as $key=>$label)
-@if(!in_array($key,['receive','confirmation']) || in_array($row?->status,['Ordered','Shipped','Received']))<x-app.action  href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</x-app.action>@endif
+@foreach(array_diff_key($stepLabels, array_flip(['basic','material','review'])) as $key=>$label)
+@if($key!=='receive' || in_array($row?->status,['Ordered','Shipped','Received']))<x-app.action  href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</x-app.action>@endif
 @endforeach
 </nav>
 </x-workflow.tabs>
@@ -25,7 +30,7 @@
 @foreach($reviewErrors as $messages)@foreach((array)$messages as $message)<p>{{ $message }}</p>@endforeach @endforeach
 </div>
 <x-workflow.tab-panel class="app-content" id="purchase-panel-basic" labelledby="purchase-tab-basic" :active="$tab === 'basic'">
-<x-workflow.heading><h2>Basic info</h2><x-app.action variant="primary" type="submit"  name="action" value="next" :disabled="!$editable">Next ▷</x-app.action></x-workflow.heading>
+<x-workflow.heading><h2>{{ $panelLabels['basic'] }}</h2><x-app.action variant="primary" type="submit"  name="action" value="next" :disabled="!$editable" :hidden="$finished">{{ $buttonLabels['basic'] }}</x-app.action></x-workflow.heading>
 <fieldset class="app-entry-fieldset">
 <div class="app-columns app-columns-fields">
 <label for="purchase-title">Title<input id="purchase-title" name="title" required maxlength="255" value="{{ old('title',$work['title']) }}" @readonly(!$editable)></label>
@@ -70,7 +75,7 @@
 </x-workflow.tab-panel>
 <x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-material" labelledby="purchase-tab-material" :active="$tab === 'material'">
 <x-app.table-region label="Requested material" :nowrap="true" :quantity-fields="true" class="purchase-material">
-<x-slot:header><x-workflow.heading><h2>Requested material</h2><x-app.action variant="primary" type="submit"  name="action" value="next" data-material-next :disabled="!$editable">Next ▷</x-app.action></x-workflow.heading></x-slot:header>
+<x-slot:header><x-workflow.heading><h2>{{ $panelLabels['material'] }}</h2><x-app.action variant="primary" type="submit"  name="action" value="next" data-material-next :disabled="!$editable" :hidden="$finished">{{ $buttonLabels['material'] }}</x-app.action></x-workflow.heading></x-slot:header>
 <table data-request-material><colgroup><col class="table-action-column"><col><col class="purchase-material-value-column"><col class="purchase-material-value-column"><col class="purchase-material-value-column"></colgroup><thead><tr><th class="table-action-column"><span class="sr-only">Remove</span></th><th>Item</th><th class="table-heading-center">Qty</th><th class="table-heading-center">Est. unit price</th><th class="table-numeric">Est. total</th></tr></thead><tbody>
 @php($group = null)
 @foreach($items as $item)
@@ -90,7 +95,7 @@
 @endif
 </x-workflow.tab-panel>
 <x-workflow.tab-panel class="app-panel-stack" id="purchase-panel-review" labelledby="purchase-tab-review" :active="$tab === 'review'">
-<div class="app-content"><x-workflow.heading><h2>Review purchase request</h2><x-app.action variant="primary"  type="submit" name="action" value="submit" data-submit-request :disabled="!$canSubmit || count($reviewErrors)">Submit</x-app.action></x-workflow.heading>
+<div class="app-content"><x-workflow.heading><h2>{{ $panelLabels['review'] }}</h2><x-app.action variant="primary"  type="submit" name="action" value="submit" data-submit-request :disabled="!$canSubmit || count($reviewErrors)" :hidden="$finished">{{ $buttonLabels['review'] }}</x-app.action></x-workflow.heading>
 <div class="app-columns app-columns-fields">
 <x-app.detail-list variant="content" >
 <dt>Title</dt><dd data-review="title">{{ $work['title'] ?: '—' }}</dd>

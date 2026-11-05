@@ -1,4 +1,5 @@
 @php
+    $collectionValue = old('collection_id', $record?->collection_id ?? $selectedCollection?->id);
     $itemCollections = $collections->filter(fn ($entry) => $entry->state === 'active' || $record?->collection_id === $entry->id)
         ->sort(fn ($a, $b) => strcasecmp($a->category_name, $b->category_name) ?: strcasecmp($a->name, $b->name) ?: ($a->id <=> $b->id));
 @endphp
@@ -7,10 +8,10 @@
 <label>Name<input name="name" required maxlength="255" value="{{ old('name', $record?->name) }}"></label>
 <label>Category<input type="text" readonly data-collection-category value=""></label>
 <label>Collection<select name="collection_id" required>
-@if(!$record || !$itemCollections->contains('id', old('collection_id', $record?->collection_id)))<option value="" @selected(!$itemCollections->contains('id', old('collection_id', $record?->collection_id)))>– select –</option>@endif
+@if(!$record || !$itemCollections->contains('id', $collectionValue))<option value="" @selected(!$itemCollections->contains('id', $collectionValue))>– select –</option>@endif
 @foreach($itemCollections->groupBy('category_id') as $group)
 <optgroup label="{{ $group->first()->category_name }}">
-@foreach($group as $entry)<option value="{{ $entry->id }}" data-prefix="{{ $entry->sku_prefix }}" data-category="{{ $entry->category_name }}" @selected(old('collection_id', $record?->collection_id) == $entry->id)>{{ $entry->name }}</option>@endforeach
+@foreach($group as $entry)<option value="{{ $entry->id }}" data-prefix="{{ $entry->sku_prefix }}" data-category="{{ $entry->category_name }}" @selected($collectionValue == $entry->id)>{{ $entry->name }}</option>@endforeach
 </optgroup>
 @endforeach
 </select></label>

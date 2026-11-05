@@ -144,7 +144,7 @@ import './app.js';
             if (!Number.isInteger(result.id) || result.id < 1) throw new Error('The save response could not be confirmed. Your inputs are retained.');
             baseline = submitted;
             retainedError = false;
-            window.location.assign(form.dataset.recordBase + result.id);
+            window.location.assign(result.redirect || form.dataset.recordBase + result.id);
             navigating = true;
         } catch (error) {
             retainedError = true;

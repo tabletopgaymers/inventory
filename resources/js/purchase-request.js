@@ -69,7 +69,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
         });
     };
     updateBasicChoices();
-    mountProgressSave(form, { feedback:form.querySelector('[data-progress-feedback]'), onBusy:value => { saveBusy = value; },
+    const progress = mountProgressSave(form, { feedback:form.querySelector('[data-progress-feedback]'), onBusy:value => { saveBusy = value; },
         canSave:() => !searchRoot || !window.appInventorySearch.get(searchRoot)?.getState().busy,
         getGeneration:() => editGeneration, onSaved:(result, {unchanged}) => {
         form.elements.revision.value = result.revision;
@@ -165,6 +165,7 @@ import { mountProgressSave } from './workflow/progress-save.js';
             paragraph.append(link); return paragraph;
         }));
         errors.hidden = form.dataset.editable!=='true' || form.dataset.tab !== 'review' || !messages.length;
+        save.hidden = form.dataset.editable !== 'true' || form.dataset.tab === 'review';
         form.querySelector('[data-submit-request]').disabled = form.dataset.canSubmit !== 'true' || messages.length > 0;
     };
     const showTab = tab => tabUI.activate(tab);
@@ -172,7 +173,11 @@ import { mountProgressSave } from './workflow/progress-save.js';
         form.dataset.tab = tab; form.querySelector('[data-current-tab]').value = tab;
         updateReview();
     } });
-    form.querySelector('[data-material-next]').addEventListener('click',event => { event.preventDefault(); showTab('review'); });
+    form.querySelector('[data-material-next]').addEventListener('click', async event => {
+        event.preventDefault();
+        const saved = await progress.save();
+        if (saved && !dirty) showTab('review');
+    });
     const markDirty = () => { editGeneration++; dirty = true; setSaveDirty(save, true); updateBasicChoices(); updateMaterialTotals(); updateReview(); };
     const changed = event => {
         if (searchRoot?.contains(event.target) || searchResults?.contains(event.target)) return;

@@ -3,6 +3,7 @@
 // One presentation mapping for server-rendered and client-updated status badges.
 return [
     'default' => 'pending',
+    'labels' => ['request' => 'Requested'],
     'statuses' => [
         'new' => 'pending',
         'draft' => 'pending',

@@ -11,8 +11,9 @@ import './inventory-search-controls.js';
 (() => {
     const form = document.getElementById('relocation-form');
     if (!form) return;
-    const tabs = [...form.querySelectorAll('[role="tab"]')];
+    const panelLabels = JSON.parse(form.querySelector('[data-relocation-panel-labels]').textContent);
     const save = document.querySelector('[data-relocation-save]');
+    const finished = () => ['Completed', 'Cancelled'].includes(form.dataset.status);
     const feedback = document.querySelector('[data-relocation-feedback]');
     let dirty = false;
     const dirtySections = new Set();
@@ -35,13 +36,7 @@ import './inventory-search-controls.js';
         refreshConfirmation();
         if (['material', 'review', 'ship', 'confirmation'].includes(tab.dataset.workflowTab)) refreshBalances();
     } });
-    const showTab = tab => tabUI.activate(tab?.dataset.workflowTab, { allowDisabled: true });
-    form.querySelector('[data-material-next]').addEventListener('click', () => {
-        if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'review'));
-    });
-    form.querySelector('[data-reconcile-next]').addEventListener('click', () => {
-        if (!busy) showTab(tabs.find(tab => tab.dataset.workflowTab === 'confirmation'));
-    });
+    const showTab = key => tabUI.activate(key, { allowDisabled: true });
     const controls = () => [...form.querySelectorAll('input:not([type="hidden"]), select, textarea')];
     const markDirty = section => {
         dirtySections.add(section || (activeTab() === 'reconcile' ? 'reconciliation' : activeTab() === 'tracking' ? 'tracking' : form.dataset.status === 'Accepted' ? (activeTab() === 'basic' ? 'basic' : 'fulfillment') : 'request'));
@@ -338,8 +333,10 @@ import './inventory-search-controls.js';
         }
         reviewErrors.hidden = !reviewErrors.childElementCount || form.querySelector('[aria-selected="true"]').dataset.workflowTab !== 'review';
         submit.disabled = busy || form.dataset.status !== 'Draft' || form.dataset.editable !== 'true' || form.dataset.canSubmit !== 'true' || errors.length > 0;
+        submit.hidden = finished();
     };
     refreshShipment = () => {
+        form.querySelector('[data-relocation-ship]').hidden = finished();
         const previewShipment = form.dataset.status === 'Accepted';
         form.querySelectorAll('[data-ship-field]').forEach(output => {
             const field = form.elements.namedItem(output.dataset.shipField);
@@ -356,7 +353,8 @@ import './inventory-search-controls.js';
         shippingDate.hidden = showDateText;
         dateDisplay.hidden = !showDateText;
         const now = new Date();
-        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone:form.dataset.timeZone, year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(now).map(part => [part.type, part.value]));
+        const today = `${parts.year}-${parts.month}-${parts.day}`;
         form.querySelector('[data-shipping-label-text]').textContent = shippingDate.value && today > shippingDate.value ? 'Shipped' : 'Shipping';
         dateDisplay.textContent = shippingDate.value ? new Date(shippingDate.value + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         if (form.dataset.status === 'Accepted' && (!shippingDate.value || !shippingDate.validity.valid)) errors.push('Choose a valid shipping date.');
@@ -432,6 +430,7 @@ import './inventory-search-controls.js';
         form.querySelector('[data-relocation-complete]').disabled = busy || form.dataset.manager !== 'true' || form.dataset.status !== 'Received' || blankCount > 0 || errors.length > 0;
     };
     refreshConfirmation = () => {
+        form.querySelector('[data-relocation-complete]').hidden = finished();
         form.querySelectorAll('[data-confirmation-field]').forEach(output => {
             const field = form.elements.namedItem(output.dataset.confirmationField);
             output.textContent = field.tagName === 'SELECT' ? (field.value ? field.selectedOptions[0].textContent : 'Not selected') : field.value || '—';
@@ -533,19 +532,22 @@ import './inventory-search-controls.js';
         const searchHost = form.querySelector(`[data-${policy.tab}-search-host]`);
         if (searchPanel.parentElement !== searchHost) searchHost.append(searchPanel);
         form.querySelector('[data-material-search-fields]').disabled = busy || !canAddMaterial();
-        const title = policy.tab === 'reconcile' ? 'Material reconciliation' : policy.tab === 'fulfillment' ? 'Material fulfillment' : 'Requested material';
+        const title = panelLabels[policy.tab];
         results.querySelectorAll('[data-search-quantity-heading]').forEach(heading => { heading.textContent = policy.tab === 'reconcile' ? 'Received' : policy.tab === 'fulfillment' ? 'Fulfilled' : 'Request'; });
         results.querySelectorAll('[data-search-item]').forEach(row => { row.querySelector('[data-search-quantity]').setAttribute('aria-label', `${policy.tab === 'reconcile' ? 'Received' : policy.tab === 'fulfillment' ? 'Fulfilled' : 'Request'} ${row.dataset.itemLabel}`); });
         sharedTable.querySelector('[data-material-table-title]').textContent = title;
-        const printButton = sharedTable.querySelector('[data-fulfillment-print]');
-        printButton.hidden = policy.tab !== 'fulfillment';
+        const printButton = sharedTable.querySelector('[data-material-print]');
+        printButton.hidden = !['fulfillment', 'reconcile'].includes(policy.tab);
         printButton.disabled = busy;
+        const fulfillmentNext = sharedTable.querySelector('[data-fulfillment-next]');
+        fulfillmentNext.hidden = policy.tab !== 'fulfillment' || finished();
+        fulfillmentNext.disabled = busy || !policy.fulfilled;
         const reconcileNext = sharedTable.querySelector('[data-reconcile-next]');
-        reconcileNext.hidden = policy.tab !== 'reconcile';
-        reconcileNext.disabled = busy;
+        reconcileNext.hidden = policy.tab !== 'reconcile' || finished();
+        reconcileNext.disabled = busy || !policy.received;
         const next = sharedTable.querySelector('[data-material-next]');
-        next.hidden = policy.tab !== 'material';
-        next.disabled = busy;
+        next.hidden = policy.tab !== 'material' || finished();
+        next.disabled = busy || !policy.requested;
         sharedTable.querySelector('[role="region"]').setAttribute('aria-label', title);
         sharedTable.querySelectorAll('[data-material-only]').forEach(cell => { cell.hidden = policy.tab !== 'material'; });
         sharedTable.querySelectorAll('[data-fulfillment-only]').forEach(cell => { cell.hidden = policy.tab === 'material'; });
@@ -579,6 +581,7 @@ import './inventory-search-controls.js';
         ['title', 'details'].forEach(name => { form.elements.namedItem(name).readOnly = !(basicEditable || (manager && accepted)); });
         locationControls.forEach(control => { control.disabled = busy || !basicEditable; });
         form.querySelector('[data-basic-next]').disabled = busy || !basicEditable;
+        form.querySelector('[data-basic-next]').hidden = finished();
         const shippingDate = form.querySelector('[data-shipping-date]');
         shippingDate.disabled = busy;
         shippingDate.readOnly = !manager || !accepted;
@@ -589,10 +592,12 @@ import './inventory-search-controls.js';
         unavailable.hidden = available;
         unavailable.textContent = form.dataset.status === 'Requested' ? 'Must Accept First' : 'Not available';
         form.querySelector('[data-relocation-accept]').disabled = busy || !manager || form.dataset.status !== 'Requested';
+        form.querySelector('[data-relocation-accept]').hidden = finished();
         const reconcileAvailable = ['Received', 'Completed'].includes(form.dataset.status);
         form.querySelector('[data-reconcile-receive-panel]').hidden = reconcileAvailable;
         form.querySelector('[data-reconcile-content]').hidden = !reconcileAvailable;
         form.querySelector('[data-relocation-receive]').disabled = busy || !manager || form.dataset.status !== 'Fulfilled';
+        form.querySelector('[data-relocation-receive]').hidden = finished();
         form.querySelector('[data-reconcile-unavailable]').textContent = form.dataset.status === 'Fulfilled' ? 'Acknowledge receipt to enter the quantities actually received.' : 'Not available until shipped.';
         refreshFulfillment();
         sharedTable.hidden = form.dataset.saved !== 'true' || (materialTablePolicy().tab === 'fulfillment' && !available) || (materialTablePolicy().tab === 'reconcile' && !reconcileAvailable);
@@ -602,9 +607,12 @@ import './inventory-search-controls.js';
         form.querySelector('[data-tracking-content]').hidden = !trackingAvailable;
         form.querySelector('[data-tracking-unavailable]').hidden = trackingAvailable;
         form.querySelector('[data-tracking-fields]').disabled = busy || !canEditTracking();
+        form.querySelectorAll('[data-completion-detail]').forEach(element => { element.hidden = form.dataset.status !== 'Completed'; });
         refreshShipment();
         refreshConfirmation();
-        save.disabled = busy || !(form.dataset.editable === 'true' || (manager && accepted && ['basic', 'fulfillment'].includes(activeTab())) || (manager && form.dataset.status === 'Received' && activeTab() === 'reconcile') || (canEditTracking() && activeTab() === 'tracking'));
+        const canSave = (basicEditable && ['basic', 'material'].includes(activeTab())) || (manager && accepted && ['basic', 'fulfillment'].includes(activeTab())) || (manager && form.dataset.status === 'Received' && activeTab() === 'reconcile') || (canEditTracking() && activeTab() === 'tracking');
+        save.hidden = !canSave;
+        save.disabled = busy || !canSave;
     };
     refreshFulfillment();
     refreshWorkflow();
@@ -622,10 +630,10 @@ import './inventory-search-controls.js';
         feedback.hidden = true;
         feedback.removeAttribute('aria-label');
     };
-    const showErrors = (result, action = 'save') => {
+    const showErrors = (result, action = 'save', originTab = null) => {
         const materialError = Object.keys(result.errors || {}).some(name => name === 'lines' || name.startsWith('lines.'));
         const fulfillmentError = action === 'accept' || form.dataset.status === 'Accepted';
-        showTab(tabs[action === 'complete' ? 7 : ['receive', 'reconciliation'].includes(action) ? 6 : action === 'basic' ? 0 : action === 'ship' ? 5 : action === 'tracking' ? 4 : fulfillmentError ? 3 : action === 'submit' ? 2 : materialError ? 1 : 0]);
+        showTab(originTab || (action === 'complete' ? 'confirmation' : ['receive', 'reconciliation'].includes(action) ? 'reconcile' : action === 'basic' ? 'basic' : action === 'ship' ? 'ship' : action === 'tracking' ? 'tracking' : fulfillmentError ? 'fulfillment' : action === 'submit' ? 'review' : materialError ? 'material' : 'basic'));
         feedback.hidden = false;
         feedback.className = 'error';
         feedback.setAttribute('role', 'alert');
@@ -645,7 +653,7 @@ import './inventory-search-controls.js';
                 const quantityLabel = control.name.startsWith('reconciliation[') ? 'Received quantity for ' : control.name.startsWith('fulfillment[') ? 'Fulfilled quantity for ' : 'Requested quantity for ';
                 const trackingLabel = control.name.startsWith('tracking[') ? (control.name.endsWith('[carrier]') ? 'Shipper' : control.name.endsWith('[name]') ? 'Name' : 'Tracking number') : null;
                 link.textContent = `${itemLabel ? quantityLabel + itemLabel : trackingLabel || labels[name] || name}: ${message}`;
-                link.addEventListener('click', () => { showTab(tabs[control.name.startsWith('reconciliation[') ? 6 : control.name === 'shipping_date' ? 5 : control.name.startsWith('tracking[') ? 4 : control.name.startsWith('fulfillment[') ? 3 : control.name.startsWith('lines[') ? 1 : 0]); form.elements.namedItem(control.name)?.focus(); });
+                link.addEventListener('click', () => { showTab(control.name.startsWith('reconciliation[') ? 'reconcile' : control.name === 'shipping_date' ? 'ship' : control.name.startsWith('tracking[') ? 'tracking' : control.name.startsWith('fulfillment[') ? 'fulfillment' : control.name.startsWith('lines[') ? 'material' : 'basic'); form.elements.namedItem(control.name)?.focus(); });
                 summary.append(link);
                 const inline = document.createElement('p');
                 inline.id = control.id + '-error';
@@ -674,9 +682,15 @@ import './inventory-search-controls.js';
         event.preventDefault();
         if (busy) return;
         const action = event.submitter?.value || 'save';
+        const originTab = action === 'next' ? activeTab() : null;
+        const saving = action === 'save' || action === 'next';
+        const nextTab = action === 'next' ? event.submitter?.dataset.nextTab : null;
         const printing = action === 'print';
-        const printUrl = form.querySelector('[data-fulfillment-print]').dataset.printUrl;
-        if (printing && !(activeTab() === 'fulfillment' && form.dataset.status === 'Accepted' && form.dataset.manager === 'true')) {
+        const printLocation = new URL(form.querySelector('[data-material-print]').dataset.printUrl, location.origin);
+        if (activeTab() === 'reconcile') printLocation.searchParams.set('stage', 'reconcile');
+        const printUrl = printLocation.href;
+        const printEditable = form.dataset.manager === 'true' && ((activeTab() === 'fulfillment' && form.dataset.status === 'Accepted') || (activeTab() === 'reconcile' && form.dataset.status === 'Received'));
+        if (printing && !printEditable) {
             window.open(printUrl, '_blank', 'noopener');
             return;
         }
@@ -684,19 +698,19 @@ import './inventory-search-controls.js';
         const shipping = action === 'ship';
         const receiving = action === 'receive';
         const completing = action === 'complete';
-        const reconciliationSave = action === 'save' && activeTab() === 'reconcile' && form.dataset.status === 'Received';
-        const fulfillmentSave = (action === 'save' || printing) && form.dataset.status === 'Accepted' && form.querySelector('[aria-selected="true"]').dataset.workflowTab === 'fulfillment';
-        const basicSave = action === 'save' && form.dataset.status === 'Accepted' && activeTab() === 'basic';
-        const trackingSave = action === 'save' && activeTab() === 'tracking' && canEditTracking();
+        const reconciliationSave = (saving || printing) && activeTab() === 'reconcile' && form.dataset.status === 'Received';
+        const fulfillmentSave = (saving || printing) && form.dataset.status === 'Accepted' && form.querySelector('[aria-selected="true"]').dataset.workflowTab === 'fulfillment';
+        const basicSave = saving && form.dataset.status === 'Accepted' && activeTab() === 'basic';
+        const trackingSave = saving && activeTab() === 'tracking' && canEditTracking();
         if (receiving ? form.dataset.manager !== 'true' || form.dataset.status !== 'Fulfilled' : completing ? form.dataset.manager !== 'true' || form.dataset.status !== 'Received' : shipping ? form.dataset.manager !== 'true' || form.dataset.status !== 'Accepted' : accepting ? form.dataset.manager !== 'true' || form.dataset.status !== 'Requested' : fulfillmentSave || basicSave || reconciliationSave ? form.dataset.manager !== 'true' : trackingSave ? !canEditTracking() : form.dataset.editable !== 'true') return;
         if (shipping && dirtySections.has('fulfillment')) {
-            showTab(tabs[3]);
+            showTab('fulfillment');
             feedback.hidden = false; feedback.className = 'error'; feedback.setAttribute('role', 'alert');
             feedback.textContent = 'Save Fulfillment progress before shipping so the saved quantities match your edits.';
             return;
         }
         if (pendingSelections()) {
-            showTab(tabs[['reconcile', 'confirmation'].includes(activeTab()) ? 6 : activeTab() === 'fulfillment' ? 3 : 1]);
+            showTab(['reconcile', 'confirmation'].includes(activeTab()) ? 'reconcile' : activeTab() === 'fulfillment' ? 'fulfillment' : 'material');
             showSearchMessage('Use Add selected or clear checked items and entered quantities before saving.');
             return;
         }
@@ -712,14 +726,14 @@ import './inventory-search-controls.js';
         if (completing) requestedRows().forEach(row => {
             data.set(`reconciliation[${row.dataset.materialItem}]`, row.querySelector('[data-material-received]').value);
         });
-        data.set('action', printing ? 'save' : action);
+        data.set('action', printing || action === 'next' ? 'save' : action);
         // Reserve the new tab during the click so saving can finish before navigation.
         const printWindow = printing ? window.open('', '_blank') : null;
         let printReady = false;
         if (printWindow) {
             printWindow.opener = null;
-            printWindow.document.title = 'Preparing packing sheet';
-            printWindow.document.body.textContent = 'Saving progress before opening the packing sheet…';
+            printWindow.document.title = 'Preparing print sheet';
+            printWindow.document.body.textContent = 'Saving progress before opening the print sheet…';
         }
         clearErrors();
         const endpoint = form.getAttribute('action') + (receiving ? '/receive' : completing ? '/complete' : reconciliationSave ? '/reconciliation' : shipping ? '/ship' : accepting ? '/accept' : basicSave ? '/basic' : fulfillmentSave ? '/fulfillment' : trackingSave ? '/tracking' : '');
@@ -735,6 +749,9 @@ import './inventory-search-controls.js';
             if ('requestedDate' in result) form.querySelector('[data-ship-requested-date]').textContent = result.requestedDate || '—';
             if (result.shippingDate) form.querySelector('[data-shipping-date]').value = result.shippingDate;
             if (result.fulfillerName) form.querySelector('[data-ship-fulfiller]').textContent = result.fulfillerName;
+            if (result.completionDetails) Object.entries(result.completionDetails).forEach(([field, value]) => {
+                form.querySelector(`[data-completion-field="${field}"]`).textContent = value;
+            });
             if (result.fulfilled) {
                 fulfilledValues = result.fulfilled;
                 fulfillmentBody.querySelectorAll('[data-fulfillment-quantity]').forEach(input => { input.value = fulfilledValues[input.dataset.itemId] ?? ''; });
@@ -769,11 +786,11 @@ import './inventory-search-controls.js';
             dirty = dirtySections.size > 0; setSaveDirty(save, dirty);
             if (dirty) feedback.textContent += ' Changes on another tab are still unsaved.';
             showNotice(feedback, feedback.textContent, dirty ? 'warning' : 'success');
-            if (action === 'next') showTab(tabs[1]);
-            if (action === 'submit') showTab(tabs[2]);
-            if (accepting) showTab(tabs[3]);
-            if (receiving) showTab(tabs[6]);
-            if (completing) showTab(tabs[7]);
+            if (nextTab) showTab(nextTab);
+            if (action === 'submit') showTab('review');
+            if (accepting) showTab('fulfillment');
+            if (receiving) showTab('reconcile');
+            if (completing) showTab('confirmation');
             if (printing) {
                 if (printWindow && !printWindow.closed) printWindow.location.replace(printUrl);
                 else {
@@ -786,7 +803,7 @@ import './inventory-search-controls.js';
             }
             },
             onError: result => {
-                showErrors(result, reconciliationSave ? 'reconciliation' : basicSave ? 'basic' : trackingSave || (shipping && Object.keys(result.errors || {}).some(name => name.startsWith('tracking.'))) ? 'tracking' : action);
+                showErrors(result, reconciliationSave ? 'reconciliation' : basicSave ? 'basic' : trackingSave || (shipping && Object.keys(result.errors || {}).some(name => name.startsWith('tracking.'))) ? 'tracking' : action, originTab);
             },
             onFinally: () => {
                 if (printWindow && !printReady && !printWindow.closed) printWindow.close();

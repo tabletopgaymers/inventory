@@ -1,6 +1,6 @@
 import { createAction } from './actions.js';
 import { setSaveDirty, setSaveBusy } from './workflow/save-button.js';
-import { mountNotices } from './workflow/notices.js';
+import { mountNotices, showNotice } from './workflow/notices.js';
 import './app.js';
 
 import { mountQuantityNavigation } from './workflow/quantity-navigation.js';
@@ -14,6 +14,8 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     mountNotices();
     const linkedField = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (linkedField && !linkedField.closest('[hidden]')) { linkedField.focus(); linkedField.select?.(); }
+    // The shared shell renders/links field errors; focus the first visible problem.
+    [...form.querySelectorAll('[aria-invalid="true"]')].find(control => !control.closest('[hidden]'))?.focus();
     let dirty = form.dataset.workspaceDirty==='true';
     let editGeneration = 0;
     const searchRoot=form.querySelector('[data-inventory-search]'), searchResults=form.querySelector('[data-purchase-search-results]');
@@ -22,8 +24,7 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
     setSaveDirty(save, dirty);
     const markDirty = () => {
         editGeneration++; dirty = true; setSaveDirty(save, true);
-        form.querySelectorAll('[data-invoice-derived]').forEach(element => { element.hidden = true; });
-        form.querySelectorAll('[data-derived-stale]').forEach(element => { element.hidden = false; });
+        form.querySelectorAll('[data-invoice-derived]:not([data-allocation-preview])').forEach(element => { element.hidden = true; });
     };
     const changed=event=>{if(!searchRoot?.contains(event.target) && !searchResults?.contains(event.target))markDirty();};
     form.addEventListener('input', changed);
@@ -34,6 +35,14 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         document.querySelectorAll('input[name="revision"]').forEach(input => { input.value = result.revision; });
         if (!unchanged) return;
         dirty = false; setSaveDirty(save, false);
+        if (result.allocationPreview) {
+            const section = form.querySelector('[data-step="charges"]');
+            const template = document.createElement('template');
+            template.innerHTML = result.allocationPreview.html;
+            section.querySelector('[data-allocation-preview-host]').replaceChildren(template.content);
+            const errors = Object.values(result.allocationPreview.errors || {}).flat();
+            if (errors.length) showNotice(document.querySelector('[data-progress-feedback]'), 'Progress saved. Complete these values to calculate allocations: ' + errors.join(' '), 'warning');
+        }
     }});
     const replacementButton = form.querySelector('[data-replace-vendor]');
     const supplierChoice = form.elements.supplier_id;
@@ -65,10 +74,21 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         const notice = panel.querySelector('[data-supplier-verification]');
         if (notice) {
             notice.hidden = info.state !== 'unverified';
-            notice.querySelector('[data-supplier-review]').href = `/catalog/suppliers/${supplierChoice.value}/edit`;
+            const review = notice.querySelector('[data-supplier-review]');
+            review.dataset.reviewUrl = `/catalog/suppliers/${supplierChoice.value}/edit?${new URLSearchParams({purchase_work:review.dataset.purchaseWork})}`;
         }
     });
     updateSupplierAction();
+    form.querySelector('[data-supplier-review]')?.addEventListener('click', async event => {
+        if (progress.isBusy()) return;
+        const button = event.currentTarget;
+        if (dirty) {
+            const saved = await progress.save();
+            if (!saved || dirty) return;
+        }
+        navigation.allowDeparture();
+        window.location.assign(button.dataset.reviewUrl);
+    });
     const deliveryChoice = form.querySelector('[data-delivery-choice]');
     const deliveryFields = ['name', 'address', 'email', 'phone'];
     const deliveryDrafts = new Map();
@@ -94,31 +114,22 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
             navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Discard order draft?',actionLabel:'Discard draft',text:'Discard your saved and unsaved order edits and reload the latest request or recorded order? This does not cancel the purchase or change inventory.'});
             return;
         }
-        if (event.submitter?.value === 'reconcile_receipt' && !navigation.isLeaving()) {
-            event.preventDefault(); const button=event.submitter;
-            navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Reconcile with updated order?',actionLabel:'Reconcile',text:'Keep your entered receiving values and use the updated order as their reference? New items need receiving counts; check removed and changed items before confirmation.'});
-            return;
-        }
+
         if (event.submitter?.value === 'replace_vendor' && !navigation.isLeaving()) {
             event.preventDefault(); const button = event.submitter;
             navigation.confirm(() => form.requestSubmit(button), {origin:button,title:'Replace supplier?',actionLabel:'Replace supplier',
                 text:'Replace the supplier with the selected supplier and preserve its details in a permanent note? If removal is selected, only an unused, unshared supplier will be deleted. Your other pending order edits will also be saved.'});
             return;
         }
-        if (event.submitter?.value === 'cancel_receipt' && !navigation.isLeaving()) {
-            event.preventDefault();
-            const button = event.submitter;
-            navigation.confirm(() => form.requestSubmit(button), { origin: button, title: 'Cancel receiving?',
-                text: 'Unsaved invoice edits and the saved receipt draft will be discarded.', actionLabel: 'Cancel receiving' });
-            return;
-        }
+
         navigation.allowDeparture();
     });
     document.querySelectorAll('form:not([data-purchase-invoice])').forEach(other => other.addEventListener('submit', event => {
         if (navigation.isLeaving()) return;
         if (other.matches('[data-confirm-transition]')) {
             event.preventDefault();const button=event.submitter;
-            navigation.confirm(()=>other.requestSubmit(button),{origin:button,title:'Confirm status change',actionLabel:'Continue',text:'Continue with this status change?'+(dirty?' Unsaved invoice edits will not be saved.':'')});
+            const cancelling = button?.value === 'cancel';
+            navigation.confirm(()=>other.requestSubmit(button),{origin:button,title:cancelling?'Cancel purchase?':'Confirm status change',actionLabel:cancelling?'Cancel purchase':'Continue',text:(cancelling?'Cancel this purchase after resolving the outcome with the supplier? This clears its Ordered quantities without adding stock or changing catalog Unit Cost. Cancelled purchases cannot be reopened.':'Continue with this status change?')+(dirty?' Unsaved invoice edits will not be saved.':'')});
             return;
         }
         if (!dirty) { navigation.allowDeparture(); return; }

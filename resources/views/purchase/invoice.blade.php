@@ -1,25 +1,28 @@
 @extends('layout')
-@section('title', $row->title ?: 'Purchase')
+@section('title', 'Purchase request')
+@section('subtitle'){{ $values['title'] ?? $row->title }}@endsection
 @section('title-status')<x-app.status-badge :status="$row->status" />@endsection
 @section('page-actions')
-@if($editable)<x-workflow.save-progress form="purchase-invoice-form" :disabled="$receiptStale ?? false" />@endif
+@if($editable && in_array($tab, ['order','invoice','charges'], true))<x-workflow.save-progress form="purchase-invoice-form" />@endif
 @endsection
 @section('content-sections')
 @php
     $readonly = !($editable ?? false) || in_array($row->status, ['Received','Cancelled'], true);
-    $tabs = ['order'=>'Procurement','invoice'=>'Order','charges'=>$mode==='receipt' ? 'Receipt charges' : 'Order charges','order-review'=>'Order review','receive'=>'Receive','confirmation'=>'Confirmation'];
-    $tab = array_key_exists($tab, $tabs) ? $tab : ($mode === 'receipt' ? 'receive' : 'order');
+    $stepLabels = config('purchase-workflow.tabs');
+    $panelLabels = config('purchase-workflow.panels');
+    $buttonLabels = config('purchase-workflow.buttons');
+    $tabs = array_diff_key($stepLabels, array_flip(['basic','material','review','receive']));
+    $tab = array_key_exists($tab, $tabs) ? $tab : 'order';
     $base = '/purchase/work/'.$token;
-    $editTab = $mode === 'receipt' ? 'receive' : 'invoice';
-    $reviewTab = $mode === 'receipt' ? 'confirmation' : 'order-review';
-    $next = ['order'=>'invoice','invoice'=>'charges','charges'=>$reviewTab,'receive'=>'confirmation'];
+    $editTab = 'invoice';
+    $reviewTab = 'order-review';
+    $next = ['order'=>'invoice','invoice'=>'charges','charges'=>$reviewTab];
     $requestedSupplier = str_starts_with($work['vendor_choice'] ?? '', 'supplier:') ? $suppliers->firstWhere('id', (int) substr($work['vendor_choice'], 9)) : null;
 @endphp
 @vite(['resources/css/purchase.css', 'resources/js/purchase-work-invoice.js'])
 <x-app.panel-stack>
 <div class="app-content" data-progress-feedback hidden></div>
 @include('purchase.tabs')
-@if($receiptStale)<div class="app-content warning" role="alert">This purchase changed since receiving was opened. Your receipt values are retained. Use “Reconcile with updated order” on Receive, then check new and removed items.</div>@endif
 @if($reviewErrors)<div class="app-content error" role="alert"><ul>
 @foreach($reviewErrors as $field=>$messages)
 @php
@@ -27,10 +30,11 @@
     if(preg_match('/^lines\.([A-Za-z0-9-]+)\.(quantity|unit|cost|fee|description|item_id)$/',$field,$match)) { $targetTab=$editTab; $targetId='purchase-line-'.$match[1].'-'.($match[2]==='item_id'?'description':$match[2]); }
     elseif(in_array($field,['title','supplier_id','delivery_choice','delivery_name','delivery_address','delivery_email','delivery_phone','receiving_location_id','ordered_date','shipped_date','received_date'])) { $targetTab=$field==='received_date' ? 'receive' : 'order'; $targetId='purchase-'.$field; if($field!=='received_date')$targetMode='order'; }
     elseif(in_array($field,['other_fees','discount','tax','shipping','shipping_method'])) { $targetTab='charges'; $targetId='purchase-'.$field; }
-    elseif($mode==='receipt' && in_array($field,['source_order_operation','revision'])) { $targetTab='receive';$targetId='app-main'; }
     elseif($field==='order') { $targetTab='order-review';$targetMode='order';$targetId='app-main'; }
 @endphp
-@foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$targetMode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif</li>@endforeach
+@foreach((array)$messages as $message)<li>@if($targetTab)<a href="{{ $base }}?{{ http_build_query(['tab'=>$targetTab,'mode'=>$targetMode]) }}#{{ $targetId }}">{{ $message }}</a>@else{{ $message }}@endif
+
+</li>@endforeach
 @endforeach
 </ul></div>@endif
 <form class="app-panel-stack" id="purchase-invoice-form" method="post" action="{{ $base }}/invoice" data-purchase-invoice data-workspace-dirty="{{ $invoiceDirty ? 'true' : 'false' }}" novalidate>
@@ -39,9 +43,9 @@
 <input type="hidden" name="revision" value="{{ $revision }}"><input type="hidden" name="mode" value="{{ $mode }}"><input type="hidden" name="tab" value="{{ $tab }}"><input type="hidden" name="next_tab" value="{{ $next[$tab] ?? $tab }}">
 @foreach($tabs as $section=>$heading)
 <section class="purchase-step app-panel-stack" data-step="{{ $section }}" @if($section!==$tab) hidden @endif>
-<div class="app-content app-record-content purchase-panel"><x-workflow.heading><h2>{{ $section==='order' && $mode==='receipt' ? 'Receipt details' : $heading }}</h2>
+<div class="app-content app-record-content purchase-panel"><x-workflow.heading><h2>{{ $panelLabels[$section] }}</h2>
 @if(!$readonly)
-@if(isset($next[$section]))<x-app.action variant="primary" type="submit" name="action" value="next" >Next ▷</x-app.action>@elseif($section===$reviewTab)<x-app.action variant="primary" type="submit" name="action" value="confirm"  :disabled="!$preview || count($reviewErrors)>0 || ($mode==='receipt' && !($preview['can_confirm'] ?? false))">{{ $mode==='receipt' ? 'Confirm receipt' : (in_array($row->status,['Ordered','Shipped']) ? 'Update order' : 'Record order') }}</x-app.action>@endif
+@if(isset($next[$section]))<x-app.action variant="primary" type="submit" name="action" value="next" >{{ $buttonLabels[$section] }}</x-app.action>@elseif($section===$reviewTab)<x-app.action variant="primary" type="submit" name="action" value="confirm"  :disabled="!$preview || count($reviewErrors)>0">{{ $buttonLabels[$section] }}</x-app.action>@endif
 @endif
 </x-workflow.heading>
 @if($section==='order')
@@ -56,7 +60,7 @@
 @if($actualSupplier)<dt>Supplier status</dt><dd>{{ ucfirst($actualSupplier->state) }}</dd>@foreach(['website'=>'Website','contact_name'=>'Contact','email'=>'Email','phone'=>'Phone'] as $field=>$label)@if($actualSupplier->$field)<dt>{{ $label }}</dt><dd>{{ $actualSupplier->$field }}</dd>@endif @endforeach
 @endif
 </x-app.detail-list>
-@if(!$readonly)<p class="notice" data-supplier-verification @if($actualSupplier?->state!=='unverified') hidden @endif>This supplier needs explicit verification before Record order. <a data-supplier-review href="/catalog/suppliers/{{ $actualSupplier?->id }}/edit">Review and verify supplier</a></p>@endif
+@if(!$readonly)<p class="notice" data-supplier-verification @if($actualSupplier?->state!=='unverified') hidden @endif>This supplier needs explicit verification before Record order. <x-app.action type="button" size="small" data-supplier-review data-purchase-work="{{ $token }}" data-review-url="/catalog/suppliers/{{ $actualSupplier?->id }}/edit?purchase_work={{ $token }}">Review and verify supplier</x-app.action></p>@endif
 </fieldset>
 @if(!$readonly && $row->status!=='Draft')<div class="app-inline-group"><x-app.action type="submit" name="action" value="replace_vendor" data-replace-vendor data-original-supplier="{{ $row->supplier_id ?: $requestedSupplier?->id }}" :disabled="true">Replace supplier</x-app.action><label class="app-choice"><input type="checkbox" name="delete_unused_vendor" value="1" disabled> Remove the original supplier if unused</label></div><p class="app-field-help">Replacement preserves the submitted and current supplier details in a permanent note. Used or shared suppliers are retained.</p>@endif
 <label>Procurer<input value="{{ $values['procurer_name'] ?? auth()->user()->displayName() }}" readonly></label>
@@ -77,50 +81,33 @@
 </div></div>
 </fieldset>
 @if(!$readonly && $mode==='order' && $row->status==='Ordered')<p>Mark shipped records the date and status; it does not move stock.</p><x-app.action type="submit" name="action" value="ship">Mark shipped</x-app.action>@endif
-@elseif($section==='invoice' || $section==='receive')
-<p>{{ $section==='receive' ? 'Verify the actual delivery and final invoice. Saving does not add stock.' : 'Enter the actual supplier invoice. Requested quantities remain a reference.' }}</p>
-@if($section==='receive' && $mode==='receipt')<label>Receiver<input value="{{ $values['receiver_name'] ?? ($readonly ? '—' : auth()->user()->displayName()) }}" readonly></label><label>Received<input id="purchase-received_date" type="date" name="received_date" value="{{ $values['received_date'] ?? '' }}" @readonly($readonly)></label><p><a href="{{ $base }}?tab=order&mode=receipt">Receipt details</a> · <a href="{{ $base }}?tab=charges&mode=receipt">Receipt charges</a></p>@if($receiptStale && !$readonly)<x-app.action type="submit" name="action" value="reconcile_receipt">Reconcile with updated order</x-app.action>@endif @endif
+@elseif($section==='invoice')
+<p>Enter the actual supplier invoice. Requested quantities remain a reference.</p>
 @elseif($section==='charges')
 @include('purchase.partials.charges')
-@elseif($section==='order-review' || $section==='confirmation')
+@elseif($section==='order-review')
 <x-app.detail-list variant="content" ><dt>Title</dt><dd>{{ $values['title'] ?? $row->title }}</dd><dt>Supplier</dt><dd>{{ $preview['vendor_snapshot']['name'] ?? $suppliers->firstWhere('id',(int)($values['supplier_id'] ?? 0))?->name ?? '—' }}</dd><dt>Deliver to</dt><dd>{{ $values['delivery_name'] ?? '—' }}</dd><dt>Mailing address</dt><dd>{{ $values['delivery_address'] ?? '—' }}</dd><dt>{{ $mode==='receipt' ? 'Received' : 'Ordered' }}</dt><dd>{{ $reviewDate }}</dd></x-app.detail-list>
 @if($row->status==='Received')<p>Received is final. These are stored purchase values.</p>
-@elseif($mode==='order')<p>Recording the order changes Ordered quantities only for catalog items going to storage. Held stock and catalog Unit Cost do not change until final receipt.</p>
+@elseif($mode==='order')@if($section!=='order-review')<p>Recording the order changes Ordered quantities only for catalog items going to storage. Held stock and catalog Unit Cost do not change until final receipt.</p>@endif
 @else<p>Final receipt clears this purchase’s Ordered quantities and applies the confirmed stock and Unit Cost effects.</p>@endif
 @if(!$preview)<p>Complete the invoice and required details before confirmation.</p>@endif
-@if($section==='order-review' && $preview)
-<h3>Ordered quantities</h3><x-app.detail-list variant="content" >@foreach($preview['lines'] as $line)<dt>{{ $line['description'] ?? $catalogItems->firstWhere('id',(int)($line['item_id'] ?? 0))?->name ?? 'Item' }}</dt><dd>{{ !empty($line['item_id']) && str_starts_with($values['delivery_choice'] ?? '', 'location:') ? number_format($line['quantity']).' Ordered' : 'No inventory quantity' }}</dd>@endforeach</x-app.detail-list>
-@endif
 @endif
 </div>
 @if($section===$editTab)
 @include('purchase.partials.invoice-material')
 @endif
-@if(($section===$reviewTab || $section==='charges') && $preview)
-<p data-derived-stale hidden>Amounts changed. Open a fresh review to calculate the saved allocations.</p>
-<x-app.table-region data-invoice-derived label="Acquisition cost breakdown" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="all"><table><thead><tr><th>Item</th><th>Units</th>@foreach(['cost'=>'Cost','fee'=>'Fee','other'=>'Other fees','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping','acquisition'=>'Acquisition'] as $key=>$label)<th>{{ $label }} ($)</th>@endforeach<th>Acquisition / unit</th></tr></thead><tbody>
-@php($group=null)
-@foreach($items as $item)
-@php($id=$item['id'])
-@if(isset($preview['lines'][$id]))
-@php($line=$preview['lines'][$id])
-@if($group!==$item['group'])@php($group=$item['group'])<tr><th colspan="10">{{ $group }}</th></tr>@endif
-<tr><th>{{ $item['name'] }}</th><td>{{ number_format($line['quantity']) }}</td>@foreach(['cost','fee','other','discount','tax','shipping','acquisition'] as $field)<td>{{ \App\Support\PurchaseCosting::dollars($line[$field]) }}</td>@endforeach<td>${{ \Brick\Math\BigDecimal::of($line['acquisition_unit'])->toScale(3, \Brick\Math\RoundingMode::HalfUp) }}</td></tr>
-@endif
-@endforeach
-</tbody><tfoot><tr><th colspan="9">Total USD</th><td>{{ \App\Support\PurchaseCosting::dollars($preview['total']) }}</td></tr></tfoot></table></x-app.table-region>
-@if($section==='confirmation')
-@include('purchase.partials.confirmation')
+@if($section===$reviewTab || $section==='charges')
+<div data-allocation-preview-host>
+@if($preview)@include('purchase.partials.acquisition-breakdown', ['showRecalculate' => $section !== 'order-review'])@endif
+</div>
 
-@endif
 @endif
 </section>
 @endforeach
-@if(!$readonly && $mode==='receipt')<div class="app-content purchase-panel"><x-app.action type="submit" name="action" value="cancel_receipt">Cancel receiving</x-app.action></div>@endif
 </form>
 <x-app.collapsible-panel title="Permanent notes"><form method="post" action="{{ $base }}/note">@csrf<label>Note<textarea name="note" required maxlength="5000" rows="3"></textarea></label><x-app.action type="submit">Add note</x-app.action></form>@foreach($notes as $note)<article><p><strong>{{ $note->actor_name }}</strong> · {{ \App\Support\DisplayDates::timestamp($note->occurred_at) }}</p><p class="plain-text">{{ $note->body }}</p></article>@endforeach</x-app.collapsible-panel>
 @if($procurement && in_array($row->status,['Draft','Request','Ordered','Shipped']))
-<x-app.collapsible-panel title="Other actions"><div class="app-inline-group">@if(!$readonly && $mode==='order')<x-app.action type="submit" form="purchase-invoice-form" name="action" value="discard_order">Discard order draft</x-app.action>@endif<form class="app-inline-group" method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<x-app.action type="submit" name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</x-app.action>@endif <x-app.action type="submit" name="action" value="cancel">Cancel purchase</x-app.action></form></div></x-app.collapsible-panel>
+<x-app.collapsible-panel title="Other actions"><div class="app-inline-group">@if(!$readonly && $mode==='order')<x-app.action type="submit" form="purchase-invoice-form" name="action" value="discard_order">Discard order draft</x-app.action>@endif<form id="purchase-transition-form" class="app-inline-group" method="post" action="{{ $base }}/transition" data-confirm-transition>@csrf<input type="hidden" name="revision" value="{{ $revision }}">@if($row->status!=='Draft')<x-app.action type="submit" name="action" value="backward">Return to {{ ['Request'=>'Draft','Ordered'=>'Request','Shipped'=>'Ordered'][$row->status] }}</x-app.action>@endif <x-app.action type="submit" name="action" value="cancel">Cancel purchase</x-app.action></form></div></x-app.collapsible-panel>
 @endif
 
 </x-app.panel-stack>

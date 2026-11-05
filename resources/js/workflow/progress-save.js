@@ -24,7 +24,15 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
             const response = await fetch(endpoint, {method:'POST', body:payload, headers:{Accept:'application/json'}});
             const result = (response.headers.get('content-type') || '').includes('application/json') ? await response.json() : {};
             if (!response.ok || result.saved !== true) await onError(result);
-            else { await onSaved(result); saved = result; }
+            else {
+                await onSaved(result);
+                const subtitle = document.querySelector('[data-page-subtitle]');
+                if (subtitle && typeof result.values?.title === 'string') {
+                    subtitle.textContent = result.values.title;
+                    subtitle.hidden = result.values.title.trim() === '';
+                }
+                saved = result;
+            }
         } catch {
             await onError({message:'Progress could not be saved. Your entered values are retained; try again.'});
         } finally {
@@ -41,9 +49,15 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
 // Purchase adapter: one progress endpoint, generation-based dirty clearing.
 export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, canSave = () => true, getGeneration = () => 0 }) {
     const controller = createProgressController(form, {onBusy});
-    form.addEventListener('submit', async event => {
-        if ((event.submitter?.value || 'save') !== 'save') return;
-        event.preventDefault();
+    const button = [...document.querySelectorAll('[data-save-shortcut]')].find(button => button.form === form);
+    let nativeSaveDisabled = null;
+    window.addEventListener('pageshow', () => {
+        if (nativeSaveDisabled === null) return;
+        button.disabled = nativeSaveDisabled;
+        nativeSaveDisabled = null;
+        setSaveBusy(button, false);
+    });
+    const saveProgress = async () => {
         if (controller.isBusy()) return;
         if (!canSave()) {
             showNotice(feedback, 'Wait for the catalog search to finish before saving.', 'warning');
@@ -56,6 +70,23 @@ export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, 
             onError: result => showNotice(feedback, Object.values(result.errors || {}).flat().join(' ') || result.message || 'Progress could not be saved. Your entered values are retained.', 'error')
         });
         if (saved) onSaved(saved, {unchanged:generation === getGeneration()});
+        return saved;
+    };
+    form.addEventListener('submit', event => {
+        const action = event.submitter?.value || 'save';
+        if (action === 'next') {
+            // Native Next posts use the same saving presentation as AJAX Save.
+            // Wait for all submit handlers; cancelled submissions must stay idle.
+            queueMicrotask(() => {
+                if (event.defaultPrevented || !button || nativeSaveDisabled !== null) return;
+                nativeSaveDisabled = button.disabled;
+                button.disabled = true;
+                setSaveBusy(button, true);
+            });
+        }
+        if (action !== 'save') return;
+        event.preventDefault();
+        void saveProgress();
     });
-    return controller;
+    return { ...controller, save: saveProgress };
 }
