@@ -3,6 +3,9 @@
     <x-app.page-heading :class="$__env->hasSection('relocation-save') || $__env->hasSection('purchase-save') || $__env->hasSection('page-actions') ? 'app-heading-with-actions' : ''">
         <x-slot:title>@yield('title')</x-slot:title>
         <x-slot:status>@yield('title-status')</x-slot:status>
+        @if($__env->hasSection('subtitle'))
+            <x-slot:subtitle>@yield('subtitle')</x-slot:subtitle>
+        @endif
         @hasSection('relocation-save')
             <x-slot:actions>@yield('relocation-save')</x-slot:actions>
         @elseif($__env->hasSection('purchase-save'))

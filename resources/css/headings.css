@@ -11,6 +11,7 @@
 .app-shell .app-heading-row-page.app-heading-with-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
 .app-shell .app-heading-row-page h1 { font-size: 1.5rem; line-height: 1.125; margin: 0; font-weight: var(--app-page-title-weight); }
 .app-heading-row-page p { margin: .25rem 0 0; }
+.app-page-subtitle { font-size: .875rem; font-weight: 600; color: #666; text-transform: uppercase; overflow-wrap: anywhere; }
 .app-heading-row-section { --app-heading-row-gap: var(--app-section-heading-gap); margin-bottom: var(--app-density-field-y); }
 .app-heading-row-table { --app-heading-row-gap: var(--app-table-heading-gap); }
 .app-shell .app-heading-row :is(h2, h3) { margin: 0; }

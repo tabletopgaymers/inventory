@@ -24,7 +24,15 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
             const response = await fetch(endpoint, {method:'POST', body:payload, headers:{Accept:'application/json'}});
             const result = (response.headers.get('content-type') || '').includes('application/json') ? await response.json() : {};
             if (!response.ok || result.saved !== true) await onError(result);
-            else { await onSaved(result); saved = result; }
+            else {
+                await onSaved(result);
+                const subtitle = document.querySelector('[data-page-subtitle]');
+                if (subtitle && typeof result.values?.title === 'string') {
+                    subtitle.textContent = result.values.title;
+                    subtitle.hidden = result.values.title.trim() === '';
+                }
+                saved = result;
+            }
         } catch {
             await onError({message:'Progress could not be saved. Your entered values are retained; try again.'});
         } finally {
