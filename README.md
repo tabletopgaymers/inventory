@@ -26,10 +26,19 @@ created.
 ### Frontend assets
 
 From the application root, run `npm ci` to install locked frontend dependencies.
-Use `npm run dev` alongside Herd for live CSS/JS development, leaving that terminal
-running; Ctrl+C stops it. If an interrupted process leaves `public/hot`, remove
-that stale marker before using built assets. Use `npm run build` to generate
-hashed assets and the manifest in ignored `public/build/`.
+Prefer Herd-managed Vite for live CSS/JS development, without keeping a terminal
+open. From this application directory, run `herd processes:start vite` and use
+`herd processes` / `herd processes:output vite` to inspect it. Stop it with
+`herd processes:stop vite`. Herd already serves PHP; do not start a duplicate
+Artisan web server/full dev stack. If Vite is part of an existing dev stack,
+stop that stack before starting standalone Vite.
+
+Manual `npm run dev` is an alternative that requires its terminal to remain open;
+use one method at a time. After selecting an updated Node version, verify
+`node --version` and restart Vite. If an interrupted process leaves `public/hot`,
+remove the stale marker only after confirming Vite is stopped. Use
+`npm run build` to generate hashed assets and the manifest in ignored
+`public/build/`; generated assets are built during deployment, not committed.
 
 The common shell loads `resources/css/app.css` and `resources/js/app.js`
 through Laravel Vite. CSS imports the existing Tailwind/daisyUI theme from
@@ -72,7 +81,10 @@ it is not loaded site-wide.
 
 Deployment must run `npm ci --include=dev` followed by
 `npm run build` in the Forge release directory before activating the release.
-The server needs compatible Node/npm (local Node 24); no Vite dev server runs on
+Every Forge site needs these steps in its own script; remote development's script
+does not update staging automatically. A deployment can finish successfully yet
+serve a missing-manifest 500 if the asset build was omitted. The server needs
+compatible Node/npm (local Node 24); no Vite dev server runs on
 the deployed site. Never deploy public/hot. Development mode uses the same entry
 points; no manual hashed-filename edits are needed.
 
@@ -84,6 +96,12 @@ Composer packages without development dependencies, installs/builds npm assets
 before activation, runs `php artisan migrate --force`,
 caches configuration and views, activates the release and restarts queues.
 Deployment does not run custom scripts, CI, tests, seeders or resets.
+
+On meeple01, the `node` executable is provided by NodeSource's APT `nsolid`
+package. Inspect the package owner and candidate before updating; do not assume
+the `nodejs` package is installed or replace the runtime incidentally. Node patch
+updates are separate from application dependency updates. Verify the version as
+the site deployment user and check a normal authorized asset build afterward.
 
 Keep the existing shared environment and storage configuration. Preserve business
 data, immutable history and runtime authorization when deploying. Sample data
@@ -104,12 +122,37 @@ label. Installations without release metadata display `Version unavailable`;
 existing non-SHA revision labels remain supported. No Git commands run during
 deployed page requests, and no generated revision file is required.
 
+When rebuilding configuration outside deployment, preserve existing injected
+release metadata; it may not be stored in the private `.env`.
+
 With `APP_ENV=local`, the footer instead reads the current checkout's Git branch
 and commit on each page render, adding `modified` for staged, unstaged or
 untracked changes. Ignored files such as .env, build output and private inputs do
 not mark it modified. Refresh after a commit or branch switch to update the label.
 A detached checkout displays `Detached HEAD`. If Git is unavailable, slow or the
 checkout has no .git, recorded metadata is used without breaking the page.
+
+### Redis connections
+
+Redis is prepared for future selective caching. Existing defaults remain file
+cache, database sessions and synchronous queues; configuring a connection does
+not enable catalog caching. Database sessions are currently required by startup
+validation. Local Redis is managed by Herd on `127.0.0.1:6379`, without a password,
+with connection prefix `tg:inventory_local:`. Keep it loopback-only.
+
+Remote Inventory environments have separate ACL users/passwords and key prefixes.
+Store credentials only in private environment/configuration and the password
+manager. The production Redis account is prepared, but the production application
+has not been configured to use it. Shared/default credentials are not Inventory
+application credentials.
+
+meeple01 uses a persistent Redis ACL file. Forge's Set password action alone does
+not synchronize that ACL's default-user password; follow the server's Forge Notes
+and maintained Redis operating reference when rotating it. Preserve named-user
+restrictions and verify fresh connections. Database-wide `FLUSHDB`/`FLUSHALL`
+operations are denied to application users; future cache invalidation must respect
+the application's key namespace. Do not broaden permissions just to make
+`cache:clear` succeed. Do not run dated one-time setup scripts blindly.
 
 ## Additional installations
 
