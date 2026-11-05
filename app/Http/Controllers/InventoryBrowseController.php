@@ -14,7 +14,7 @@ class InventoryBrowseController
 {
     private function ready(): void
     {
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['catalogReady'], 503, 'Inventory browsing is not ready.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['catalogReady'], 503, 'Inventory browsing is not ready.');
     }
 
     private function context(Request $request, string $token): array

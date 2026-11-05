@@ -15,7 +15,7 @@ class CheckBaseline
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $baseline = app(BaselineProbe::class)->inspect();
+        $baseline = app(BaselineProbe::class)->inspect(auditSchema: false);
         if (! $baseline['ready']) {
             return new \Illuminate\Http\Response(view('welcome', $baseline)->render(), 503);
         }

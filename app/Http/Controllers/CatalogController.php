@@ -24,7 +24,7 @@ class CatalogController
 
     private function ready(): void
     {
-        abort_unless(app(BaselineProbe::class)->schemaState(DB::connection())['catalogReady'], 503, 'Catalog is not ready.');
+        abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['catalogReady'], 503, 'Catalog is not ready.');
     }
 
     public function index(Request $request, string $kind = 'categories')
