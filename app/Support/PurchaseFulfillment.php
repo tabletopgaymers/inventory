@@ -180,6 +180,41 @@ class PurchaseFulfillment
         return RequestStock::header('purchase', $id)['purchase_progress'][$actorId][$mode] ?? null;
     }
 
+    public function currentOrderValues(int $actorId, int $id, mixed $revision): array
+    {
+        abort_unless(RequestValues::manages(RequestValues::actor($actorId), 'procurement'), 403);
+        $row = DB::table('purchase_requests')->where('id', $id)->firstOrFail();
+        RequestValues::revision($revision, $row);
+        $draft = $this->progressDraft($actorId, $id, 'order');
+        if ($draft) RequestValues::revision($draft['revision'], $row);
+
+        return PurchaseProgress::invoice($draft['values'] ?? $this->data($id));
+    }
+
+    public function completeCurrentOrder(int $actorId, int $id, mixed $revision, string $date, string $operation): array
+    {
+        return DB::transaction(function () use ($actorId, $id, $revision, $date, $operation) {
+            $actor = RequestValues::actor($actorId);
+            abort_unless(RequestValues::manages($actor, 'procurement'), 403);
+            abort_unless(Str::isUuid($operation), 422);
+            $row = DB::table('purchase_requests')->where('id', $id)->lockForUpdate()->firstOrFail();
+            $header = RequestStock::header('purchase', $id);
+            if ($row->status === 'Received' && ($header['receipt_operation'] ?? null) === $operation) {
+                abort_unless((int) ($header['receipt_actor'] ?? 0) === $actorId, 403);
+                return ['duplicate' => true];
+            }
+            abort_unless(in_array($row->status, ['Ordered', 'Shipped'], true), 409);
+            $values = $this->currentOrderValues($actorId, $id, $revision);
+            $values['received_date'] = RequestStock::date($date, 'received_date');
+            // Apply saved amendments and receive that same invoice atomically.
+            $this->recordOrder($actorId, $id, $revision, $values, 'confirm', (string) Str::uuid());
+            $row = DB::table('purchase_requests')->where('id', $id)->firstOrFail();
+            $values['source_order_operation'] = RequestStock::header('purchase', $id)['order_operation'];
+
+            return $this->recordReceipt($actorId, $id, $row->revision, $values, $operation);
+        }, 3);
+    }
+
     public function assertReceiptSource(array $header, array $values): void
     {
         if (empty($header['order_operation']) || ($values['source_order_operation'] ?? null)!==$header['order_operation']) throw ValidationException::withMessages(['source_order_operation'=>'The recorded order changed. Your receipt values are retained; reconcile with the updated order before continuing.']);

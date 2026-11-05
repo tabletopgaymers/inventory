@@ -11,7 +11,6 @@ return [
         'charges' => 'Fees',
         'order-review' => 'Order',
         'receive' => 'Receive',
-        'confirmation' => 'Confirmation',
     ],
     // First panel headings can differ from navigation labels independently.
     'panels' => [
@@ -23,7 +22,6 @@ return [
         'charges' => 'Update order fees',
         'order-review' => 'Review and place order',
         'receive' => 'Receive delivery',
-        'confirmation' => 'Review and confirm completed',
     ],
     'buttons' => [
         'basic' => 'Next ▷',
@@ -33,7 +31,6 @@ return [
         'invoice' => 'Next ▷',
         'charges' => 'Next ▷',
         'order-review' => 'Mark Ordered ✓',
-        'receive' => 'Next ▷',
-        'confirmation' => 'Mark Completed ✓',
+        'receive' => 'Mark Completed ✓',
     ],
 ];

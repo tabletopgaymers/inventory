@@ -31,6 +31,7 @@ export default defineConfig({
             'resources/js/relocation.js',
             'resources/js/purchase-request.js',
             'resources/js/purchase-work-invoice.js',
+            'resources/js/purchase-receive.js',
             'resources/js/workflow-demo.js',
             'resources/css/browser-memory-demo.css',
             'resources/js/browser-memory-demo.js',

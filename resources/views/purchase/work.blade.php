@@ -22,7 +22,7 @@
 <x-workflow.tabs prefix="purchase" label="Purchase request steps" :active="$tab" :tabs="array_intersect_key($stepLabels, array_flip(['basic','material','review']))">
 <nav class="workflow-tabs" aria-label="Purchase fulfillment steps" data-fulfillment-links @if(!$work['id']) hidden @endif>
 @foreach(array_diff_key($stepLabels, array_flip(['basic','material','review'])) as $key=>$label)
-@if(!in_array($key,['receive','confirmation']) || in_array($row?->status,['Ordered','Shipped','Received']))<x-app.action  href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</x-app.action>@endif
+@if($key!=='receive' || in_array($row?->status,['Ordered','Shipped','Received']))<x-app.action  href="/purchase/work/{{ $token }}?tab={{ $key }}">{{ $label }}</x-app.action>@endif
 @endforeach
 </nav>
 </x-workflow.tabs>

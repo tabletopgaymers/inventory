@@ -114,24 +114,14 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
             navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Discard order draft?',actionLabel:'Discard draft',text:'Discard your saved and unsaved order edits and reload the latest request or recorded order? This does not cancel the purchase or change inventory.'});
             return;
         }
-        if (event.submitter?.value === 'reconcile_receipt' && !navigation.isLeaving()) {
-            event.preventDefault(); const button=event.submitter;
-            navigation.confirm(()=>form.requestSubmit(button),{origin:button,title:'Reconcile with updated order?',actionLabel:'Reconcile',text:'Keep your entered receiving values and use the updated order as their reference? New items need receiving counts; check removed and changed items before confirmation.'});
-            return;
-        }
+
         if (event.submitter?.value === 'replace_vendor' && !navigation.isLeaving()) {
             event.preventDefault(); const button = event.submitter;
             navigation.confirm(() => form.requestSubmit(button), {origin:button,title:'Replace supplier?',actionLabel:'Replace supplier',
                 text:'Replace the supplier with the selected supplier and preserve its details in a permanent note? If removal is selected, only an unused, unshared supplier will be deleted. Your other pending order edits will also be saved.'});
             return;
         }
-        if (event.submitter?.value === 'cancel_receipt' && !navigation.isLeaving()) {
-            event.preventDefault();
-            const button = event.submitter;
-            navigation.confirm(() => form.requestSubmit(button), { origin: button, title: 'Cancel receiving?',
-                text: 'Unsaved invoice edits and the saved receipt draft will be discarded.', actionLabel: 'Cancel receiving' });
-            return;
-        }
+
         navigation.allowDeparture();
     });
     document.querySelectorAll('form:not([data-purchase-invoice])').forEach(other => other.addEventListener('submit', event => {
