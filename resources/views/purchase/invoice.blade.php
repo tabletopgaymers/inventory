@@ -108,7 +108,7 @@
 @php($id=$item['id'])
 @if(isset($preview['lines'][$id]))
 @php($line=$preview['lines'][$id])
-@if($group!==$item['group'])@php($group=$item['group'])<tr><th colspan="10">{{ $group }}</th></tr>@endif
+@if($group!==$item['group'])@php($group=$item['group'])<tr class="group-row"><th colspan="10" scope="rowgroup">{{ $group }}</th></tr>@endif
 <tr><th>{{ $item['name'] }}</th><td>{{ number_format($line['quantity']) }}</td>@foreach(['cost','fee','other','discount','tax','shipping','acquisition'] as $field)<td>{{ \App\Support\PurchaseCosting::dollars($line[$field]) }}</td>@endforeach<td>${{ \Brick\Math\BigDecimal::of($line['acquisition_unit'])->toScale(3, \Brick\Math\RoundingMode::HalfUp) }}</td></tr>
 @endif
 @endforeach

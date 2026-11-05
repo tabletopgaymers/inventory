@@ -87,7 +87,7 @@
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-tracking" labelledby="relocation-tab-tracking" :active="$step === 'tracking'">
         <p class="app-content" data-tracking-unavailable @if(in_array($status, ['Accepted', 'Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>Not available</p>
         <div class="app-panel-stack" data-tracking-content @if(!in_array($status, ['Accepted', 'Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>
-            <div class="app-content"><h2>Saved tracking</h2><p data-tracking-empty>No tracking saved yet.</p><div class="tracking-saved-scroll"><table class="tracking-saved-table" aria-label="Saved tracking" hidden><tbody data-tracking-saved></tbody></table></div></div>
+            <div class="app-content"><x-workflow.heading><h2>Saved tracking</h2><x-app.action variant="primary" type="submit" name="action" value="next" data-next-tab="ship" data-tracking-next :disabled="!$manager || $status === 'Cancelled'">Next ▷</x-app.action></x-workflow.heading><p data-tracking-empty>No tracking saved yet.</p><div class="tracking-saved-scroll"><table class="tracking-saved-table" aria-label="Saved tracking" hidden><tbody data-tracking-saved></tbody></table></div></div>
             <div class="app-content">
             <fieldset class="app-entry-fieldset" data-tracking-fields @disabled(!$manager || $status === 'Cancelled')>
                 <div data-tracking-lines></div>
@@ -109,19 +109,23 @@
     <x-workflow.tab-panel class="app-panel-stack" id="relocation-panel-ship" labelledby="relocation-tab-ship" :active="$step === 'ship'">
         <div class="app-content">
             <x-workflow.heading><h2>Review shipment</h2><x-app.action variant="primary" type="submit" name="action" value="ship"  data-relocation-ship :disabled="!$manager || $status !== 'Accepted'">Ship</x-app.action></x-workflow.heading>
+            <div class="app-columns app-columns-two">
             <x-app.detail-list variant="content" >
                 @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                 <dt>{{ $label }}</dt><dd class="plain-text" data-ship-field="{{ $field }}">—</dd>
                 @endforeach
+            </x-app.detail-list>
+            <x-app.detail-list variant="content">
                 <dt>Requester</dt><dd data-ship-requester>{{ $requesterName }}</dd>
                 <dt>Requested</dt><dd data-ship-requested-date>{{ $requestedDate ?? '—' }}</dd>
                 <dt>Fulfiller</dt><dd data-ship-fulfiller>{{ $fulfillerName }}</dd>
                 <dt><label id="relocation-shipping-label" for="relocation-shipping-date" data-shipping-label><span data-shipping-label-text>{{ now()->toDateString() > $shippingDate ? 'Shipped' : 'Shipping' }}</span></label></dt>
-                <dd>
+                <dd class="app-inline-group">
                     <input type="date" id="relocation-shipping-date" name="shipping_date" value="{{ $shippingDate }}" data-shipping-date required @readonly(!$manager || $status !== 'Accepted') @if(in_array($status, ['Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>
                     <span data-shipping-date-display aria-labelledby="relocation-shipping-label" @if(!in_array($status, ['Fulfilled', 'Received', 'Completed', 'Cancelled'])) hidden @endif>{{ $shippingDate ? \Illuminate\Support\Carbon::parse($shippingDate)->format('d M Y') : '—' }}</span>
                 </dd>
             </x-app.detail-list>
+            </div>
         </div>
         <x-app.table-region label="Shipment material review" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
             <x-slot:header><h2>Material</h2></x-slot:header>
@@ -146,15 +150,22 @@
         <div class="app-panel-stack" data-confirmation-content @if(!in_array($status, ['Received', 'Completed'])) hidden @endif>
             <div class="app-content">
                 <x-workflow.heading><h2>Confirmation</h2><x-app.action variant="primary" type="submit" name="action" value="complete"  data-relocation-complete :disabled="!$manager || $status !== 'Received'">Complete</x-app.action></x-workflow.heading>
+                <div class="app-columns app-columns-two">
                 <x-app.detail-list variant="content" >
                     @foreach(['title' => 'Title', 'source_location_id' => 'Source', 'destination_location_id' => 'Destination', 'details' => 'Notes'] as $field => $label)
                     <dt>{{ $label }}</dt><dd class="plain-text" data-confirmation-field="{{ $field }}">—</dd>
                     @endforeach
+                </x-app.detail-list>
+                <x-app.detail-list variant="content">
                     <dt>Requester</dt><dd>{{ $requesterName }}</dd>
                     <dt>Requested</dt><dd data-confirmation-requested-date>{{ $requestedDate ?? '—' }}</dd>
                     <dt>Fulfiller</dt><dd data-confirmation-fulfiller>{{ $fulfillerName }}</dd>
                     <dt data-confirmation-shipping-label>Shipping</dt><dd data-confirmation-shipping-date>—</dd>
+                    @foreach(['receiver'=>'Receiver','received'=>'Received','completer'=>'Completed by','completed'=>'Completed'] as $field=>$label)
+                    <dt data-completion-detail @if($status!=='Completed') hidden @endif>{{ $label }}</dt><dd data-completion-detail data-completion-field="{{ $field }}" @if($status!=='Completed') hidden @endif>{{ $completionDetails[$field] }}</dd>
+                    @endforeach
                 </x-app.detail-list>
+                </div>
             </div>
             <x-app.table-region label="Reconciliation confirmation" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
                 <x-slot:header><h2>Material</h2></x-slot:header>

@@ -534,6 +534,9 @@ import './inventory-search-controls.js';
         const printButton = sharedTable.querySelector('[data-fulfillment-print]');
         printButton.hidden = policy.tab !== 'fulfillment';
         printButton.disabled = busy;
+        const fulfillmentNext = sharedTable.querySelector('[data-fulfillment-next]');
+        fulfillmentNext.hidden = policy.tab !== 'fulfillment';
+        fulfillmentNext.disabled = busy || !policy.fulfilled;
         const reconcileNext = sharedTable.querySelector('[data-reconcile-next]');
         reconcileNext.hidden = policy.tab !== 'reconcile';
         reconcileNext.disabled = busy || !policy.received;
@@ -596,6 +599,8 @@ import './inventory-search-controls.js';
         form.querySelector('[data-tracking-content]').hidden = !trackingAvailable;
         form.querySelector('[data-tracking-unavailable]').hidden = trackingAvailable;
         form.querySelector('[data-tracking-fields]').disabled = busy || !canEditTracking();
+        form.querySelector('[data-tracking-next]').disabled = busy || !canEditTracking();
+        form.querySelectorAll('[data-completion-detail]').forEach(element => { element.hidden = form.dataset.status !== 'Completed'; });
         refreshShipment();
         refreshConfirmation();
         save.disabled = busy || !(form.dataset.editable === 'true' || (manager && accepted && ['basic', 'fulfillment'].includes(activeTab())) || (manager && form.dataset.status === 'Received' && activeTab() === 'reconcile') || (canEditTracking() && activeTab() === 'tracking'));
@@ -732,6 +737,9 @@ import './inventory-search-controls.js';
             if ('requestedDate' in result) form.querySelector('[data-ship-requested-date]').textContent = result.requestedDate || '—';
             if (result.shippingDate) form.querySelector('[data-shipping-date]').value = result.shippingDate;
             if (result.fulfillerName) form.querySelector('[data-ship-fulfiller]').textContent = result.fulfillerName;
+            if (result.completionDetails) Object.entries(result.completionDetails).forEach(([field, value]) => {
+                form.querySelector(`[data-completion-field="${field}"]`).textContent = value;
+            });
             if (result.fulfilled) {
                 fulfilledValues = result.fulfilled;
                 fulfillmentBody.querySelectorAll('[data-fulfillment-quantity]').forEach(input => { input.value = fulfilledValues[input.dataset.itemId] ?? ''; });

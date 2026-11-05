@@ -73,6 +73,7 @@ class RelocationController
             'requestedDate' => $work['id'] ? $this->requestedDate((int) $work['id']) : null,
             'fulfillerName' => isset($shipment['shipment_actor']) ? ($shipment['shipment_actor_name'] ?? \App\Models\User::find($shipment['shipment_actor'])?->displayName() ?? 'Unknown') : (RequestValues::manages($request->user(), 'manager') ? $request->user()->displayName() : '—'),
             'shippingDate' => $shipment['shipped_date'] ?? now()->toDateString(),
+            'completionDetails' => $this->completionDetails($shipment),
             'items' => app(CatalogRecords::class)->records('items'),
             'materialItems' => app(RequestCatalog::class)->rows(array_map('intval', array_keys($work['lines'] ?? [])), $work['source_location_id'] ? (int) $work['source_location_id'] : null, $work['destination_location_id'] ? (int) $work['destination_location_id'] : null, naturalNames: true),
             'fulfilled' => $work['id'] ? DB::table('relocation_request_lines')->where('relocation_request_id', $work['id'])->pluck('fulfillment_quantity', 'item_id')->all() : [],
@@ -108,6 +109,16 @@ class RelocationController
             ->first(fn ($activity) => (json_decode($activity->current ?? '{}', true)['status'] ?? null) === 'Requested');
 
         return $activity ? \Illuminate\Support\Carbon::parse($activity->occurred_at, 'UTC')->timezone(config('app.timezone'))->format('d M Y') : null;
+    }
+
+    private function completionDetails(array $shipment): array
+    {
+        return [
+            'receiver' => $shipment['received_actor_name'] ?? (isset($shipment['received_actor']) ? (\App\Models\User::find($shipment['received_actor'])?->displayName() ?? 'Unknown') : '—'),
+            'received' => !empty($shipment['received_date']) ? \App\Support\DisplayDates::businessDate($shipment['received_date']) : '—',
+            'completer' => isset($shipment['receipt_actor']) ? (\App\Models\User::find($shipment['receipt_actor'])?->displayName() ?? 'Unknown') : '—',
+            'completed' => !empty($shipment['completed_date']) ? \App\Support\DisplayDates::businessDate($shipment['completed_date']) : '—',
+        ];
     }
 
     public function save(Request $request, string $token)
@@ -315,7 +326,8 @@ class RelocationController
         $addedStages = DB::table('relocation_request_lines')->where('relocation_request_id', $row->id)->pluck('added_stage', 'item_id')->all();
         $received = DB::table('relocation_fulfillment_lines')->where('relocation_request_id', $row->id)->pluck('received', 'item_id')->all();
         $request->session()->put('relocation_workspace.'.$token, array_replace($work, $fields, ['revision' => (int) $row->revision, 'lines' => $lines]));
-        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'values' => $fields, 'lines' => $lines, 'fulfilled' => $fulfilled, 'received' => $received, 'addedStages' => $addedStages]);
+        if ($request->expectsJson()) return response()->json(['saved' => true, 'id' => (int) $row->id, 'revision' => (int) $row->revision, 'status' => $row->status, 'values' => $fields, 'lines' => $lines, 'fulfilled' => $fulfilled, 'received' => $received, 'addedStages' => $addedStages,
+            'completionDetails' => $row->status === 'Completed' ? $this->completionDetails(RequestStock::header('relocation', $row->id)) : null]);
 
         return redirect('/relocation/work/'.$token.'?tab='.$tab)->with('success', $tab === 'reconcile' ? 'Reconciliation saved.' : 'Fulfillment progress saved.');
     }

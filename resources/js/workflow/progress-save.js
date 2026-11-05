@@ -41,6 +41,14 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
 // Purchase adapter: one progress endpoint, generation-based dirty clearing.
 export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, canSave = () => true, getGeneration = () => 0 }) {
     const controller = createProgressController(form, {onBusy});
+    const button = [...document.querySelectorAll('[data-save-shortcut]')].find(button => button.form === form);
+    let nativeSaveDisabled = null;
+    window.addEventListener('pageshow', () => {
+        if (nativeSaveDisabled === null) return;
+        button.disabled = nativeSaveDisabled;
+        nativeSaveDisabled = null;
+        setSaveBusy(button, false);
+    });
     const saveProgress = async () => {
         if (controller.isBusy()) return;
         if (!canSave()) {
@@ -57,7 +65,18 @@ export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, 
         return saved;
     };
     form.addEventListener('submit', event => {
-        if ((event.submitter?.value || 'save') !== 'save') return;
+        const action = event.submitter?.value || 'save';
+        if (action === 'next') {
+            // Native Next posts use the same saving presentation as AJAX Save.
+            // Wait for all submit handlers; cancelled submissions must stay idle.
+            queueMicrotask(() => {
+                if (event.defaultPrevented || !button || nativeSaveDisabled !== null) return;
+                nativeSaveDisabled = button.disabled;
+                button.disabled = true;
+                setSaveBusy(button, true);
+            });
+        }
+        if (action !== 'save') return;
         event.preventDefault();
         void saveProgress();
     });
