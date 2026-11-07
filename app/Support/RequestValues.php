@@ -76,12 +76,12 @@ class RequestValues
 
     public static function manages(User $user, string $role): bool
     {
-        return $user->enabled && $user->validContact() && ($user->hasRole('admin') || $user->hasRole($role));
+        return $user->enabled && ($user->hasRole('admin') || $user->hasRole($role));
     }
 
     public static function elevated(User $user): bool
     {
-        return $user->enabled && $user->validContact() && array_intersect($user->roles(), ['admin', 'manager', 'procurement']) !== [];
+        return $user->enabled && array_intersect($user->roles(), ['admin', 'manager', 'procurement']) !== [];
     }
 
     public static function submitsOwn(User $user): bool

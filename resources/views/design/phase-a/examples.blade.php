@@ -17,10 +17,6 @@
     <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
     <label>Elevated roles<input readonly value="admin, manager, procurement"></label>
     <label>Microsoft account<input readonly value="sample@tabletopgaymers.org"></label>
-    <label>TG email<input data-optional type="email" value="sample@tabletopgaymers.org" placeholder="youremail@tabletopgaymers.org"></label>
-    <div class="app-profile-confirmation">TG email confirmation</div>
-    <label class="app-choice"><input type="checkbox"><span>Confirm my TG email address. Current status: <strong class="app-confirmation-status">Confirmed</strong></span></label>
-    <p class="app-field-help">Changing TG email clears its previous confirmation. Each user confirms their own address.</p>
     </div>
     <div>
     <label>Personal email<input data-optional type="email" placeholder="youremail@yourprovider.com"></label>

@@ -28,9 +28,6 @@ class AccessManagement
             if (in_array($role, $previous, true) === $grant) {
                 return;
             }
-            if ($grant && $role !== 'basic' && ! $target->validContact()) {
-                throw ValidationException::withMessages(['role' => 'this user has not verified their email address']);
-            }
             if ($grant) {
                 DB::table('user_roles')->insert(['user_id' => $targetId, 'role' => $role]);
             } else {
@@ -86,8 +83,6 @@ class AccessManagement
             $ownProfile = (int) $actor->id === (int) $user->id;
             abort_unless($actor->enabled && ($ownProfile || $actor->hasRole('admin')), 403);
             abort_unless(app(BaselineProbe::class)->runtimeState(DB::connection())['profilePreferencesReady'], 503, 'Profile preferences need guarded preparation. Your profile was not changed.');
-            $address = $data['contact_email'] ?: null;
-            $changed = $address !== $user->contact_email;
             $user->first_name = $data['first_name'];
             $user->last_name = $data['last_name'];
             if (array_key_exists('time_zone', $data)) {
@@ -96,20 +91,15 @@ class AccessManagement
                 }
                 $user->time_zone = $data['time_zone'];
             }
-            $user->contact_email = $address;
             foreach (['personal_email', 'mobile_number', 'mailing_address', 'display_density'] as $field) {
                 if (array_key_exists($field, $data)) {
                     $user->{$field} = $data[$field];
                 }
             }
-            $user->contact_attested = ($changed ? false : $user->contact_attested) || ($ownProfile && $data['contact_attested']);
-            if (! $address) {
-                $user->contact_attested = false;
-            }
             $user->save();
             $tenant = config('microsoft_auth.bootstrap_tenant');
             $object = config('microsoft_auth.bootstrap_object');
-            if ($ownProfile && $bootstrap->consumed_at === null && $user->validContact()
+            if ($ownProfile && $bootstrap->consumed_at === null
                 && is_string($tenant) && is_string($object) && $tenant !== '' && $object !== ''
                 && DB::table('external_identities')->where('user_id', $userId)->where('provider', 'microsoft')
                     ->where('tenant_id', $tenant)->where('object_id', $object)->exists()) {

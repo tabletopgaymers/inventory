@@ -70,7 +70,7 @@ class BaselineProbe
         $schema = $database->getSchemaBuilder();
         $tables = $schema->getTableListing(null, false);
         $authentication = [
-            'users' => ['id', 'first_name', 'last_name', 'provider_email', 'contact_email', 'contact_attested', 'enabled', 'created_at', 'updated_at'],
+            'users' => ['id', 'first_name', 'last_name', 'provider_email', 'enabled', 'created_at', 'updated_at'],
             'external_identities' => ['id', 'user_id', 'provider', 'tenant_id', 'object_id', 'created_at', 'updated_at'],
             'user_roles' => ['user_id', 'role'],
             'authentication_bootstraps' => ['key', 'user_id', 'consumed_at'],

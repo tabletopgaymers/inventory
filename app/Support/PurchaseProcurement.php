@@ -23,7 +23,7 @@ class PurchaseProcurement
         } elseif (str_starts_with($choice, 'user:')) {
             $row = User::find((int) substr($choice,5));
             $values = array_replace($values, ['delivery_name'=>$row?->displayName() ?? '', 'delivery_address'=>$row?->mailing_address ?? '',
-                'delivery_email'=>$row?->personal_email ?: ($row?->contact_email ?? ''), 'delivery_phone'=>$row?->mobile_number ?? '']);
+                'delivery_email'=>$row?->deliveryEmail() ?? '', 'delivery_phone'=>$row?->mobile_number ?? '']);
         }
         return array_replace(array_fill_keys(self::FIELDS,''), $values);
     }

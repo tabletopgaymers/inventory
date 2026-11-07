@@ -27,11 +27,6 @@
             @endif
         </div>
     @endif
-    @auth
-        @if(count(array_intersect(auth()->user()->roles(), ['admin', 'manager', 'procurement'])) && ! auth()->user()->validContact())
-            <p class="warning">Add your organizational contact address and confirm it in <a href="/profile">My profile</a>. Your current roles are retained.</p>
-        @endif
-    @endauth
     @hasSection('content-sections')
         <x-app.panel-stack>
             @yield('content-sections')

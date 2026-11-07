@@ -250,9 +250,6 @@
 .app-shell .item-metadata { display: grid; grid-template-columns: 11rem minmax(0,1fr); gap: var(--app-density-detail-gap) 1rem; margin: 0.625rem 0; }
 .app-shell .item-metadata dt { color: var(--app-muted); font-weight: 500; }
 .app-shell .item-metadata dd { margin: 0; white-space: pre-wrap; }
-.app-profile-confirmation { font-weight: 500; margin-top: .5rem; }
-.app-confirmation-status { font-weight: 700; }
-.app-confirmation-unconfirmed { color: var(--app-danger); }
 .app-shell .actions.app-user-actions { justify-content: flex-start; margin: 0; }
 .app-shell .app-user-actions > .inline { display: flex; margin: 0; }
 .app-shell .app-user-actions .app-user-disable-action { margin-left: auto; }

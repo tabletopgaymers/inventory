@@ -42,7 +42,7 @@ class UserController extends Controller
     public function saveProfile(Request $request, AccessManagement $access)
     {
         $profileUser = $this->profileUser($request);
-        $input = $request->only(['first_name', 'last_name', 'contact_email', 'contact_attested', 'time_zone',
+        $input = $request->only(['first_name', 'last_name', 'time_zone',
             'personal_email', 'mobile_number', 'mailing_address', 'display_density']);
         // Reject controls before global normalization could hide invalid input.
         foreach (['first_name', 'last_name'] as $name) {
@@ -58,16 +58,9 @@ class UserController extends Controller
             $value = $input[$name] ?? '';
             $input[$name] = is_string($value) ? preg_replace('/^\s+|\s+$/u', '', $value) : $value;
         }
-        $input['contact_email'] = is_string($input['contact_email'] ?? null) ? trim($input['contact_email']) : ($input['contact_email'] ?? '');
         $data = validator($input, [
             'first_name' => ['required', 'string', 'max:100', 'not_regex:/\p{Cc}/u'],
             'last_name' => ['required', 'string', 'max:100', 'not_regex:/\p{Cc}/u'],
-            'contact_email' => ['bail', 'nullable', 'string', 'max:255', 'email:rfc', function ($attribute, $value, $fail) {
-                if (strtolower(substr(strrchr($value, '@'), 1)) !== 'tabletopgaymers.org') {
-                    $fail('Use an address at tabletopgaymers.org.');
-                }
-            }],
-            'contact_attested' => ['sometimes', 'boolean'],
             'time_zone' => ['sometimes', 'required', 'string', Rule::in(DisplayDates::zones())],
             'personal_email' => ['nullable', 'string', 'max:255', 'email:rfc'],
             'mobile_number' => ['nullable', 'string', 'max:100'],
@@ -76,8 +69,6 @@ class UserController extends Controller
         ])->validate();
         $data['first_name'] = $data['first_name'] ?? '';
         $data['last_name'] = $data['last_name'] ?? '';
-        $data['contact_email'] = $data['contact_email'] ?? '';
-        $data['contact_attested'] = $request->boolean('contact_attested');
         foreach (['personal_email', 'mobile_number', 'mailing_address'] as $field) {
             $data[$field] = ($data[$field] ?? '') === '' ? null : $data[$field];
         }

@@ -52,12 +52,13 @@ class UserAccountAccessTest extends TestCase
         $migration->up();
         Schema::table('users', fn ($table) => $table->string('time_zone')->nullable());
         (require base_path('database/migrations/2026_10_11_000000_add_user_contact_preferences.php'))->up();
+        (require base_path('database/migrations/2026_11_06_230000_remove_user_tg_email_confirmation.php'))->up();
     }
 
     private function account(array $roles, bool $enabled = true): User
     {
         $user = User::create(['first_name' => 'Synthetic', 'last_name' => 'Account',
-            'enabled' => $enabled, 'contact_email' => 'fixture@tabletopgaymers.org', 'contact_attested' => true]);
+            'enabled' => $enabled]);
         foreach ($roles as $role) {
             DB::table('user_roles')->insert(['user_id' => $user->id, 'role' => $role]);
         }
@@ -339,13 +340,12 @@ class UserAccountAccessTest extends TestCase
     private function profileData(): array
     {
         return ['first_name' => 'Updated', 'last_name' => 'Person',
-            'contact_email' => 'changed@tabletopgaymers.org', 'contact_attested' => true,
             'time_zone' => 'America/New_York', 'personal_email' => 'person@example.test',
             'mobile_number' => '+44 20 1234 5678', 'mailing_address' => "Updated Person\nSynthetic address",
             'display_density' => 'spacious'];
     }
 
-    public function test_admin_can_edit_another_profile_without_attesting_or_bootstrapping_roles(): void
+    public function test_admin_can_edit_another_profile_without_bootstrapping_roles(): void
     {
         $this->readyProfile();
         $admin = $this->account(['admin']);
@@ -359,8 +359,6 @@ class UserAccountAccessTest extends TestCase
         $target = $target->fresh();
         $this->assertSame('Updated', $target->first_name);
         $this->assertSame('America/New_York', $target->time_zone);
-        $this->assertSame('changed@tabletopgaymers.org', $target->contact_email);
-        $this->assertFalse($target->contact_attested);
         $this->assertSame(['manager'], $target->roles());
         $this->assertNull(DB::table('authentication_bootstraps')->value('consumed_at'));
         $this->assertSame('Synthetic', $admin->fresh()->first_name);
@@ -380,12 +378,12 @@ class UserAccountAccessTest extends TestCase
         $this->assertSame([], $target->roles());
     }
 
-    public function test_own_profile_still_allows_self_confirmation(): void
+    public function test_own_profile_save_preserves_roles(): void
     {
         $this->readyProfile();
         $owner = $this->account([]);
         (new AccessManagement)->saveProfile($owner->id, $this->profileData());
-        $this->assertTrue($owner->fresh()->validContact());
+        $this->assertSame('Updated', $owner->fresh()->first_name);
         $this->assertSame([], $owner->roles());
     }
 
@@ -429,7 +427,6 @@ class UserAccountAccessTest extends TestCase
         $html = $editor->render();
         $this->assertStringContainsString('action="/profile?user='.$target->id.'"', $html);
         $this->assertStringContainsString('America/New_York', $html);
-        $this->assertStringNotContainsString('name="contact_attested"', $html);
         Auth::setUser($target);
         $this->assertStringContainsString('href="/profile">Edit', view('user-show', ['user' => $target])->render());
         Auth::setUser($this->account(['manager']));
@@ -447,9 +444,9 @@ class UserAccountAccessTest extends TestCase
 
     public function test_new_account_defaults_and_subsequent_sign_in_preserve_user_edits(): void
     {
-        foreach (['member@tabletopgaymers.org' => 'member@tabletopgaymers.org',
-            'delugeia_gmail.com#EXT#@tabletopgaymers.onmicrosoft.com' => null,
-            'outsider@example.test' => null, 'fake#EXT#@tabletopgaymers.org' => null] as $account => $expected) {
+        foreach (['member@tabletopgaymers.org',
+            'delugeia_gmail.com#EXT#@tabletopgaymers.onmicrosoft.com',
+            'outsider@example.test', 'fake#EXT#@tabletopgaymers.org'] as $account) {
             $object = sprintf('22222222-2222-2222-2222-%012d', User::count() + 1);
             $external = new class($object, $account) {
                 public array $user = ['givenName' => 'Synthetic', 'surname' => 'Member'];
@@ -459,15 +456,14 @@ class UserAccountAccessTest extends TestCase
             };
             $claims = (object) ['tid' => config('services.microsoft.tenant'), 'oid' => $object];
             $user = (new MicrosoftIdentity)->resolve($external, $claims)->fresh();
-            $this->assertSame($expected, $user->contact_email);
-            $this->assertFalse($user->contact_attested);
+            $this->assertSame($account, $user->provider_email);
             $this->assertSame('America/Chicago', $user->time_zone);
             $this->assertSame('standard', $user->display_density);
-            $user->update(['contact_email' => 'edited@tabletopgaymers.org', 'first_name' => 'Edited',
+            $user->update(['personal_email' => 'edited@example.test', 'first_name' => 'Edited',
                 'time_zone' => 'Europe/London', 'display_density' => 'compact']);
             $again = (new MicrosoftIdentity)->resolve($external, $claims);
             $this->assertSame($user->id, $again->id);
-            $this->assertSame('edited@tabletopgaymers.org', $again->contact_email);
+            $this->assertSame('edited@example.test', $again->personal_email);
             $this->assertSame('Edited', $again->first_name);
             $this->assertSame('Europe/London', $again->time_zone);
             $this->assertSame('compact', $again->display_density);
@@ -488,7 +484,6 @@ class UserAccountAccessTest extends TestCase
         $this->assertSame($data['mailing_address'], $saved->mailing_address);
         $this->assertSame('person@example.test', $saved->personal_email);
         $this->assertSame('spacious', $saved->display_density);
-        $this->assertTrue($saved->validContact());
         $this->assertTrue($saved->enabled);
         $this->assertSame(['manager'], $saved->roles());
         $this->assertNull($saved->provider_email);
@@ -534,7 +529,6 @@ class UserAccountAccessTest extends TestCase
             }
         }
         $this->assertSame('Synthetic', $owner->fresh()->first_name);
-        $this->assertSame('fixture@tabletopgaymers.org', $owner->fresh()->contact_email);
         $this->assertSame('standard', $owner->fresh()->display_density);
     }
 }

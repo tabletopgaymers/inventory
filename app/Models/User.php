@@ -11,11 +11,11 @@ class User extends Authenticatable
 
     protected $guarded = ['id'];
 
-    protected $attributes = ['first_name' => '', 'last_name' => '', 'enabled' => true, 'contact_attested' => false];
+    protected $attributes = ['first_name' => '', 'last_name' => '', 'enabled' => true];
 
     protected function casts(): array
     {
-        return ['enabled' => 'boolean', 'contact_attested' => 'boolean'];
+        return ['enabled' => 'boolean'];
     }
 
     public function roles(): array
@@ -33,11 +33,16 @@ class User extends Authenticatable
         return $this->enabled && array_intersect($this->roles(), ['admin', 'procurement']) !== [];
     }
 
-    public function validContact(): bool
+    public function deliveryEmail(): string
     {
-        return $this->contact_attested && is_string($this->contact_email)
-            && filter_var($this->contact_email, FILTER_VALIDATE_EMAIL)
-            && strtolower(substr(strrchr($this->contact_email, '@'), 1)) === 'tabletopgaymers.org';
+        foreach ([$this->personal_email, $this->provider_email] as $email) {
+            if (is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL)
+                && ! str_contains(strtoupper($email), '#EXT#')) {
+                return $email;
+            }
+        }
+
+        return '';
     }
 
     public function displayName(): string

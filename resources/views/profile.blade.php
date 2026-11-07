@@ -11,21 +11,13 @@
 @endsection
 @section('content')
 <form id="profile-form" method="post" action="{{ $profileUrl }}">@csrf<input type="hidden" name="_deliberate" value="1">
-@if(!app(\App\Support\BaselineProbe::class)->runtimeState(\Illuminate\Support\Facades\DB::connection())['profilePreferencesReady'])<p class="warning">Profile saving is waiting for the contact/preferences migration. Your existing profile is retained.</p>@endif
+@if(!app(\App\Support\BaselineProbe::class)->runtimeState(\Illuminate\Support\Facades\DB::connection())['profilePreferencesReady'])<p class="warning">Profile saving is waiting for the profile preferences migration. Your existing profile is retained.</p>@endif
 <div class="app-columns app-columns-two app-columns-trim">
 <div>
 <label>First name<input name="first_name" required maxlength="100" autocomplete="given-name" value="{{ old('first_name', $profileUser->first_name) }}"></label>
 <label>Last name<input name="last_name" required maxlength="100" autocomplete="family-name" value="{{ old('last_name', $profileUser->last_name) }}"></label>
 <label>Elevated roles<input readonly value="{{ implode(', ', array_diff($profileUser->roles(), ['basic'])) ?: 'None' }}"></label>
 <label>Microsoft account<input readonly value="{{ $profileUser->provider_email ?: 'Not supplied' }}"></label>
-<label>TG email<input data-optional type="email" name="contact_email" maxlength="255" placeholder="youremail@tabletopgaymers.org" value="{{ old('contact_email', $profileUser->contact_email) }}"></label>
-<div class="app-profile-confirmation" id="tg-email-confirmation">TG email confirmation</div>
-@if($ownProfile)
-<label class="app-choice"><input type="checkbox" name="contact_attested" value="1" aria-describedby="tg-email-confirmation" @checked(old('contact_attested'))><span>Confirm my TG email address. Current status: <strong @class(['app-confirmation-status', 'app-confirmation-unconfirmed' => !$profileUser->validContact()])>{{ $profileUser->validContact() ? 'Confirmed' : 'Not confirmed' }}</strong></span></label>
-@else
-<p>Current status: <strong @class(['app-confirmation-status', 'app-confirmation-unconfirmed' => !$profileUser->validContact()])>{{ $profileUser->validContact() ? 'Confirmed' : 'Not confirmed' }}</strong>. This user must confirm their own TG email address.</p>
-@endif
-<p class="app-field-help">Elevated roles require a TG email address and {{ $ownProfile ? 'your confirmation' : 'confirmation by this user' }}. Changing the address clears its previous confirmation. No verification email is sent.</p>
 </div>
 <div>
 <label>Personal email<input data-optional type="email" name="personal_email" maxlength="255" placeholder="youremail@yourprovider.com" value="{{ old('personal_email', $profileUser->personal_email) }}"></label>
