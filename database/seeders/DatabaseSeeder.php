@@ -8,6 +8,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // No fixtures or identities are authorized for this local baseline.
+        // Imports are explicit opt-in commands; never load real fixtures automatically.
     }
 }

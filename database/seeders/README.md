@@ -1,55 +1,76 @@
-# Catalog seeding
+# Seeders and fixture data
 
-## Command output
+## Shared structure and format
 
-Use `php artisan catalog:seed` and `php artisan inventory:seed` for explicit start, success and failure messages. Success is printed after the transaction commits, with counts (including zero new/changed records on an unchanged rerun). Failures return a nonzero exit status and explain input/authorization problems; unexpected failures direct you to private application logs without printing database details. Failed imports do not commit partial catalog/stock changes.
+Jeff adopted this standard on November 6, 2026:
 
-The standard `php artisan db:seed --class=CatalogSeeder` and `php artisan db:seed --class=StartingStockSeeder` entry points also print the same success summaries; failures use Laravel's normal exception output. Programmatic calls without a console command still return the summary without printing.
+| Directory | Purpose | Git policy |
+| --- | --- | --- |
+| `database/seeders/` | Seeder PHP classes and this operating reference | Tracked |
+| `database/fixtures/` | Real input files for the selected environment | Contents ignored except the tracked `.gitignore` |
+| `database/fixtures-example/` | Fictional CSV templates illustrating accepted columns | Tracked |
 
-Forge's `cat: .../.forge/provision-....output: No such file or directory` refers to its command-output capture file, not a seeder validation error. Seeder messages do not repair missing Forge output files. If Forge cannot show output, inspect command execution through SSH before rerunning an import: starting-stock reruns deliberately reapply the supplied counts.
+All fixture inputs use **comma-delimited CSV encoded as UTF-8**. A UTF-8 BOM is accepted for Excel exports. Preserve identifiers, postal codes and quantities as source text; CSV quoting handles commas, quotes and multiline fields. Do not supply tab-delimited input with a .csv extension. Catalog input previously used catalog.tab; it has been converted to catalog.csv and the reader now uses commas.
 
-## Catalog-only seed — October 20, 2026
+A fresh checkout contains the fixture directory's `.gitignore` and examples, but **no real data**. Copy approved inputs into `database/fixtures/` separately. Never force-add real fixture data to Git, and never silently substitute examples when real input is missing. Examples are fictional documentation, not a deployment dataset.
 
-`CatalogSeeder` reads `database/seeders/fixtures/catalog.tab`, a UTF-8 tab-delimited copy of Jeff's approved catalog file. This is the active catalog-only seeder. The default `DatabaseSeeder` remains empty. Deployments do not run this command automatically.
+The default `DatabaseSeeder` remains empty. Imports are run explicitly and are not part of deployment or ordinary migrations. Each implemented command accepts `--file` to select an alternative private input. Publishing seeder code does not execute it. Run migrations before importing and confirm the target environment/database before each authorized execution.
+
+## Server storage
+
+Release-based deployments replace the application directory. Keep real server inputs in a private site-shared directory outside releases and outside the public web root, for example `<site>/shared/fixtures/`. Upload files manually using the site's existing secure access, restrict access to the site's deployment/runtime account, and retain backups as appropriate. Then pass the absolute path with `--file` from the active release. Do not put private uploads into a generated asset, public storage link, tracked fixture or deployment log.
+
+For example, after a separately authorized upload and import:
+
+```bash
+php artisan catalog:seed --file="/absolute/private/site/shared/fixtures/catalog.csv"
+php artisan inventory:seed --file="/absolute/private/site/shared/fixtures/starting-stock.csv" --actor=123
+```
+
+These are instructions, not automatic deploy steps. No server directories, uploads or imports were performed merely by adopting this structure. Historical Git revisions may still contain previously tracked catalog/stock data; this change removes those files from the current tree, not from repository history.
+
+## Catalog
+
+Default file: `database/fixtures/catalog.csv`. Example: `database/fixtures-example/catalog.csv`.
 
 ```powershell
 php artisan catalog:seed
-# An explicitly selected UTF-8 file can be used later:
-php artisan catalog:seed --file="C:/path/to/catalog.tab"
+php artisan catalog:seed --file="C:/private/catalog.csv"
 ```
 
-Standard Laravel entry point is also supported: `php artisan db:seed --class=CatalogSeeder`.
+Standard Laravel entry point: `php artisan db:seed --class=CatalogSeeder`.
 
-Required columns: Category, Collection, Item, SkuPre, SkuPost, Sku. Each row describes an Item under its Category/Collection. Sku must equal prefix + dash + suffix (e.g. BH-TGBH). Prefixes may be shared by collections; full SKUs must be unique. Quoted fields follow standard CSV quoting with a tab delimiter. Input must be UTF-8; Unicode fractions and embedded quotation marks are preserved.
+Required headers: Category, Collection, Item, SkuPre, SkuPost, Sku. Optional headers: CategoryDescription, CollectionDescription, ItemDescription, Notes, Variety. SKU must be prefix + dash + suffix. Full SKUs must be unique; collections may share prefixes. Nonblank repeated category/collection descriptions must agree. Unknown headers, malformed rows, duplicate/conflicting identities and invalid values reject the import.
 
-Optional columns for later enrichment: CategoryDescription, CollectionDescription, ItemDescription, Notes, Variety. Nonblank supplied values update those fields; omitted/blank values preserve existing metadata. Repeated category/collection descriptions within the file must agree. To add other attributes later, extend `CatalogSeeder` explicitly rather than silently ignoring unknown columns.
+Reruns add missing records and reuse matching identities. Nonblank supplied optional metadata updates its corresponding fields; blank/omitted optional values preserve existing values. Existing statuses and unit costs are retained. There are no deletions, renames, reparenting, stock changes or user creation. New catalog items start with zero/unknown unit cost. One transaction coordinates with ordinary catalog saves using the existing bootstrap lock. The configured MySQL/MariaDB connection is used; importing into another environment requires its own authorization.
 
-Reruns add missing records and reuse matching identities; no deletions, renames, reparenting, prefix changes or stock/cost overwrites. Existing statuses and unspecified metadata are preserved. New Items use zero/unknown unit cost. Identity conflicts, malformed rows and unsupported headers abort the transaction. Categories/Collections populate the name registry; all records receive active metadata on creation. Uses a single transaction coordinated with catalog saves through the existing bootstrap lock. Uses the application's configured MySQL/MariaDB connection without environment or database-host restrictions, including when called through db:seed. Run migrations/setup first; publishing the command does not execute it. No actor account required for this explicit CLI catalog setup.
+The fictional stock example references the SKUs in the fictional catalog example. Real stock inputs must instead reference their matching real catalog. Do not mix example stock with the application's real catalog by accident.
 
-Creates no Locations, balances, quantity history, requests, suppliers, programs, purposes, users or roles. Fresh fixture contains 13 Categories, 36 Collections and 206 Items. The source in the documentation workspace is `_data/seeder/seeder-data.tab`; after editing it, copy/export the approved UTF-8 data into the application fixture or select the source explicitly with --file. The application fixture is the default executable input, not an automatically synchronized file.
+## Starting stock
 
-
-## Retired sample-data seeder — October 22, 2026
-
-At Jeff's direction, the former development sample fixture/seeder and its `samples:seed` / `samples:reset` commands were removed, including the reset helper that depended on that fixture. Private backups preserve the removed implementation and its former instructions. Existing database data was not changed. Use `catalog:seed` for the current approved catalog.
-
-## Starting-stock CSV — October 22, 2026
-
-`StartingStockSeeder` reads `database/seeders/fixtures/starting-stock.csv`, copied unchanged from Jeff's UTF-8 CSV. Run separately after catalog and location setup; never runs on deployment or through the empty default DatabaseSeeder.
+Default file: `database/fixtures/starting-stock.csv`. Example: `database/fixtures-example/starting-stock.csv`.
 
 ```powershell
 php artisan inventory:seed
-php artisan inventory:seed --file="C:/path/to/starting-stock.csv"
-# Optional existing enabled Admin/Manager; otherwise the initial administrator:
-php artisan inventory:seed --actor=1
+php artisan inventory:seed --file="C:/private/starting-stock.csv" --actor=123
 ```
 
-Standard entry point `php artisan db:seed --class=StartingStockSeeder` uses the default file and initial administrator. The command uses the application's configured MySQL/MariaDB connection; execution on another installation requires a separate authorization. No new users/roles, items or locations are created.
+Standard Laravel entry point: `php artisan db:seed --class=StartingStockSeeder`. The actor must be an existing enabled Admin/Manager; when omitted, the initial administrator is used. Catalog items and named storage locations must already exist. No users, roles, locations or catalog items are created.
 
-CSV requires a `SKU` header and one or more existing location-name headers. Columns can be reordered, including SKU. SKUs and location headers must uniquely resolve before any counts are posted. Unknown/ambiguous SKUs or locations, duplicate rows/headers and malformed quantities reject the whole import. UTF-8 BOM is accepted; use CSV quoting around quantities with thousands separators, such as `"3,000"`. Whole signed quantities follow the application's ±1,000,000,000 bounds; fractions/scientific notation and malformed comma grouping are rejected.
+CSV requires SKU and at least one existing location-name column. Headers can be reordered and must be nonblank, unpadded and unique. Every SKU resolves uniquely, including rows whose quantities are all blank. Duplicate SKUs, unknown locations, invalid quantities or malformed rows reject the import. Signed whole quantities use the existing bounds; quote thousands separators, such as "3,000". Fractions and scientific notation are rejected.
 
-Blank/whitespace cells leave existing counts unchanged. Explicit0 sets the count to0. Supplied numbers SET absolute quantities rather than adding them; omitted locations/items remain unchanged. First stock for an item is posted as Starting inventory; later changed values use ordinary audited adjustments. Both go through StockPosting with an existing enabled Admin/Manager, current unit-cost snapshots, normal posting validation and one outer transaction for the entire file. Initial posting follows the existing active-location rules. Existing unit costs, catalog metadata and other business records are untouched.
+**Supplied quantities SET absolute counts.** Blank cells leave existing counts unchanged; explicit zero sets zero. Omitted locations/items are preserved. First stock records Starting inventory; later changes use audited adjustments through StockPosting. Identical reruns create no duplicate history, but if live counts changed since the previous import, rerunning resets supplied numeric cells to the CSV values. All rows post within one transaction; failure commits no partial stock changes. Existing catalog metadata and unit costs remain unchanged.
 
-Rerunning identical counts creates no duplicate history; even all-blank rows have their SKU validated but cause no posting. **If live counts have changed since an import, rerunning resets each supplied numeric cell to the CSV value.** It does not treat a previously used file as permanently completed. A first explicit zero establishes a zero starting balance/history even when no balance exists; already-zero existing stock is unchanged.
+## Officers/users — template only
 
-Current fixture:206 SKU rows,5 locations (Central/Ames/Indy/Boston/Milwaukee),373 numeric cells and657 blanks, total220003 units.35 item rows contain only blanks. Usage does not require modifying the script when adding existing-location columns or item rows.
+Real roster: `database/fixtures/users.csv`. Fictional template: `database/fixtures-example/users.csv`. The officer seeder/command is **not implemented yet**; no runnable user-import command is promised by this document.
+
+The id column is the Microsoft Object ID, not the application's numeric user ID. The configured tenant supplies the matching tenant identity. Canonical roles are comma-separated lowercase basic, manager, procurement and admin. The current source also has username and individual role helper columns; these are not application profile columns. Jeff explicitly confirmed Admin for himself, Justin Nauman and TG Administrator despite their original roles cells omitting admin. Resolve that input inconsistency in the approved import behavior before execution; do not infer roles from Microsoft administrative privileges.
+
+Names, Microsoft account email, personal email, phone and named IANA timezone can populate existing profile fields. There is no separate TG email or self-confirmation field. Assemble mailing_address from nonblank lines: displayName; address; then city, state and zipCode joined by spaces. If all address components are absent, leave mailing_address blank rather than storing the name alone. Preserve postal-code leading zeros. Missing optional fields remain blank. Existing profile edits/unrelated roles must be preserved according to the separately approved future user-import policy.
+
+## Messages, safety and reruns
+
+Implemented catalog/stock commands print start and success/failure messages. Success is reported after commit, with counts, including unchanged reruns. Failures return nonzero; expected validation/authorization problems are explained, while unexpected private details go to application logs. `db:seed --class=...` uses Laravel's normal exception output. Missing files produce actionable CSV/path guidance. Do not print file contents or personal details in command summaries.
+
+Forge's missing `.forge/provision-....output` error concerns its output capture, not CSV validation; inspect execution before rerunning. Especially for stock, an unexamined rerun may reapply absolute counts.

@@ -11,7 +11,7 @@ use Throwable;
 
 class SeedCatalog extends Command
 {
-    protected $signature = 'catalog:seed {--file= : UTF-8 tab file; defaults to database/seeders/fixtures/catalog.tab}';
+    protected $signature = 'catalog:seed {--file= : UTF-8 CSV; defaults to database/fixtures/catalog.csv}';
 
     protected $description = 'Add catalog identities without sample stock, accounts or requests';
 

@@ -19,7 +19,7 @@ class CatalogSeeder extends Seeder
         if (! in_array($connection->getConfig('driver'), ['mysql', 'mariadb'], true)) {
             throw new LogicException('Catalog seeding requires the configured MySQL/MariaDB database connection.');
         }
-        $rows = $this->readRows($file ?? database_path('seeders/fixtures/catalog.tab'));
+        $rows = $this->readRows($file ?? database_path('fixtures/catalog.csv'));
 
         $summary = DB::transaction(function () use ($rows) {
             // Coordinate with ordinary catalog saves; never create accounts or stock.
@@ -56,20 +56,20 @@ class CatalogSeeder extends Seeder
     {
         $contents = is_file($file) ? file_get_contents($file) : false;
         if ($contents === false || ! mb_check_encoding($contents, 'UTF-8')) {
-            throw new LogicException('Supply a readable UTF-8 tab-delimited catalog file.');
+            throw new LogicException('Supply a readable UTF-8 catalog CSV file in database/fixtures/catalog.csv, or select one with --file.');
         }
         $handle = fopen('php://temp', 'w+');
         fwrite($handle, preg_replace('/\A\xEF\xBB\xBF/', '', $contents));
         rewind($handle);
         try {
-            $header = fgetcsv($handle, 0, "\t", '"', '');
+            $header = fgetcsv($handle, 0, ',', '"', '');
             if (! is_array($header) || count(array_unique($header)) !== count($header)
                 || array_diff(self::REQUIRED, $header) || array_diff($header, array_merge(self::REQUIRED, self::OPTIONAL))) {
                 throw new LogicException('Expected Category, Collection, Item, SkuPre, SkuPost, Sku and documented optional columns.');
             }
             $rows = $skus = $prefixes = $descriptions = [];
             $line = 1;
-            while (($values = fgetcsv($handle, 0, "\t", '"', '')) !== false) {
+            while (($values = fgetcsv($handle, 0, ',', '"', '')) !== false) {
                 $line++;
                 if ($values === [null]) {
                     continue;

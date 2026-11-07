@@ -168,3 +168,11 @@ defines supported PHP/framework dependencies. Set APP_DEBUG=false and use
 database sessions with SESSION_ENCRYPT=true, SESSION_SECURE_COOKIE=true,
 SESSION_HTTP_ONLY=true and SESSION_SAME_SITE=lax. Deploy normally to refresh
 configuration and view caches. No custom baseline command is required.
+
+## Seeder inputs
+
+Seeder code lives in `database/seeders/`, real UTF-8 CSV inputs in ignored
+`database/fixtures/`, and fictional templates in tracked `database/fixtures-example/`.
+See [seeder operations](database/seeders/README.md) for schemas, explicit commands,
+private server storage and rerun effects. Deployments never run seeders automatically.
+A fresh checkout intentionally contains no real fixture data.

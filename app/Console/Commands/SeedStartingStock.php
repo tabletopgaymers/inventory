@@ -11,7 +11,7 @@ use Throwable;
 
 class SeedStartingStock extends Command
 {
-    protected $signature = 'inventory:seed {--file= : UTF-8 CSV; defaults to database/seeders/fixtures/starting-stock.csv} {--actor= : Existing enabled Admin/Manager; defaults to the initial administrator}';
+    protected $signature = 'inventory:seed {--file= : UTF-8 CSV; defaults to database/fixtures/starting-stock.csv} {--actor= : Existing enabled Admin/Manager; defaults to the initial administrator}';
 
     protected $description = 'Set supplied inventory counts at existing locations, preserving blank cells';
 

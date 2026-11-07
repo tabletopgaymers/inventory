@@ -17,7 +17,7 @@ class StartingStockSeeder extends Seeder
         if (! in_array(DB::connection()->getConfig('driver'), ['mysql', 'mariadb'], true)) {
             throw new LogicException('Starting stock requires the configured MySQL/MariaDB connection.');
         }
-        [$headers, $rows] = $this->readRows($file ?? database_path('seeders/fixtures/starting-stock.csv'));
+        [$headers, $rows] = $this->readRows($file ?? database_path('fixtures/starting-stock.csv'));
 
         $summary = DB::transaction(function () use ($headers, $rows, $actorId) {
             $bootstrap = DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();
@@ -104,7 +104,7 @@ class StartingStockSeeder extends Seeder
     {
         $contents = is_file($file) ? file_get_contents($file) : false;
         if ($contents === false || ! mb_check_encoding($contents, 'UTF-8')) {
-            throw new LogicException('Supply a readable UTF-8 starting-stock CSV file.');
+            throw new LogicException('Supply a readable UTF-8 starting-stock CSV file in database/fixtures/starting-stock.csv, or select one with --file.');
         }
         $handle = fopen('php://temp', 'w+');
         fwrite($handle, preg_replace('/\A\xEF\xBB\xBF/', '', $contents));
