@@ -16,6 +16,7 @@ export default defineConfig({
             'resources/js/catalog-progress.js',
             'resources/js/catalog-status-filter.js',
             'resources/js/user-actions.js',
+            'resources/js/user-directory.js',
             'resources/js/catalog-form.js',
             'resources/js/inventory.js',
             'resources/js/inventory-browse.js',

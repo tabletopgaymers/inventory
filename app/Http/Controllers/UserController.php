@@ -13,7 +13,10 @@ class UserController extends Controller
 {
     public function directory()
     {
-        return view('users', ['users' => User::orderBy('last_name')->orderBy('first_name')->orderBy('id')->get()]);
+        $users = User::orderBy('id')->get()
+            ->sortBy(fn (User $user) => mb_strtolower($user->displayName()), SORT_NATURAL);
+
+        return view('users', ['users' => $users]);
     }
 
     public function show(User $user)
