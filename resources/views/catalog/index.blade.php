@@ -1,6 +1,10 @@
 @extends('layout')
 @php
-    $columnCount = $kind === 'categories' ? 4 : ($kind === 'collections' ? 5 : ($kind === 'suppliers' ? 5 : 3));
+    $columnCount = match ($kind) {
+        'categories', 'purposes' => 4,
+        'collections', 'suppliers' => 5,
+        default => 3,
+    };
 @endphp
 @section('title', $collection ? 'Items in '.$collection->name : ($category ? 'Collections in '.$category->name : $kinds[$kind]))
 @if($canManage)
@@ -20,6 +24,7 @@
 @elseif($kind === 'items')<th>SKU</th>
 @elseif($kind === 'storage_locations')<th>Description</th>
 @elseif($kind === 'suppliers')<th>Contact</th><th>Email</th><th>Website</th>
+@elseif($kind === 'purposes')<th>Description</th><th>Examples</th>
 @else<th>Notes</th>@endif
 @include('catalog.status-filter')
 </tr></thead><tbody>
@@ -50,6 +55,7 @@
 @endphp
 <td>@if($websiteHost && in_array($websiteScheme, ['http', 'https'], true))<a href="{{ $record->website }}" target="_blank" rel="noopener noreferrer">{{ preg_replace('/\Awww\./i', '', $websiteHost) }}</a>@else—@endif</td>
 <td><x-app.status-badge :status="ucfirst($record->state)" /></td>
+@elseif($kind === 'purposes')<td class="plain-text">{{ filled($record->description) ? $record->description : '—' }}</td><td class="plain-text">{{ filled($record->examples) ? $record->examples : '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>
 @else<td>{{ $record->notes ?: '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>@endif
 @if(in_array($kind, ['categories', 'collections']))
 <td><x-app.status-badge :status="ucfirst($record->state)" /></td>

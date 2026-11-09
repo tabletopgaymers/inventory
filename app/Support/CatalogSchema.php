@@ -6,6 +6,7 @@ namespace App\Support;
 class CatalogSchema
 {
     public const MIGRATION = '2026_10_06_010000_create_catalog_tables';
+    public const PURPOSE_DETAILS_MIGRATION = '2026_11_09_220000_add_purpose_details_to_catalog_references';
 
     public const TABLES = ['catalog_metadata', 'catalog_names', 'catalog_references', 'item_metadata', 'item_programs', 'inventory_sources', 'inventory_source_balances', 'inventory_preferences'];
 
@@ -13,14 +14,15 @@ class CatalogSchema
     {
         $present = array_intersect(self::TABLES, $tables);
         $recorded = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::MIGRATION)->exists();
+        $purposeDetails = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::PURPOSE_DETAILS_MIGRATION)->exists();
         if ($present === []) {
-            return ['compatible' => ! $recorded, 'ready' => false];
+            return ['compatible' => ! $recorded && ! $purposeDetails, 'ready' => false];
         }
         if (count($present) !== count(self::TABLES) || ! $recorded) {
             return ['compatible' => false, 'ready' => false];
         }
         $schema = $database->getSchemaBuilder();
-        foreach ($this->columns() as $table => $columns) {
+        foreach ($this->columns($purposeDetails) as $table => $columns) {
             $actual = [];
             foreach ($schema->getColumns($table) as $column) {
                 $actual[$column['name']] = [preg_replace('/\b(bigint|int)\(\d+\)/', '$1', strtolower($column['type'])), $column['nullable']];
@@ -76,18 +78,19 @@ class CatalogSchema
         return ['compatible' => true, 'ready' => true];
     }
 
-    private function columns(): array
+    private function columns(bool $purposeDetails): array
     {
         $id = ['bigint unsigned', false];
         $text = ['varchar(255)', true];
         $timestamps = ['created_at' => ['timestamp', true], 'updated_at' => ['timestamp', true]];
+        $purposeColumns = $purposeDetails ? ['description' => ['text', true], 'examples' => ['text', true]] : [];
 
         return [
             // TODO: Retire unused Notes for category, collection and location records.
             // Description is validated as single-line text; mailing_address allows line breaks.
             'catalog_metadata' => ['id' => $id, 'kind' => ['varchar(30)', false], 'record_id' => $id, 'state' => ['varchar(10)', false], 'description' => ['text', true], 'notes' => ['text', true], 'mailing_address' => ['text', true]] + $timestamps,
             'catalog_names' => ['id' => $id, 'kind' => ['varchar(30)', false], 'parent_id' => $id, 'name' => ['varchar(255)', false], 'record_id' => $id],
-            'catalog_references' => ['id' => $id, 'kind' => ['varchar(30)', false], 'name' => ['varchar(255)', false], 'state' => ['varchar(10)', false], 'contact_name' => $text, 'email' => $text, 'phone' => $text, 'website' => $text, 'address' => ['text', true], 'notes' => ['text', true]] + $timestamps,
+            'catalog_references' => ['id' => $id, 'kind' => ['varchar(30)', false], 'name' => ['varchar(255)', false], 'state' => ['varchar(10)', false], 'contact_name' => $text, 'email' => $text, 'phone' => $text, 'website' => $text, 'address' => ['text', true], 'notes' => ['text', true]] + $timestamps + $purposeColumns,
             'item_metadata' => ['item_id' => $id, 'variety' => $text, 'purpose_id' => ['bigint unsigned', true], 'bundle_type' => $text, 'bundle_quantity' => ['int unsigned', true], 'irs_fmv' => ['decimal(24,12)', true], 'in_person_ask' => ['decimal(24,12)', true], 'online_ask' => ['decimal(24,12)', true], 'notes' => ['text', true]] + $timestamps,
             'item_programs' => ['item_id' => $id, 'program_id' => $id],
             'inventory_sources' => ['id' => $id, 'kind' => ['varchar(10)', false], 'name' => ['varchar(255)', false], 'active' => ['tinyint(1)', false]] + $timestamps,
