@@ -1,0 +1,3 @@
+name,status,website,contactName,email,phone,address,city,state,zip,notes
+Example Print Shop,active,https://print.example.test,Example Contact,orders@print.example.test,202-555-0100,"123 Example Street, Suite 4",Example City,MA,00001,Fictional example
+Example Materials,unverified,https://materials.example.test,,,,,,,,Optional contact and address fields can be blank

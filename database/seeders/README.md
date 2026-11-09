@@ -46,6 +46,31 @@ Reruns add missing records and reuse matching identities. Nonblank supplied opti
 
 The fictional stock example references the SKUs in the fictional catalog example. Real stock inputs must instead reference their matching real catalog. Do not mix example stock with the application's real catalog by accident.
 
+## Locations
+
+Default file: `database/fixtures/locations.csv`. Fictional template: `database/fixtures-example/locations.csv`.
+
+```powershell
+php artisan locations:seed
+php artisan locations:seed --file="C:/private/locations.csv"
+```
+
+Standard Laravel entry point: `php artisan db:seed --class=LocationSeeder`. This explicit setup import needs no actor account and uses the configured MySQL/MariaDB connection. It is not called by deployment or DatabaseSeeder. The real fixture is supplied privately, including on a server via an absolute shared-storage `--file` path. The example is illustrative, not a default fallback.
+
+Required headers (any order): isCentral, name, description, status, addressTo, address, city, state, zipCode. Names must be unique. isCentral accepts 0/1; status is normalized to lowercase active/inactive/archived. The file must contain exactly one Central row with active status. Names/street/city/status/flag must be nonblank; recipient, description, state and postal code may be blank. Invalid encoding, headers, row shapes or values reject the complete import before any database writes.
+
+The stored mailing address is assembled as these nonblank lines, preserving postal-code leading zeros:
+
+```text
+[addressTo]
+[address]
+[city] [state] [zipCode]
+```
+
+Match existing locations by name using database collation and preserve their IDs/names. Create missing base records, name-registry entries and catalog metadata. On reruns, supplied mailing addresses and nonblank descriptions update existing metadata; blank descriptions preserve existing descriptions. **Existing lifecycle statuses are preserved**; status is used when creating metadata. Identical reruns do not update timestamps or duplicate records. Locations omitted from the file remain unchanged. A conflicting Central flag, multiple existing Central locations, inactive existing Central or inconsistent name registry aborts the transaction; this importer never reassigns the protected Central designation.
+
+Creates no inventory, quantities, ledger/history postings, costs, users or roles. The whole import is one transaction serialized with ordinary catalog saves through the existing bootstrap lock. Any write conflict rolls back the entire import. Publishing this implementation does not execute it.
+
 ## Starting stock
 
 Default file: `database/fixtures/starting-stock.csv`. Example: `database/fixtures-example/starting-stock.csv`.
@@ -61,16 +86,40 @@ CSV requires SKU and at least one existing location-name column. Headers can be 
 
 **Supplied quantities SET absolute counts.** Blank cells leave existing counts unchanged; explicit zero sets zero. Omitted locations/items are preserved. First stock records Starting inventory; later changes use audited adjustments through StockPosting. Identical reruns create no duplicate history, but if live counts changed since the previous import, rerunning resets supplied numeric cells to the CSV values. All rows post within one transaction; failure commits no partial stock changes. Existing catalog metadata and unit costs remain unchanged.
 
-## Officers/users — template only
+## Suppliers
 
-Real roster: `database/fixtures/users.csv`. Fictional template: `database/fixtures-example/users.csv`. The officer seeder/command is **not implemented yet**; no runnable user-import command is promised by this document.
+The default input is `database/fixtures/suppliers.csv`. The fictional template is `database/fixtures-example/suppliers.csv`.
 
-The id column is the Microsoft Object ID, not the application's numeric user ID. The configured tenant supplies the matching tenant identity. Canonical roles are comma-separated lowercase basic, manager, procurement and admin. The current source also has username and individual role helper columns; these are not application profile columns. Jeff explicitly confirmed Admin for himself, Justin Nauman and TG Administrator despite their original roles cells omitting admin. Resolve that input inconsistency in the approved import behavior before execution; do not infer roles from Microsoft administrative privileges.
+```powershell
+php artisan suppliers:seed
+php artisan suppliers:seed --file="C:/private/suppliers.csv"
+```
 
-Names, Microsoft account email, personal email, phone and named IANA timezone can populate existing profile fields. There is no separate TG email or self-confirmation field. Assemble mailing_address from nonblank lines: displayName; address; then city, state and zipCode joined by spaces. If all address components are absent, leave mailing_address blank rather than storing the name alone. Preserve postal-code leading zeros. Missing optional fields remain blank. Existing profile edits/unrelated roles must be preserved according to the separately approved future user-import policy.
+The Laravel entry point is `php artisan db:seed --class=SupplierSeeder`. The command uses the configured MySQL/MariaDB connection and requires no actor account. For server imports, supply the real file through a private shared-storage path with `--file`.
+
+Include these headers in any order: `name`, `status`, `website`, `contactName`, `email`, `phone`, `address`, `city`, `state`, `zip`, `notes`. Name and status require values. Status accepts `active`, `inactive`, `archived` and `unverified`, regardless of case. Names must be unique. Optional websites use HTTP or HTTPS, and supplied email addresses must be valid. The importer joins the street address and the city, state and ZIP line, skipping empty lines and keeping ZIP codes as text.
+
+Match existing suppliers by name under database collation. New suppliers receive the supplied status. Reruns update supplied contact details, mailing addresses and notes while preserving existing statuses and values where the fixture fields are blank. An identical rerun leaves timestamps alone. The command reports created, updated and unchanged counts after one transaction. Validation and name conflicts abort the import. Purchases retain their existing supplier IDs and saved snapshots.
+
+## Officers/users
+
+The default input is `database/fixtures/users.csv`. The fictional template is `database/fixtures-example/users.csv`.
+
+```powershell
+php artisan users:seed
+php artisan users:seed --file="C:/private/users.csv" --actor=123
+```
+
+The Laravel entry point `php artisan db:seed --class=OfficerSeeder` uses the default file and initial administrator. Each import requires an existing enabled Admin to authorize and audit the grants. Complete initial administrator setup first, or supply the numeric user ID of another enabled Admin with `--actor`.
+
+Match by Microsoft provider, configured `MICROSOFT_TENANT_ID`, and the Object ID in `id`. The importer creates and links accounts for new identities. `id` and `roles` are required. Quote a comma-separated role list such as `"basic,manager"`. Allowed values are `basic`, `manager`, `procurement` and `admin`. The same `roles` column controls every row. `username` and the individual role columns are reference data.
+
+Optional columns are `displayName`, `userPrincipalName`, `givenName`, `surname`, `email`, `personalEmail`, `mobileNumber`, `address`, `city`, `state`, `zipCode` and `timeZone`. The importer fills blank profile fields from supplied values. It uses `email` as the Microsoft account email and falls back to `userPrincipalName`. It assembles the mailing address from `displayName`, street address, and a line joining city, state and ZIP. Empty lines are omitted and ZIP codes stay as text. If no address components are supplied, the mailing address stays blank. Time zones use IANA identifiers.
+
+Reruns preserve nonblank profile fields and existing roles. The command adds missing CSV roles through the usual audited role grant service. Duplicate or invalid identities, invalid profile fields or roles, and matches to disabled accounts abort the import. The import runs in one transaction and reports counts after commit.
 
 ## Messages, safety and reruns
 
-Implemented catalog/stock commands print start and success/failure messages. Success is reported after commit, with counts, including unchanged reruns. Failures return nonzero; expected validation/authorization problems are explained, while unexpected private details go to application logs. `db:seed --class=...` uses Laravel's normal exception output. Missing files produce actionable CSV/path guidance. Do not print file contents or personal details in command summaries.
+The catalog, location, stock, supplier and officer commands print start and success/failure messages. Success is reported after commit, with counts, including unchanged reruns. Failures return nonzero; expected validation/authorization problems are explained, while unexpected private details go to application logs. `db:seed --class=...` uses Laravel's normal exception output. Missing files produce actionable CSV/path guidance. Do not print file contents or personal details in command summaries.
 
 Forge's missing `.forge/provision-....output` error concerns its output capture, not CSV validation; inspect execution before rerunning. Especially for stock, an unexamined rerun may reapply absolute counts.

@@ -1,0 +1,3 @@
+isCentral,name,description,status,addressTo,address,city,state,zipCode
+1,Central,Fictional central storage example,Active,Example Organization,123 Example Street,Example City,IA,50000
+0,Example storage,Fictional secondary storage,Active,Example Volunteer,456 Sample Avenue,Example Town,MA,00001
