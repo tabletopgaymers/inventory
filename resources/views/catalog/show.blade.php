@@ -7,8 +7,7 @@
 @endsection
 @section('content-sections')
 <div class="app-content">
-    <x-app.detail-list variant="content" >
-        @if($kind === 'suppliers')
+    @if($kind === 'suppliers')
         @php
             $emailHref = $record->contact_name
                 ? 'mailto:%22'.rawurlencode($record->contact_name).'%22<'.$record->email.'>'
@@ -18,25 +17,36 @@
             if (mb_strlen($websiteText) > 30) $websiteText = mb_substr($websiteText, 0, 30).'…';
             $websiteScheme = strtolower(parse_url($record->website ?? '', PHP_URL_SCHEME) ?? '');
         @endphp
-        @foreach(['contact_name' => 'Contact name', 'email' => 'Email', 'phone' => 'Phone', 'website' => 'Website', 'address' => 'Address'] as $field => $fieldLabel)
-        <dt>{{ $fieldLabel }}</dt>
-        @if($field === 'address')<dd class="plain-text">{{ $record->address ?: '—' }}</dd>
-        @else<dd>
-        @if(!$record->$field) —
-        @elseif($field === 'email')<a href="{{ $emailHref }}">{{ $record->email }}</a>
-        @elseif($field === 'phone')<a href="tel:{{ preg_replace('/\s+/u', '', $record->phone) }}">{{ $record->phone }}</a>
-        @elseif($field === 'website' && in_array($websiteScheme, ['http', 'https'], true))<a href="{{ $record->website }}" title="{{ $record->website }}" target="_blank" rel="noopener noreferrer">{{ $websiteText }}</a>
-        @else{{ $record->$field }}
-        @endif
-        </dd>
-        @endif
-        @endforeach
-        @endif
-        @if($category)<dt>Category</dt><dd><a href="/catalog/categories/{{ $category->id }}">{{ $category->name }}</a></dd><dt>SKU prefix</dt><dd>{{ $record->sku_prefix }}</dd>@endif
-        @if(in_array($kind, ['categories', 'collections']))<dt>Description</dt><dd>{{ $record->description ?: '—' }}</dd>@endif
-        @if(!in_array($kind, ['categories', 'collections']))<dt>Notes</dt><dd class="plain-text">{{ $record->notes ?: '—' }}</dd>@endif
-        @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format($children->count()) }}</a></dd>@endif
-    </x-app.detail-list>
+        <div class="app-columns app-columns-two">
+            <x-app.detail-list variant="content">
+                @foreach(['contact_name' => 'Contact name', 'email' => 'Email', 'phone' => 'Phone', 'website' => 'Website'] as $field => $fieldLabel)
+                    <dt>{{ $fieldLabel }}</dt>
+                    @if(!$record->$field)
+                        <dd>—</dd>
+                    @elseif($field === 'email')
+                        <dd><a href="{{ $emailHref }}">{{ $record->email }}</a></dd>
+                    @elseif($field === 'phone')
+                        <dd><a href="tel:{{ preg_replace('/\s+/u', '', $record->phone) }}">{{ $record->phone }}</a></dd>
+                    @elseif($field === 'website' && in_array($websiteScheme, ['http', 'https'], true))
+                        <dd><a href="{{ $record->website }}" title="{{ $record->website }}" target="_blank" rel="noopener noreferrer">{{ $websiteText }}</a></dd>
+                    @else
+                        <dd>{{ $record->$field }}</dd>
+                    @endif
+                @endforeach
+            </x-app.detail-list>
+            <x-app.detail-list variant="content">
+                <dt>Address</dt><dd class="plain-text">{{ $record->address ?: '—' }}</dd>
+                <dt>Notes</dt><dd class="plain-text">{{ $record->notes ?: '—' }}</dd>
+            </x-app.detail-list>
+        </div>
+    @else
+        <x-app.detail-list variant="content">
+            @if($category)<dt>Category</dt><dd><a href="/catalog/categories/{{ $category->id }}">{{ $category->name }}</a></dd><dt>SKU prefix</dt><dd>{{ $record->sku_prefix }}</dd>@endif
+            @if(in_array($kind, ['categories', 'collections']))<dt>Description</dt><dd>{{ $record->description ?: '—' }}</dd>@endif
+            @if(!in_array($kind, ['categories', 'collections']))<dt>Notes</dt><dd class="plain-text">{{ $record->notes ?: '—' }}</dd>@endif
+            @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format($children->count()) }}</a></dd>@endif
+        </x-app.detail-list>
+    @endif
 </div>
 @if($kind === 'categories' && $canManage)<div class="app-actions"><x-app.action variant="new"  href="/catalog/collections/create?category={{ $record->id }}">＋ New</x-app.action></div>@endif
 @if($kind === 'collections' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/items/create?collection={{ $record->id }}">＋ New</x-app.action></div>@endif
