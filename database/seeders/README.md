@@ -114,6 +114,17 @@ The Laravel entry point is `php artisan db:seed --class=PurposeSeeder`. Apply th
 
 The importer matches by name within Purposes, preserving existing IDs and statuses. It creates new records as Active and updates supplied nonblank descriptions and examples on reruns. Empty fields preserve saved text. Duplicate names or invalid rows reject the import. The command reports created, updated and unchanged counts after one transaction.
 
+## Programs
+
+Default file: `database/fixtures/programs.csv`. Fictional template: `database/fixtures-example/programs.csv`.
+
+```powershell
+php artisan programs:seed
+php artisan programs:seed --file="C:/private/programs.csv"
+```
+
+The Laravel entry point is `php artisan db:seed --class=ProgramSeeder`. Required headers are `name` and `description`. The importer creates missing programs as Active and updates nonblank descriptions on matching names. Blank descriptions preserve saved text. Existing IDs, statuses, item links and programs omitted from the file are preserved. Duplicate names and invalid rows reject the import. The command reports counts after one transaction.
+
 ## Officers/users
 
 The default input is `database/fixtures/users.csv`. The fictional template is `database/fixtures-example/users.csv`.
@@ -133,6 +144,6 @@ Reruns preserve nonblank profile fields and existing roles. The command adds mis
 
 ## Messages, safety and reruns
 
-The catalog, location, stock, supplier, purpose and officer commands print start and success/failure messages. Success is reported after commit, with counts, including unchanged reruns. Failures return nonzero; expected validation/authorization problems are explained, while unexpected private details go to application logs. `db:seed --class=...` uses Laravel's normal exception output. Missing files produce actionable CSV/path guidance. Do not print file contents or personal details in command summaries.
+The catalog, location, stock, supplier, purpose, program and officer commands print start and success/failure messages. Success is reported after commit, with counts, including unchanged reruns. Failures return nonzero; expected validation/authorization problems are explained, while unexpected private details go to application logs. `db:seed --class=...` uses Laravel's normal exception output. Missing files produce actionable CSV/path guidance. Do not print file contents or personal details in command summaries.
 
 Forge's missing `.forge/provision-....output` error concerns its output capture, not CSV validation; inspect execution before rerunning. Especially for stock, an unexamined rerun may reapply absolute counts.

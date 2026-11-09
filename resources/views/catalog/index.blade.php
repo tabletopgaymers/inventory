@@ -22,10 +22,10 @@
 @if($kind === 'categories')<th>Description</th><th class="number">Entries</th>
 @elseif($kind === 'collections')<th>Description</th><th>SKU Prefix</th><th class="number">Entries</th>
 @elseif($kind === 'items')<th>SKU</th>
-@elseif($kind === 'storage_locations')<th>Description</th>
+@elseif(in_array($kind, ['storage_locations', 'programs'], true))<th>Description</th>
 @elseif($kind === 'suppliers')<th>Contact</th><th>Email</th><th>Website</th>
 @elseif($kind === 'purposes')<th>Description</th><th>Examples</th>
-@else<th>Notes</th>@endif
+@endif
 @include('catalog.status-filter')
 </tr></thead><tbody>
 @php
@@ -55,8 +55,11 @@
 @endphp
 <td>@if($websiteHost && in_array($websiteScheme, ['http', 'https'], true))<a href="{{ $record->website }}" target="_blank" rel="noopener noreferrer">{{ preg_replace('/\Awww\./i', '', $websiteHost) }}</a>@else—@endif</td>
 <td><x-app.status-badge :status="ucfirst($record->state)" /></td>
-@elseif($kind === 'purposes')<td class="plain-text">{{ filled($record->description) ? $record->description : '—' }}</td><td class="plain-text">{{ filled($record->examples) ? $record->examples : '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>
-@else<td>{{ $record->notes ?: '—' }}</td><td><x-app.status-badge :status="ucfirst($record->state)" /></td>@endif
+@elseif(in_array($kind, ['purposes', 'programs'], true))
+<td class="plain-text">{{ filled($record->description) ? $record->description : '—' }}</td>
+@if($kind === 'purposes')<td class="plain-text">{{ filled($record->examples) ? $record->examples : '—' }}</td>@endif
+<td><x-app.status-badge :status="ucfirst($record->state)" /></td>
+@endif
 @if(in_array($kind, ['categories', 'collections']))
 <td><x-app.status-badge :status="ucfirst($record->state)" /></td>
 @endif

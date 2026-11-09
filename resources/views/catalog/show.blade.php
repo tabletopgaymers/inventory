@@ -43,11 +43,11 @@
         <x-app.detail-list variant="content">
             @if($category)<dt>Category</dt><dd><a href="/catalog/categories/{{ $category->id }}">{{ $category->name }}</a></dd><dt>SKU prefix</dt><dd>{{ $record->sku_prefix }}</dd>@endif
             @if(in_array($kind, ['categories', 'collections']))<dt>Description</dt><dd>{{ $record->description ?: '—' }}</dd>@endif
+            @if(in_array($kind, ['purposes', 'programs'], true))
+                <dt>Description</dt><dd class="plain-text">{{ filled($record->description) ? $record->description : '—' }}</dd>
+            @endif
             @if($kind === 'purposes')
-                <dt>Description</dt><dd>{{ filled($record->description) ? $record->description : '—' }}</dd>
                 <dt>Examples</dt><dd>{{ filled($record->examples) ? $record->examples : '—' }}</dd>
-            @elseif(!in_array($kind, ['categories', 'collections']))
-                <dt>Notes</dt><dd class="plain-text">{{ $record->notes ?: '—' }}</dd>
             @endif
             @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format($children->count()) }}</a></dd>@endif
         </x-app.detail-list>

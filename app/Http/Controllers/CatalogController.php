@@ -186,12 +186,12 @@ class CatalogController
         if ($kind === 'storage_locations') {
             $rules['mailing_address'] = array_replace($this->multilineText(), [0 => 'required']);
         }
-        if ($kind === 'purposes') {
-            $rules['description'] = $rules['examples'] = $this->multilineText();
+        if (in_array($kind, ['purposes', 'programs'], true)) {
+            $rules['description'] = $this->multilineText();
             unset($rules['notes']);
         }
-        if ($kind === 'programs') {
-            $rules['notes'] = $this->multilineText();
+        if ($kind === 'purposes') {
+            $rules['examples'] = $this->multilineText();
         }
         if ($kind === 'collections') {
             if (is_string($request->input('sku_prefix'))) {
@@ -282,8 +282,8 @@ class CatalogController
                     $values['kind'] = $kind;
                     $fields = match ($kind) {
                         'purposes' => ['description', 'examples'],
+                        'programs' => ['description'],
                         'suppliers' => ['contact_name', 'email', 'phone', 'website', 'address', 'notes'],
-                        default => ['notes'],
                     };
                     foreach ($fields as $field) {
                         $values[$field] = $data[$field] ?? null;

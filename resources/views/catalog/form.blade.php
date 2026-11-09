@@ -24,10 +24,12 @@
 @if(in_array($kind, ['categories','collections','storage_locations']))<label>Description<input type="text" data-optional name="description" maxlength="5000" value="{{ old('description', $record?->description) }}"></label>@endif
 @if($kind === 'storage_locations')<label>Mailing address<textarea required name="mailing_address" maxlength="5000">{{ old('mailing_address', $record?->mailing_address) }}</textarea></label>@endif
 @if($kind === 'suppliers')@foreach(['contact_name'=>'Contact name','email'=>'Email','phone'=>'Phone','website'=>'Website'] as $field=>$label)<label>{{ $label }}<input data-optional name="{{ $field }}" maxlength="255" value="{{ old($field, $record?->$field) }}"></label>@endforeach<label>Address<textarea data-optional name="address" maxlength="5000">{{ old('address', $record?->address) }}</textarea></label>@endif
-@if($kind === 'purposes')
+@if(in_array($kind, ['purposes', 'programs'], true))
     <label>Description<textarea data-optional name="description" maxlength="5000">{{ old('description', $record?->description) }}</textarea></label>
-    <label>Examples<textarea data-optional name="examples" maxlength="5000">{{ old('examples', $record?->examples) }}</textarea></label>
-@elseif(in_array($kind, ['suppliers', 'programs']))
+    @if($kind === 'purposes')
+        <label>Examples<textarea data-optional name="examples" maxlength="5000">{{ old('examples', $record?->examples) }}</textarea></label>
+    @endif
+@elseif($kind === 'suppliers')
     <label>Notes<textarea data-optional name="notes" maxlength="5000">{{ old('notes', $record?->notes) }}</textarea></label>
 @endif
 </form>
