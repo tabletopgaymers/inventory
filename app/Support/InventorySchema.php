@@ -7,6 +7,8 @@ class InventorySchema
 {
     public const MIGRATION = '2026_10_06_000000_create_inventory_tables';
 
+    public const CLASSIFICATION_MIGRATION = '2026_11_09_231000_add_collection_classifications';
+
     public const TABLES = ['categories', 'collections', 'items', 'storage_locations', 'inventory_balances', 'inventory_adjustments', 'inventory_adjustment_entries'];
 
     public function state($database, array $tables): array
@@ -14,14 +16,16 @@ class InventorySchema
         $present = array_intersect(self::TABLES, $tables);
         $recorded = in_array('migrations', $tables, true)
             && $database->table('migrations')->where('migration', self::MIGRATION)->exists();
+        $classified = in_array('migrations', $tables, true)
+            && $database->table('migrations')->where('migration', self::CLASSIFICATION_MIGRATION)->exists();
         if ($present === []) {
-            return ['compatible' => ! $recorded, 'ready' => false];
+            return ['compatible' => ! $recorded && ! $classified, 'ready' => false];
         }
         if (count($present) !== count(self::TABLES) || ! $recorded) {
             return ['compatible' => false, 'ready' => false];
         }
         $schema = $database->getSchemaBuilder();
-        foreach ($this->contract() as $table => $expected) {
+        foreach ($this->contract($classified) as $table => $expected) {
             $actual = [];
             foreach ($schema->getColumns($table) as $column) {
                 $actual[$column['name']] = [
@@ -75,7 +79,7 @@ class InventorySchema
         return ['compatible' => true, 'ready' => true];
     }
 
-    private function contract(): array
+    private function contract(bool $classified): array
     {
         $id = ['bigint unsigned', false, true];
         $reference = ['bigint unsigned', false, false];
@@ -83,10 +87,12 @@ class InventorySchema
         $quantity = ['int', false, false];
         $cost = ['decimal(24,12)', false, false];
         $timestamps = ['created_at' => ['timestamp', true, false], 'updated_at' => ['timestamp', true, false]];
+        $classificationColumns = $classified ? array_fill_keys(['purpose_id', 'program_id'], ['bigint unsigned', true, false]) : [];
+        $classificationKeys = $classified ? ['purpose_id:catalog_references:id', 'program_id:catalog_references:id'] : [];
 
         return [
             'categories' => ['columns' => ['id' => $id, 'name' => $name] + $timestamps, 'unique' => ['id'], 'foreign' => []],
-            'collections' => ['columns' => ['id' => $id, 'category_id' => $reference, 'name' => $name, 'sku_prefix' => ['varchar(50)', false, false]] + $timestamps, 'unique' => ['id'], 'foreign' => ['category_id:categories:id']],
+            'collections' => ['columns' => ['id' => $id, 'category_id' => $reference, 'name' => $name, 'sku_prefix' => ['varchar(50)', false, false]] + $timestamps + $classificationColumns, 'unique' => ['id'], 'foreign' => ['category_id:categories:id', ...$classificationKeys]],
             'items' => ['columns' => ['id' => $id, 'collection_id' => $reference, 'name' => $name, 'sku_suffix' => ['varchar(50)', false, false], 'sku' => ['varchar(101)', false, false], 'unit_cost' => $cost] + $timestamps, 'unique' => ['id', 'sku'], 'foreign' => ['collection_id:collections:id']],
             'storage_locations' => ['columns' => ['id' => $id, 'name' => $name, 'is_central' => ['tinyint(1)', false, false]] + $timestamps, 'unique' => ['id'], 'foreign' => []],
             'inventory_balances' => ['columns' => ['id' => $id, 'item_id' => $reference, 'storage_location_id' => $reference, 'quantity' => $quantity] + $timestamps, 'unique' => ['id', 'item_id,storage_location_id'], 'foreign' => ['item_id:items:id', 'storage_location_id:storage_locations:id']],

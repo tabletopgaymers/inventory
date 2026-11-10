@@ -66,6 +66,28 @@ class CatalogRecords
         return $this->records($kind)->firstWhere('id', $id) ?? abort(404);
     }
 
+    public function collectionClassification(object $collection): array
+    {
+        return [
+            'purpose' => isset($collection->purpose_id) ? $this->record('purposes', (int) $collection->purpose_id) : null,
+            'program' => isset($collection->program_id) ? $this->record('programs', (int) $collection->program_id) : null,
+        ];
+    }
+
+    public function validateCollectionClassification(array $data, ?object $existing): void
+    {
+        foreach (['purpose_id' => 'purposes', 'program_id' => 'programs'] as $field => $kind) {
+            $id = $data[$field] ?? null;
+            if ($id === null) {
+                continue;
+            }
+            $reference = DB::table('catalog_references')->where(['id' => $id, 'kind' => $kind])->lockForUpdate()->first();
+            if (! $reference || ($reference->state !== 'active' && (int) ($existing?->{$field} ?? 0) !== (int) $id)) {
+                throw ValidationException::withMessages([$field => 'Choose an active '.self::SINGULAR[$kind].'.']);
+            }
+        }
+    }
+
     public function activeAssociation(string $kind, int $id, ?int $existing = null): void
     {
         $table = in_array($kind, ['purposes', 'programs', 'suppliers'], true) ? 'catalog_references' : $kind;

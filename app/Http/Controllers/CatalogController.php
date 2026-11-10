@@ -103,7 +103,8 @@ class CatalogController
             ? $service->records('collections')->where('category_id', $record)->values()
             : ($kind === 'collections' ? $service->records('items', naturalNames: true)->where('collection_id', $record)->values() : collect());
 
-        return view('catalog.show', PurchaseSupplierReturn::context($request, $kind) + [
+        $classification = $kind === 'collections' ? $service->collectionClassification($row) : [];
+        return view('catalog.show', PurchaseSupplierReturn::context($request, $kind) + $classification + [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
             'canManage' => $this->canMaintain($request, $kind, $record),
         ]);
@@ -144,7 +145,7 @@ class CatalogController
         $context = PurchaseSupplierReturn::context($request, $kind) + ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
         $context['startingLocations'] = $kind === 'items' && !$record ? $service->records('storage_locations')->where('state', 'active')->values() : collect();
         $context['selectedCollection'] = $selectedCollection;
-        return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $service->records('purposes'), 'programs' => $service->records('programs'), 'selectedPrograms' => $record && $kind === 'items' ? DB::table('item_programs')->where('item_id', $record)->pluck('program_id')->all() : []]);
+        return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $kind === 'collections' ? $service->records('purposes') : collect(), 'programs' => $kind === 'collections' ? $service->records('programs') : collect()]);
     }
 
     public function itemForm(Request $request, ?int $record = null)
@@ -198,9 +199,10 @@ class CatalogController
                 $request->merge(['sku_prefix' => rtrim($request->input('sku_prefix'), '-')]);
             }
             $rules += ['category_id' => ['required', 'integer', 'min:1'], 'sku_prefix' => ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D']];
+            $rules += ['purpose_id' => ['required', 'integer', 'min:1'], 'program_id' => ['nullable', 'integer', 'min:1']];
         }
         if ($kind === 'items') {
-            $rules += ['collection_id' => ['required', 'integer', 'min:1'], 'sku_suffix' => ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D'], 'variety' => $this->text(), 'purpose_id' => ['nullable', 'integer', 'min:1'], 'programs' => ['nullable', 'array'], 'programs.*' => ['integer', 'distinct', 'min:1'], 'bundle_type' => $this->text(), 'bundle_quantity' => ['nullable', 'integer', 'min:1', 'max:1000000000']];
+            $rules += ['collection_id' => ['required', 'integer', 'min:1'], 'sku_suffix' => ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D'], 'variety' => $this->text(), 'bundle_type' => $this->text(), 'bundle_quantity' => ['nullable', 'integer', 'min:1', 'max:1000000000']];
             if (!$record && is_string($request->input('unit_cost')) && preg_match('/\A\.\d{1,12}\z/D', $request->input('unit_cost'))) {
                 $request->merge(['unit_cost' => '0'.$request->input('unit_cost')]);
             }
@@ -243,6 +245,7 @@ class CatalogController
                 if ($kind === 'collections') {
                     DB::table('categories')->where('id', $data['category_id'])->lockForUpdate()->firstOrFail();
                     $service->activeAssociation('categories', (int) $data['category_id'], $old ? (int) $old->category_id : null);
+                    $service->validateCollectionClassification($data, $old);
                     if ($old && $old->sku_prefix !== $data['sku_prefix']) {
                         $items = DB::table('items')->where('collection_id', $old->id)->orderBy('id')->lockForUpdate()->get(['id', 'sku_suffix']);
                         $finalSkus = $items->mapWithKeys(fn ($item) => [$item->id => CatalogRecords::itemSku($data['sku_prefix'], $item->sku_suffix)]);
@@ -268,7 +271,7 @@ class CatalogController
                             ]);
                         }
                     }
-                    $values += ['category_id' => $data['category_id'], 'sku_prefix' => $data['sku_prefix']];
+                    $values += ['category_id' => $data['category_id'], 'sku_prefix' => $data['sku_prefix'], 'purpose_id' => $data['purpose_id'], 'program_id' => $data['program_id'] ?? null];
                 }
                 if ($kind === 'items') {
                     $collection = DB::table('collections')->where('id', $data['collection_id'])->lockForUpdate()->firstOrFail();
@@ -308,26 +311,14 @@ class CatalogController
                     }
                 }
                 if ($kind === 'items') {
-                    $oldMeta = DB::table('item_metadata')->where('item_id', $id)->first();
-                    if (! empty($data['purpose_id'])) {
-                        $service->activeAssociation('purposes', (int) $data['purpose_id'], $oldMeta?->purpose_id);
-                    }
-                    $existingPrograms = DB::table('item_programs')->where('item_id', $id)->pluck('program_id')->all();
-                    foreach ($data['programs'] ?? [] as $program) {
-                        $service->activeAssociation('programs', (int) $program, in_array((int) $program, $existingPrograms) ? (int) $program : null);
-                    }
                     $meta = ['updated_at' => now('UTC')];
-                    foreach (['variety', 'purpose_id', 'bundle_type', 'bundle_quantity', 'notes', 'irs_fmv', 'in_person_ask', 'online_ask'] as $field) {
+                    foreach (['variety', 'bundle_type', 'bundle_quantity', 'notes', 'irs_fmv', 'in_person_ask', 'online_ask'] as $field) {
                         $meta[$field] = $data[$field] ?? null;
                         if (in_array($field, ['irs_fmv', 'in_person_ask', 'online_ask']) && $meta[$field] !== null) {
                             $meta[$field] = StockNumbers::cost($meta[$field]);
                         }
                     }
                     DB::table('item_metadata')->updateOrInsert(['item_id' => $id], $meta);
-                    DB::table('item_programs')->where('item_id', $id)->delete();
-                    foreach ($data['programs'] ?? [] as $program) {
-                        DB::table('item_programs')->insert(['item_id' => $id, 'program_id' => $program]);
-                    }
                     if (!$old) {
                         $startingRows = [];
                         foreach ($data['starting_inventory'] ?? [] as $locationId => $quantity) {

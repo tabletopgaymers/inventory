@@ -60,14 +60,15 @@ class InventoryController
         $dailyReady = $schema['dailyInventoryReady'];
         $extraBalances = [];
         $metadata = null;
-        $purpose = null;
-        $programs = collect();
+        $classification = ['purpose' => null, 'program' => null];
+        $itemRecord = $this->item($item);
         $state = 'active';
         if ($catalogReady) {
             $metadata = DB::table('item_metadata')->where('item_id', $item)->first();
-            $purpose = $metadata?->purpose_id ? app(CatalogRecords::class)->record('purposes', $metadata->purpose_id) : null;
-            $programs = DB::table('item_programs')->join('catalog_references', 'catalog_references.id', '=', 'item_programs.program_id')->where('item_id', $item)->orderBy('name')->get();
-            $state = app(CatalogRecords::class)->record('items', $item)->state;
+            $catalog = app(CatalogRecords::class);
+            $collection = DB::table('collections')->where('id', $itemRecord->collection_id)->firstOrFail(['purpose_id', 'program_id']);
+            $classification = $catalog->collectionClassification($collection);
+            $state = $catalog->record('items', $item)->state;
             $criteria = app(InventorySearch::class)->defaults();
             $criteria['include_inactive'] = true;
             $results = app(InventorySearch::class)->results($criteria, naturalNames: true);
@@ -136,8 +137,8 @@ class InventoryController
 
         $itemBase = $request->is('catalog/*') ? '/catalog/items/' : '/inventory/items/';
         $itemEditUrl = $itemBase.$item.($request->is('catalog/*') ? '/edit' : '/details/edit');
-        return view('inventory.item', ['itemBase' => $itemBase, 'itemEditUrl' => $itemEditUrl, 'item' => $this->item($item), 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->canAdjustUnitCost(),
-            'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'purpose' => $purpose, 'programs' => $programs, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);
+        return view('inventory.item', $classification + ['itemBase' => $itemBase, 'itemEditUrl' => $itemEditUrl, 'item' => $itemRecord, 'locations' => $this->locations($item), 'history' => $history, 'dailyReady' => $dailyReady, 'canCost' => $request->user()->canAdjustUnitCost(),
+            'canCorrect' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'), 'catalogReady' => $catalogReady, 'metadata' => $metadata, 'state' => $state, 'extraBalances' => $extraBalances, 'browse' => $request->query('browse')]);
     }
 
     private function draft(Request $request, int $item, string $token): array

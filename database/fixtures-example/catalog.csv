@@ -1,4 +1,4 @@
-Category,Collection,Item,SkuPre,SkuPost,Sku,CategoryDescription,CollectionDescription,ItemDescription,Notes,Variety
-Example category,Example collection,"Example token, blue",EX,BLUE,EX-BLUE,Fictional sample category,Fictional sample collection,Unicode example: ½,Example note,Blue
-Example category,Example collection,"Example token, red",EX,RED,EX-RED,Fictional sample category,Fictional sample collection,,,Red
-Example category,Example collection,"Example token, green",EX,GREEN,EX-GREEN,Fictional sample category,Fictional sample collection,,,Green
+Category,Collection,Item,SkuPre,SkuPost,Sku,CategoryDescription,CollectionDescription,ItemDescription,Notes,Variety,CollectionPurpose,CollectionProgram
+Example category,Example collection,"Example token, blue",EX,BLUE,EX-BLUE,Fictional sample category,Fictional sample collection,Unicode example: ½,Example note,Blue,Example Displays,Example Game Club
+Example category,Example collection,"Example token, red",EX,RED,EX-RED,Fictional sample category,Fictional sample collection,,,Red,Example Displays,Example Game Club
+Example category,Example collection,"Example token, green",EX,GREEN,EX-GREEN,Fictional sample category,Fictional sample collection,,,Green,Example Displays,Example Game Club

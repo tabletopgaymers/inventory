@@ -11,7 +11,7 @@ use LogicException;
 class CatalogSeeder extends Seeder
 {
     private const REQUIRED = ['Category', 'Collection', 'Item', 'SkuPre', 'SkuPost', 'Sku'];
-    private const OPTIONAL = ['CategoryDescription', 'CollectionDescription', 'ItemDescription', 'Notes', 'Variety'];
+    private const OPTIONAL = ['CategoryDescription', 'CollectionDescription', 'ItemDescription', 'Notes', 'Variety', 'CollectionPurpose', 'CollectionProgram'];
 
     public function run(?string $file = null): array
     {
@@ -27,11 +27,30 @@ class CatalogSeeder extends Seeder
                 throw new LogicException('Run database migrations before catalog seeding.');
             }
             $created = ['categories' => 0, 'collections' => 0, 'items' => 0];
-            $categories = $collections = [];
+            $categories = $collections = $classifications = $references = [];
             foreach ($rows as $row) {
                 $category = $categories[$row['Category']] ??= $this->record('categories', ['name' => $row['Category']], [], $created);
                 $key = json_encode([$row['Category'], $row['Collection']], JSON_THROW_ON_ERROR);
-                $collection = $collections[$key] ??= $this->record('collections', ['category_id' => $category, 'name' => $row['Collection']], ['sku_prefix' => $row['SkuPre']], $created);
+                if (! isset($collections[$key])) {
+                    $identity = ['category_id' => $category, 'name' => $row['Collection']];
+                    if (! array_key_exists('CollectionPurpose', $row) && ! DB::table('collections')->where($identity)->exists()) {
+                        throw new LogicException('A new collection requires CollectionPurpose and CollectionProgram columns.');
+                    }
+                    $collections[$key] = $this->record('collections', $identity, ['sku_prefix' => $row['SkuPre']], $created);
+                }
+                $collection = $collections[$key];
+                if (array_key_exists('CollectionPurpose', $row)) {
+                    $purpose = $row['CollectionPurpose'];
+                    $program = $row['CollectionProgram'];
+                    $classification = [
+                        'purpose_id' => $references['purposes'][$purpose] ??= $this->reference('purposes', $purpose),
+                        'program_id' => $program === '' ? null : ($references['programs'][$program] ??= $this->reference('programs', $program)),
+                    ];
+                    if (isset($classifications[$collection]) && $classifications[$collection] !== $classification) {
+                        throw new LogicException('Rows for the same collection have conflicting Purpose or Program assignments.');
+                    }
+                    $classifications[$collection] = $classification;
+                }
                 $item = $this->record('items', ['sku' => $row['Sku']], ['collection_id' => $collection, 'name' => $row['Item'], 'sku_suffix' => $row['SkuPost'], 'unit_cost' => '0'], $created);
                 $this->metadata('categories', $category, ['description' => $row['CategoryDescription'] ?? null]);
                 $this->metadata('collections', $collection, ['description' => $row['CollectionDescription'] ?? null]);
@@ -41,6 +60,13 @@ class CatalogSeeder extends Seeder
                     DB::table('item_metadata')->insert(['item_id' => $item, 'created_at' => now('UTC'), 'updated_at' => now('UTC')] + $details);
                 } elseif ($details !== []) {
                     DB::table('item_metadata')->where('item_id', $item)->update($details + ['updated_at' => now('UTC')]);
+                }
+            }
+            foreach ($classifications as $collection => $classification) {
+                $query = DB::table('collections')->where('id', $collection);
+                $existing = (array) $query->first(['purpose_id', 'program_id']);
+                if ($existing != $classification) {
+                    $query->update($classification + ['updated_at' => now('UTC')]);
                 }
             }
             $summary = ['rows' => count($rows), 'categories' => count($categories), 'collections' => count($collections), 'created' => $created];
@@ -67,6 +93,10 @@ class CatalogSeeder extends Seeder
                 || array_diff(self::REQUIRED, $header) || array_diff($header, array_merge(self::REQUIRED, self::OPTIONAL))) {
                 throw new LogicException('Expected Category, Collection, Item, SkuPre, SkuPost, Sku and documented optional columns.');
             }
+            $hasClassification = in_array('CollectionPurpose', $header, true);
+            if ($hasClassification !== in_array('CollectionProgram', $header, true)) {
+                throw new LogicException('Include both CollectionPurpose and CollectionProgram, or omit both for a legacy fixture.');
+            }
             $rows = $skus = $prefixes = $descriptions = [];
             $line = 1;
             while (($values = fgetcsv($handle, 0, ',', '"', '')) !== false) {
@@ -82,9 +112,16 @@ class CatalogSeeder extends Seeder
                 $rules += array_fill_keys(['SkuPre', 'SkuPost'], ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D']);
                 $rules['Sku'] = ['required', 'string', 'max:101'];
                 foreach (self::OPTIONAL as $field) {
-                    $rules[$field] = ['nullable', 'string', 'max:'.($field === 'Variety' ? '255' : '5000')];
+                    $rules[$field] = ['nullable', 'string', 'max:'.(in_array($field, ['Variety', 'CollectionPurpose', 'CollectionProgram'], true) ? '255' : '5000')];
+                }
+                if ($hasClassification) {
+                    $rules['CollectionPurpose'][0] = 'required';
                 }
                 Validator::make($row, $rules)->validate();
+                if ($hasClassification) {
+                    $row['CollectionPurpose'] = trim($row['CollectionPurpose']);
+                    $row['CollectionProgram'] = trim($row['CollectionProgram']);
+                }
                 foreach (self::REQUIRED as $field) {
                     if (trim($row[$field]) !== $row[$field] || trim($row[$field]) === '') {
                         throw new LogicException("Catalog row {$line} has blank or padded identity text.");
@@ -120,6 +157,16 @@ class CatalogSeeder extends Seeder
         } finally {
             fclose($handle);
         }
+    }
+
+    private function reference(string $kind, string $name): int
+    {
+        $reference = DB::table('catalog_references')->where(['kind' => $kind, 'name' => $name, 'state' => 'active'])->lockForUpdate()->first();
+        if (! $reference) {
+            throw new LogicException('Unknown or inactive collection '.CatalogRecords::SINGULAR[$kind].'. Seed active references first.');
+        }
+
+        return (int) $reference->id;
     }
 
     private function record(string $table, array $identity, array $values, array &$created): int

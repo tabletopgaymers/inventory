@@ -42,6 +42,10 @@
     @else
         <x-app.detail-list variant="content">
             @if($category)<dt>Category</dt><dd><a href="/catalog/categories/{{ $category->id }}">{{ $category->name }}</a></dd><dt>SKU prefix</dt><dd>{{ $record->sku_prefix }}</dd>@endif
+            @if($kind === 'collections')
+                <dt>Purpose</dt><dd>{{ $purpose?->name ?? '—' }}</dd>
+                <dt>Program</dt><dd>{{ $program?->name ?? '—' }}</dd>
+            @endif
             @if(in_array($kind, ['categories', 'collections']))<dt>Description</dt><dd>{{ $record->description ?: '—' }}</dd>@endif
             @if(in_array($kind, ['purposes', 'programs'], true))
                 <dt>Description</dt><dd class="plain-text">{{ filled($record->description) ? $record->description : '—' }}</dd>

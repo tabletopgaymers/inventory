@@ -16,7 +16,7 @@
 <dt>Name</dt><dd>{{ $item->name }}</dd>
 <dt>Collection</dt><dd><a href="/catalog/categories/{{ $item->category_id }}">{{ $item->category_name }}</a> : <a href="/catalog/collections/{{ $item->collection_id }}">{{ $item->collection_name }}</a></dd>
 <dt>SKU</dt><dd>{{ $item->sku }}</dd>
-<dt>Variety</dt><dd>{{ $metadata?->variety ?? '—' }}</dd><dt>Purpose</dt><dd>{{ $purpose?->name ?? '—' }}</dd><dt>Programs</dt><dd>{{ $programs->pluck('name')->join(', ') ?: '—' }}</dd>
+<dt>Variety</dt><dd>{{ $metadata?->variety ?? '—' }}</dd><dt>Purpose</dt><dd>{{ $purpose?->name ?? '—' }}</dd><dt>Program</dt><dd>{{ $program?->name ?? '—' }}</dd>
 </x-app.detail-list></div>
 <div><x-app.detail-list variant="content" >
 <dt>Unit cost</dt><dd>{{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}@if($dailyReady && $canCost) (<a href="{{ $itemBase }}{{ $item->id }}/cost">adjust</a>)@endif</dd>
