@@ -14,7 +14,25 @@ All fixture inputs use **comma-delimited CSV encoded as UTF-8**. A UTF-8 BOM is 
 
 A fresh checkout contains the fixture directory's `.gitignore` and examples, but **no real data**. Copy approved inputs into `database/fixtures/` separately. Never force-add real fixture data to Git, and never silently substitute examples when real input is missing. Examples are fictional documentation, not a deployment dataset.
 
-The default `DatabaseSeeder` remains empty. Imports are run explicitly and are not part of deployment or ordinary migrations. Each implemented command accepts `--file` to select an alternative private input. Publishing seeder code does not execute it. Run migrations before importing and confirm the target environment/database before each authorized execution.
+The default `DatabaseSeeder` remains empty. Imports are run explicitly and are not part of deployment or ordinary migrations. Each implemented command accepts `--file` to select an alternative private input. Publishing seeder code does not execute it.
+
+## Full setup and seeding order
+
+1. Verify the target environment and database, then run `php artisan migrate`. For an authorized hosted migration, use `php artisan migrate --force`.
+2. Set up the initial administrator. Configure `MICROSOFT_BOOTSTRAP_TENANT_ID` to match `MICROSOFT_TENANT_ID` and set `MICROSOFT_BOOTSTRAP_OBJECT_ID` to the designated administrator's Microsoft Object ID. Have that person sign in with Microsoft and save their profile to activate the one-time Admin grant. Confirm the account is enabled and has the Admin role before seeding.
+3. Supply the approved private CSVs, then run these commands in order. On a hosted installation, pass the absolute fixture path to each command with `--file` as described under [Server storage](#server-storage).
+
+   ```bash
+   php artisan purposes:seed
+   php artisan programs:seed
+   php artisan locations:seed
+   php artisan suppliers:seed
+   php artisan users:seed
+   php artisan catalog:seed
+   php artisan inventory:seed
+   ```
+
+Catalog uses the seeded Purposes and Programs. The officer import uses the initial administrator to authorize and audit role grants. Starting stock runs last because it needs the catalog, storage locations, and an enabled Admin or Manager as its actor.
 
 ## Server storage
 
