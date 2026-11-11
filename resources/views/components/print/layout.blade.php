@@ -5,6 +5,6 @@
     <title>{{ $documentTitle ?? $title }}</title>
     @vite(array_merge(['resources/css/print.css', 'resources/js/print.js'], $styles))
 </head><body class="print-page {{ $bodyClass }}"><main>
-    <div class="print-title"><h1>{{ $title }}</h1><x-app.action type="button" size="small" data-print-document>Print</x-app.action></div>
+    <div class="print-title"><h1>{{ $title }}</h1><x-app.action type="button" size="small" class="print-screen-only" data-print-document>Print</x-app.action></div>
     {{ $slot }}
 </main></body></html>

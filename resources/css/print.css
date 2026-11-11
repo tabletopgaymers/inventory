@@ -14,8 +14,11 @@ h1 { font-size: 1.4rem; }
 table { border-collapse: separate; }
 .print-collection { break-inside: auto; }
 .print-collection > td { padding: 0; }
-col.print-quantity-column { width: 15%; }
-.print-quantity { width: 15%; border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); height: 2rem; text-align: right; }
+col.print-quantity-column { width: var(--app-print-writing-width); }
+col.print-sku-column { width: var(--app-print-sku-width, 1%); }
+.print-sku { white-space: nowrap; }
+td.print-sku { border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
+.print-quantity { border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); height: 2rem; text-align: right; }
 .print-quantity:last-child { border-right: var(--app-print-table-border); }
 .print-group-row th { background: var(--app-print-table-group-surface); border-left: var(--app-print-table-border); border-right: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
 .print-material > thead th { border-top: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }

@@ -2,12 +2,13 @@
    Document layouts retain their page margins, columns and continuation structure. */
 :root {
     --app-print-table-border: 1pt solid #000;
-    --app-print-table-padding: .35em .5em;
+    --app-print-table-padding: .25em .5em;
     --app-print-table-group-surface: #eee;
     --app-print-table-item-padding: 1em;
     --app-print-table-font: system-ui, sans-serif;
+    --app-print-writing-width: 1in;
 }
-:where(.print-page, .count-worksheet) table { width: 100%; table-layout: fixed; border-spacing: 0; font-family: var(--app-print-table-font); font-size: 12pt; }
+:where(.print-page, .count-worksheet) table { width: 100%; table-layout: fixed; border-spacing: 0; font-family: var(--app-print-table-font); font-size: 11pt; }
 :where(.print-page, .count-worksheet) :is(th, td) { padding: var(--app-print-table-padding); text-align: left; }
 :where(.print-page, .count-worksheet) thead { display: table-header-group; break-inside: avoid; }
 :where(.print-page, .count-worksheet) tr { break-inside: avoid; }
@@ -20,7 +21,7 @@
 .count-worksheet table .collection-heading th { background: var(--app-print-table-group-surface); }
 .count-worksheet table :is(.number, .table-numeric) { text-align: right; }
 @media print {
-    .app-shell .app-main table { border-collapse: collapse; border-spacing: 0; color: #000; font-family: var(--app-print-table-font); font-size: 12pt; }
+    .app-shell .app-main table { border-collapse: collapse; border-spacing: 0; color: #000; font-family: var(--app-print-table-font); font-size: 11pt; }
     .app-shell .app-main table :is(th, td) { padding: var(--app-print-table-padding); border: var(--app-print-table-border); color: #000; background: #fff; }
     .app-shell .app-main table :is(.collection-heading, .group-row) > :is(th, td) { background: var(--app-print-table-group-surface); }
     .app-shell .app-main table .app-grouped-item { padding-left: var(--app-print-table-item-padding); }

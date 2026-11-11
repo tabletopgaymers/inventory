@@ -1,9 +1,12 @@
 :root { background: white; }
-.count-worksheet table { width: 100%; table-layout: fixed; }
-.count-worksheet col.item-name { width: 60%; }
-.count-worksheet col.quantity { width: 20%; }
+.count-worksheet table { width: 100%; table-layout: auto; }
+.count-worksheet col.item-sku,
+.count-worksheet col.quantity { width: 1%; }
+.count-worksheet col.findings-column { width: var(--app-print-writing-width); }
+.count-worksheet :is(th, td):is(.item-sku, .number) { white-space: nowrap; }
+.count-worksheet table thead th.item-sku { text-align: left; }
 .count-worksheet td.app-grouped-item { padding-left: var(--app-print-table-item-padding); }
-.count-worksheet .findings { min-width: 6rem; height: 2rem; }
+.count-worksheet .findings { box-sizing: border-box; width: var(--app-print-writing-width); min-width: var(--app-print-writing-width); max-width: var(--app-print-writing-width); height: 2rem; }
 @media print {
     @page { size: letter portrait;  }
     .count-worksheet main { margin: 0; padding: 0; background: white; box-shadow: none; border: 0; }
