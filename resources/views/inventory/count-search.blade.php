@@ -1,5 +1,5 @@
 @extends('layout')
-@section('title', 'Location counts')
+@section('title', 'Reconcile')
 @section('content-sections')
 <div class="app-content app-record-content">
 <p>Choose one location and criteria. Saved searches contain criteria only; each opening uses current inventory.</p>

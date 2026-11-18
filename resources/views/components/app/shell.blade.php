@@ -13,7 +13,8 @@
 <html lang="en" data-theme="tg-app">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title }} · TG Inventory</title>
+    <x-app.document-title :title="$title.' · TG Inventory'" />
+    <x-app.favicon />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}" data-density="{{ array_key_exists($displayDensity, \App\Models\User::DISPLAY_DENSITIES) ? $displayDensity : 'standard' }}">
@@ -40,8 +41,8 @@
     @if($signedIn)<aside class="app-sidebar"><x-app.navigation label="Main navigation" /></aside>@endif
     <div class="app-workspace">
         <main id="app-main" class="app-main" tabindex="-1">
-            @if($signedIn && request()->is('inventory', 'inventory/*', 'catalog', 'catalog/*'))
-                <x-app.navigation :label="request()->is('catalog', 'catalog/*') ? 'Catalog sections' : 'Inventory sections'" presentation="section" />
+            @if($signedIn && request()->is('catalog', 'catalog/*'))
+                <x-app.navigation label="Catalog sections" presentation="section" />
             @endif
             {{ $slot }}
         </main>

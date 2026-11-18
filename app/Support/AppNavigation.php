@@ -20,10 +20,8 @@ class AppNavigation
         }
 
         return [
-            ['href' => '/inventory', 'label' => 'Inventory', 'active' => request()->is('inventory', 'inventory/*'), 'children' => [
-                ['href' => '/inventory', 'label' => 'Browse', 'current' => request()->is('inventory', 'inventory/*') && ! request()->is('inventory/location-counts', 'inventory/location-counts/*')],
-                ['href' => '/inventory/location-counts', 'label' => 'Location Counts', 'current' => request()->is('inventory/location-counts', 'inventory/location-counts/*')],
-            ]],
+            ['href' => '/inventory', 'label' => 'Inventory', 'active' => request()->is('inventory', 'inventory/*') && ! request()->is('inventory/location-counts', 'inventory/location-counts/*'), 'children' => []],
+            ['href' => '/inventory/location-counts', 'label' => 'Reconcile', 'active' => request()->is('inventory/location-counts', 'inventory/location-counts/*'), 'children' => []],
             ['href' => '/relocation', 'label' => 'Relocations', 'active' => request()->is('relocation', 'relocation/*'), 'children' => []],
             ['href' => '/events', 'label' => 'Events (dev)', 'active' => request()->is('events', 'events/*'), 'children' => []],
             ['href' => '/purchase', 'label' => 'Purchases', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],

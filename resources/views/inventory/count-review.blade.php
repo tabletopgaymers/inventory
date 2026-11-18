@@ -1,5 +1,5 @@
 @extends('layout')
-@section('title', 'Review counts · '.$location->name)
+@section('title', 'Review reconciliation · '.$location->name)
 @section('content-sections')
 <div class="app-content">
 <p>Only changed counts are listed. Save applies these absolute counts to current inventory; all other items remain unchanged.</p>
