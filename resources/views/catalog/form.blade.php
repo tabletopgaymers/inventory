@@ -16,7 +16,14 @@
 @if($kind !== 'items')<label>Name<input name="name" required maxlength="255" value="{{ old('name', $record?->name) }}"></label>@endif
 @if($kind === 'collections')
 @php($categoryValue = old('category_id', $record?->category_id ?? $selectedCategory?->id))
-<label>Category<select name="category_id" required>@if(!$record)<option value="" @selected(!$categoryValue)>– select –</option>@endif @foreach($categories as $category)@if($category->state === 'active' || $record?->category_id === $category->id)<option value="{{ $category->id }}" @selected($categoryValue == $category->id)>{{ $category->name }} ({{ $category->state }})</option>@endif @endforeach</select></label>
+@php($activeCategories = $categories->where('state', 'active'))
+@php($hasActiveCategory = $activeCategories->contains('id', $categoryValue))
+<label>Category<select name="category_id" required>
+@if(!$record || !$hasActiveCategory)<option value="" @selected(!$hasActiveCategory)>– select –</option>@endif
+@foreach($activeCategories as $category)
+    <option value="{{ $category->id }}" @selected($categoryValue == $category->id)>{{ $category->name }}</option>
+@endforeach
+</select></label>
 <label>SKU prefix<input name="sku_prefix" required maxlength="50" pattern="[A-Za-z0-9_-]+" value="{{ old('sku_prefix', $record ? rtrim($record->sku_prefix, '-') : null) }}"></label>
 <label>Purpose<select name="purpose_id" required><option value="">– select –</option>
 @foreach($purposes as $purpose)

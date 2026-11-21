@@ -6,7 +6,7 @@
 <x-app.guide-divider />
 <div class="app-content" id="profile-example">
     <h2>Shared frame and panels</h2>
-    <p>The navigation runs from the top of the page. The header sits above the main area to its right; its environment status is left aligned, opposite the account controls. Header, menu and footer come from the shared application layout. Information and action panels share padding; buttons retain their own internal padding.</p>
+    <p>Desktop navigation stays at the top of the viewport while the page scrolls. If the menu is taller than the screen, it scrolls independently so all links remain reachable. The header sits above the main area to its right; its environment status is left aligned, opposite the account controls. Header, menu and footer come from the shared application layout. Information and action panels share padding; buttons retain their own internal padding.</p>
     <p>Role controls align left and Disable account aligns right. The preview modal changes no account.</p>
     <p><a href="/style-guide/examples#users">Return to complete examples</a>.</p>
 </div>

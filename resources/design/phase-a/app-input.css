@@ -269,17 +269,21 @@
 .app-sku-field:focus-within { --app-field-border: var(--app-primary); outline: 3px solid var(--app-primary); outline-offset: -3px; }
 .app-shell .inline { display: inline-block; margin: 0.15rem .3rem; }
 .app-shell .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.app-nav-dialog { margin: 0; width: min(22rem,90vw); max-width: none; height: 100dvh; max-height: none; padding: 0.75rem 1.5rem; border: 0; border-right: 1px solid var(--app-border); background: white; color: var(--app-text); overflow-y: auto; }
+.app-nav-dialog { margin: 0; width: min(22rem,90vw); max-width: none; height: 100dvh; max-height: none; padding: 0.75rem 1rem; border: 0; border-right: 1px solid var(--app-border); background: white; color: var(--app-text); overflow-y: auto; }
 .app-nav-dialog::backdrop { background: #20212b80; }
 .app-nav-dialog[open] { display: flex; flex-direction: column; }
-.app-drawer-heading { flex-shrink: 0; }
-.app-drawer-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.375rem .75rem; }
-.app-drawer-heading h2 { margin: 0; }
+.app-drawer-heading { flex-shrink: 0; display: flex; align-items: center; justify-content: flex-start; gap: 0.375rem .75rem; }
 /* Checklist density is independent of the application navigation mode. */
 @media(max-width: 63.999rem) { .app-shell .collection-checklist { columns: 2; } }
 /* Desktop starts at 50rem (800px with a 16px browser default); smaller viewports use mobile mode. */
+@media(width >= theme(--breakpoint-app-navigation)) {
+  .app-sidebar { position: sticky; top: 0; align-self: start; height: 100dvh; overflow-y: auto; padding-top: .375rem; }
+}
 @media(width < theme(--breakpoint-app-navigation)) {
   .app-header { padding: 0.5rem 1rem; flex-wrap: wrap; gap: 0.375rem .75rem; }
+  .app-header .app-environment-status { flex-basis: 100%; text-align: center; }
+  .app-header-actions { width: 100%; margin-left: 0; }
+  .app-header-actions > :last-child { margin-left: auto; }
   .app-body { grid-template-columns: minmax(0,1fr); }
   .app-sidebar { border-right: 0; border-bottom: 1px solid var(--app-border); padding: 0.625rem 1.25rem; }
   .app-navigation-ready .app-sidebar { display: none; }

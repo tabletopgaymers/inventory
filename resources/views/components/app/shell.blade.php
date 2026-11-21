@@ -66,8 +66,8 @@
     </div>
 </div>
 @if($signedIn)
-<dialog id="app-nav-dialog" class="app-nav-dialog" aria-labelledby="app-nav-title">
-    <div class="app-drawer-heading"><h2 id="app-nav-title">Menu</h2><x-app.action id="app-nav-close" autofocus>Close menu</x-app.action></div>
+<dialog id="app-nav-dialog" class="app-nav-dialog" aria-label="Menu">
+    <div class="app-drawer-heading"><x-app.action id="app-nav-close" autofocus>Close menu</x-app.action></div>
     <x-app.navigation label="Mobile navigation" presentation="mobile" />
 </dialog>
 @endif
