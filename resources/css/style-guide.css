@@ -31,3 +31,5 @@
 .guide-color---app-disabled-surface { background: var(--app-disabled-surface); }
 .guide-color---app-disabled-text { background: var(--app-disabled-text); }
 .guide-color---app-disabled-border { background: var(--app-disabled-border); }
+
+.guide-environment-header { border: 1px solid var(--app-border); border-radius: 0; }

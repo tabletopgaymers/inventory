@@ -57,3 +57,8 @@
 .app-action.app-control-dismiss { padding: 0; width: var(--app-control-dismiss-size); height: var(--app-control-dismiss-size); border-radius: .25rem; color: inherit; font-size: inherit; font-weight: var(--app-control-dismiss-weight); line-height: 1; }
 .app-action.app-control-filter { width: var(--app-control-filter-size); height: var(--app-control-filter-size); padding: 0; border: 1px solid transparent; }
 .app-action.app-control-filter.app-action-primary { background: var(--app-primary, #5b21b6); border-color: var(--app-primary, #5b21b6); color: #fff; }
+
+/* Text-only copy actions retain the surrounding typography and appearance. */
+.app-action.app-control-copy { padding: 0; color: inherit; font: inherit; line-height: inherit; text-align: inherit; }
+
+.app-release-modified { color: var(--app-danger); font-weight: 700; }

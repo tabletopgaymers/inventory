@@ -21,12 +21,12 @@ class AppNavigation
 
         return [
             ['href' => '/inventory', 'label' => 'Inventory', 'active' => request()->is('inventory', 'inventory/*') && ! request()->is('inventory/location-counts', 'inventory/location-counts/*'), 'children' => []],
+            ['href' => '/relocation', 'label' => 'Relocation Request', 'active' => request()->is('relocation', 'relocation/*'), 'children' => []],
+            ['href' => '/purchase', 'label' => 'Purchase Request', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],
             ['href' => '/inventory/location-counts', 'label' => 'Reconcile', 'active' => request()->is('inventory/location-counts', 'inventory/location-counts/*'), 'children' => []],
-            ['href' => '/relocation', 'label' => 'Relocations', 'active' => request()->is('relocation', 'relocation/*'), 'children' => []],
-            ['href' => '/events', 'label' => 'Events (dev)', 'active' => request()->is('events', 'events/*'), 'children' => []],
-            ['href' => '/purchase', 'label' => 'Purchases', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],
             ['href' => '/catalog', 'label' => 'Catalog', 'active' => request()->is('catalog', 'catalog/*'), 'children' => $catalog],
             ['href' => '/users', 'label' => 'Users', 'active' => request()->is('users', 'users/*'), 'children' => []],
+            ['href' => '/events', 'label' => 'Events (dev)', 'active' => request()->is('events', 'events/*'), 'children' => [], 'footer' => true],
         ];
     }
 }

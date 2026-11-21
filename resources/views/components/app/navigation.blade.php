@@ -1,18 +1,11 @@
 @props(['label', 'presentation' => 'desktop'])
 @php
     $destinations = \App\Support\AppNavigation::destinations(auth()->user());
-    $environmentBox = match (config('app.env')) {
-        'local' => ['tone' => 'local', 'lines' => ['LOCAL', 'DEVELOPMENT']],
-        'development' => ['tone' => 'development', 'lines' => ['REMOTE', 'ENVIRONMENT']],
-        'testing' => ['tone' => 'testing', 'lines' => ['TESTING', 'ENVIRONMENT']],
-        'staging' => ['tone' => 'staging', 'lines' => ['STAGE', 'ENVIRONMENT']],
-        'production' => null,
-        default => null,
-    };
+
 @endphp
-<nav class="{{ $presentation === 'section' ? 'app-section-nav' : 'app-navigation' }}{{ $environmentBox && $presentation !== 'section' ? ' app-navigation-with-environment' : '' }}" aria-label="{{ $label }}">
-    @if($environmentBox && $presentation !== 'section')
-        <div class="app-environment-box app-environment-{{ $environmentBox['tone'] }}">@foreach($environmentBox['lines'] as $environmentLine)<span>{{ $environmentLine }}</span> @endforeach</div>
+<nav class="{{ $presentation === 'section' ? 'app-section-nav' : 'app-navigation' }}" aria-label="{{ $label }}">
+    @if($presentation !== 'section')
+        <div class="app-brand"><a href="/">TG Inventory</a></div>
     @endif
     @foreach($destinations as $destination)
         @if($presentation === 'section')
@@ -32,10 +25,10 @@
                 @endforeach
             </details>
         @else
-            <a href="{{ $destination['href'] }}" @class(['app-navigation-current' => $destination['active']]) @if(request()->is(ltrim($destination['href'], '/')))aria-current="page"@endif>{{ $destination['label'] }}</a>
+            <a href="{{ $destination['href'] }}" @class(['app-navigation-current' => $destination['active'], 'app-navigation-footer' => $destination['footer'] ?? false]) @if(request()->is(ltrim($destination['href'], '/')))aria-current="page"@endif>{{ $destination['label'] }}</a>
         @endif
     @endforeach
     @if($presentation !== 'section' && app()->environment(['local', 'development']))
-        <a class="app-navigation-footer" href="/style-guide" @if(request()->is('style-guide', 'style-guide/*'))aria-current="page"@endif>Style guide</a>
+        <a href="/style-guide" @if(request()->is('style-guide', 'style-guide/*'))aria-current="page"@endif>Style Guide</a>
     @endif
 </nav>

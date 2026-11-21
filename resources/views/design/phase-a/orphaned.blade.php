@@ -11,14 +11,6 @@
 <p class="app-field-help">Fictional quantities; this example does not change inventory.</p><div class="app-actions"><x-app.action type="button">Download sample</x-app.action></div></div>
 </section>
 <x-app.guide-divider />
-<section aria-labelledby="environment-title"><h2 id="environment-title">Environment indicators</h2><p>These are label and color specimens. They do not change the active environment.</p>
-<x-app.table-region label="Environment indicators" class="app-list-table-panel"><table><thead><tr><th>Environment</th><th>Indicator</th></tr></thead><tbody>
-<tr><td>Local</td><td><div class="app-environment-box app-environment-local"><span>LOCAL</span><span>DEVELOPMENT</span></div></td></tr>
-<tr><td>Remote development</td><td><div class="app-environment-box app-environment-development"><span>REMOTE</span><span>ENVIRONMENT</span></div></td></tr>
-<tr><td>Testing</td><td><div class="app-environment-box app-environment-testing"><span>TESTING</span><span>ENVIRONMENT</span></div></td></tr>
-<tr><td>Staging</td><td><div class="app-environment-box app-environment-staging"><span>STAGE</span><span>ENVIRONMENT</span></div></td></tr>
-</tbody></table></x-app.table-region></section>
-<x-app.guide-divider />
 <div class="app-content"><h2>Record details</h2><x-app.detail-list variant="content" ><dt>Name</dt><dd>Sample Administrator</dd><dt>MS account</dt><dd>sample@example.test</dd><dt>Elevated roles</dt><dd>admin, manager, procurement</dd><dt>Time zone</dt><dd>America/Chicago</dd></x-app.detail-list><p>Use a definition list for labeled values. See the complete <a href="/style-guide/examples#users">user example</a>.</p></div>
 <x-app.guide-divider />
 <div class="app-content"><h2>Permanent notes</h2><p>Sample note: checked the convention kit.</p><p class="app-field-help">Sample author · 11 Oct 2026. Permanent notes retain attribution and cannot be edited or deleted.</p></div>

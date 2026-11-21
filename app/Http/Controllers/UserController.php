@@ -80,7 +80,7 @@ class UserController extends Controller
         }
         $access->saveProfile($profileUser->id, $data, $request->user()->id);
 
-        return redirect('/profile'.((int) $profileUser->id === (int) $request->user()->id ? '' : '?user='.$profileUser->id))->with('success', 'Profile saved.');
+        return redirect($request->query('user') !== null ? '/users/'.$profileUser->id : '/')->with('success', 'Profile saved.');
     }
 
     public function role(Request $request, User $user, AccessManagement $access)

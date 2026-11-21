@@ -1,5 +1,12 @@
 @props(['title', 'guest' => false])
 @php
+    $footerEnvironment = match (config('app.env')) {
+        'local' => 'Local Development',
+        'development' => 'Development',
+        'stage', 'staging' => 'Stage Testing',
+        'testing' => 'Testing',
+        default => '',
+    };
     $signedIn = ! $guest && auth()->check();
     $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';
     $releaseMetadata = app(\App\Support\ReleaseMetadata::class)->current();
@@ -7,7 +14,12 @@
     $releaseRevision = $releaseMetadata['revision'];
     $releaseCommit = preg_match('/\A[0-9a-f]{40,64}\z/i', $releaseRevision) ? substr($releaseRevision, 0, 7) : $releaseRevision;
     $releaseLabel = implode(' · ', array_filter([$releaseBranch, $releaseCommit])) ?: 'Version unavailable';
-    if ($releaseMetadata['modified']) $releaseLabel .= ' · modified';
+    $releaseCopy = implode("\n", [
+        'Git Repo: tabletopgaymers/inventory',
+        'Branch: '.($releaseBranch ?: 'Unavailable').(app()->environment('local') && $releaseMetadata['modified'] ? ' (modified)' : ''),
+        'Commit: '.($releaseRevision ?: 'Unavailable'),
+        'Short: '.($releaseCommit ?: 'Unavailable'),
+    ]);
 @endphp
 <!doctype html>
 <html lang="en" data-theme="tg-app">
@@ -19,26 +31,26 @@
 </head>
 <body class="app-shell {{ $signedIn ? 'app-authenticated' : 'app-guest' }}" data-density="{{ array_key_exists($displayDensity, \App\Models\User::DISPLAY_DENSITIES) ? $displayDensity : 'standard' }}">
 <a class="app-skip" href="#app-main">Skip to content</a>
-<header class="app-header">
-    <div class="app-brand"><a href="/">TG Inventory</a><span>Tabletop Gaymers</span></div>
-    @if($signedIn)
-    <div class="app-header-actions">
-        <x-app.action id="app-nav-open" aria-haspopup="dialog" aria-controls="app-nav-dialog" aria-expanded="false" hidden>☰ Menu</x-app.action>
-        <details class="app-account" id="app-account">
-            <summary class="app-account-trigger" aria-label="Account for {{ auth()->user()->displayName() }}"><span class="app-account-name">{{ auth()->user()->displayName() }}</span> <span aria-hidden="true">▾</span></summary>
-            <div class="app-account-panel">
-                <p class="app-account-label">{{ auth()->user()->displayName() }}</p>
-                <nav aria-label="Account">
-                    <a href="/users/{{ auth()->id() }}" @if(request()->is('users/'.auth()->id())) aria-current="page" @endif>My profile</a>
-                    <form method="post" action="/logout">@csrf<x-app.action variant="danger" type="submit">Sign out</x-app.action></form>
-                </nav>
-            </div>
-        </details>
-    </div>
-    @endif
-</header>
 <div class="app-body">
     @if($signedIn)<aside class="app-sidebar"><x-app.navigation label="Main navigation" /></aside>@endif
+    <div class="app-main-column">
+        <x-app.header>
+            @if($signedIn)
+            <div class="app-header-actions">
+                <x-app.action id="app-nav-open" aria-haspopup="dialog" aria-controls="app-nav-dialog" aria-expanded="false" hidden>☰ Menu</x-app.action>
+                <details class="app-account" id="app-account">
+                    <summary class="app-account-trigger" aria-label="Account for {{ auth()->user()->displayName() }}"><span class="app-account-name">{{ auth()->user()->displayName() }}</span> <span aria-hidden="true">▾</span></summary>
+                    <div class="app-account-panel">
+                        <p class="app-account-label">{{ auth()->user()->displayName() }}</p>
+                        <nav aria-label="Account">
+                            <a href="/users/{{ auth()->id() }}" @if(request()->is('users/'.auth()->id())) aria-current="page" @endif>My profile</a>
+                            <form method="post" action="/logout">@csrf<x-app.action variant="danger" type="submit">Sign out</x-app.action></form>
+                        </nav>
+                    </div>
+                </details>
+            </div>
+            @endif
+        </x-app.header>
     <div class="app-workspace">
         <main id="app-main" class="app-main" tabindex="-1">
             @if($signedIn && request()->is('catalog', 'catalog/*'))
@@ -46,7 +58,11 @@
             @endif
             {{ $slot }}
         </main>
-        <footer class="app-footer"><span>TG Inventory · {{ app()->environment('local') ? 'Local development' : 'Development' }}</span><span @if($releaseRevision)title="{{ $releaseRevision }}"@endif>{{ $releaseLabel }}</span></footer>
+        <footer class="app-footer"><span>TG Inventory
+@if($footerEnvironment !== '') · <strong class="app-footer-environment app-environment-{{ config('app.env') }}">{{ $footerEnvironment }}</strong>
+@endif
+</span><x-app.action control="copy" data-release-copy="{{ $releaseCopy }}" aria-label="Copy Git version information">{{ $releaseLabel }}@if($releaseMetadata['modified']) · <strong class="app-release-modified">modified</strong>@endif</x-app.action><span class="sr-only" data-release-copy-status role="status"></span></footer>
+    </div>
     </div>
 </div>
 @if($signedIn)

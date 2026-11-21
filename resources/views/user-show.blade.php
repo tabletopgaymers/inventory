@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', $user->displayName())
 @if(auth()->user()->hasRole('admin') || (int) auth()->id() === (int) $user->id)
-@section('page-actions')<x-app.action  href="{{ (int) auth()->id() === (int) $user->id ? '/profile' : '/profile?user='.$user->id }}">Edit</x-app.action>@endsection
+@section('page-actions')<x-app.action  href="{{ '/profile?user='.$user->id }}">Edit</x-app.action>@endsection
 @endif
 @section('content-sections')
 @php($zone = is_string($user->time_zone) && in_array($user->time_zone, \App\Support\DisplayDates::zones(), true) ? $user->time_zone : \App\Support\DisplayDates::DEFAULT_ZONE)

@@ -1,13 +1,15 @@
 @extends('layout')
 @php
     $ownProfile = (int) $profileUser->id === (int) auth()->id();
-    $profileUrl = '/profile'.($ownProfile ? '' : '?user='.$profileUser->id);
+    $editingUser = request()->query('user') !== null;
+    $profileUrl = '/profile'.($editingUser ? '?user='.$profileUser->id : '');
+    $returnUrl = $editingUser ? '/users/'.$profileUser->id : '/';
     $profileZone = is_string($profileUser->time_zone) && in_array($profileUser->time_zone, \App\Support\DisplayDates::zones(), true) ? $profileUser->time_zone : \App\Support\DisplayDates::DEFAULT_ZONE;
 @endphp
 @section('title', $ownProfile ? 'My profile' : 'Edit profile: '.$profileUser->displayName())
 @section('page-actions')
-<x-app.action variant="danger"  href="{{ $profileUrl }}">Discard</x-app.action>
-<x-app.action variant="primary" type="submit"  form="profile-form">Save</x-app.action>
+<x-app.action variant="danger"  href="{{ $returnUrl }}">Discard</x-app.action>
+<x-app.action variant="primary" type="submit"  form="profile-form">{{ $editingUser ? 'Save' : 'Confirm' }}</x-app.action>
 @endsection
 @section('content')
 <form id="profile-form" method="post" action="{{ $profileUrl }}">@csrf<input type="hidden" name="_deliberate" value="1">
