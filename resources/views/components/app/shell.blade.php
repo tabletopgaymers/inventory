@@ -1,25 +1,7 @@
 @props(['title', 'guest' => false])
 @php
-    $footerEnvironment = match (config('app.env')) {
-        'local' => 'Local Development',
-        'development' => 'Development',
-        'stage', 'staging' => 'Stage Testing',
-        'testing' => 'Testing',
-        default => '',
-    };
     $signedIn = ! $guest && auth()->check();
     $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';
-    $releaseMetadata = app(\App\Support\ReleaseMetadata::class)->current();
-    $releaseBranch = $releaseMetadata['branch'];
-    $releaseRevision = $releaseMetadata['revision'];
-    $releaseCommit = preg_match('/\A[0-9a-f]{40,64}\z/i', $releaseRevision) ? substr($releaseRevision, 0, 7) : $releaseRevision;
-    $releaseLabel = implode(' · ', array_filter([$releaseBranch, $releaseCommit])) ?: 'Version unavailable';
-    $releaseCopy = implode("\n", [
-        'Git Repo: tabletopgaymers/inventory',
-        'Branch: '.($releaseBranch ?: 'Unavailable').(app()->environment('local') && $releaseMetadata['modified'] ? ' (modified)' : ''),
-        'Commit: '.($releaseRevision ?: 'Unavailable'),
-        'Short: '.($releaseCommit ?: 'Unavailable'),
-    ]);
 @endphp
 <!doctype html>
 <html lang="en" data-theme="tg-app">
@@ -58,10 +40,7 @@
             @endif
             {{ $slot }}
         </main>
-        <footer class="app-footer"><span>TG Inventory
-@if($footerEnvironment !== '') · <strong class="app-footer-environment app-environment-{{ config('app.env') }}">{{ $footerEnvironment }}</strong>
-@endif
-</span><x-app.action control="copy" data-release-copy="{{ $releaseCopy }}" aria-label="Copy Git version information">{{ $releaseLabel }}@if($releaseMetadata['modified']) · <strong class="app-release-modified">modified</strong>@endif</x-app.action><span class="sr-only" data-release-copy-status role="status"></span></footer>
+        <x-app.footer />
     </div>
     </div>
 </div>

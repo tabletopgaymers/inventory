@@ -33,3 +33,5 @@
 .guide-color---app-disabled-border { background: var(--app-disabled-border); }
 
 .guide-environment-header { border: 1px solid var(--app-border); border-radius: 0; }
+
+.guide-footer-preview { border: 1px solid var(--app-border); padding: 1rem; }

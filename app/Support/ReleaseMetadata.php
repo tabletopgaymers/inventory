@@ -9,10 +9,13 @@ class ReleaseMetadata
 {
     public function current(): array
     {
+        $preparationId = config('baseline.preparation_id');
         $recorded = [
             'branch' => (string) config('baseline.branch'),
             'revision' => (string) config('baseline.revision'),
             'modified' => false,
+            'preparation_id' => app()->environment(['stage', 'staging']) && is_string($preparationId)
+                && preg_match('/\A[a-f0-9]{32}\z/', $preparationId) ? $preparationId : null,
         ];
 
         if (! app()->environment('local') || ! file_exists(base_path('.git'))) {
@@ -28,6 +31,7 @@ class ReleaseMetadata
                 'branch' => $branch !== '' ? $branch : 'Detached HEAD',
                 'revision' => $revision,
                 'modified' => $status !== '',
+                'preparation_id' => null,
             ];
         } catch (Throwable) {
             // Optional local version information must never prevent page rendering.
