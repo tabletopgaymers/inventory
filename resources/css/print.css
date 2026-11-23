@@ -11,20 +11,9 @@ h1 { font-size: 1.4rem; }
 .print-details dd { margin: 0; overflow-wrap: anywhere; }
 .print-notes { margin: 0; min-width: 0; border: 1pt solid #000; padding: .35rem .5rem; }
 .print-notes p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-table { border-collapse: separate; }
-.print-collection { break-inside: auto; }
-.print-collection > td { padding: 0; }
+/* Document-specific column sizing and space for handwriting. */
 col.print-quantity-column { width: var(--app-print-writing-width); }
 col.print-sku-column { width: var(--app-print-sku-width, 1%); }
 .print-sku { white-space: nowrap; }
-td.print-sku { border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
-.print-quantity { border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); height: 2rem; text-align: right; }
-.print-quantity:last-child { border-right: var(--app-print-table-border); }
-.print-group-row th { background: var(--app-print-table-group-surface); border-left: var(--app-print-table-border); border-right: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
-.print-material > thead th { border-top: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
-.print-material > thead th:first-child { border-left: var(--app-print-table-border); }
-.print-material > thead th:last-child { border-right: var(--app-print-table-border); }
-.print-material > tbody > tr:not(.print-collection) > td { border: var(--app-print-table-border); border-top: 0; }
-.print-quantity-heading { text-align: right; }
-.print-item { padding-left: var(--app-print-table-item-padding); border-left: var(--app-print-table-border); border-bottom: var(--app-print-table-border); }
-@media print { @page { margin: .5in; } body { margin: 0; } button, .print-screen-only { display: none; } }
+.print-quantity { height: 2rem; }
+@media print { body { margin: 0; } button { display: none; } }

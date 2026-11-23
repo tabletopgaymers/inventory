@@ -5,13 +5,10 @@
 .count-worksheet col.findings-column { width: var(--app-print-writing-width); }
 .count-worksheet :is(th, td):is(.item-sku, .number) { white-space: nowrap; }
 .count-worksheet table thead th.item-sku { text-align: left; }
-.count-worksheet td.app-grouped-item { padding-left: var(--app-print-table-item-padding); }
 .count-worksheet .findings { box-sizing: border-box; width: var(--app-print-writing-width); min-width: var(--app-print-writing-width); max-width: var(--app-print-writing-width); height: 2rem; }
 @media print {
     @page { size: letter portrait;  }
     .count-worksheet main { margin: 0; padding: 0; background: white; box-shadow: none; border: 0; }
     .count-worksheet .no-print { display: none; }
-    .count-worksheet .collection-heading { break-after: avoid; }
     .count-worksheet td:first-child { overflow-wrap: anywhere; }
-    .count-worksheet td.app-grouped-item { padding-left: var(--app-print-table-item-padding); }
 }

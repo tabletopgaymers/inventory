@@ -142,11 +142,10 @@ class InventoryBrowseController
     {
         $this->ready();
         $row = app(CatalogRecords::class)->record('storage_locations', $location);
-        $criteria = app(InventorySearch::class)->defaults();
-        $criteria['include_inactive'] = true;
-        $criteria['columns'] = ['storage:'.$location];
+        $includeZeroStock = $request->boolean('include_zero_stock');
+        $showIncoming = $request->boolean('show_incoming', true);
 
-        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->results($criteria, naturalNames: true), 'browse' => $request->query('browse'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->locationResults($location, $includeZeroStock, $showIncoming), 'includeZeroStock' => $includeZeroStock, 'showIncoming' => $showIncoming, 'browse' => $request->query('browse'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
     }
 
     public function classification(Request $request, string $kind, int $record)

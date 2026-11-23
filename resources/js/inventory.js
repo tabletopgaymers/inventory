@@ -1,6 +1,11 @@
 import './app.js';
 
 (() => {
+  document.querySelectorAll('[data-location-view-filter]').forEach(form => {
+    form.addEventListener('change', event => {
+      if (event.target.matches('input[type="checkbox"]')) form.requestSubmit();
+    });
+  });
   const editor = document.querySelector('[data-stock-editor]');
   const integer = (input, blankZero = false) => {
     const text = input.value;

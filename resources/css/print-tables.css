@@ -1,32 +1,56 @@
-/* Shared print-table appearance, based on the Style Guide packing specimen.
-   Document layouts retain their page margins, columns and continuation structure. */
+/* Shared foundation for standalone previews and printed application pages.
+   Document-specific files own content, column widths and writing space only. */
 :root {
     --app-print-table-border: 1pt solid #000;
     --app-print-table-padding: .25em .5em;
     --app-print-table-group-surface: #eee;
     --app-print-table-item-padding: 1em;
     --app-print-table-font: system-ui, sans-serif;
+    --app-print-table-font-size: 11pt;
+    --app-print-table-line-height: 1.3;
     --app-print-writing-width: 1in;
 }
-:where(.print-page, .count-worksheet) table { width: 100%; table-layout: fixed; border-spacing: 0; font-family: var(--app-print-table-font); font-size: 11pt; }
-:where(.print-page, .count-worksheet) :is(th, td) { padding: var(--app-print-table-padding); text-align: left; }
-:where(.print-page, .count-worksheet) thead { display: table-header-group; break-inside: avoid; }
-:where(.print-page, .count-worksheet) tr { break-inside: avoid; }
-/* Flat print tables use collapsed grid lines; the packing document has its own
-   nested collection structure so its carefully joined edges remain separate. */
-.count-worksheet table { border-collapse: collapse; }
-.count-worksheet table :is(th, td) { border: var(--app-print-table-border); color: #000; }
-.count-worksheet table thead th { background: #fff; }
-.count-worksheet table thead th:not(:first-child) { text-align: right; }
-.count-worksheet table .collection-heading th { background: var(--app-print-table-group-surface); }
-.count-worksheet table :is(.number, .table-numeric) { text-align: right; }
+/* Standalone document previews use these same settings before printing. */
+.print-page table { width: 100%; table-layout: fixed; border-collapse: collapse; border-spacing: 0; font-family: var(--app-print-table-font); font-size: var(--app-print-table-font-size); line-height: var(--app-print-table-line-height); }
+.print-page :is(th, td) { padding: var(--app-print-table-padding); border: var(--app-print-table-border); text-align: left; color: #000; }
+.print-page thead th { background: #fff; }
+.print-page :is(.collection-heading, .group-row, .print-group-row) > :is(th, td) { background: var(--app-print-table-group-surface); }
+.print-page :is(.number, .table-numeric, .print-quantity, .print-quantity-heading) { text-align: right; }
+.print-page :is(.app-grouped-item, .print-item) { padding-left: var(--app-print-table-item-padding); }
 @media print {
-    .app-shell .app-main table { border-collapse: collapse; border-spacing: 0; color: #000; font-family: var(--app-print-table-font); font-size: 11pt; }
-    .app-shell .app-main table :is(th, td) { padding: var(--app-print-table-padding); border: var(--app-print-table-border); color: #000; background: #fff; }
-    .app-shell .app-main table :is(.collection-heading, .group-row) > :is(th, td) { background: var(--app-print-table-group-surface); }
-    .app-shell .app-main table .app-grouped-item { padding-left: var(--app-print-table-item-padding); }
-    .app-shell .app-main table a { color: inherit; text-decoration: none; }
-    .app-shell .app-main thead { display: table-header-group; break-inside: avoid; }
-    .app-shell .app-main tr { break-inside: avoid; }
+    @page { margin: .5in; }
+    :is(.app-shell, .print-page) :is(.app-screen-only, .print-screen-only) { display: none !important; }
+
+    /* One print contract for normal application tables and standalone documents. */
+    :is(.app-shell .app-main, .print-page) table {
+        width: 100%; min-width: 0; border-collapse: collapse; border-spacing: 0;
+        color: #000; font-family: var(--app-print-table-font);
+        font-size: var(--app-print-table-font-size); line-height: var(--app-print-table-line-height);
+    }
+    :is(.app-shell .app-main, .print-page) table :is(th, td) {
+        padding: var(--app-print-table-padding); border: var(--app-print-table-border);
+        color: #000; background: #fff;
+    }
+    /* Screen panels supply their own outer edge; paper needs every cell edge. */
+    :is(.app-shell .app-main, .print-page) table tbody tr:last-child > :is(th, td) { border-bottom: var(--app-print-table-border); }
+    :is(.app-shell .app-main, .print-page) table :is(.collection-heading, .group-row, .print-group-row) > :is(th, td) { background: var(--app-print-table-group-surface); }
+    :is(.app-shell .app-main, .print-page) table :is(.app-grouped-item, .print-item) { padding-left: var(--app-print-table-item-padding); white-space: normal; }
+    :is(.app-shell .app-main, .print-page) table :is(.number, .table-numeric, .print-quantity, .print-quantity-heading) { text-align: right; white-space: nowrap; }
+    :is(.app-shell .app-main, .print-page) table a { color: inherit; text-decoration: none; }
+    :is(.app-shell .app-main, .print-page) thead { display: table-header-group; break-inside: avoid; }
+    :is(.app-shell .app-main, .print-page) :is(tbody, tfoot) { display: table-row-group; break-inside: auto; }
+    :is(.app-shell .app-main, .print-page) tr { break-inside: avoid; }
+    :is(.app-shell .app-main, .print-page) :is(.collection-heading, .group-row, .print-group-row) { break-after: avoid; }
     .app-shell .app-main :is(.app-list-table-panel, .table-wrap) { border: 0; border-radius: 0; box-shadow: none; }
+
+    /* Opt-in report layout for printing an existing application page. */
+    .app-shell .app-main:has(.app-print-report) { padding: 0; font-size: var(--app-print-table-font-size); line-height: var(--app-print-table-line-height); }
+    .app-shell .app-print-report .app-columns { display: block; }
+    .app-shell .app-print-report .app-details { grid-template-columns: max-content minmax(0, 1fr); gap: .25em 1em; }
+    .app-shell .app-print-report .app-details dt { font-weight: 600; break-after: avoid; }
+    .app-shell .app-print-report .app-details dd { break-inside: avoid; }
+    .app-shell .app-print-report :is(h2, h3, .app-table-panel-header) { break-after: avoid; }
+    .app-shell .app-print-report h2 { font-size: 12pt; }
+    .app-shell .app-print-report .app-table-panel-header { padding: 0 0 .25em; }
+    .app-shell .app-print-report .app-table-panel-footer { padding: .5em 0 0; border: 0; font-size: 10pt; break-inside: avoid; }
 }

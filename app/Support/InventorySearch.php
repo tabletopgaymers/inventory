@@ -72,6 +72,49 @@ class InventorySearch
         });
     }
 
+    public function locationResults(int $location, bool $includeZeroStock = false, bool $showIncoming = true): array
+    {
+        $criteria = $this->defaults();
+        $criteria['include_inactive'] = true;
+        $criteria['columns'] = ['storage:'.$location];
+        $result = $this->results($criteria, naturalNames: true);
+
+        // Source balances are global; destination totals come from posted requests,
+        // not editable order drafts or partially entered receiving quantities.
+        $transit = DB::table('relocation_fulfillment_lines as lines')
+            ->join('relocation_requests as requests', 'requests.id', '=', 'lines.relocation_request_id')
+            ->where('requests.destination_location_id', $location)
+            ->whereIn('requests.status', ['Fulfilled', 'Received'])
+            ->select('lines.item_id', DB::raw('SUM(lines.sent) as quantity'))
+            ->groupBy('lines.item_id')->pluck('quantity', 'item_id');
+        $ordered = [];
+        $orders = DB::table('purchase_fulfillment as fulfillment')
+            ->join('purchase_requests as requests', 'requests.id', '=', 'fulfillment.purchase_request_id')
+            ->where('requests.receiving_location_id', $location)
+            ->whereIn('requests.status', ['Ordered', 'Shipped'])->pluck('fulfillment.data');
+        foreach ($orders as $data) {
+            $header = json_decode($data, true, flags: JSON_THROW_ON_ERROR);
+            foreach ($header['ordered_quantities'] ?? [] as $item => $quantity) {
+                $ordered[$item] = ($ordered[$item] ?? 0) + (int) $quantity;
+            }
+        }
+        $result['showTransit'] = $transit->contains(fn ($quantity) => (int) $quantity > 0);
+        $result['showOrdered'] = collect($ordered)->contains(fn ($quantity) => $quantity > 0);
+        foreach ($result['rows'] as &$row) {
+            $row['incoming_transit'] = (int) ($transit[$row['id']] ?? 0);
+            $row['incoming_ordered'] = $ordered[$row['id']] ?? 0;
+            $row['expected'] = $row['values']['storage:'.$location] + $row['incoming_transit'] + $row['incoming_ordered'];
+        }
+        unset($row);
+        if (! $includeZeroStock) {
+            $result['rows'] = array_values(array_filter($result['rows'], fn ($row) =>
+                $row['values']['storage:'.$location] !== 0
+                || ($showIncoming && ($row['incoming_transit'] !== 0 || $row['incoming_ordered'] !== 0))));
+        }
+
+        return $result;
+    }
+
     public function results(array $criteria, bool $naturalNames = false): array
     {
         $items = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')->join('categories', 'categories.id', '=', 'collections.category_id')
