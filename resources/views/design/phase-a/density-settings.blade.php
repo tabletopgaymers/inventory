@@ -28,6 +28,7 @@
     ],
     'Fields and buttons' => [
         '--app-density-field-y' => 'Field vertical margin',
+        '--app-control-row-gap' => 'Control row gap',
         '--app-label-control-gap' => 'Label / control gap',
         '--app-control-padding-y' => 'Field / normal button vertical padding',
         'button' => 'Button padding',

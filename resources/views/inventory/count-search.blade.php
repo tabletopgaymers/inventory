@@ -30,26 +30,18 @@
 </form>
 </section>
 @if($canCount)
-<x-app.collapsible-panel title="Lists" class="app-columns-fields" open>
 {{-- Retained until the Lists replacement is complete (UW-320).
 <label>Personal search name (optional for Search; required to save criteria)<input name="name" maxlength="100" value="{{ old('name') }}"></label><label class="app-choice"><input type="checkbox" name="overwrite" value="1">Overwrite my existing search with this name</label><x-app.action type="submit" name="action" value="save">Save personal criteria</x-app.action>
 --}}
-<form method="post" action="/inventory/location-counts/load-list">
-    @csrf
-    <div class="app-field">
-        <select id="reconcile-list" name="list_id" aria-label="List" required>
-            <option value="">Select a list</option>
-            @if($loadedList && !$lists->contains('id', $loadedList['id']))
-                <option value="{{ $loadedList['id'] }}" selected disabled>{{ $loadedList['name'] }}</option>
-            @endif
-            @foreach($lists as $list)<option value="{{ $list->id }}" @selected(old('list_id', $loadedList['id'] ?? null) == $list->id)>{{ $list->name }}</option>@endforeach
-        </select>
-    </div>
-    <div class="actions">
-        @if($loadedList)<x-app.action href="{{ $lastSearch === null ? '/inventory/location-counts' : '/inventory/location-counts?context='.$lastSearch }}">Reset</x-app.action>@endif
-        <x-app.action type="submit">Load</x-app.action>
-    </div>
-</form>
+<x-app.saved-list-selector
+    :lists="$lists"
+    :loaded-list="$loadedList"
+    load-action="/inventory/location-counts/load-list"
+    :reset-url="$loadedList ? ($lastSearch === null ? '/inventory/location-counts' : '/inventory/location-counts?context='.$lastSearch) : null"
+    select-id="reconcile-list"
+    class="app-columns-fields"
+    open
+>
 @if($loadedList)
 <form method="post" action="/inventory/location-counts/{{ $token }}/list-location" data-list-location>
     @csrf
@@ -62,7 +54,7 @@
     <noscript><x-app.action type="submit">Apply location</x-app.action></noscript>
 </form>
 @endif
-</x-app.collapsible-panel>
+</x-app.saved-list-selector>
 @endif
 </div>
 @if($rows !== null)
