@@ -5,8 +5,9 @@
 .inventory-search-controls .inventory-search-choices { column-count: 1; column-gap: 1.5rem; }
 .inventory-search-controls .app-choice { margin: var(--app-density-field-y,.75rem) 0; break-inside: avoid; }
 .inventory-search-controls .inventory-search-choices label.app-choice { margin: 0; padding: calc(var(--app-density-field-y,.75rem) / 2) 0; }
-.inventory-search-controls .inventory-search-filter-actions { display: flex; justify-content: flex-end; padding: calc(var(--app-density-field-y,.75rem) / 2) 0 var(--app-density-field-y,.75rem); }
-.inventory-search-controls .search-actions label { min-width: min(100%,16rem); }
+.inventory-search-controls .inventory-search-field { flex: 1; min-width: min(100%,16rem); }
+.app-shell .inventory-search-controls .inventory-search-filter-heading { position: relative; padding-inline-end: 8rem; }
+.inventory-search-controls .inventory-search-filter-heading > .app-action { position: absolute; inset-inline-end: 1rem; top: 50%; transform: translateY(-50%); }
 .inventory-search-controls [data-is-feedback]:empty { display: none; }
 @container inventory-search (min-width: 40rem) {
     .inventory-search-controls .inventory-search-filter-groups { grid-template-columns: repeat(3,minmax(0,1fr)); }

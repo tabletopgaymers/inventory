@@ -8,6 +8,7 @@
 @import './panels.css';
 @import './table-panels.css';
 @import './layouts.css';
+@import './clearable-input.css';
 @import './headings.css';
 @import './details.css';
 @import './inventory-search-controls.css';

@@ -1,0 +1,4 @@
+.app-clearable-field { position: relative; min-width: 0; }
+.app-shell .app-clearable-field input { width: 100%; max-width: none; box-sizing: border-box; padding-inline-end: 2.5rem; }
+.app-shell .app-clearable-field .app-clear-input { position: absolute; top: 0; right: .25rem; height: 100%; }
+.app-clearable-field input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }

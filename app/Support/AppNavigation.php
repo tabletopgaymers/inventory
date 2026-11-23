@@ -17,6 +17,9 @@ class AppNavigation
         foreach (CatalogRecords::KINDS as $kind => $label) {
             $catalog[] = ['href' => '/catalog/'.$kind, 'label' => $label,
                 'current' => request()->is('catalog/'.$kind, 'catalog/'.$kind.'/*') || ($kind === 'categories' && request()->is('catalog'))];
+            if ($kind === 'items') {
+                $catalog[] = ['href' => '/catalog/lists', 'label' => 'Lists', 'current' => request()->is('catalog/lists', 'catalog/lists/*')];
+            }
         }
 
         return [

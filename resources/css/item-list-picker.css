@@ -1,0 +1,9 @@
+.item-picker-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--app-section-gap); align-items: start; }
+.item-picker-columns > * { min-width: 0; }
+.app-shell ul.item-picker-suggestions { position: absolute; z-index: 5; inset: 100% 0 auto; max-height: 24rem; overflow-y: auto; margin: .25rem 0 0; padding: 0; list-style: none; background: var(--app-surface); border: 1px solid var(--app-border); border-radius: var(--app-radius); box-shadow: 0 .25rem .75rem #0002; }
+.item-picker-suggestions [role="option"] { margin: 0; padding: .125rem .75rem; cursor: pointer; white-space: nowrap; }
+.item-picker-suggestions .item-picker-level-1 { padding-inline-start: 1.75rem; }
+.item-picker-suggestions .item-picker-level-2 { padding-inline-start: 2.75rem; }
+.item-picker-suggestions [role="option"]:hover, .item-picker-suggestions [aria-selected="true"] { background: var(--app-primary); color: var(--app-surface); }
+.item-picker-suggestions [role="option"].item-picker-added { color: var(--app-border); }
+@media (max-width: 60rem) { .item-picker-columns { grid-template-columns: minmax(0, 1fr); } }

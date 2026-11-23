@@ -5,6 +5,7 @@
     --app-button-padding-x: .9rem;
     --app-button-min-height: 2rem;
     --app-button-font-size: .9375rem;
+    --app-button-line-height: 1.2;
     --app-button-weight: 600;
     --app-button-radius: .375rem;
     --app-button-small-font-size: .8rem;
@@ -34,7 +35,7 @@
     border: 1px solid var(--app-border, #d5d5df); border-radius: var(--app-button-radius);
     background: var(--app-surface, #fff); color: var(--app-text, #231c2f); cursor: pointer;
     font: inherit; font-size: var(--app-button-font-size); font-weight: var(--app-button-weight);
-    line-height: 1.2; text-align: center; text-decoration: none;
+    line-height: var(--app-button-line-height); text-align: center; text-decoration: none;
 }
 .app-action:hover { background: var(--app-page, #f5f5f8); text-decoration: none; }
 .app-action-primary { background: var(--app-primary, #5b21b6); border-color: var(--app-primary, #5b21b6); color: #fff; }
@@ -45,11 +46,11 @@
 .app-action-new { background: var(--app-action-new-color); border-color: var(--app-action-new-color); color: #fff; white-space: nowrap; }
 .app-action-new:hover { background: var(--app-action-new-hover); border-color: var(--app-action-new-hover); }
 .app-action-changed, .app-action-changed:hover { background: var(--app-action-changed-surface); border-color: var(--app-action-changed-color); color: var(--app-action-changed-color); }
-.app-action-small { min-height: 0; padding: var(--app-button-small-padding); font-size: var(--app-button-small-font-size); }
+.app-action-small { min-height: 0; padding: var(--app-button-small-padding); font-size: var(--app-button-small-font-size); line-height: 1.2; }
 .app-action:disabled { background: var(--app-disabled-surface); border-color: var(--app-disabled-border); color: var(--app-disabled-text); cursor: default; opacity: 1; }
 .app-action:focus-visible { outline: 3px solid var(--app-primary, #5b21b6); outline-offset: 1px; }
 /* Special controls share a foundation and centrally configurable semantic tokens. */
-.app-action.app-control { min-height: 0; border: 0; background: transparent; box-shadow: none; }
+.app-action.app-control { min-height: 0; border: 0; background: transparent; box-shadow: none; line-height: 1.2; }
 .app-action.app-control:hover { background: transparent; }
 .app-action.app-control-delete { padding: var(--app-control-delete-padding); color: var(--app-control-delete-color); font-size: var(--app-control-delete-size); font-weight: var(--app-control-delete-weight); line-height: inherit; }
 .app-action.app-control-clear { padding: 0 .5rem; color: var(--app-control-clear-color); font-size: var(--app-control-clear-size); font-weight: var(--app-control-clear-weight); }

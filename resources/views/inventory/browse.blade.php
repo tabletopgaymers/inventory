@@ -1,30 +1,28 @@
 @extends('layout')
 @section('title', 'Inventory')
-@if(auth()->user()->hasRole('admin') || auth()->user()->hasRole('manager'))
-@section('page-actions')<x-app.action variant="new"  href="/inventory/items/create">＋ New</x-app.action>@endsection
-@endif
 @section('content-sections')
 <div class="app-content">
 <form method="post" action="/inventory/search" id="inventory-search">@csrf
 <input type="hidden" name="context" value="{{ $token }}"><input type="hidden" name="scroll" value="{{ $scroll }}"><input type="hidden" name="destination" value="">
-<div class="search-actions"><label>Search inventory<input name="search" maxlength="255" value="{{ old('search', $pending['search']) }}"></label><x-app.action variant="primary" type="submit" name="action" value="search"  aria-busy="false">Search<span class="app-search-spinner" aria-hidden="true"></span></x-app.action><span class="sr-only" role="status" data-search-status></span><x-app.action type="submit" name="action" value="show_all">Show all</x-app.action><x-app.action type="submit" name="action" value="reset">Reset</x-app.action></div>
-<details id="inventory-filters"><summary>Filters <span id="filter-summary"></span></summary>
-<fieldset><legend>Collections</legend><div class="collection-checklist">@foreach($collections as $collection)<label class="app-choice"><input type="checkbox" name="collections[]" value="{{ $collection->id }}" @checked(in_array($collection->id, old('collections', $pending['collections'])))>{{ $collection->category_name }} : {{ $collection->name }}</label>@endforeach</div></fieldset>
-<div class="location-filters"><fieldset><legend>Locations</legend>@foreach($allColumns as $key=>$column)@if($column['kind']==='storage')<label class="app-choice"><input type="checkbox" name="columns[]" value="{{ $key }}" @checked(in_array($key, old('columns', $pending['columns'])))>{{ $column['name'] }}@if($column['unavailable'] ?? false) (unavailable — remove this saved selection before searching)@endif @if($column['state'] !== 'active') ({{ $column['state'] }})@endif</label>@endif @endforeach</fieldset>
-<fieldset><legend>Events, In Transit and Ordered</legend>@foreach($allColumns as $key=>$column)@if($column['kind']!=='storage')<label class="app-choice"><input type="checkbox" name="columns[]" value="{{ $key }}" @checked(in_array($key, old('columns', $pending['columns'])))>{{ $column['name'] }}</label>@endif @endforeach</fieldset></div>
-<label class="app-choice"><input type="checkbox" name="include_inactive" value="1" @checked(old('include_inactive', $pending['include_inactive']))>Include inactive zero-stock items</label><x-app.action type="button" id="clear-filters">Clear filters</x-app.action>
-</details></form>
+<x-app.inventory-search :definition="$searchDefinition" endpoint="/inventory/search" instance="inventory-main-search" :script="false" :form-mode="true" :submitted="$submitted" :persistence="['key' => 'inventory', 'endpoint' => '/inventory/preferences', 'context' => $token, 'scroll' => $scroll]" />
+</form>
 @if(collect($allColumns)->contains(fn ($column) => $column['unavailable'] ?? false))<p class="warning" role="status">A saved location selection is unavailable. Your saved criteria are retained; remove the unavailable selection explicitly before searching. Existing results retain their submitted columns.</p>@endif
-<p id="pending-notice" class="warning" hidden>Search settings changed — select Search to update results.</p><p id="preference-error" class="error" role="alert" hidden></p>
-<p>Available includes every storage location. Event, In Transit and Ordered balances are separate read-only sources; future transaction links are unavailable.</p>
+
 </div>
-<x-app.table-region label="Inventory results" class="inventory-results app-list-table-panel" id="inventory-results"><table><thead><tr><th>Name</th><th class="number">Available</th>@foreach($result['columns'] ?? [] as $key=>$column)<th class="number">@if($column['kind']==='storage')<a data-browse-link href="/inventory/locations/{{ $column['id'] }}">{{ $column['name'] }}</a>@else{{ $column['name'] }}@endif</th>@endforeach</tr></thead><tbody>
+<x-app.table-region label="Inventory results" :nowrap="true" class="inventory-results app-list-table-panel" id="inventory-results">
+<x-slot:header>
+    <x-app.heading-row variant="table">
+        <h2>Results</h2>
+        @if(!empty($result['rows']))<x-app.action href="/inventory/results/{{ $token }}/csv">Download CSV</x-app.action>@else<x-app.action :disabled="true">Download CSV</x-app.action>@endif
+    </x-app.heading-row>
+    <p>Available includes every storage location. Event, In Transit and Ordered balances are separate read-only sources; future transaction links are unavailable.</p>
+</x-slot:header>
+<table><colgroup><col><col class="table-quantity-column">@foreach($result['columns'] ?? [] as $column)<col class="table-quantity-column">@endforeach</colgroup><thead><tr><th>Name</th><th class="table-numeric">Available</th>@foreach($result['columns'] ?? [] as $key=>$column)<th class="table-numeric">@if($column['kind']==='storage')<a data-browse-link href="/inventory/locations/{{ $column['id'] }}">{{ $column['name'] }}</a>@else{{ $column['name'] }}@endif</th>@endforeach</tr></thead><tbody>
 @php($group = null)
 @forelse($result['rows'] ?? [] as $row)
 @if($group !== $row['category'].':'.$row['collection'])@php($group = $row['category'].':'.$row['collection'])<tr class="collection-heading"><th colspan="{{ 2+count($result['columns']) }}">{{ $row['category'] }} : {{ $row['collection'] }}</th></tr>@endif
 <tr><td class="app-grouped-item"><a data-browse-link href="/inventory/items/{{ $row['id'] }}">{{ $row['name'] }}</a></td><td class="number">{{ $row['available'] ? number_format($row['available']) : '—' }}</td>@foreach($result['columns'] as $key=>$column)<td class="number">{{ $row['values'][$key] ? number_format($row['values'][$key]) : '—' }}</td>@endforeach</tr>
-@empty<tr><td colspan="{{ 2+count($result['columns'] ?? []) }}">{{ $result === null ? 'Search inventory or choose Show all.' : 'No items match. Change your search or filters, then select Search, or choose Show all.' }}</td></tr>@endforelse
+@empty<tr><td colspan="{{ 2+count($result['columns'] ?? []) }}">{{ $result === null ? 'Enter search text or leave it blank, then select Search.' : 'No items match. Change your search or filters, then select Search.' }}</td></tr>@endforelse
 </tbody></table></x-app.table-region>
-<div class="actions download-bar">@if(!empty($result['rows']))<x-app.action  href="/inventory/results/{{ $token }}/csv">Download CSV</x-app.action>@else<x-app.action type="submit" :disabled="true">Download CSV</x-app.action>@endif</div>
-<script type="application/json" id="browse-state">@json(['submitted'=>$submitted,'scroll'=>$scroll])</script>@vite('resources/js/inventory-browse.js')
+@vite('resources/js/inventory-browse.js')
 @endsection

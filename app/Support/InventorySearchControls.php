@@ -19,9 +19,9 @@ class InventorySearchControls
         $defaults = array_replace(app(InventorySearch::class)->defaults(), $config['defaults'] ?? []);
         $centralId = DB::table('storage_locations')->where('is_central', true)->value('id');
         $columnGroups = ['locations' => [], 'events' => [], 'transit' => [], 'ordered' => []];
-        foreach (app(InventorySearch::class)->columns() as $key => $column) {
+        foreach ($config['columns'] ?? app(InventorySearch::class)->columns() as $key => $column) {
             $group = $this->group($column['kind']);
-            if ($group === 'locations') $column['is_central'] = (int) $column['id'] === (int) $centralId;
+            if ($group === 'locations') $column['is_central'] = (int) ($column['id'] ?? 0) === (int) $centralId;
             if (in_array($group, $filters, true)) $columnGroups[$group][$key] = $column;
         }
         $collections = app(CatalogRecords::class)->records('collections')->sort(fn ($a, $b) =>

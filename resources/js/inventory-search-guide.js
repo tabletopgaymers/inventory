@@ -35,7 +35,7 @@ import './inventory-search-controls.js';
         table.append(body); (plain ? region.querySelector('.app-table-panel-body') : region).append(table); output.replaceChildren(region);
     };
     const render = () => {
-        if (!latest) { fullOutput.replaceChildren(node('p', 'Search inventory or choose Show all.')); return; }
+        if (!latest) { fullOutput.replaceChildren(node('p', 'Enter search text or leave it blank, then select Search.')); return; }
         if (format.value === 'table') { table(latest, fullOutput, true); return; }
         const container = node(format.value === 'list' ? 'ul' : 'div', undefined, format.value === 'cards' ? 'guide-search-cards' : '');
         for (const row of latest.rows) {
@@ -58,7 +58,7 @@ import './inventory-search-controls.js';
     picker.addEventListener('inventory-search:reset', () => {
         const labels = { central: { name: 'Central' } };
         table({ rows: [], columns: labels }, pickerOutput, false);
-        pickerOutput.querySelector('tbody td').textContent = 'Search inventory or choose Show all.';
+        pickerOutput.querySelector('tbody td').textContent = 'Enter search text or leave it blank, then select Search.';
     });
     format.addEventListener('change', render);
 })();

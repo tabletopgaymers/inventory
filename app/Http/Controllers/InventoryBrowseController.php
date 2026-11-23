@@ -37,8 +37,13 @@ class InventoryBrowseController
             }
         }
 
+        $defaults = [
+            'search' => old('search', $pending['search']), 'collections' => old('collections', $pending['collections']),
+            'columns' => old('columns', $pending['columns']), 'include_inactive' => (bool) old('include_inactive', $pending['include_inactive']),
+        ];
+
         return view('inventory.browse', ['pending' => $pending, 'submitted' => $submitted, 'result' => $result, 'token' => $token, 'scroll' => $scroll,
-            'collections' => DB::table('collections')->join('categories', 'categories.id', '=', 'collections.category_id')->select('collections.*', 'categories.name as category_name')->orderBy('categories.name')->orderBy('collections.name')->get(), 'allColumns' => $columns]);
+            'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['defaults' => $defaults, 'columns' => $columns]), 'allColumns' => $columns]);
     }
 
     public function index(Request $request)

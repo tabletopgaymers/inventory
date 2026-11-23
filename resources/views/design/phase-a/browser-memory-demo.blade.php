@@ -5,45 +5,11 @@
 @vite(['resources/css/browser-memory-demo.css', 'resources/js/browser-memory-demo.js'])
 <div class="app-content">
 <p>Catalog and inventory snapshots are reused for up to 15 minutes across pages using this cache. Selected item IDs and location are remembered separately for each signed-in user. No catalog records or inventory are changed.</p>
-<p class="app-field-help" data-memory-snapshot>Loading catalog and inventory…</p>
 </div>
-<div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your saved selections have been kept. <x-app.action type="button" data-memory-retry>Try again</x-app.action></div>
 <x-app.panel-stack>
-<div class="memory-demo-columns" data-memory-demo data-user-id="{{ auth()->id() }}" data-catalog-url="/style-guide/browser-memory-demo/data">
-    <section class="app-content">
-        <h2 class="app-heading-flush">Search</h2>
-        <form data-memory-search role="search">
-            <x-app.field label="Item, collection or category" for="memory-search">
-            <div class="memory-demo-combobox">
-                <input id="memory-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="memory-suggestions" autocomplete="off" spellcheck="false" disabled>
-                <x-app.action control="clear" type="button" class="memory-demo-clear" aria-label="Clear search" title="Clear search" hidden>✕</x-app.action>
-                <ul id="memory-suggestions" class="memory-demo-suggestions" role="listbox" aria-label="Matching catalog entries" hidden></ul>
-            </div>
-            </x-app.field>
-        </form>
-        <p class="app-field-help">Search names, including an item's category and collection. Choose a match or press Enter to add the first match. A category or collection adds all its items. Already selected items are included only once.</p>
-        <p role="status" data-memory-status></p>
-        <p class="warning" role="status" data-memory-persistence hidden></p>
-    </section>
-    <section class="app-panel-stack" aria-labelledby="memory-results-title">
-        <x-app.table-region label="Selected inventory" :nowrap="true" :quantity-fields="true">
-            <x-slot:header>
-                <x-workflow.heading>
-                    <h2 id="memory-results-title">Results</h2>
-                    <select id="memory-location" aria-label="Inventory location" disabled><option value="">Loading locations…</option></select>
-                </x-workflow.heading>
-                <p class="app-field-help" data-memory-count>0 items</p>
-            </x-slot:header>
-            <table>
-                <colgroup><col class="table-action-column"><col><col><col class="table-quantity-column"></colgroup>
-                <thead><tr><th><span class="sr-only">Remove</span></th><th>Item</th><th>SKU</th><th class="table-numeric" data-memory-location-heading>Location</th></tr></thead>
-                <tbody data-memory-results><tr><td colspan="4">Loading catalog and inventory…</td></tr></tbody>
-            </table>
-        </x-app.table-region>
-    </section>
-</div>
+<x-app.item-list-picker />
 <x-app.collapsible-panel title="About this demo and implementation notes">
-    <p>This is a read-only browser-selection demonstration. It does not create a purchase, relocation, reservation or stock adjustment. Only this demo uses the snapshot loader; existing application workflows have not been converted.</p>
+    <p>This is a read-only browser-selection demonstration. It does not create a purchase, relocation, reservation or stock adjustment. This demo and Catalog Lists share the snapshot loader and item picker. Existing Purchase, Relocation and Reconcile workflows have not been converted.</p>
 
     <h3>What happens in the browser</h3>
     <ul>
@@ -78,11 +44,11 @@
 
     <h3>Code entry points and reuse</h3>
     <ul>
-        <li><code>app/Http/Controllers/BrowserMemoryDemoController.php</code>: lightweight page shell and consistent read-only database snapshot.</li>
+        <li><code>app/Http/Controllers/BrowserMemoryDemoController.php</code>: lightweight demo page shell. <code>CatalogSnapshotController.php</code> supplies the shared read-only snapshot, also available to authenticated Catalog Lists.</li>
         <li><code>routes/design-phase-a.php</code>: authenticated, local/development-only <code>GET /style-guide/browser-memory-demo</code> and <code>GET /style-guide/browser-memory-demo/data</code>. The latter returns <code>{catalog}</code> with private/no-store HTTP caching.</li>
         <li><code>resources/js/catalog-snapshot.js</code>: reusable <code>loadCatalogSnapshot({userId, endpoint})</code> and <code>CATALOG_MAX_AGE_MS</code>. It returns the catalog, original loadedAt, cache source and persistence status. A cache hit avoids requesting the JSON endpoint.</li>
-        <li><code>resources/js/browser-memory-demo.js</code>: search, hierarchy, selection, location display and demo-specific selection persistence.</li>
-        <li><code>resources/views/design/phase-a/browser-memory-demo.blade.php</code> and <code>resources/css/browser-memory-demo.css</code>: shared panels/table components and demo presentation. Assets are registered in <code>vite.config.js</code>.</li>
+        <li><code>resources/js/item-list-picker.js</code>: shared hierarchy search, selection and location display. <code>resources/js/browser-memory-demo.js</code> mounts it with demo-specific localStorage selection persistence; Catalog Lists supplies database-backed selections instead.</li>
+        <li><code>resources/views/components/app/item-list-picker.blade.php</code> and <code>resources/css/item-list-picker.css</code>: shared picker panels, table and presentation. The demo imports these through its own entries. Assets are registered in <code>vite.config.js</code>.</li>
     </ul>
     <p>Another page can import the same loader, supply its authenticated user ID and the same snapshot contract, and reuse this cache without sharing its selected-item list. Keep page/workflow selection keys separate. Version the cache key/validation when the payload contract changes. Do not copy the loader or embed another full catalog into every page.</p>
 

@@ -11,13 +11,13 @@ const validCatalog = data => data && typeof data === 'object'
     && rows(data.inventory, row => row && id(row.item_id) && id(row.storage_location_id) && Number.isSafeInteger(Number(row.quantity)))
     && (data.central_id === null || id(data.central_id));
 
-export async function loadCatalogSnapshot({userId, endpoint}) {
+export async function loadCatalogSnapshot({userId, endpoint, refresh = false}) {
     if (!/^[1-9]\d*$/.test(String(userId))) throw new Error('A signed-in user is required.');
     const key = `inventory-catalog-snapshot:v${version}:user:${userId}`;
     const now = Date.now();
     try {
         const saved = JSON.parse(localStorage.getItem(key));
-        if (saved?.version === version && Number.isSafeInteger(saved.loadedAt)
+        if (!refresh && saved?.version === version && Number.isSafeInteger(saved.loadedAt)
             && saved.loadedAt > 0 && saved.loadedAt <= now && now - saved.loadedAt <= CATALOG_MAX_AGE_MS && validCatalog(saved.catalog)) {
             return {...saved, fromCache: true, persisted: true};
         }

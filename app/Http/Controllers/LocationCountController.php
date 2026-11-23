@@ -73,7 +73,10 @@ class LocationCountController
 
         return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved, 'compatibilityNotice' => $compatibilityNotice,
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
-            'collections' => DB::table('collections')->join('categories', 'categories.id', '=', 'collections.category_id')->select('collections.*', 'categories.name as category_name')->orderBy('categories.name')->orderBy('collections.name')->get(),
+            'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections'], 'defaults' => [
+                'search' => old('search', $criteria['search'] ?? ''),
+                'collections' => old('collections', $request->session()->has('errors') ? [] : ($criteria['collections'] ?? [])),
+            ]]),
             'canCount' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
     }
 

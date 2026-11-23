@@ -4,13 +4,13 @@
 @section('guide-content')
 <div class="app-content">
 <h2>All filters · separate controls and results</h2>
-<p>The search controls are independent of panels and results. The same result data can drive a table, cards, list or selection form. Neither example loads results until Search or Show all.</p>
+<p>The search controls are independent of panels and results. The same result data can drive a table, cards, list or selection form. Neither example loads results until Search. Leave the query blank to search without a name restriction.</p>
 <p>Search matches Item, Collection and Category names, following the existing inventory search behavior.</p>
 <x-app.inventory-search :definition="$fullDefinition" endpoint="/style-guide/inventory-search/results?profile=full" instance="guide-search-full" />
 <p class="app-field-help">Location and source choices select balance columns, rather than restricting matching items. Available always totals all storage; events, In Transit and Ordered remain separate.</p>
 <div class="app-actions"><label>Display results<select id="guide-search-format"><option value="table">Table</option><option value="cards">Cards</option><option value="list">List</option></select></label></div>
 </div>
-<div id="guide-search-full-results" class="guide-search-results" aria-live="polite"><p>Search inventory or choose Show all.</p></div>
+<div id="guide-search-full-results" class="guide-search-results" aria-live="polite"><p>Enter search text or leave it blank, then select Search.</p></div>
 <x-app.collapsible-panel title="Returned data"><pre id="guide-search-json" class="guide-search-data">No search submitted.</pre></x-app.collapsible-panel>
 <x-app.table-region label="Configured inventory search results" class="app-list-table-panel">
 <x-slot:header>
@@ -18,7 +18,7 @@
 <p>Only Collections is visible. Locations remains enabled but hidden and fixed to Central by the server. Events, In Transit, Ordered and inactive-item options are removed. This example returns active items only.</p>
 <x-app.inventory-search :definition="$pickerDefinition" endpoint="/style-guide/inventory-search/results?profile=picker" instance="guide-search-picker" />
 </x-slot:header>
-<div id="guide-search-picker-results" class="guide-search-results" aria-live="polite"><table><thead><tr><th>Item</th><th>SKU</th><th class="number">Central</th></tr></thead><tbody><tr><td colspan="3">Search inventory or choose Show all.</td></tr></tbody></table></div>
+<div id="guide-search-picker-results" class="guide-search-results" aria-live="polite"><table><thead><tr><th>Item</th><th>SKU</th><th class="number">Central</th></tr></thead><tbody><tr><td colspan="3">Enter search text or leave it blank, then select Search.</td></tr></tbody></table></div>
 </x-app.table-region>
 <details class="app-collapsible-panel">
 <summary><h2>Using the component</h2></summary>
@@ -38,6 +38,8 @@ return response()-&gt;json($search-&gt;search($request, $config));</code></pre>
     :endpoint="route('inventory-picker.results')" instance="inventory-picker" /&gt;</code></pre>
 @endverbatim
 <p>The component loads its own assets once. Give each instance a unique ID and attach your renderer to that root; the result renderer is separate from the controls. The guide's <code>inventory-search-guide.js</code> demonstrates that pattern.</p>
+<p>Optional persistence belongs to an individual search instance and signed-in user. Pass a stable <code>instance</code> and <code>:persistence="['key' =&gt; 'my-search']"</code> to remember criteria and scroll in browser storage. No global search state is shared between keys. The examples here deliberately leave persistence off.</p>
+<p>Inventory uses <code>form-mode</code> with named fields and its existing POST/result/export routes. Its persistence configuration adds the same-origin <code>/inventory/preferences</code> endpoint, current result context and saved scroll. Server-rendered preferences take precedence over the browser copy, preserving account preferences across devices. The shared client owns debounce, queued saves, page-leave persistence, pending changes, busy presentation and scroll restoration. A server endpoint must retain its caller's scope; the current Inventory endpoint is exclusively for Inventory, not a generic storage endpoint for other instances.</p>
 <ul>
 <li><code>filters</code> selects enabled groups: collections, locations, events, transit, ordered, inactive. Omitting the setting enables all.</li>
 <li><code>hiddenFilters</code> hides enabled groups; the server supplies their choices from <code>defaults</code>. Removing a group excludes its controls and balance columns.</li>
@@ -46,7 +48,7 @@ return response()-&gt;json($search-&gt;search($request, $config));</code></pre>
 </ul>
 <p>Listen for <code>inventory-search:results</code> on the control root. <code>event.detail</code> contains criteria, rows, columns and count. Alternatively pass a <code>render(data, root)</code> callback to <code>appInventorySearch.mount(root, options)</code>; this also configures an already mounted instance. Calling <code>search()</code> or <code>showAll()</code> returns a promise containing the successful result data.</p>
 <p>Rows include <code>item_id</code>, <code>category_id</code>, <code>collection_id</code>, names, SKU, state, Available and keyed quantities. Column metadata includes <code>location_id</code> or <code>source_id</code>/<code>event_id</code> when applicable. An event source ID is not an event ID; a missing event mapping is null. The caller constructs links in its own Catalog/Inventory context. No transaction link is invented for aggregated In Transit/Ordered balances.</p>
-<p><code>appInventorySearch.get(root)</code> exposes search, showAll, reset, clearFilters and getState. <code>inventory-search:before-search</code> is cancelable so a workflow can protect entered quantities. Reset clears results; Clear filters keeps them. Pending edits never change displayed results until submitted. Search/Show all collapse filters and show the spinner. Separate instances do not share criteria.</p>
+<p><code>appInventorySearch.get(root)</code> exposes search, showAll, reset, clearFilters and getState. <code>inventory-search:before-search</code> is cancelable so a workflow can protect entered quantities. Reset clears results; Clear filters keeps them. Pending edits never change displayed results until submitted. Search collapses filters and shows the spinner. Show all and Reset are not displayed; their API methods remain for existing programmatic callers. Separate instances do not share criteria.</p>
 <p class="app-field-help">Existing searches are unchanged. This prototype does not implement saved criteria, export, item selection, stock posting or return-scroll restoration; those belong to the caller.</p>
 </div>
 </details>

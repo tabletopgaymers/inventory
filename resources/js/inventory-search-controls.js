@@ -1,3 +1,6 @@
+import { mountSearchPersistence } from './search-persistence.js';
+import { mountClearableInput } from './clearable-input.js';
+
 (() => {
     const instances = new WeakMap();
     const mount = (root, options = {}) => {
@@ -7,23 +10,33 @@
             return instance.api;
         }
         options = { ...options };
+        const config = JSON.parse(root.querySelector('[data-is-config]')?.textContent || '{}');
         const text = root.querySelector('[data-is-text]');
         const filters = root.querySelector('[data-is-filters]');
         const feedback = root.querySelector('[data-is-feedback]');
         const pending = root.querySelector('[data-is-pending]');
         let busy = false;
         let result = null;
-        let submittedInputs = null;
+        let submittedInputs = config.submitted || null;
+        let persistence = null;
+        let clearInput = null;
         const emit = (name, detail, cancelable = false) => root.dispatchEvent(new CustomEvent('inventory-search:' + name, { bubbles: true, detail, cancelable }));
-        const criteria = () => ({ search: text.value.trim(),
+        const criteria = () => {
+            const next = { search: text.value.trim(),
             collections: [...root.querySelectorAll('[data-is-collection]:checked')].map(field => Number(field.value)).sort((a,b) => a-b),
             columns: [...root.querySelectorAll('[data-is-column]:checked')].map(field => field.value).sort(),
-            include_inactive: root.querySelector('[data-is-inactive]')?.checked || false });
+            include_inactive: root.querySelector('[data-is-inactive]')?.checked || false };
+            const fields = [...root.querySelectorAll('[data-is-extra][name]')];
+            if (fields.length) next.extras = Object.fromEntries(fields.map(field => [field.name, field.type === 'checkbox' ? field.checked : field.value]));
+            return next;
+        };
         const changed = () => {
+            clearInput?.update();
             const current = criteria();
-            pending.hidden = !result || JSON.stringify(current) === JSON.stringify(submittedInputs);
-            const count = current.collections.length + current.columns.length + Number(current.include_inactive);
-            root.querySelector('[data-is-filter-count]')?.replaceChildren(document.createTextNode(count ? ` — ${count} selected` : ''));
+            pending.hidden = !submittedInputs || JSON.stringify(current) === JSON.stringify(submittedInputs);
+            const count = current.collections.length + current.columns.length + Number(current.include_inactive)
+                + root.querySelectorAll('[data-is-extra][type="checkbox"]:checked').length;
+            root.querySelector('[data-is-filter-count]')?.replaceChildren(document.createTextNode(count ? ` (${count} selected)` : ''));
             filters?.classList.toggle('active-filter', count > 0);
             emit('pending', { criteria: current, changed: !pending.hidden });
         };
@@ -33,11 +46,51 @@
             feedback.className = error ? 'error' : 'app-field-help';
             feedback.setAttribute('role', error ? 'alert' : 'status');
         };
+        const apply = saved => {
+            if (!saved || typeof saved.search !== 'string' || saved.search.length > 255
+                || !Array.isArray(saved.collections) || !saved.collections.every(Number.isSafeInteger)
+                || !Array.isArray(saved.columns) || !saved.columns.every(key => typeof key === 'string')
+                || typeof saved.include_inactive !== 'boolean') return;
+            text.value = saved.search;
+            root.querySelectorAll('[data-is-collection]').forEach(field => { field.checked = saved.collections.includes(Number(field.value)); });
+            root.querySelectorAll('[data-is-column]').forEach(field => { field.checked = saved.columns.includes(field.value); });
+            const inactive = root.querySelector('[data-is-inactive]');
+            if (inactive) inactive.checked = saved.include_inactive;
+            root.querySelectorAll('[data-is-extra][name]').forEach(field => {
+                const value = saved.extras?.[field.name];
+                if (field.type === 'checkbox') { if (typeof value === 'boolean') field.checked = value; }
+                else if (typeof value === 'string' && value.length <= 255
+                    && (field.tagName !== 'SELECT' || [...field.options].some(option => option.value === value && !option.disabled))) field.value = value;
+            });
+        };
+        const submitForm = async (action, destination = null) => {
+            if (busy) return;
+            const form = root.closest('form');
+            if (!form) throw new Error('Form search requires a surrounding form.');
+            if (!form.reportValidity()) return;
+            const endpoint = new URL(destination ? persistence.endpoint : root.dataset.endpoint, location.href);
+            if (endpoint.origin !== location.origin) throw new Error('Search must use this site.');
+            if (action === 'all') text.value = '';
+            if (action === 'reset') apply({search: '', collections: [], columns: [], include_inactive: false});
+            if (filters) filters.open = false;
+            busy = true; root.setAttribute('aria-busy', 'true');
+            root.querySelector(`[data-is-action="${action}"]`)?.setAttribute('aria-busy', 'true');
+            message(action === 'save' ? 'Saving…' : 'Searching…'); emit('busy', {busy: true});
+            await persistence?.beforeSubmit();
+            if (form.elements.scroll) form.elements.scroll.value = String(Math.round(window.scrollY));
+            if (form.elements.destination) form.elements.destination.value = destination || '';
+            form.action = endpoint.href;
+            let field = form.querySelector('[data-is-form-action]');
+            if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = 'action'; field.dataset.isFormAction = ''; form.append(field); }
+            field.value = action === 'all' ? 'show_all' : action;
+            form.submit();
+        };
         const search = async (action = 'search') => {
             if (busy) return;
             const next = criteria();
             if (action === 'all') next.search = '';
             if (!emit('before-search', { criteria: next, action }, true)) return;
+            if (config.formMode) return submitForm(action);
             if (action === 'all') text.value = '';
             if (filters) filters.open = false;
             const controls = [...root.querySelectorAll('input, button')].map(control => [control, control.disabled]);
@@ -72,6 +125,7 @@
                 emit('results', data);
                 message(`${data.count} ${data.count === 1 ? 'item' : 'items'} found.`);
                 changed();
+                persistence?.schedule();
                 return data;
             } catch (error) {
                 message(error instanceof SyntaxError || error instanceof TypeError ? 'Search could not be completed. Check your connection or sign in again.' : error.message, true);
@@ -89,6 +143,7 @@
             if (busy) return;
             if (!emit('before-reset', { reset }, true)) return;
             root.querySelectorAll('input[type="checkbox"]').forEach(field => { field.checked = false; });
+            if (config.formMode && filters) filters.open = false;
             if (reset) {
                 text.value = '';
                 result = null;
@@ -98,19 +153,40 @@
                 emit('reset', null);
             }
             changed();
+            persistence?.schedule();
         };
-        root.querySelectorAll('[data-is-action]').forEach(button => button.addEventListener('click', () => {
+        root.querySelectorAll('[data-is-action]').forEach(button => button.addEventListener('click', event => {
+            event.stopPropagation();
+            if (config.formMode) event.preventDefault();
             const action = button.dataset.isAction;
-            if (action === 'reset' || action === 'clear') clear(action === 'reset');
+            if (action === 'reset' && config.formMode) submitForm('reset');
+            else if (action === 'reset' || action === 'clear') clear(action === 'reset');
             else search(action);
         }));
         text.addEventListener('keydown', event => {
             if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); event.stopPropagation(); search(); }
         });
-        root.addEventListener('input', changed);
-        root.addEventListener('change', changed);
-        const api = { search: () => search(), showAll: () => search('all'), reset: () => clear(true), clearFilters: () => clear(),
-            getState: () => ({ pending: criteria(), submitted: result?.criteria || null, result, busy }) };
+        const edited = () => { changed(); persistence?.schedule(); };
+        root.addEventListener('input', edited);
+        root.addEventListener('change', edited);
+        persistence = mountSearchPersistence(root, config.persistence, {criteria, apply, changed});
+        clearInput = mountClearableInput(text, root.querySelector('[data-is-clear-text]'));
+        if (config.formMode) {
+            root.closest('form').addEventListener('submit', event => {
+                event.preventDefault();
+                if (event.submitter && !root.contains(event.submitter)) submitForm(event.submitter.value || 'search');
+                else search();
+            });
+            window.addEventListener('pageshow', event => {
+                busy = false; persistence?.resume(); root.setAttribute('aria-busy', 'false');
+                root.querySelectorAll('[data-is-action]').forEach(button => button.setAttribute('aria-busy', 'false'));
+                if (event.persisted && submittedInputs) window.location.reload();
+            });
+        }
+        const api = { search: () => search(), showAll: () => search('all'), reset: () => config.formMode ? submitForm('reset') : clear(true), clearFilters: () => clear(),
+            getState: () => ({ pending: criteria(), submitted: result?.criteria || submittedInputs, result, busy }),
+            persistence,
+            navigateWithPreferences: destination => { if (config.formMode && persistence?.endpoint) return submitForm('search', destination); } };
         instances.set(root, { api, options });
         changed();
         return api;

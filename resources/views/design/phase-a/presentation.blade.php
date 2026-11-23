@@ -13,7 +13,7 @@
     <ul>
         <li>Use the shared font family and base font size; do not override them on individual pages or components.</li>
         <li>Use density variables for internal vertical spacing, except the explicitly fixed settings listed below. Use the shared section-gap token between panels.</li>
-        <li>Keep consistent panel padding and align action groups with related information. Buttons retain their internal padding.</li>
+        <li>Keep consistent panel padding and align action groups with related information. Normal buttons and single-line fields share font size, line height, vertical padding and minimum height across Display Density presets. Horizontal padding remains specific to each control; small buttons and icon controls retain their separate sizing.</li>
         <li>Use the shared heading hierarchy; do not enlarge ordinary text to create headings.</li>
         <li>Let content grow with the page. Avoid internal vertical scrolling for table results.</li>
         <li>Display density belongs to the viewer; print worksheets retain their established spacing.</li>

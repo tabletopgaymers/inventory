@@ -36,6 +36,8 @@ export default defineConfig({
             'resources/js/workflow-demo.js',
             'resources/css/browser-memory-demo.css',
             'resources/js/browser-memory-demo.js',
+            'resources/css/item-list-picker.css',
+            'resources/js/saved-lists.js',
         ],
         refresh: ['resources/views/**/*.blade.php'],
     }), tailwindcss()],
