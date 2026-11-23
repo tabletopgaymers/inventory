@@ -1,5 +1,6 @@
 import { createAction } from './actions.js';
 import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
+import { syncNoticeTimer } from './workflow/notices.js';
 (() => {
     // Preview only a committed selection in the viewer's own profile; Save persists it.
     const density = document.querySelector('#profile-form select[data-density-preview]');
@@ -194,6 +195,7 @@ import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
         const eligible = banner.matches('.notice, .warning, .error')
             && banner.dataset.noticeDismissible !== 'false';
         const hasContent = [...banner.childNodes].some(node => node !== existing && node.textContent.trim());
+        syncNoticeTimer(banner);
         if (!eligible || !hasContent) {
             existing?.remove();
             if (banner.classList.contains('app-notice-dismissible')) banner.classList.remove('app-notice-dismissible');
@@ -231,10 +233,11 @@ import { mountConfirmationDialog } from './workflow/confirmation-dialog.js';
         records.forEach(record => {
             if (record.type === 'attributes') inspect(record.target);
             else {
-                const banner = record.target instanceof Element ? record.target.closest(selector) : null;
+                const target = record.target instanceof Element ? record.target : record.target.parentElement;
+                const banner = target?.closest(selector);
                 if (banner) update(banner);
                 record.addedNodes.forEach(inspect);
             }
         });
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
+    }).observe(document.body, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
 })();

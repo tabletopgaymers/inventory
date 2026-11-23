@@ -11,7 +11,9 @@ class SavedList extends Model
 
     protected $fillable = ['name', 'description', 'storage_location_id', 'status'];
 
-    protected $attributes = ['status' => 'active'];
+    protected $attributes = ['status' => 'active', 'shared' => false];
+
+    protected $casts = ['shared' => 'boolean'];
 
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
@@ -29,5 +31,10 @@ class SavedList extends Model
     public function canEdit(User $user): bool
     {
         return $user->enabled && ((int) $this->owner_id === (int) $user->id || $user->hasRole('admin'));
+    }
+
+    public function canView(User $user): bool
+    {
+        return $user->enabled && ($this->shared || $this->canEdit($user));
     }
 }

@@ -11,7 +11,7 @@
 <input type="hidden" name="item_ids_json" value="{{ old('item_ids_json', json_encode($itemIds)) }}">
 <input type="hidden" name="picker_ready" value="0">
 @if($list)<input type="hidden" name="version" value="{{ old('version', $list->getRawOriginal('updated_at')) }}">@endif
-<x-app.collapsible-panel title="List information" open>
+<x-app.collapsible-panel title="List information" :open="!$list">
 <div class="app-columns app-columns-two app-columns-fields">
     <div>
         <x-app.field label="Name" for="list-name" name="name"><input id="list-name" name="name" required maxlength="255" value="{{ old('name', $list?->name) }}"></x-app.field>
@@ -19,6 +19,10 @@
             <select id="list-location" name="storage_location_id"><option value="">No default location</option>@foreach($locations as $location)<option value="{{ $location->id }}" @selected(old('storage_location_id', $list?->storage_location_id) == $location->id)>{{ $location->name }}</option>@endforeach</select>
         </x-app.field>
         <x-app.field label="Status" for="list-status" name="status"><select id="list-status" name="status">@foreach(\App\Models\SavedList::STATUSES as $value => $label)<option value="{{ $value }}" @selected(old('status', $list?->status ?? 'active') === $value)>{{ $label }}</option>@endforeach</select></x-app.field>
+        @if(auth()->user()->hasRole('admin'))
+        <input type="hidden" name="shared" value="0">
+        <label class="app-choice"><input type="checkbox" name="shared" value="1" @checked(old('shared', $list?->shared ?? false))> Shared</label>
+        @endif
     </div>
     <div>
         <x-app.field label="Description (optional)" for="list-description" name="description"><textarea id="list-description" name="description" rows="4" maxlength="5000">{{ old('description', $list?->description) }}</textarea></x-app.field>

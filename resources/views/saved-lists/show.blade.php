@@ -22,13 +22,18 @@
 </div>
 </section>
 <x-app.table-region label="List items" :nowrap="true">
-<x-slot:header><h2>Items</h2><p>{{ number_format($items->count()) }} {{ $items->count() === 1 ? 'item' : 'items' }}</p></x-slot:header>
+<x-slot:header>
+    <x-app.heading-row variant="table"><h2>Items</h2><span>{{ number_format($items->count()) }}/{{ number_format($collectionTotals->sum()) }} items</span></x-app.heading-row>
+</x-slot:header>
 <table><colgroup><col><col class="table-quantity-column"></colgroup><thead><tr><th>Item</th><th>SKU</th></tr></thead><tbody>
-@php($group = null)
+@php
+    $group = null;
+    $selectedCounts = $items->countBy('collection_id');
+@endphp
 @forelse($items as $item)
 @if($group !== $item->collection_id)
 @php($group = $item->collection_id)
-<tr class="group-row"><th colspan="2">{{ $item->category_name }} : {{ $item->collection_name }}</th></tr>
+<tr class="group-row"><th colspan="2"><x-app.heading-row variant="table"><span>{{ $item->category_name }} : {{ $item->collection_name }}</span><span>{{ number_format($selectedCounts[$group]) }}/{{ number_format($collectionTotals[$group]) }} items</span></x-app.heading-row></th></tr>
 @endif
 <tr><td class="app-grouped-item">{{ $item->name }}</td><td>{{ $item->sku }}</td></tr>
 @empty

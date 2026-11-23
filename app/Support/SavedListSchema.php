@@ -19,7 +19,8 @@ class SavedListSchema
         }
         $schema = $database->getSchemaBuilder();
         $hasStatus = $database->table('migrations')->where('migration', '2026_11_22_000100_add_saved_list_status')->exists();
-        foreach (['saved_lists' => array_merge(['id', 'name', 'owner_id', 'description', 'storage_location_id', 'created_at', 'updated_at'], $hasStatus ? ['status'] : []),
+        $hasShared = $database->table('migrations')->where('migration', '2026_11_22_000200_add_saved_list_shared')->exists();
+        foreach (['saved_lists' => array_merge(['id', 'name', 'owner_id', 'description', 'storage_location_id', 'created_at', 'updated_at'], $hasStatus ? ['status'] : [], $hasShared ? ['shared'] : []),
             'saved_list_items' => ['saved_list_id', 'item_id']] as $table => $expected) {
             $actual = $schema->getColumnListing($table);
             sort($expected); sort($actual);

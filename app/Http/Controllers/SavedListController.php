@@ -8,9 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 class SavedListController
 {
-    public function index()
+    public function index(Request $request)
     {
-        $lists = SavedList::with('owner')->orderBy('id')->get();
+        $query = SavedList::with('owner')->orderBy('id');
+        if (! $request->user()->hasRole('admin')) {
+            $query->where(fn ($query) => $query->where('owner_id', $request->user()->id)->orWhere('shared', true));
+        }
+        $lists = $query->get();
         $counts = DB::table('saved_list_items')->selectRaw('saved_list_id, COUNT(*) AS total')->groupBy('saved_list_id')->pluck('total', 'saved_list_id');
 
         return view('saved-lists.index', compact('lists', 'counts') + ['locations' => DB::table('storage_locations')->pluck('name', 'id')]);
@@ -41,14 +45,18 @@ class SavedListController
     public function show(Request $request, int $id)
     {
         $list = SavedList::with('owner')->findOrFail($id);
+        abort_unless($list->canView($request->user()), 403);
         $items = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')
             ->join('categories', 'categories.id', '=', 'collections.category_id')
             ->join('saved_list_items', 'saved_list_items.item_id', '=', 'items.id')->where('saved_list_items.saved_list_id', $id)
             ->orderBy('categories.name')->orderBy('collections.name')->orderBy('items.name')->orderBy('items.id')
             ->get(['items.id', 'items.name', 'items.sku', 'collections.id as collection_id', 'collections.name as collection_name', 'categories.name as category_name']);
+        $collectionTotals = DB::table('items')->whereIn('collection_id', $items->pluck('collection_id')->unique())
+            ->selectRaw('collection_id, COUNT(*) AS total')->groupBy('collection_id')->pluck('total', 'collection_id');
 
         return view('saved-lists.show', [
             'list' => $list, 'items' => $items, 'canEdit' => $list->canEdit($request->user()),
+            'collectionTotals' => $collectionTotals,
             'location' => $list->storage_location_id ? DB::table('storage_locations')->where('id', $list->storage_location_id)->value('name') : null,
         ]);
     }
@@ -63,6 +71,7 @@ class SavedListController
             'name' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:5000'],
             'storage_location_id' => ['nullable', 'integer', 'exists:storage_locations,id'],
             'status' => ['required', \Illuminate\Validation\Rule::in(array_keys(SavedList::STATUSES))],
+            'shared' => ['sometimes', 'boolean'],
             'item_ids' => ['present', 'array', 'max:10000'], 'item_ids.*' => ['integer', 'distinct', 'exists:items,id'],
             'version' => $id ? ['required', 'string'] : ['nullable'],
         ]);
@@ -75,6 +84,11 @@ class SavedListController
                 }
             } else {
                 $list->owner_id = $request->user()->id;
+            }
+            if (array_key_exists('shared', $data)) {
+                $shared = (bool) $data['shared'];
+                abort_if(! $request->user()->hasRole('admin') && $shared !== $list->shared, 403);
+                $list->shared = $shared;
             }
             $list->fill(collect($data)->only(['name', 'description', 'storage_location_id', 'status'])->all());
             // Updating membership must also advance the parent timestamp.
@@ -96,6 +110,7 @@ class SavedListController
     {
         $copy = DB::transaction(function () use ($request, $id) {
             $source = SavedList::lockForUpdate()->findOrFail($id);
+            abort_unless($source->canView($request->user()), 403);
             $copy = new SavedList(['name' => mb_substr($source->name, 0, 245).' (copy)', 'description' => $source->description, 'storage_location_id' => $source->storage_location_id]);
             $copy->status = $source->status;
             $copy->owner_id = $request->user()->id;

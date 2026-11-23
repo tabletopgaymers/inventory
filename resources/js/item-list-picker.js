@@ -58,8 +58,11 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
     const entryByKey = new Map(entries.map(entry => [`${entry.kind}:${entry.id}`, entry]));
     const collator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
     const selected = new Set();
+    const collapsedCollections = new Set();
     const input = root.querySelector('#memory-search'), suggestions = root.querySelector('#memory-suggestions');
     const clearSearch = root.querySelector('.item-picker-clear');
+    const browse = root.querySelector('[data-memory-browse]');
+    const browseOptions = root.querySelector('[data-memory-browse-options]');
     const locationSelect = root.querySelector('#memory-location');
     locationSelect.replaceChildren();
     if (!persistSelection || !locations.has(catalog.central_id)) locationSelect.add(new Option('No default location', ''));
@@ -92,6 +95,20 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
         } catch { storageWarning(); }
     };
     const body = root.querySelector('[data-memory-results]'), status = root.querySelector('[data-memory-status]');
+    const collapseAll = root.querySelector('[data-memory-collapse-all]'), expandAll = root.querySelector('[data-memory-expand-all]');
+    const setCollectionCollapsed = (id, collapsed) => {
+        if (collapsed) collapsedCollections.add(id); else collapsedCollections.delete(id);
+        body.querySelector(`[data-memory-collection-heading="${id}"] .item-picker-section-toggle`)
+            ?.setAttribute('aria-expanded', String(!collapsed));
+        body.querySelectorAll(`[data-memory-collection-item="${id}"]`).forEach(row => { row.hidden = collapsed; });
+    };
+    const setAllCollapsed = collapsed => {
+        body.querySelectorAll('[data-memory-collection-heading]').forEach(heading => {
+            setCollectionCollapsed(Number(heading.dataset.memoryCollectionHeading), collapsed);
+        });
+    };
+    collapseAll.addEventListener('click', () => setAllCollapsed(true));
+    expandAll.addEventListener('click', () => setAllCollapsed(false));
     let matches = [], active = 0;
     const close = () => { suggestions.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); };
     const activate = index => {
@@ -101,15 +118,19 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
         suggestions.children[active]?.scrollIntoView({block: 'nearest'});
     };
     const textCell = (tag, text) => { const cell = document.createElement(tag); cell.textContent = text; return cell; };
+    const idsFor = entry => entry?.kind === 'Item' ? [entry.id] : (entry?.kind === 'Collection' ? collectionItems.get(entry.id) : categoryItems.get(entry?.id)) ?? [];
+    const allSelected = ids => ids.length > 0 && ids.every(id => selected.has(id));
+    const markAdded = (option, entry) => {
+        const ids = idsFor(entry);
+        const added = allSelected(ids);
+        option.classList.toggle('item-picker-added', added);
+        option.setAttribute('aria-description', added ? 'Already in Results. Activate to remove these items.' : 'Activate to add missing items.');
+    };
     const updateAdded = () => {
         [...suggestions.children].forEach((option, index) => {
-            const entry = matches[index];
-            const ids = entry?.kind === 'Item' ? [entry.id] : (entry?.kind === 'Collection' ? collectionItems.get(entry.id) : categoryItems.get(entry?.id)) ?? [];
-            const added = ids.length > 0 && ids.every(id => selected.has(id));
-            option.classList.toggle('item-picker-added', added);
-            if (added) option.setAttribute('aria-description', 'Already in Results');
-            else option.removeAttribute('aria-description');
+            markAdded(option, matches[index]);
         });
+        browseOptions.querySelectorAll('[data-entry-key]').forEach(option => markAdded(option, entryByKey.get(option.dataset.entryKey)));
     };
     const renderResults = () => {
         const locationHeading = root.querySelector('[data-memory-location-heading]');
@@ -126,16 +147,33 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
             const collection = collections.get(item.collection_id);
             if (group !== collection.id) {
                 group = collection.id;
-                const row = document.createElement('tr'), heading = textCell('th', `${categories.get(collection.category_id)?.name ?? 'Category'} : ${collection.name}`);
-                row.className = 'group-row'; heading.colSpan = showInventory ? 3 : 2; heading.scope = 'rowgroup';
+                const row = document.createElement('tr'), heading = document.createElement('th');
+                row.className = 'group-row'; row.dataset.memoryCollectionHeading = collection.id;
+                heading.className = 'item-picker-section-heading'; heading.colSpan = showInventory ? 3 : 2; heading.scope = 'rowgroup';
+                const toggle = document.createElement('button'), marker = textCell('span', '▶');
+                toggle.type = 'button'; toggle.className = 'item-picker-section-toggle';
+                toggle.setAttribute('aria-expanded', String(!collapsedCollections.has(group)));
+                marker.className = 'item-picker-marker'; marker.setAttribute('aria-hidden', 'true');
+                const title = textCell('span', `${categories.get(collection.category_id)?.name ?? 'Category'} : ${collection.name}`);
+                title.className = 'item-picker-section-title';
+                const ids = collectionItems.get(group) ?? [];
+                const count = ids.filter(id => selected.has(id)).length;
+                const tally = textCell('span', `${count.toLocaleString()}/${ids.length.toLocaleString()} items`);
+                tally.className = 'item-picker-section-count';
+                toggle.append(marker, title, tally); heading.append(toggle);
                 const action = document.createElement('th'), remove = createAction({ control: 'delete' });
                 remove.type = 'button'; remove.classList.add('material-remove'); remove.textContent = '✕';
                 remove.dataset.memoryRemoveCollection = collection.id;
                 remove.setAttribute('aria-label', `Remove collection ${categories.get(collection.category_id)?.name ?? 'Category'} : ${collection.name}`);
                 action.append(remove); row.append(action, heading); body.append(row);
             }
-            const row = document.createElement('tr'), name = textCell('td', item.name);
-            name.className = 'app-grouped-item';
+            const row = document.createElement('tr'), name = document.createElement('td');
+            name.className = 'app-grouped-item item-picker-item-name';
+            const label = document.createElement('div'), spacer = textCell('span', '');
+            label.className = 'item-picker-item-label'; spacer.className = 'item-picker-marker'; spacer.setAttribute('aria-hidden', 'true');
+            label.append(spacer, textCell('span', item.name)); name.append(label);
+            row.dataset.memoryCollectionItem = collection.id;
+            row.hidden = collapsedCollections.has(collection.id);
             const quantity = textCell('td', locations.has(selectedLocationId) ? Number(inventory.get(`${item.id}:${selectedLocationId}`) ?? 0).toLocaleString() : '—');
             quantity.className = 'table-numeric'; row.dataset.memoryItem = item.id;
             const action = document.createElement('td'), remove = createAction({ control: 'delete' });
@@ -149,7 +187,10 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
             const row = document.createElement('tr'), empty = textCell('td', 'Select an item, collection or category to begin.');
             empty.colSpan = showInventory ? 4 : 3; row.append(empty); body.append(row);
         }
-        root.querySelector('[data-memory-count]').textContent = `${selected.size.toLocaleString()} ${selected.size === 1 ? 'item' : 'items'}`;
+        const representedCollections = new Set(rows.map(item => item.collection_id));
+        const total = [...representedCollections].reduce((sum, id) => sum + (collectionItems.get(id)?.length ?? 0), 0);
+        root.querySelector('[data-memory-count]').textContent = `${selected.size.toLocaleString()}/${total.toLocaleString()} items`;
+        collapseAll.disabled = expandAll.disabled = selected.size === 0;
         updateAdded();
         remember();
     };
@@ -166,29 +207,77 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
         if (collectionRemove) {
             const id = Number(collectionRemove.dataset.memoryRemoveCollection);
             (collectionItems.get(id) ?? []).forEach(itemId => selected.delete(itemId));
+            collapsedCollections.delete(id);
             renderResults();
             status.textContent = `${collections.get(id).name} removed. ${selected.size.toLocaleString()} total.`;
             input.focus();
             return;
         }
+        const heading = event.target.closest('[data-memory-collection-heading]');
+        if (heading) {
+            const id = Number(heading.dataset.memoryCollectionHeading);
+            setCollectionCollapsed(id, !collapsedCollections.has(id));
+            return;
+        }
         const remove = event.target.closest('[data-memory-remove]');
         if (!remove) return;
-        const id = Number(remove.dataset.memoryRemove), buttons = [...body.querySelectorAll('[data-memory-remove]')];
+        const id = Number(remove.dataset.memoryRemove), buttons = [...body.querySelectorAll('[data-memory-remove]')].filter(button => !button.closest('tr').hidden);
         const index = buttons.indexOf(remove), neighbor = buttons[index + 1] ?? buttons[index - 1];
         selected.delete(id); renderResults();
         status.textContent = `${items.get(id).name} removed. ${selected.size.toLocaleString()} total.`;
         (neighbor ? body.querySelector(`[data-memory-remove="${neighbor.dataset.memoryRemove}"]`) : input)?.focus();
     });
-    const add = entry => {
+    const toggleEntry = (entry, {focusSearch = true} = {}) => {
         if (!entry) return;
-        const ids = entry.kind === 'Item' ? [entry.id] : (entry.kind === 'Collection' ? collectionItems.get(entry.id) : categoryItems.get(entry.id)) ?? [];
+        const ids = idsFor(entry);
         const before = selected.size;
-        ids.forEach(id => { if (collections.has(items.get(id)?.collection_id)) selected.add(id); });
-        if (selected.size) renderResults();
-        const added = selected.size - before;
-        status.textContent = `${entry.name}: ${added.toLocaleString()} ${added === 1 ? 'item' : 'items'} added. ${selected.size.toLocaleString()} total.`;
-        input.focus();
+        const representedBefore = new Set([...selected].map(id => items.get(id).collection_id));
+        const startCollapsed = representedBefore.size > 0 && [...representedBefore].every(id => collapsedCollections.has(id));
+        const removing = allSelected(ids);
+        ids.forEach(id => {
+            if (removing) selected.delete(id);
+            else if (collections.has(items.get(id)?.collection_id)) {
+                const collectionId = items.get(id).collection_id;
+                if (!representedBefore.has(collectionId)) {
+                    if (startCollapsed) collapsedCollections.add(collectionId);
+                    else collapsedCollections.delete(collectionId);
+                }
+                selected.add(id);
+            }
+        });
+        if (removing) {
+            collapsedCollections.forEach(id => {
+                if (!(collectionItems.get(id) ?? []).some(itemId => selected.has(itemId))) collapsedCollections.delete(id);
+            });
+        }
+        if (selected.size !== before) renderResults();
+        const changed = Math.abs(selected.size - before);
+        status.textContent = `${entry.name}: ${changed.toLocaleString()} ${changed === 1 ? 'item' : 'items'} ${removing ? 'removed' : 'added'}. ${selected.size.toLocaleString()} total.`;
+        if (focusSearch) input.focus();
     };
+    browseOptions.replaceChildren();
+    const byName = (a, b) => collator.compare(a.name, b.name) || a.id - b.id;
+    const browseEntry = (kind, row, depth) => {
+        const item = document.createElement('li'), button = document.createElement('button');
+        button.type = 'button'; button.className = `item-picker-browse-option item-picker-level-${depth}`;
+        button.dataset.entryKey = `${kind}:${row.id}`; button.textContent = row.name;
+        button.setAttribute('aria-label', `${kind}: ${kind === 'Collection' ? `${categories.get(row.category_id)?.name ?? ''} : ` : ''}${row.name}`);
+        item.append(button); browseOptions.append(item);
+    };
+    [...catalog.categories].sort(byName).forEach(category => {
+        browseEntry('Category', category, 0);
+        catalog.collections.filter(collection => collection.category_id === category.id).sort(byName)
+            .forEach(collection => browseEntry('Collection', collection, 1));
+    });
+    updateAdded();
+    browseOptions.addEventListener('click', event => {
+        const option = event.target.closest('[data-entry-key]');
+        if (option) toggleEntry(entryByKey.get(option.dataset.entryKey), {focusSearch: false});
+    });
+    browse.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { event.preventDefault(); browse.open = false; browse.querySelector('summary').focus(); }
+    });
+    document.addEventListener('click', event => { if (!browse.contains(event.target)) browse.open = false; });
     input.addEventListener('input', () => {
         const query = input.value.normalize('NFKC').trim().toLocaleLowerCase();
         if (!query) { matches = []; close(); return; }
@@ -230,9 +319,9 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
             event.preventDefault(); activate((active + (event.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length);
         }
     });
-    input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); if (!suggestions.hidden) add(matches[active]); } });
+    input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); if (!suggestions.hidden) toggleEntry(matches[active]); } });
     suggestions.addEventListener('pointerdown', event => event.preventDefault());
-    suggestions.addEventListener('click', event => { const option = event.target.closest('[data-index]'); if (option) add(matches[Number(option.dataset.index)]); });
+    suggestions.addEventListener('click', event => { const option = event.target.closest('[data-index]'); if (option) toggleEntry(matches[Number(option.dataset.index)]); });
     input.addEventListener('blur', close);
     mountClearableInput(input, clearSearch, {onClear: () => {
         matches = []; suggestions.replaceChildren(); close(); status.textContent = '';

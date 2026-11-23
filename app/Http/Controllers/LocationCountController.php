@@ -72,6 +72,8 @@ class LocationCountController
         }
 
         return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved, 'compatibilityNotice' => $compatibilityNotice,
+            'lists' => \App\Models\SavedList::where(fn ($query) => $query->where('owner_id', $request->user()->id)->orWhere('shared', true))
+                ->orderBy('name')->orderBy('id')->get(['id', 'name']),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
             'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections'], 'defaults' => [
                 'search' => old('search', $criteria['search'] ?? ''),
