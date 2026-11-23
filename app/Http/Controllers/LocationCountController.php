@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SavedList;
 use App\Support\BaselineProbe;
 use App\Support\CatalogRecords;
 use App\Support\DailyInventoryPosting;
@@ -10,7 +11,7 @@ use App\Support\LocationCountSearch;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class LocationCountController
 {
@@ -27,11 +28,7 @@ class LocationCountController
 
     private function draft(Request $request, string $token): array
     {
-        abort_unless(Str::isUuid($token), 404);
-        $draft = $request->session()->get('location_counts.'.$token);
-        abort_unless(is_array($draft) && $draft['actor'] === (int) $request->user()->id, 404);
-
-        return $draft;
+        return app(LocationCountSearch::class)->draft($request, $token);
     }
 
     private function rows(array $draft): array
@@ -39,16 +36,26 @@ class LocationCountController
         $criteria = app(InventorySearch::class)->defaults();
         $criteria['include_inactive'] = true;
 
-        return array_values(array_filter(app(InventorySearch::class)->results($criteria, naturalNames: true)['rows'], fn ($row) => in_array($row['id'], $draft['items'], true)));
+        $itemIds = array_fill_keys($draft['items'], true);
+        return array_values(array_filter(app(InventorySearch::class)->results($criteria, naturalNames: true)['rows'], fn ($row) => isset($itemIds[$row['id']])));
+    }
+
+    private function availableLists(Request $request)
+    {
+        return SavedList::where('status', 'active')
+            ->where(fn ($query) => $query->where('owner_id', $request->user()->id)->orWhere('shared', true));
     }
 
     public function index(Request $request)
     {
         $this->ready();
+        $canCount = $request->user()->hasRole('admin') || $request->user()->hasRole('manager');
         $saved = app(LocationCountSearch::class)->saved((int) $request->user()->id);
         $criteria = null;
         $result = null;
         $token = null;
+        $loadedList = null;
+        $listLocation = null;
         $compatibilityNotice = null;
         if ($request->filled('saved')) {
             $key = $request->query('saved');
@@ -60,34 +67,41 @@ class LocationCountController
             } else {
                 $criteria = $service->criteria(Request::create('/', 'POST', $service->normalize($saved[$key]['criteria'])));
                 $result = $service->rows($criteria);
-                $token = $this->newDraft($request, $criteria, $result);
+                $token = app(LocationCountSearch::class)->newDraft($request, $criteria, array_column($result, 'id'));
             }
         }
         if ($request->filled('context')) {
             $token = $request->query('context');
             abort_unless(is_string($token), 404);
             $draft = $this->draft($request, $token);
-            $criteria = $draft['criteria'];
-            $result = app(LocationCountSearch::class)->rows($criteria);
+            $loadedList = $draft['list'] ?? null;
+            if ($loadedList !== null) {
+                abort_unless($canCount, 403);
+                $listLocation = $draft['criteria']['location_id'];
+                $lastSearch = app(LocationCountSearch::class)->lastSearch($request);
+                $criteria = $lastSearch === null ? null : $this->draft($request, $lastSearch)['criteria'];
+                $result = $this->rows($draft);
+                $loadedList['canEdit'] = SavedList::find($loadedList['id'])?->canEdit($request->user()) ?? false;
+            } else {
+                $criteria = $draft['criteria'];
+                $result = app(LocationCountSearch::class)->rows($criteria);
+                $request->session()->put('location_counts_last_search', $token);
+            }
+        }
+
+        if ($token !== null && $result !== null) {
+            $request->session()->put('location_counts.'.$token.'.displayed_items', array_column($result, 'id'));
         }
 
         return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved, 'compatibilityNotice' => $compatibilityNotice,
-            'lists' => \App\Models\SavedList::where(fn ($query) => $query->where('owner_id', $request->user()->id)->orWhere('shared', true))
-                ->orderBy('name')->orderBy('id')->get(['id', 'name']),
+            'lists' => $canCount ? $this->availableLists($request)->orderBy('name')->orderBy('id')->get(['id', 'name']) : collect(),
+            'loadedList' => $loadedList, 'listLocation' => $listLocation, 'lastSearch' => app(LocationCountSearch::class)->lastSearch($request),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
             'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections'], 'defaults' => [
                 'search' => old('search', $criteria['search'] ?? ''),
                 'collections' => old('collections', $request->session()->has('errors') ? [] : ($criteria['collections'] ?? [])),
             ]]),
-            'canCount' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
-    }
-
-    private function newDraft(Request $request, array $criteria, array $rows): string
-    {
-        $token = (string) Str::uuid();
-        $request->session()->put('location_counts', [$token => ['actor' => (int) $request->user()->id, 'criteria' => $criteria, 'items' => array_column($rows, 'id'), 'counts' => [], 'reviewed' => false, 'review_ids' => [], 'rationales' => []]]);
-
-        return $token;
+            'canCount' => $canCount]);
     }
 
     public function search(Request $request)
@@ -106,7 +120,7 @@ class LocationCountController
             if ($data['action'] === 'save') {
                 $service->save((int) $request->user()->id, $data['name'] ?? '', $criteria, (bool) ($data['overwrite'] ?? false));
             }
-            $token = $this->newDraft($request, $criteria, $service->rows($criteria));
+            $token = app(LocationCountSearch::class)->newDraft($request, $criteria, array_column($service->rows($criteria), 'id'));
 
             return redirect('/inventory/location-counts?context='.$token)->with('success', $data['action'] === 'save' ? 'Personal criteria saved.' : null);
         } catch (QueryException) {
@@ -114,20 +128,66 @@ class LocationCountController
         }
     }
 
+    public function loadList(Request $request)
+    {
+        $this->access($request);
+        $data = $request->validate(['list_id' => ['required', 'integer', 'min:1']]);
+        [$list, $items] = DB::transaction(function () use ($request, $data) {
+            $list = $this->availableLists($request)->lockForUpdate()->findOrFail($data['list_id']);
+
+            return [$list, $list->itemIds()];
+        });
+        $lastSearch = app(LocationCountSearch::class)->lastSearch($request);
+        $searchLocation = $lastSearch === null ? null : $this->draft($request, $lastSearch)['criteria']['location_id'];
+        $location = $list->storage_location_id ?? $searchLocation;
+        $token = app(LocationCountSearch::class)->newDraft($request, ['location_id' => $location === null ? null : (int) $location], $items,
+            ['id' => $list->id, 'name' => $list->name]);
+
+        return redirect('/inventory/location-counts?context='.$token);
+    }
+
+    public function listLocation(Request $request, string $token)
+    {
+        $this->access($request);
+        $draft = $this->draft($request, $token);
+        abort_unless(isset($draft['list']), 404);
+        $data = $request->validate(['list_location_id' => ['required', 'integer', Rule::exists('storage_locations', 'id')]]);
+        $location = (int) $data['list_location_id'];
+        if ($draft['criteria']['location_id'] !== $location) {
+            // A different location needs its own operation token and blank count inputs.
+            $token = app(LocationCountSearch::class)->newDraft($request, ['location_id' => $location], $draft['items'], $draft['list']);
+        }
+
+        return redirect('/inventory/location-counts?context='.$token);
+    }
+
     public function worksheet(Request $request, string $token)
     {
         $this->ready();
         $draft = $this->draft($request, $token);
 
-        return view('inventory.count-worksheet', ['location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id']), 'rows' => app(LocationCountSearch::class)->rows($draft['criteria'])]);
+        if (isset($draft['list'])) {
+            $this->access($request);
+            abort_unless($draft['criteria']['location_id'] !== null && $draft['items'] !== [], 409);
+        }
+        $rows = isset($draft['list']) ? $this->rows($draft) : app(LocationCountSearch::class)->rows($draft['criteria']);
+
+        return view('inventory.count-worksheet', ['location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id']), 'rows' => $rows]);
     }
 
     public function enter(Request $request, string $token)
     {
         $this->access($request);
         $draft = $this->draft($request, $token);
+        if (isset($draft['list'], $draft['result'])) {
+            $nextToken = app(LocationCountSearch::class)->newDraft($request, $draft['criteria'], $draft['items'], $draft['list']);
+
+            return redirect('/inventory/location-counts/'.$nextToken.'/enter');
+        }
         abort_if(isset($draft['result']), 409, 'This count has already been saved.');
-        if ($draft['counts'] === [] && ! $draft['reviewed']) {
+        if (isset($draft['list'])) {
+            abort_unless($draft['criteria']['location_id'] !== null && $draft['items'] !== [], 409);
+        } elseif ($draft['counts'] === [] && ! $draft['reviewed']) {
             $draft['items'] = array_column(app(LocationCountSearch::class)->rows($draft['criteria']), 'id');
             $request->session()->put('location_counts.'.$token, $draft);
         }
@@ -140,6 +200,7 @@ class LocationCountController
         $this->access($request);
         $draft = $this->draft($request, $token);
         abort_if(isset($draft['result']), 409);
+        abort_if(isset($draft['list']) && ($draft['criteria']['location_id'] === null || $draft['items'] === []), 409);
         $data = $request->validate(['counts' => ['nullable', 'array'], 'counts.*' => ['nullable', 'string']]);
         $counts = $data['counts'] ?? [];
         foreach ($counts as $id => $value) {
@@ -203,7 +264,13 @@ class LocationCountController
     {
         $this->ready();
         $row = DB::table('inventory_count_operations')->where('id', $operation)->firstOrFail();
+        $draft = $request->session()->get('location_counts.'.$row->operation_id);
+        $returnUrl = '/inventory/location-counts';
+        if (isset($draft['list']) && $draft['actor'] === (int) $request->user()->id
+            && ($request->user()->hasRole('admin') || $request->user()->hasRole('manager'))) {
+            $returnUrl .= '?context='.$row->operation_id;
+        }
 
-        return view('inventory.count-result', ['operation' => $row, 'location' => app(CatalogRecords::class)->record('storage_locations', $row->storage_location_id), 'changes' => DB::table('inventory_count_items')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_count_items.inventory_adjustment_id')->where('inventory_count_operation_id', $operation)->orderByRaw('NATURAL_SORT_KEY(item_name)')->orderBy('item_name')->get()]);
+        return view('inventory.count-result', ['operation' => $row, 'returnUrl' => $returnUrl, 'location' => app(CatalogRecords::class)->record('storage_locations', $row->storage_location_id), 'changes' => DB::table('inventory_count_items')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_count_items.inventory_adjustment_id')->where('inventory_count_operation_id', $operation)->orderByRaw('NATURAL_SORT_KEY(item_name)')->orderBy('item_name')->get()]);
     }
 }

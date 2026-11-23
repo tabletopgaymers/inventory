@@ -5,13 +5,13 @@
 .item-picker-suggestions .item-picker-level-1, .app-shell .item-picker-browse-option.item-picker-level-1 { padding-inline-start: 1.75rem; }
 .item-picker-suggestions .item-picker-level-2 { padding-inline-start: 2.75rem; }
 .item-picker-suggestions [role="option"]:hover, .item-picker-suggestions [aria-selected="true"], .app-shell .item-picker-browse-option:hover { background: var(--app-primary); color: var(--app-surface); }
-.item-picker-suggestions [role="option"].item-picker-added, .app-shell .item-picker-browse-option.item-picker-added { color: var(--app-muted); }
-.item-picker-suggestions [role="option"].item-picker-added:is(:hover, [aria-selected="true"]), .app-shell .item-picker-browse-option.item-picker-added:hover { color: var(--app-surface); }
 @media (max-width: 60rem) { .item-picker-columns { grid-template-columns: minmax(0, 1fr); } }
 
 .item-picker-browse { position: relative; }
 .app-shell .item-picker-browse-options > li { margin: 0; list-style: none; }
 .app-shell .item-picker-browse-option { display: block; width: 100%; min-height: 0; border: 0; border-radius: 0; background: transparent; color: var(--app-text); font: inherit; text-align: left; box-shadow: none; }
+.item-picker-suggestions [role="option"].item-picker-added, .app-shell .item-picker-browse-option.item-picker-added { color: #15803d; font-weight: 700; }
+.item-picker-suggestions [role="option"].item-picker-added:is(:hover, [aria-selected="true"]), .app-shell .item-picker-browse-option.item-picker-added:is(:hover, :focus-visible) { background: var(--color-success); color: #166534; text-decoration: underline; }
 
 .app-shell .item-picker-results th.item-picker-section-heading { padding: 0; }
 .app-shell .item-picker-section-toggle {

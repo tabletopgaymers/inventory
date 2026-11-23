@@ -4,11 +4,49 @@ namespace App\Support;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class LocationCountSearch
 {
+    public function draft(Request $request, string $token): array
+    {
+        abort_unless(Str::isUuid($token), 404);
+        $draft = $request->session()->get('location_counts.'.$token);
+        abort_unless(is_array($draft) && $draft['actor'] === (int) $request->user()->id, 404);
+
+        return $draft;
+    }
+
+    public function lastSearch(Request $request): ?string
+    {
+        $token = $request->session()->get('location_counts_last_search');
+        $draft = is_string($token) ? $request->session()->get('location_counts.'.$token) : null;
+
+        return ($draft['actor'] ?? null) === (int) $request->user()->id ? $token : null;
+    }
+
+    public function newDraft(Request $request, array $criteria, array $items, ?array $list = null): string
+    {
+        $token = (string) Str::uuid();
+        $drafts = [];
+        $lastSearch = $list === null ? null : $this->lastSearch($request);
+        if ($lastSearch !== null) {
+            $drafts[$lastSearch] = $this->draft($request, $lastSearch);
+        }
+        $drafts[$token] = ['actor' => (int) $request->user()->id, 'criteria' => $criteria, 'items' => $items,
+            'counts' => [], 'reviewed' => false, 'review_ids' => [], 'rationales' => []];
+        if ($list === null) {
+            $request->session()->put('location_counts_last_search', $token);
+        } else {
+            $drafts[$token]['list'] = $list;
+        }
+        $request->session()->put('location_counts', $drafts);
+
+        return $token;
+    }
+
     public function zeroStockDefault(int $location): bool
     {
         return DB::table('storage_locations')->where('id', $location)->where('is_central', true)->exists();

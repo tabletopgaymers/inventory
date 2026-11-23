@@ -14,7 +14,7 @@
             </div>
             </div>
         </div>
-        <p class="app-field-help">Search names, including an item's category and collection. Choose a match or press Enter to select it. Black entries add missing items; grey entries remove their items. Categories and collections apply to all their items.</p>
+        <p class="app-field-help">Choose an entry or press Enter on a search match to add missing items. Bold green entries are already fully added. Choose them again to remove their items.</p>
         <details class="item-picker-browse" data-memory-browse>
             <summary>Categories and Collections</summary>
             <ul class="item-picker-browse-options" aria-label="Categories and Collections" data-memory-browse-options><li>Loading categories and collections…</li></ul>

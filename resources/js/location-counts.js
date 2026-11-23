@@ -14,6 +14,9 @@ if (searchForm) {
 }
 
 document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+const listLocation = document.querySelector('[data-list-location]');
+listLocation?.addEventListener('change', () => listLocation.requestSubmit());
+
 const countForm = document.querySelector('[data-count-entry]');
 if (countForm) {
     mountQuantityNavigation(countForm, {

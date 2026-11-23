@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth')->group(function () {
     Route::get('/inventory/location-counts', [LocationCountController::class, 'index']);
     Route::post('/inventory/location-counts', [LocationCountController::class, 'search']);
+    Route::post('/inventory/location-counts/load-list', [LocationCountController::class, 'loadList']);
+    Route::post('/inventory/location-counts/{token}/list-location', [LocationCountController::class, 'listLocation']);
     Route::get('/inventory/location-counts/results/{operation}', [LocationCountController::class, 'result'])->whereNumber('operation');
     Route::get('/inventory/location-counts/{token}/worksheet', [LocationCountController::class, 'worksheet']);
     Route::get('/inventory/location-counts/{token}/enter', [LocationCountController::class, 'enter']);

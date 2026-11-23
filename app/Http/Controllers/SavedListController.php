@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SavedList;
+use App\Support\LocationCountSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,7 +23,18 @@ class SavedListController
 
     public function create(Request $request)
     {
-        return $this->form($request, null);
+        $context = $request->query('reconcile');
+        if ($context === null) {
+            return $this->form($request, null);
+        }
+
+        $draft = $this->reconcileDraft($request, $context);
+        if (isset($draft['list']) && !$this->canReturnToListCount($request)) {
+            return $this->form($request, null);
+        }
+
+        $name = isset($draft['list']) ? mb_substr($draft['list']['name'], 0, 248).' - COPY' : null;
+        return $this->form($request, null, $draft['displayed_items'] ?? $draft['items'], $draft['criteria']['location_id'], $context, $name);
     }
 
     public function edit(Request $request, int $id)
@@ -30,15 +42,40 @@ class SavedListController
         $list = SavedList::findOrFail($id);
         abort_unless($list->canEdit($request->user()), 403);
 
-        return $this->form($request, $list);
+        $context = $request->query('reconcile');
+        if ($context !== null) {
+            $this->reconcileDraft($request, $context, $id);
+            if (!$this->canReturnToListCount($request)) {
+                $context = null;
+            }
+        }
+
+        return $this->form($request, $list, reconcileContext: $context);
     }
 
-    private function form(Request $request, ?SavedList $list)
+    private function reconcileDraft(Request $request, mixed $context, ?int $listId = null): array
+    {
+        abort_unless(is_string($context), 404);
+        $draft = app(LocationCountSearch::class)->draft($request, $context);
+        abort_if($listId !== null && (int) ($draft['list']['id'] ?? 0) !== $listId, 404);
+
+        return $draft;
+    }
+
+    private function canReturnToListCount(Request $request): bool
+    {
+        return $request->user()->hasRole('manager') || $request->user()->hasRole('admin');
+    }
+
+    private function form(Request $request, ?SavedList $list, array $itemIds = [], ?int $locationId = null, ?string $reconcileContext = null, ?string $name = null)
     {
         return response()->view('saved-lists.form', [
             'list' => $list, 'owner' => $list?->owner ?? $request->user(),
             'locations' => DB::table('storage_locations')->orderBy('name')->get(['id', 'name']),
-            'itemIds' => $list?->itemIds() ?? [],
+            'itemIds' => $list?->itemIds() ?? $itemIds,
+            'locationId' => $list?->storage_location_id ?? $locationId,
+            'reconcileContext' => $reconcileContext,
+            'name' => $list?->name ?? $name,
         ])->header('Cache-Control', 'private, no-store');
     }
 
@@ -65,6 +102,13 @@ class SavedListController
     {
         $list = $id ? SavedList::findOrFail($id) : new SavedList;
         abort_if($id && ! $list->canEdit($request->user()), 403);
+        $reconcileContext = $request->query('reconcile');
+        $draft = $reconcileContext === null ? null : $this->reconcileDraft($request, $reconcileContext, $id);
+        $canCount = $this->canReturnToListCount($request);
+        if (isset($draft['list']) && !$canCount) {
+            $draft = $reconcileContext = null;
+        }
+
         $request->validate(['item_ids_json' => ['required', 'json'], 'picker_ready' => ['required', 'accepted']]);
         $request->merge(['item_ids' => json_decode($request->input('item_ids_json'), true)]);
         $data = $request->validate([
@@ -103,7 +147,20 @@ class SavedListController
             return $list;
         });
 
-        return redirect('/catalog/lists/'.$list->id)->with('success', 'List saved.');
+        if ($draft !== null && $id === null && $canCount) {
+            $location = $list->storage_location_id ?? $draft['criteria']['location_id'];
+            $reconcileContext = app(LocationCountSearch::class)->newDraft($request,
+                ['location_id' => $location === null ? null : (int) $location],
+                array_map('intval', $data['item_ids']), ['id' => $list->id, 'name' => $list->name]);
+        } elseif ($draft !== null && $id !== null) {
+            $request->session()->put('location_counts.'.$reconcileContext.'.list.name', $list->name);
+        }
+
+        $destination = $reconcileContext === null
+            ? '/catalog/lists/'.$list->id
+            : '/inventory/location-counts?context='.$reconcileContext;
+
+        return redirect($destination)->with('success', 'List saved.');
     }
 
     public function copy(Request $request, int $id)
