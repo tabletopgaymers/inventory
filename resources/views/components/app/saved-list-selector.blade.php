@@ -1,8 +1,9 @@
 @props(['lists', 'loadAction', 'selectId', 'loadedList' => null, 'resetUrl' => null])
 
-<x-app.collapsible-panel title="Lists" {{ $attributes->class(['app-saved-list-selector']) }}>
+<x-app.collapsible-panel title="Saved Lists" {{ $attributes->class(['app-saved-list-selector']) }}>
     <form method="post" action="{{ $loadAction }}">
         @csrf
+        {{ $loadFields ?? '' }}
         <div class="app-field">
             <select id="{{ $selectId }}" name="list_id" aria-label="List" required>
                 <option value="">Select a list</option>

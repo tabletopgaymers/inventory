@@ -42,8 +42,7 @@ class LocationCountController
 
     private function availableLists(Request $request)
     {
-        return SavedList::where('status', 'active')
-            ->where(fn ($query) => $query->where('owner_id', $request->user()->id)->orWhere('shared', true));
+        return SavedList::availableFor($request->user());
     }
 
     public function index(Request $request)

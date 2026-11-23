@@ -52,7 +52,10 @@ export function mountSearchPersistence(root, config, {criteria, apply, changed})
         });
         return queue;
     };
-    const schedule = () => { clearTimeout(timer); timer = setTimeout(save, 400); };
+    const schedule = () => {
+        clearTimeout(timer);
+        if (!navigating) timer = setTimeout(save, 400);
+    };
     window.addEventListener('pagehide', () => {
         if (navigating) return;
         clearTimeout(timer); remember();
@@ -65,7 +68,16 @@ export function mountSearchPersistence(root, config, {criteria, apply, changed})
     return {
         schedule,
         flush: () => { clearTimeout(timer); return save(); },
-        async beforeSubmit() { clearTimeout(timer); remember(); navigating = true; await queue.catch(() => {}); },
+        async beforeSubmit({flush = false} = {}) {
+            clearTimeout(timer);
+            navigating = true;
+            if (flush) {
+                await save();
+            } else {
+                remember();
+                await queue.catch(() => {});
+            }
+        },
         resume() { navigating = false; },
         endpoint: endpoint?.href,
     };

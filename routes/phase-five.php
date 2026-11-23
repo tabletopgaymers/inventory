@@ -48,8 +48,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/catalog/{kind}/{record}/lifecycle', [CatalogController::class, 'lifecycle'])->whereNumber('record');
     Route::get('/inventory', [InventoryBrowseController::class, 'index']);
     Route::post('/inventory/search', [InventoryBrowseController::class, 'submit']);
-    Route::post('/inventory/preferences', [InventoryBrowseController::class, 'pending']);
-    Route::get('/inventory/results/{token}', [InventoryBrowseController::class, 'results']);
+    Route::post('/inventory/load-list', [InventoryBrowseController::class, 'loadList'])->block(120, 10);
+    Route::post('/inventory/preferences', [InventoryBrowseController::class, 'pending'])->block(120, 10);
+    Route::get('/inventory/results/{token}', [InventoryBrowseController::class, 'results'])->block(120, 10);
     Route::get('/inventory/results/{token}/csv', [InventoryBrowseController::class, 'export']);
     Route::get('/inventory/locations/{location}', [InventoryBrowseController::class, 'location'])->whereNumber('location');
     Route::get('/inventory/classification/{kind}/{record}', [InventoryBrowseController::class, 'classification'])->whereNumber('record');

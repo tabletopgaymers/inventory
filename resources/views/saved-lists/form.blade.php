@@ -1,17 +1,22 @@
 @extends('layout')
 @section('title', $list ? 'Edit list' : 'New list')
+@php
+    $returnUrl = $list ? '/catalog/lists/'.$list->id : '/catalog/lists';
+    $saveUrl = $list ? '/catalog/lists/'.$list->id.'/edit' : '/catalog/lists/create';
+    if ($reconcileContext !== null) {
+        $saveUrl .= '?reconcile='.$reconcileContext;
+        $returnUrl = '/inventory/location-counts?context='.$reconcileContext;
+    } elseif ($browseContext !== null) {
+        $saveUrl .= '?browse='.$browseContext;
+        $returnUrl = '/inventory/results/'.$browseContext;
+    }
+@endphp
 @section('page-actions')
-<x-app.action href="{{ $reconcileContext !== null ? '/inventory/location-counts?context='.$reconcileContext : ($list ? '/catalog/lists/'.$list->id : '/catalog/lists') }}">Discard</x-app.action>
+<x-app.action :href="$returnUrl">Discard</x-app.action>
 <x-app.action type="submit" variant="primary" form="saved-list-form" data-list-save disabled>Save</x-app.action>
 @endsection
 @section('content-sections')
 @vite(['resources/css/item-list-picker.css', 'resources/js/saved-lists.js'])
-@php
-    $saveUrl = $list ? '/catalog/lists/'.$list->id.'/edit' : '/catalog/lists/create';
-    if ($reconcileContext !== null) {
-        $saveUrl .= '?reconcile='.$reconcileContext;
-    }
-@endphp
 <form id="saved-list-form" class="app-panel-stack" method="post" action="{{ $saveUrl }}">
 @csrf
 <input type="hidden" name="item_ids_json" value="{{ old('item_ids_json', json_encode($itemIds)) }}">

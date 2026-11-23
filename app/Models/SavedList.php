@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -20,6 +21,12 @@ class SavedList extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function scopeAvailableFor(Builder $query, User $user): Builder
+    {
+        return $query->where('status', 'active')
+            ->where(fn ($matching) => $matching->where('owner_id', $user->id)->orWhere('shared', true));
     }
 
     public function itemIds(): array

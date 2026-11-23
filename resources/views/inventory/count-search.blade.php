@@ -61,13 +61,13 @@
 <x-app.table-region label="Count search" class="app-list-table-panel">
 <x-slot:header>
     <x-app.heading-row variant="table">
-        <h2>{{ $loadedList ? 'List - '.$loadedList['name'] : 'Results' }}</h2>
+        <h2>{{ $loadedList ? $loadedList['name'].' (list)' : 'Search Results' }}</h2>
         <div class="app-inline-group">
             @php($canUseResults = !$loadedList || ($listLocation !== null && $rows !== []))
             @if($loadedList['canEdit'] ?? false)
-                <x-app.action href="/catalog/lists/{{ $loadedList['id'] }}/edit?reconcile={{ $token }}">Edit</x-app.action>
+                <x-app.action href="/catalog/lists/{{ $loadedList['id'] }}/edit?reconcile={{ $token }}">Edit list</x-app.action>
             @else
-                <x-app.action href="/catalog/lists/create?reconcile={{ $token }}">Create List</x-app.action>
+                <x-app.action href="/catalog/lists/create?reconcile={{ $token }}">Create list</x-app.action>
             @endif
             <x-app.action href="/inventory/location-counts/{{ $token }}/worksheet" target="_blank" rel="noopener" :disabled="!$canUseResults">Print worksheet</x-app.action>
             @if($canCount)<x-app.action href="/inventory/location-counts/{{ $token }}/enter" :disabled="!$canUseResults">Reconcile inventory</x-app.action>@endif
@@ -75,7 +75,7 @@
     </x-app.heading-row>
 </x-slot:header>
 @php($resultLocation = $loadedList ? $listLocation : $criteria['location_id'])
-<table><thead><tr><th>Name</th><th class="number">Recorded at selected location</th></tr></thead><tbody>
+<table><thead><tr><th>Name</th><th class="number">{{ $locations->firstWhere('id', $resultLocation)?->name ?? 'Location' }}</th></tr></thead><tbody>
 @php($group = null)
 @forelse($rows as $row)
     @if($group !== $row['category'].' : '.$row['collection'])

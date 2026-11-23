@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SavedList;
+use App\Support\InventoryBrowseState;
 use App\Support\LocationCountSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,16 @@ class SavedListController
 
     public function create(Request $request)
     {
+        $browse = $request->query('browse');
+        if ($browse !== null) {
+            $context = $this->inventoryDraft($request, $browse);
+            abort_unless(isset($context['export']['rows']), 404);
+            $name = isset($context['list']) ? mb_substr($context['list']['name'], 0, 248).' - COPY' : null;
+
+            return $this->form($request, null, array_column($context['export']['rows'], 'id'), $context['list']['location_id'] ?? null,
+                name: $name, browseContext: $browse);
+        }
+
         $context = $request->query('reconcile');
         if ($context === null) {
             return $this->form($request, null);
@@ -42,6 +53,13 @@ class SavedListController
         $list = SavedList::findOrFail($id);
         abort_unless($list->canEdit($request->user()), 403);
 
+        $browse = $request->query('browse');
+        if ($browse !== null) {
+            $this->inventoryDraft($request, $browse, $id);
+
+            return $this->form($request, $list, browseContext: $browse);
+        }
+
         $context = $request->query('reconcile');
         if ($context !== null) {
             $this->reconcileDraft($request, $context, $id);
@@ -51,6 +69,15 @@ class SavedListController
         }
 
         return $this->form($request, $list, reconcileContext: $context);
+    }
+
+    private function inventoryDraft(Request $request, mixed $token, ?int $listId = null): array
+    {
+        abort_if($request->query('reconcile') !== null, 404);
+        $context = app(InventoryBrowseState::class)->context($request, $token);
+        abort_if($listId !== null && (int) ($context['list']['id'] ?? 0) !== $listId, 404);
+
+        return $context;
     }
 
     private function reconcileDraft(Request $request, mixed $context, ?int $listId = null): array
@@ -67,7 +94,7 @@ class SavedListController
         return $request->user()->hasRole('manager') || $request->user()->hasRole('admin');
     }
 
-    private function form(Request $request, ?SavedList $list, array $itemIds = [], ?int $locationId = null, ?string $reconcileContext = null, ?string $name = null)
+    private function form(Request $request, ?SavedList $list, array $itemIds = [], ?int $locationId = null, ?string $reconcileContext = null, ?string $name = null, ?string $browseContext = null)
     {
         return response()->view('saved-lists.form', [
             'list' => $list, 'owner' => $list?->owner ?? $request->user(),
@@ -75,6 +102,7 @@ class SavedListController
             'itemIds' => $list?->itemIds() ?? $itemIds,
             'locationId' => $list?->storage_location_id ?? $locationId,
             'reconcileContext' => $reconcileContext,
+            'browseContext' => $browseContext,
             'name' => $list?->name ?? $name,
         ])->header('Cache-Control', 'private, no-store');
     }
@@ -102,6 +130,8 @@ class SavedListController
     {
         $list = $id ? SavedList::findOrFail($id) : new SavedList;
         abort_if($id && ! $list->canEdit($request->user()), 403);
+        $browse = $request->query('browse');
+        $inventoryDraft = $browse === null ? null : $this->inventoryDraft($request, $browse, $id);
         $reconcileContext = $request->query('reconcile');
         $draft = $reconcileContext === null ? null : $this->reconcileDraft($request, $reconcileContext, $id);
         $canCount = $this->canReturnToListCount($request);
@@ -147,18 +177,34 @@ class SavedListController
             return $list;
         });
 
-        if ($draft !== null && $id === null && $canCount) {
-            $location = $list->storage_location_id ?? $draft['criteria']['location_id'];
+        if ($inventoryDraft !== null) {
+            $state = app(InventoryBrowseState::class);
+            $items = array_map('intval', $data['item_ids']);
+            if ($id === null) {
+                $searchToken = isset($inventoryDraft['list']) ? $inventoryDraft['previous_search'] : $browse;
+                $browse = $state->loadList($request, $list, $items, $searchToken);
+            } else {
+                $state->refreshList($request, $browse, $list, $items);
+            }
+        }
+
+        if ($draft !== null && $canCount) {
+            $currentLocation = $draft['criteria']['location_id'];
+            $location = $id === null
+                ? ($list->storage_location_id ?? $currentLocation)
+                : ($currentLocation ?? $list->storage_location_id);
+            // The edited selection needs a fresh count draft so old entries cannot be applied to it.
             $reconcileContext = app(LocationCountSearch::class)->newDraft($request,
                 ['location_id' => $location === null ? null : (int) $location],
                 array_map('intval', $data['item_ids']), ['id' => $list->id, 'name' => $list->name]);
-        } elseif ($draft !== null && $id !== null) {
-            $request->session()->put('location_counts.'.$reconcileContext.'.list.name', $list->name);
         }
 
         $destination = $reconcileContext === null
             ? '/catalog/lists/'.$list->id
             : '/inventory/location-counts?context='.$reconcileContext;
+        if ($browse !== null) {
+            $destination = '/inventory/results/'.$browse;
+        }
 
         return redirect($destination)->with('success', 'List saved.');
     }

@@ -115,11 +115,14 @@ class InventorySearch
         return $result;
     }
 
-    public function results(array $criteria, bool $naturalNames = false): array
+    public function results(array $criteria, bool $naturalNames = false, ?array $itemIds = null): array
     {
         $items = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')->join('categories', 'categories.id', '=', 'collections.category_id')
             ->leftJoin('catalog_metadata as metadata', fn ($join) => $join->on('metadata.record_id', '=', 'items.id')->where('metadata.kind', 'items'))
             ->select('items.*', 'collections.name as collection_name', 'categories.name as category_name', DB::raw("COALESCE(metadata.state, 'active') as state"));
+        if ($itemIds !== null) {
+            $items->whereIntegerInRaw('items.id', $itemIds);
+        }
         if ($criteria['search'] !== '') {
             $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $criteria['search']);
             $items->where(function ($query) use ($escaped) {
