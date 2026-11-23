@@ -36,7 +36,7 @@
             @if($canEditList)
                 <x-app.action href="/catalog/lists/{{ $loadedList['id'] }}/edit?browse={{ $token }}">Edit list</x-app.action>
             @elseif($loadedList || !empty($result['rows']))
-                <x-app.action href="/catalog/lists/create?browse={{ $token }}">Create list</x-app.action>
+                <x-app.action href="/catalog/lists/create?browse={{ $token }}">{{ $loadedList ? 'Copy list' : 'Create list' }}</x-app.action>
             @endif
             @if(!empty($result['rows']))<x-app.action href="/inventory/results/{{ $token }}/csv">Download CSV</x-app.action>@else<x-app.action :disabled="true">Download CSV</x-app.action>@endif
         </div>

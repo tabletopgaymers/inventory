@@ -2,7 +2,7 @@
 @section('title', $list->name)
 @section('page-actions')
 @if($canEdit)<x-app.action href="/catalog/lists/{{ $list->id }}/edit">Edit</x-app.action>@endif
-<form method="post" action="/catalog/lists/{{ $list->id }}/copy">@csrf<x-app.action type="submit">Copy</x-app.action></form>
+<x-app.action href="/catalog/lists/{{ $list->id }}/copy">Copy</x-app.action>
 @endsection
 @section('content-sections')
 @vite('resources/js/saved-lists.js')

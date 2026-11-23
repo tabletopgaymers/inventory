@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Reconcile')
 @section('content-sections')
-<div @class(['app-columns app-columns-main-sidebar' => $canCount])>
+<div class="app-columns app-columns-main-sidebar">
 <section class="app-content app-record-content">
 <h2>Search</h2>
 <form method="post" action="/inventory/location-counts" data-count-search>@csrf
@@ -29,7 +29,6 @@
 </fieldset>
 </form>
 </section>
-@if($canCount)
 {{-- Retained until the Lists replacement is complete (UW-320).
 <label>Personal search name (optional for Search; required to save criteria)<input name="name" maxlength="100" value="{{ old('name') }}"></label><label class="app-choice"><input type="checkbox" name="overwrite" value="1">Overwrite my existing search with this name</label><x-app.action type="submit" name="action" value="save">Save personal criteria</x-app.action>
 --}}
@@ -55,7 +54,6 @@
 </form>
 @endif
 </x-app.saved-list-selector>
-@endif
 </div>
 @if($rows !== null)
 <x-app.table-region label="Count search" class="app-list-table-panel">
@@ -67,7 +65,7 @@
             @if($loadedList['canEdit'] ?? false)
                 <x-app.action href="/catalog/lists/{{ $loadedList['id'] }}/edit?reconcile={{ $token }}">Edit list</x-app.action>
             @else
-                <x-app.action href="/catalog/lists/create?reconcile={{ $token }}">Create list</x-app.action>
+                <x-app.action href="/catalog/lists/create?reconcile={{ $token }}">{{ $loadedList ? 'Copy list' : 'Create list' }}</x-app.action>
             @endif
             <x-app.action href="/inventory/location-counts/{{ $token }}/worksheet" target="_blank" rel="noopener" :disabled="!$canUseResults">Print worksheet</x-app.action>
             @if($canCount)<x-app.action href="/inventory/location-counts/{{ $token }}/enter" :disabled="!$canUseResults">Reconcile inventory</x-app.action>@endif

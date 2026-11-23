@@ -1,7 +1,6 @@
 @extends('layout')
 @section('title', $list ? 'Edit list' : 'New list')
 @php
-    $returnUrl = $list ? '/catalog/lists/'.$list->id : '/catalog/lists';
     $saveUrl = $list ? '/catalog/lists/'.$list->id.'/edit' : '/catalog/lists/create';
     if ($reconcileContext !== null) {
         $saveUrl .= '?reconcile='.$reconcileContext;
@@ -29,14 +28,14 @@
         <x-app.field label="Location (optional)" for="list-location" name="storage_location_id" help="The default location when using this list. It can be used at other locations.">
             <select id="list-location" name="storage_location_id"><option value="">No default location</option>@foreach($locations as $location)<option value="{{ $location->id }}" @selected(old('storage_location_id', $locationId) == $location->id)>{{ $location->name }}</option>@endforeach</select>
         </x-app.field>
-        <x-app.field label="Status" for="list-status" name="status"><select id="list-status" name="status">@foreach(\App\Models\SavedList::STATUSES as $value => $label)<option value="{{ $value }}" @selected(old('status', $list?->status ?? 'active') === $value)>{{ $label }}</option>@endforeach</select></x-app.field>
+        <x-app.field label="Status" for="list-status" name="status"><select id="list-status" name="status">@foreach(\App\Models\SavedList::STATUSES as $value => $label)<option value="{{ $value }}" @selected(old('status', $status) === $value)>{{ $label }}</option>@endforeach</select></x-app.field>
         @if(auth()->user()->hasRole('admin'))
         <input type="hidden" name="shared" value="0">
         <label class="app-choice"><input type="checkbox" name="shared" value="1" @checked(old('shared', $list?->shared ?? false))> Shared</label>
         @endif
     </div>
     <div>
-        <x-app.field label="Description (optional)" for="list-description" name="description"><textarea id="list-description" name="description" rows="4" maxlength="5000">{{ old('description', $list?->description) }}</textarea></x-app.field>
+        <x-app.field label="Description (optional)" for="list-description" name="description"><textarea id="list-description" name="description" rows="4" maxlength="5000">{{ old('description', $description) }}</textarea></x-app.field>
         <x-app.detail-list>
             <dt>Owner</dt><dd>{{ $owner->displayName() }}</dd>
             <dt>Updated</dt><dd>{{ $list ? \App\Support\DisplayDates::date($list->updated_at) : 'Set when created' }}</dd>

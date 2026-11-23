@@ -75,7 +75,6 @@ class LocationCountController
             $draft = $this->draft($request, $token);
             $loadedList = $draft['list'] ?? null;
             if ($loadedList !== null) {
-                abort_unless($canCount, 403);
                 $listLocation = $draft['criteria']['location_id'];
                 $lastSearch = app(LocationCountSearch::class)->lastSearch($request);
                 $criteria = $lastSearch === null ? null : $this->draft($request, $lastSearch)['criteria'];
@@ -93,7 +92,7 @@ class LocationCountController
         }
 
         return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved, 'compatibilityNotice' => $compatibilityNotice,
-            'lists' => $canCount ? $this->availableLists($request)->orderBy('name')->orderBy('id')->get(['id', 'name']) : collect(),
+            'lists' => $this->availableLists($request)->orderBy('name')->orderBy('id')->get(['id', 'name']),
             'loadedList' => $loadedList, 'listLocation' => $listLocation, 'lastSearch' => app(LocationCountSearch::class)->lastSearch($request),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
             'searchDefinition' => app(\App\Support\InventorySearchControls::class)->definition(['filters' => ['collections'], 'defaults' => [
@@ -129,7 +128,7 @@ class LocationCountController
 
     public function loadList(Request $request)
     {
-        $this->access($request);
+        $this->ready();
         $data = $request->validate(['list_id' => ['required', 'integer', 'min:1']]);
         [$list, $items] = DB::transaction(function () use ($request, $data) {
             $list = $this->availableLists($request)->lockForUpdate()->findOrFail($data['list_id']);
@@ -147,7 +146,7 @@ class LocationCountController
 
     public function listLocation(Request $request, string $token)
     {
-        $this->access($request);
+        $this->ready();
         $draft = $this->draft($request, $token);
         abort_unless(isset($draft['list']), 404);
         $data = $request->validate(['list_location_id' => ['required', 'integer', Rule::exists('storage_locations', 'id')]]);
@@ -166,7 +165,6 @@ class LocationCountController
         $draft = $this->draft($request, $token);
 
         if (isset($draft['list'])) {
-            $this->access($request);
             abort_unless($draft['criteria']['location_id'] !== null && $draft['items'] !== [], 409);
         }
         $rows = isset($draft['list']) ? $this->rows($draft) : app(LocationCountSearch::class)->rows($draft['criteria']);

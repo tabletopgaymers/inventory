@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/catalog/lists/{id}', [\App\Http\Controllers\SavedListController::class, 'show'])->whereNumber('id');
     Route::get('/catalog/lists/{id}/edit', [\App\Http\Controllers\SavedListController::class, 'edit'])->whereNumber('id');
     Route::post('/catalog/lists/{id}/edit', [\App\Http\Controllers\SavedListController::class, 'save'])->whereNumber('id');
-    Route::post('/catalog/lists/{id}/copy', [\App\Http\Controllers\SavedListController::class, 'copy'])->whereNumber('id');
+    Route::get('/catalog/lists/{id}/copy', [\App\Http\Controllers\SavedListController::class, 'copy'])->whereNumber('id');
     Route::post('/catalog/lists/{id}/delete', [\App\Http\Controllers\SavedListController::class, 'delete'])->whereNumber('id');
     Route::get('/catalog/{kind}', [CatalogController::class, 'index']);
     Route::get('/catalog/{kind}/create', [CatalogController::class, 'form']);

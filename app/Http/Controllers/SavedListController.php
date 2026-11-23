@@ -28,10 +28,11 @@ class SavedListController
         if ($browse !== null) {
             $context = $this->inventoryDraft($request, $browse);
             abort_unless(isset($context['export']['rows']), 404);
-            $name = isset($context['list']) ? mb_substr($context['list']['name'], 0, 248).' - COPY' : null;
-
-            return $this->form($request, null, array_column($context['export']['rows'], 'id'), $context['list']['location_id'] ?? null,
-                name: $name, browseContext: $browse);
+            return $this->form($request, null, [
+                'itemIds' => array_column($context['export']['rows'], 'id'),
+                'locationId' => $context['list']['location_id'] ?? null,
+                'name' => isset($context['list']) ? $this->copyName($context['list']['name']) : null,
+            ], browseContext: $browse);
         }
 
         $context = $request->query('reconcile');
@@ -40,12 +41,12 @@ class SavedListController
         }
 
         $draft = $this->reconcileDraft($request, $context);
-        if (isset($draft['list']) && !$this->canReturnToListCount($request)) {
-            return $this->form($request, null);
-        }
 
-        $name = isset($draft['list']) ? mb_substr($draft['list']['name'], 0, 248).' - COPY' : null;
-        return $this->form($request, null, $draft['displayed_items'] ?? $draft['items'], $draft['criteria']['location_id'], $context, $name);
+        return $this->form($request, null, [
+            'itemIds' => $draft['displayed_items'] ?? $draft['items'],
+            'locationId' => $draft['criteria']['location_id'],
+            'name' => isset($draft['list']) ? $this->copyName($draft['list']['name']) : null,
+        ], reconcileContext: $context);
     }
 
     public function edit(Request $request, int $id)
@@ -63,9 +64,6 @@ class SavedListController
         $context = $request->query('reconcile');
         if ($context !== null) {
             $this->reconcileDraft($request, $context, $id);
-            if (!$this->canReturnToListCount($request)) {
-                $context = null;
-            }
         }
 
         return $this->form($request, $list, reconcileContext: $context);
@@ -89,21 +87,19 @@ class SavedListController
         return $draft;
     }
 
-    private function canReturnToListCount(Request $request): bool
-    {
-        return $request->user()->hasRole('manager') || $request->user()->hasRole('admin');
-    }
-
-    private function form(Request $request, ?SavedList $list, array $itemIds = [], ?int $locationId = null, ?string $reconcileContext = null, ?string $name = null, ?string $browseContext = null)
+    private function form(Request $request, ?SavedList $list, array $defaults = [], ?string $reconcileContext = null, ?string $browseContext = null)
     {
         return response()->view('saved-lists.form', [
             'list' => $list, 'owner' => $list?->owner ?? $request->user(),
             'locations' => DB::table('storage_locations')->orderBy('name')->get(['id', 'name']),
-            'itemIds' => $list?->itemIds() ?? $itemIds,
-            'locationId' => $list?->storage_location_id ?? $locationId,
+            'itemIds' => $list?->itemIds() ?? $defaults['itemIds'] ?? [],
+            'locationId' => $list?->storage_location_id ?? $defaults['locationId'] ?? null,
             'reconcileContext' => $reconcileContext,
             'browseContext' => $browseContext,
-            'name' => $list?->name ?? $name,
+            'name' => $list?->name ?? $defaults['name'] ?? null,
+            'description' => $list?->description ?? $defaults['description'] ?? null,
+            'status' => $list?->status ?? $defaults['status'] ?? 'active',
+            'returnUrl' => $defaults['returnUrl'] ?? ($list ? '/catalog/lists/'.$list->id : '/catalog/lists'),
         ])->header('Cache-Control', 'private, no-store');
     }
 
@@ -134,10 +130,6 @@ class SavedListController
         $inventoryDraft = $browse === null ? null : $this->inventoryDraft($request, $browse, $id);
         $reconcileContext = $request->query('reconcile');
         $draft = $reconcileContext === null ? null : $this->reconcileDraft($request, $reconcileContext, $id);
-        $canCount = $this->canReturnToListCount($request);
-        if (isset($draft['list']) && !$canCount) {
-            $draft = $reconcileContext = null;
-        }
 
         $request->validate(['item_ids_json' => ['required', 'json'], 'picker_ready' => ['required', 'accepted']]);
         $request->merge(['item_ids' => json_decode($request->input('item_ids_json'), true)]);
@@ -188,7 +180,7 @@ class SavedListController
             }
         }
 
-        if ($draft !== null && $canCount) {
+        if ($draft !== null) {
             $currentLocation = $draft['criteria']['location_id'];
             $location = $id === null
                 ? ($list->storage_location_id ?? $currentLocation)
@@ -211,21 +203,26 @@ class SavedListController
 
     public function copy(Request $request, int $id)
     {
-        $copy = DB::transaction(function () use ($request, $id) {
+        $defaults = DB::transaction(function () use ($request, $id) {
             $source = SavedList::lockForUpdate()->findOrFail($id);
             abort_unless($source->canView($request->user()), 403);
-            $copy = new SavedList(['name' => mb_substr($source->name, 0, 245).' (copy)', 'description' => $source->description, 'storage_location_id' => $source->storage_location_id]);
-            $copy->status = $source->status;
-            $copy->owner_id = $request->user()->id;
-            $copy->save();
-            foreach (array_chunk($source->itemIds(), 500) as $chunk) {
-                DB::table('saved_list_items')->insert(array_map(fn ($item) => ['saved_list_id' => $copy->id, 'item_id' => $item], $chunk));
-            }
 
-            return $copy;
+            return [
+                'itemIds' => $source->itemIds(),
+                'locationId' => $source->storage_location_id,
+                'name' => $this->copyName($source->name),
+                'description' => $source->description,
+                'status' => $source->status,
+                'returnUrl' => '/catalog/lists/'.$source->id,
+            ];
         });
 
-        return redirect('/catalog/lists/'.$copy->id.'/edit')->with('success', 'List copied. You own this copy.');
+        return $this->form($request, null, $defaults);
+    }
+
+    private function copyName(string $name): string
+    {
+        return mb_substr($name, 0, 248).' (copy)';
     }
 
     public function delete(Request $request, int $id)

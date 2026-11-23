@@ -26,7 +26,18 @@
     $columnCount = 2 + (int) $showTransit + (int) $showOrdered + (int) $showExpected;
 @endphp
 <x-app.table-region label="Location inventory" :nowrap="true" class="app-list-table-panel">
-<x-slot:header><h2 class="app-screen-only">Inventory</h2></x-slot:header>
+<x-slot:header>
+    <x-app.heading-row variant="table" class="app-screen-only">
+        <h2>Inventory</h2>
+        <form method="post" action="/inventory/location-counts">
+            @csrf
+            <input type="hidden" name="location_id" value="{{ $location->id }}">
+            <input type="hidden" name="zero_stock_location" value="{{ $location->id }}">
+            <input type="hidden" name="include_active_zero" value="{{ (int) $includeZeroStock }}">
+            <x-app.action type="submit" name="action" value="search">Prepare reconcile</x-app.action>
+        </form>
+    </x-app.heading-row>
+</x-slot:header>
 <table><colgroup><col>@for($column = 1; $column < $columnCount; $column++)<col class="table-quantity-column">@endfor</colgroup>
 <thead><tr><th>Item</th><th class="table-numeric">{{ $location->name }}</th>@if($showTransit)<th class="table-numeric">In Transit</th>@endif @if($showOrdered)<th class="table-numeric">Ordered</th>@endif @if($showExpected)<th class="table-numeric">Expected</th>@endif</tr></thead><tbody>
 @php
