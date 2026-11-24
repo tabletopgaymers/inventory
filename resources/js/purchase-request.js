@@ -1,6 +1,6 @@
 import { updateStatusBadge } from './status-badges.js';
 import { createAction } from './actions.js';
-import { setSaveDirty, setSaveBusy } from './workflow/save-button.js';
+import { setSaveDirty } from './workflow/save-button.js';
 import { mountNotices } from './workflow/notices.js';
 import './app.js';
 

@@ -1,14 +1,14 @@
 @extends('layout')
 @section('title', 'Users')
 @section('content-sections')
-<x-app.table-region label="User directory" class="app-list-table-panel">
+<x-app.table-region label="User directory">
     <table data-user-directory>
         <thead><tr>
             @foreach(['Name', 'Email', 'Elevated roles'] as $label)
                 <th scope="col" @if($loop->first) aria-sort="ascending" @endif>
-                    <button type="button" class="inline-flex cursor-pointer items-center gap-1 hover:underline" data-user-sort>
+                    <x-app.action type="button" class="app-table-sort" data-user-sort>
                         {{ $label }} <span aria-hidden="true">{{ $loop->first ? '↑' : '↕' }}</span>
-                    </button>
+                    </x-app.action>
                 </th>
             @endforeach
         </tr></thead>

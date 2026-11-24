@@ -138,6 +138,6 @@ Locality and postal details</dd></x-app.detail-list></section>
         <p>Place status beside a record title and in a dedicated table column. A workflow's editing step does not create a new business status.</p>
         <div class="app-title-row"><h3>Sample collection</h3><x-app.status-badge status="Active" /></div>
     </div>
-    <x-app.table-region label="Status column example" class="app-list-table-panel"><table><thead><tr><th>Collection</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun ribbons</td><td><x-app.status-badge status="Active" /></td></tr><tr><td>Retired ribbons</td><td><x-app.status-badge status="Archived" /></td></tr></tbody></table></x-app.table-region>
+    <x-app.table-region label="Status column example"><table><thead><tr><th>Collection</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun ribbons</td><td><x-app.status-badge status="Active" /></td></tr><tr><td>Retired ribbons</td><td><x-app.status-badge status="Archived" /></td></tr></tbody></table></x-app.table-region>
 </section>
 @endsection

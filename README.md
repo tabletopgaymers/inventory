@@ -117,9 +117,10 @@ data, immutable history and runtime authorization when deploying. Sample data
 installation or reset is a separate explicitly authorized operation; see
 [catalog seeding](database/seeders/README.md).
 
-The footer displays `APP_BRANCH` and a short `APP_REVISION` (the full commit SHA
-is available on hover). Set these from the actual release checkout before
-`artisan optimize` caches configuration, without editing the shared .env:
+The footer displays `APP_BRANCH` and a short `APP_REVISION`. Select the version
+to copy the full commit SHA and release details. Set the branch and revision
+from the actual release checkout before `artisan optimize` caches configuration,
+without editing the shared .env:
 
 ```bash
 export APP_BRANCH="$(git branch --show-current)"
