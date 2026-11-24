@@ -46,7 +46,7 @@
         <p class="app-content" data-material-unavailable @if($work['id']) hidden @endif>Must complete basic info first</p>
         <div data-material-search-host>
         <div data-material-search-panel data-material-content @if(!$work['id']) hidden @endif>
-            <x-app.table-region label="Catalog search results" :nowrap="true" :quantity-fields="true" class="app-list-table-panel">
+            <x-app.table-region label="Catalog search results" :nowrap="true" :quantity-fields="true">
                 <x-slot:header>
                     <h3>Add material</h3>
             <fieldset class="app-entry-fieldset" data-material-search-fields @disabled(!$editable)>
@@ -74,7 +74,7 @@
                 @endforeach
             </x-app.detail-list>
         </div>
-        <x-app.table-region label="Requested material review" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
+        <x-app.table-region label="Requested material review" :nowrap="true" :separators="true" numeric="after-first">
             <x-slot:header><h2>Requested material</h2></x-slot:header>
             <table class="relocation-review-table"><thead><tr><th>Item</th><th class="table-heading-center" scope="col" data-review-location="source_location_id">Source</th><th class="review-requested table-numeric table-heading-center">Requested</th><th class="table-heading-center" scope="col" data-review-location="destination_location_id">Destination</th></tr></thead><tbody data-review-material></tbody></table>
         </x-app.table-region>
@@ -112,9 +112,13 @@
             </x-app.detail-list>
             </div>
         </div>
-        <x-app.table-region label="Shipment material review" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
+        <x-app.table-region label="Shipment material review" :nowrap="true" :separators="true" numeric="after-first">
             <x-slot:header><h2>Material</h2></x-slot:header>
-            <table class="relocation-ship-table"><thead><tr><th>Item</th><th class="table-heading-center" data-ship-location="source_location_id">Source</th><th class="table-heading-center">Requested</th><th class="table-heading-center" colspan="2" scope="colgroup">Fulfilled</th><th class="table-heading-center" data-ship-location="destination_location_id">Destination</th></tr></thead><tbody data-ship-material></tbody></table>
+            <table>
+                <colgroup><col><col class="table-quantity-column" span="2"></colgroup>
+                <colgroup><col><col class="table-quantity-column"></colgroup>
+                <colgroup><col class="table-quantity-column"></colgroup>
+                <thead><tr><th>Item</th><th class="table-heading-center" data-ship-location="source_location_id">Source</th><th class="table-heading-center">Requested</th><th class="table-heading-center" colspan="2" scope="colgroup">Fulfilled</th><th class="table-heading-center" data-ship-location="destination_location_id">Destination</th></tr></thead><tbody data-ship-material></tbody></table>
         </x-app.table-region>
         <template data-ship-row><tr><td class="app-grouped-item"></td><td></td><td></td><td class="table-variance table-joined"></td><td class="ship-fulfilled"></td><td></td></tr></template>
         <template data-ship-group><tr class="group-row"><th colspan="6"></th></tr></template>
@@ -136,7 +140,7 @@
                 <label>Name<input data-tracking-name maxlength="255"></label>
                 <label>Shipper<select data-tracking-carrier><option value="">Choose a shipper</option><option value="USPS">US Postal</option><option value="UPS">UPS</option><option value="FedEx">FedEx</option><option value="Other">Other</option></select></label>
                 <label>Tracking (optional)<input data-tracking-number maxlength="255"></label>
-                <x-app.action control="delete" type="button" class="material-remove" data-tracking-remove aria-label="Delete package">✕</x-app.action>
+                <x-app.action control="delete" type="button" data-tracking-remove aria-label="Delete package">✕</x-app.action>
             </div>
         </template>
         <template data-tracking-saved-row><tr><td><strong data-saved-package-name></strong></td><td data-saved-shipper></td><td data-saved-tracker></td></tr></template>
@@ -174,9 +178,13 @@
                 </x-app.detail-list>
                 </div>
             </div>
-            <x-app.table-region label="Reconciliation confirmation" :nowrap="true" :separators="true" numeric="after-first" class="app-list-table-panel">
+            <x-app.table-region label="Reconciliation confirmation" :nowrap="true" :separators="true" numeric="after-first">
                 <x-slot:header><h2>Material</h2></x-slot:header>
-                <table class="relocation-ship-table"><thead><tr><th>Item</th><th class="table-heading-center" data-confirmation-location="source_location_id">Source</th><th class="table-heading-center">Requested</th><th class="table-heading-center">Fulfilled</th><th class="table-heading-center" colspan="2" scope="colgroup">Received</th><th class="table-heading-center" data-confirmation-location="destination_location_id">Destination</th></tr></thead><tbody data-confirmation-material></tbody></table>
+                <table>
+                    <colgroup><col><col class="table-quantity-column" span="3"></colgroup>
+                    <colgroup><col><col class="table-quantity-column"></colgroup>
+                    <colgroup><col class="table-quantity-column"></colgroup>
+                    <thead><tr><th>Item</th><th class="table-heading-center" data-confirmation-location="source_location_id">Source</th><th class="table-heading-center">Requested</th><th class="table-heading-center">Fulfilled</th><th class="table-heading-center" colspan="2" scope="colgroup">Received</th><th class="table-heading-center" data-confirmation-location="destination_location_id">Destination</th></tr></thead><tbody data-confirmation-material></tbody></table>
             </x-app.table-region>
             <div class="app-content relocation-shipping-information"><h2>Shipping information</h2><p data-tracking-empty>No tracking saved yet.</p><div class="tracking-saved-scroll"><table class="tracking-saved-table" aria-label="Shipping information" hidden><tbody data-tracking-saved></tbody></table></div></div>
         </div>

@@ -26,7 +26,6 @@ export default defineConfig({
             'resources/js/inventory-search-controls.js',
             'resources/js/inventory-search-guide.js',
             'resources/js/style-guide.js',
-            'resources/css/event-report.css',
             'resources/css/inventory-worksheet.css',
             'resources/css/vite-demo.css',
             'resources/js/vite-demo.js',

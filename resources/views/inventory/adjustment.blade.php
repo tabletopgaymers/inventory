@@ -18,7 +18,7 @@
 </x-app.detail-list></div>
 </div>
 </div>
-<x-app.table-region label="Adjustment" class="app-list-table-panel"><table><thead><tr><th>Location</th><th class="number">Before</th><th class="number">After</th><th class="number">Change</th><th class="number">Unit cost</th><th>Rationale</th></tr></thead><tbody>
+<x-app.table-region label="Adjustment"><table><thead><tr><th>Location</th><th class="number">Before</th><th class="number">After</th><th class="number">Change</th><th class="number">Unit cost</th><th>Rationale</th></tr></thead><tbody>
 
 @forelse($entries as $entry)<tr><td>{{ $entry->location_name }}</td><td class="number">{{ number_format($entry->before_quantity) }}</td><td class="number">{{ number_format($entry->after_quantity) }}</td><td class="number">{{ $entry->quantity_change > 0 ? '+' : '' }}{{ number_format($entry->quantity_change) }}</td><td class="number">{{ \App\Support\StockNumbers::displayCost($entry->unit_cost) }}</td><td>{{ $entry->rationale ?? '—' }}</td></tr>
 @empty<tr><td colspan="6">No quantities changed; no History entries were recorded.</td></tr>

@@ -1,4 +1,4 @@
-<x-app.table-region label="Item history" class="app-list-table-panel">
+<x-app.table-region label="Item history">
 @if($historyHeader ?? false)
 <x-slot:header>
 <x-app.heading-row variant="table" class="app-table-panel-toolbar">

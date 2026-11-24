@@ -1,20 +1,8 @@
-# Design Phase A guide build
+# Application theme
 
-This nested package retains only the historical static evaluation build. The live application uses the root Vite build; run npm commands from the application root for normal UI development.
+`app-input.css` defines the active application theme. The root Vite build loads
+it through [app.css](../../css/app.css). Follow the application
+[asset instructions](../../../README.md#frontend-assets) to build or preview it.
 
-`app-input.css` remains the single source of the existing application theme and custom rules, imported by `resources/css/app.css`. Root Vite owns compilation, followed by shared workflow imports. The nested `build:app` command and obsolete public/app.css are retired; historical versions remain recoverable in Git. Do not recreate a parallel application build here. Domain styles now live in resources/css/purchase.css and resources/css/relocation.css.
-
-From this directory, using Node.js 20 or newer and npm:
-
-```powershell
-npm ci
-npm run build
-```
-
-Evaluation input: input.css. Source scanning is disabled globally and enabled only for ../../views/design/phase-a. Evaluation output: ../../../public/design/phase-a/evaluation.css. This command is not the application build. The application now requires the root npm build before deployment activation.
-
-Exact versions and transitive integrity hashes live in package.json/package-lock.json. Only free Tailwind CSS/CLI 4.3.3 and daisyUI 5.7.47 are used; corresponding MIT notices are in licenses/. No paid templates or MCP service. Generated dependencies are ignored and must not be published.
-
-Guide routes permit only tg-inventory-app.test and dev-inventory.tabletopgaymers.org in local/development, behind existing application authentication and development site's existing Basic protection. Production/other hosts are excluded. Views contain static illustrative data; no workflow posts, calculations or persistence.
-
-Historical evaluation choices are reference material. Normal application and style-guide pages use the shared Tailwind/daisyUI foundation plus custom app styles. Current task authority and project operating instructions control changes and publication; historical evaluation gates do not assign new work.
+The retired static evaluation build and its assets are available in Git history.
+The Tailwind and daisyUI license notices are in [licenses](licenses).

@@ -1,11 +1,11 @@
-<x-app.table-region label="Invoice material" class="app-list-table-panel purchase-table purchase-material" :nowrap="true" :quantity-fields="true" :separators="true" numeric="after-first">
-<table><colgroup><col class="table-action-column"><col>@for($column=0;$column<7;$column++)<col class="purchase-material-value-column">@endfor</colgroup>
+<x-app.table-region label="Invoice material" class="purchase-table purchase-material" :nowrap="true" :quantity-fields="true" :separators="true" numeric="after-first">
+<table><colgroup><col class="table-action-column"><col><col class="table-quantity-column" span="6"><col class="table-action-column"></colgroup>
 <thead><tr><th><span class="sr-only">Remove</span></th><th>Item</th><th>{{ $mode==='receipt' ? 'Ordered' : 'Requested' }}</th><th>{{ $mode==='receipt' ? 'Received' : 'Quantity' }}</th><th>Unit</th><th>Cost</th><th>Fee</th><th>Line</th><th><span class="sr-only">Recalculate</span></th></tr></thead><tbody data-invoice-body>
 @php($group=null)
 @foreach($items as $item)
 @php($key=$item['id']) @php($line=$values['lines'][$key])
 @if($group!==$item['group'])@php($group=$item['group'])<tr class="group-row"><th colspan="9" scope="rowgroup">{{ $group }}</th></tr>@endif
-<tr data-invoice-line data-line-key="{{ $key }}" data-group="{{ $group }}" @class(['table-row-error'=>collect(array_keys($reviewErrors))->contains(fn($field)=>str_starts_with($field,'lines.'.$key.'.'))])><td>@if(!$readonly)<x-app.action control="delete" type="button" data-remove-invoice class="material-remove" aria-label="Remove {{ $item['name'] }}">✕</x-app.action>@endif</td><td class="app-grouped-item">
+<tr data-invoice-line data-line-key="{{ $key }}" data-group="{{ $group }}" @class(['table-row-error'=>collect(array_keys($reviewErrors))->contains(fn($field)=>str_starts_with($field,'lines.'.$key.'.'))])><td>@if(!$readonly)<x-app.action control="delete" type="button" data-remove-invoice aria-label="Remove {{ $item['name'] }}">✕</x-app.action>@endif</td><td class="app-grouped-item">
 <input id="purchase-line-{{ $key }}-description" name="lines[{{ $key }}][description]" value="{{ $item['name'] }}" maxlength="500" data-invoice-description aria-label="Item description" @readonly($readonly || $item['item_id'])>
 <input type="hidden" name="lines[{{ $key }}][item_id]" value="{{ $item['item_id'] }}" data-invoice-item>
 <input type="hidden" name="lines[{{ $key }}][group_label]" value="{{ $group }}" data-invoice-group>

@@ -30,7 +30,7 @@
 <p>Unit cost: {{ \App\Support\StockNumbers::displayCost($item->unit_cost) }}</p>
 @endif
 </div>
-<x-app.table-region label="Item quantities by location" class="app-list-table-panel">
+<x-app.table-region label="Item quantities by location">
 <x-slot:header>
 <x-app.heading-row variant="table" class="app-table-panel-toolbar">
 <h2 class="app-heading-flush">Locations</h2>
@@ -43,7 +43,7 @@
 @endforeach
 </tbody><tfoot><tr><th>Total available</th><td class="number">{{ number_format($locations->sum('quantity')) }}</td></tr></tfoot></table></x-app.table-region>
 @if($catalogReady)
-<x-app.table-region label="Events and pending inventory" class="app-list-table-panel">
+<x-app.table-region label="Events and pending inventory">
 <x-slot:header>
 <h2 class="app-heading-flush">Events and pending inventory</h2>
 <p class="app-field-help">These read-only balances are excluded from Available. Purchase and relocation history links open their source requests.</p>

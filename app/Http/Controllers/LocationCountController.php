@@ -33,11 +33,11 @@ class LocationCountController
 
     private function rows(array $draft): array
     {
-        $criteria = app(InventorySearch::class)->defaults();
+        $search = app(InventorySearch::class);
+        $criteria = $search->defaults();
         $criteria['include_inactive'] = true;
 
-        $itemIds = array_fill_keys($draft['items'], true);
-        return array_values(array_filter(app(InventorySearch::class)->results($criteria, naturalNames: true)['rows'], fn ($row) => isset($itemIds[$row['id']])));
+        return $search->results($criteria, naturalNames: true, itemIds: $draft['items'])['rows'];
     }
 
     private function availableLists(Request $request)
@@ -49,26 +49,11 @@ class LocationCountController
     {
         $this->ready();
         $canCount = $request->user()->hasRole('admin') || $request->user()->hasRole('manager');
-        $saved = app(LocationCountSearch::class)->saved((int) $request->user()->id);
         $criteria = null;
         $result = null;
         $token = null;
         $loadedList = null;
         $listLocation = null;
-        $compatibilityNotice = null;
-        if ($request->filled('saved')) {
-            $key = $request->query('saved');
-            abort_unless(is_string($key) && isset($saved[$key]), 404);
-            $service = app(LocationCountSearch::class);
-            if (! $service->compatible($saved[$key]['criteria'])) {
-                $criteria = $saved[$key]['criteria'];
-                $compatibilityNotice = 'This legacy saved search included inactive zero-stock items. The new count rule excludes them, so results have not been loaded. Choose Include active items with zero stock explicitly, then Search; use Save personal criteria with overwrite to replace the saved search. Its saved criteria are unchanged.';
-            } else {
-                $criteria = $service->criteria(Request::create('/', 'POST', $service->normalize($saved[$key]['criteria'])));
-                $result = $service->rows($criteria);
-                $token = app(LocationCountSearch::class)->newDraft($request, $criteria, array_column($result, 'id'));
-            }
-        }
         if ($request->filled('context')) {
             $token = $request->query('context');
             abort_unless(is_string($token), 404);
@@ -91,7 +76,7 @@ class LocationCountController
             $request->session()->put('location_counts.'.$token.'.displayed_items', array_column($result, 'id'));
         }
 
-        return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token, 'saved' => $saved, 'compatibilityNotice' => $compatibilityNotice,
+        return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token,
             'lists' => $this->availableLists($request)->orderBy('name')->orderBy('id')->get(['id', 'name']),
             'loadedList' => $loadedList, 'listLocation' => $listLocation, 'lastSearch' => app(LocationCountSearch::class)->lastSearch($request),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
@@ -105,24 +90,21 @@ class LocationCountController
     public function search(Request $request)
     {
         $this->ready();
-        $data = $request->validate(['action' => ['required', 'in:search,show_all,reset,save'], 'name' => ['nullable', 'string', 'max:100'], 'overwrite' => ['nullable', 'boolean']]);
-        if ($data['action'] === 'reset') {
+        $action = $request->validate(['action' => ['required', 'in:search,show_all,reset']])['action'];
+        if ($action === 'reset') {
             return redirect('/inventory/location-counts');
         }
         $service = app(LocationCountSearch::class);
         $criteria = $service->criteria($request);
-        if ($data['action'] === 'show_all') {
+        if ($action === 'show_all') {
             $criteria['search'] = '';
         }
         try {
-            if ($data['action'] === 'save') {
-                $service->save((int) $request->user()->id, $data['name'] ?? '', $criteria, (bool) ($data['overwrite'] ?? false));
-            }
             $token = app(LocationCountSearch::class)->newDraft($request, $criteria, array_column($service->rows($criteria), 'id'));
 
-            return redirect('/inventory/location-counts?context='.$token)->with('success', $data['action'] === 'save' ? 'Personal criteria saved.' : null);
+            return redirect('/inventory/location-counts?context='.$token);
         } catch (QueryException) {
-            return back()->withInput()->with('error', 'Search could not be saved. Your inputs are retained; try again.');
+            return back()->withInput()->with('error', 'Search could not be completed. Your inputs are retained; try again.');
         }
     }
 

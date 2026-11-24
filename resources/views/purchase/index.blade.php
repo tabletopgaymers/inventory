@@ -4,7 +4,7 @@
 <x-app.action variant="new"  href="/purchase/new" title="New purchase request" />
 @endsection
 @section('content-sections')
-<x-app.table-region label="Purchase requests" class="app-list-table-panel">
+<x-app.table-region label="Purchase requests">
     <table>
         <thead><tr><th>ID</th><th>Title</th><th>Requester</th><th>Last updated</th><th>Status</th></tr></thead>
         <tbody>

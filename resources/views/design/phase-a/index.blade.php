@@ -20,7 +20,7 @@
         <li><strong>User details:</strong> bold labels and aligned values in a borderless definition list. Contact confirmation, Microsoft account, elevated roles and time zone are distinct.</li>
         <li><strong>Buttons:</strong> purple Save, green ＋ New, neutral Edit and a clearly separated destructive action. Disabled controls and saved/unsaved states are explicit.</li>
         <li><strong>Disabled controls:</strong> form fields and buttons use a light grey background with black text at full opacity. Save progress buttons retain their existing state styling.</li>
-        <li><strong>Notifications:</strong> Success, warning and error banners have a top-right × dismiss control. Success notices disappear after 3 seconds and warnings after 10 seconds. Error notices stay until dismissed.</li>
+        <li><strong>Notifications:</strong> Success, warning and error banners have a top-right × dismiss control. Success notices disappear after 3 seconds. Warnings and errors stay until dismissed.</li>
         <li><strong>Confirmation dialogs:</strong> role grants/removals and account disablement use modal confirmation dialogs with Cancel, the named action and focus returned to the trigger. Grant confirmations are purple; removal/disable confirmations are red. Users may remove their own manager/procurement roles, but another admin must remove their admin role or disable their account.</li>
         <li><strong>Navigation:</strong> Inventory, Relocation Request, Purchase Request, Reconcile, Catalog, Users. Events (dev) and Style Guide sit at the bottom. Desktop begins at 50rem (800px at the default font size); smaller screens use Menu. Local and development environments show a Style guide link at the bottom of the navigation, opening this overview.</li>
         <li><strong>Environment:</strong> local magenta, remote development red, testing orange and staging green. The label sits in the top bar, which uses its environment color. Production and unmapped environments show the normal header without a status label.</li>
@@ -37,7 +37,7 @@
     <p><a href="/style-guide/vite-demo">Vite demo</a> demonstrates built assets and locally hosted Font Awesome Free.</p>
     <p><a href="/style-guide/browser-memory-demo">Browser Memory Demo</a> searches a catalog snapshot and builds an inventory list entirely in browser memory.</p>
     <p><a href="/style-guide/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
-    <p><a href="/style-guide/orphaned">Orphaned examples</a> temporarily retains record details, permanent notes, loading states, account feedback, role actions and the legacy table layout.</p>
+    <p><a href="/style-guide/orphaned">Orphaned examples</a> temporarily retains record details, permanent notes, loading states, account feedback and role actions.</p>
     <p><a href="/style-guide/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
     @if(request()->getHost() === 'tg-inventory-app.test')
     <p><a href="/style-guide/wrapper">Application frame</a> shows the current shared header, navigation and a two-panel user example. Its <a href="/style-guide/wrapper#environment-indicators">Environment indicators</a> section previews each environment’s top bar.</p>

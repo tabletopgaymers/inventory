@@ -28,7 +28,7 @@
 </x-app.saved-list-selector>
 </div>
 @if($result !== null)
-<x-app.table-region label="Inventory results" :nowrap="true" class="inventory-results app-list-table-panel" id="inventory-results" :data-inventory-list-results="$loadedList ? '' : null">
+<x-app.table-region label="Inventory results" :nowrap="true" id="inventory-results" :data-inventory-list-results="$loadedList ? '' : null">
 <x-slot:header>
     <x-app.heading-row variant="table">
         <h2>{{ $loadedList ? $loadedList['name'].' (list)' : 'Search Results' }}</h2>
@@ -45,8 +45,8 @@
 <table><colgroup><col><col class="table-quantity-column">@foreach($result['columns'] ?? [] as $column)<col class="table-quantity-column">@endforeach</colgroup><thead><tr><th>Name</th><th class="table-numeric">Total</th>@foreach($result['columns'] ?? [] as $key=>$column)<th class="table-numeric">@if($column['kind']==='storage')<a @unless($loadedList) data-browse-link @endunless href="/inventory/locations/{{ $column['id'] }}?browse={{ $token }}">{{ $column['name'] }}</a>@else{{ $column['name'] }}@endif</th>@endforeach</tr></thead><tbody>
 @php($group = null)
 @forelse($result['rows'] ?? [] as $row)
-@if($group !== $row['category'].':'.$row['collection'])@php($group = $row['category'].':'.$row['collection'])<tr class="collection-heading"><th colspan="{{ 2+count($result['columns']) }}">{{ $row['category'] }} : {{ $row['collection'] }}</th></tr>@endif
-<tr><td class="app-grouped-item"><a @unless($loadedList) data-browse-link @endunless href="/inventory/items/{{ $row['id'] }}?browse={{ $token }}">{{ $row['name'] }}</a></td><td class="number">{{ $row['available'] ? number_format($row['available']) : '—' }}</td>@foreach($result['columns'] as $key=>$column)<td class="number">{{ $row['values'][$key] ? number_format($row['values'][$key]) : '—' }}</td>@endforeach</tr>
+@if($group !== $row['category'].':'.$row['collection'])@php($group = $row['category'].':'.$row['collection'])<tr class="group-row"><th colspan="{{ 2+count($result['columns']) }}">{{ $row['category'] }} : {{ $row['collection'] }}</th></tr>@endif
+<tr><td class="app-grouped-item"><a @unless($loadedList) data-browse-link @endunless href="/inventory/items/{{ $row['id'] }}?browse={{ $token }}">{{ $row['name'] }}</a></td><td class="table-numeric tabular-nums">{{ $row['available'] ? number_format($row['available']) : '—' }}</td>@foreach($result['columns'] as $key=>$column)<td class="table-numeric tabular-nums">{{ $row['values'][$key] ? number_format($row['values'][$key]) : '—' }}</td>@endforeach</tr>
 @empty<tr><td colspan="{{ 2+count($result['columns']) }}">{{ $loadedList ? 'No items in this list.' : 'No items match. Change your search or filters, then select Search.' }}</td></tr>@endforelse
 </tbody></table>
 <x-slot:footer>

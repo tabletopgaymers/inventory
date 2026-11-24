@@ -169,7 +169,7 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
                 tally.className = 'item-picker-section-count';
                 toggle.append(marker, title, tally); heading.append(toggle);
                 const action = document.createElement('th'), remove = createAction({ control: 'delete' });
-                remove.type = 'button'; remove.classList.add('material-remove'); remove.textContent = '✕';
+                remove.type = 'button'; remove.textContent = '✕';
                 remove.dataset.memoryRemoveCollection = collection.id;
                 remove.setAttribute('aria-label', `Remove collection ${categories.get(collection.category_id)?.name ?? 'Category'} : ${collection.name}`);
                 action.append(remove); row.append(action, heading); body.append(row);
@@ -184,7 +184,7 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
             const quantity = textCell('td', locations.has(selectedLocationId) ? Number(inventory.get(`${item.id}:${selectedLocationId}`) ?? 0).toLocaleString() : '—');
             quantity.className = 'table-numeric'; row.dataset.memoryItem = item.id;
             const action = document.createElement('td'), remove = createAction({ control: 'delete' });
-            remove.type = 'button'; remove.classList.add('material-remove'); remove.textContent = '✕';
+            remove.type = 'button'; remove.textContent = '✕';
             remove.dataset.memoryRemove = item.id; remove.setAttribute('aria-label', `Remove ${item.name}`); action.append(remove);
             row.append(action, name, textCell('td', item.sku));
             if (showInventory) row.append(quantity);

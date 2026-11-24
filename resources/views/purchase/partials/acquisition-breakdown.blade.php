@@ -1,4 +1,4 @@
-<x-app.table-region data-invoice-derived data-allocation-preview label="Unit cost calculations" class="app-list-table-panel purchase-table" :nowrap="true" :quantity-fields="true" numeric="after-first">
+<x-app.table-region data-invoice-derived data-allocation-preview label="Unit cost calculations" class="purchase-table" :nowrap="true" :quantity-fields="true" numeric="after-first">
 <x-slot:header><h2>Unit cost calculations</h2>@if($showRecalculate ?? true)<p>Save progress to recalculate.</p>@endif</x-slot:header>
 <table><thead><tr><th>Item</th><th class="table-numeric">Units</th>@foreach(['cost'=>'Cost','fee'=>'Fee','other'=>'Shared','discount'=>'Discount','tax'=>'Tax','shipping'=>'Shipping','acquisition'=>'Acquisition'] as $key=>$label)<th class="table-numeric">{{ $label }}</th>@endforeach<th class="table-numeric">Unit cost</th></tr></thead><tbody>
 @php($group=null)

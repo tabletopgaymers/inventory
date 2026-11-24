@@ -1,5 +1,5 @@
 {{--
-Use a titled disclosure for content that can be hidden without leaving the page. Pass the title and add the native open attribute for an initially expanded panel.
+Use a titled disclosure for content that can be hidden without leaving the page. Pass the title and add the native open attribute for an initially expanded panel. Add the app-collapsible-panel-mobile-padding class to match adjacent standard panels at narrow widths.
 
 ## Slots
 

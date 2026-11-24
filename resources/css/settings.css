@@ -6,6 +6,7 @@
     --breakpoint-app-navigation: 50rem;
 }
 :root {
+    --app-selection-surface: #5b21b612;
     --app-radius: 8px;
     --app-font-family: "Segoe UI", system-ui, sans-serif;
     --app-font-size: 1rem;
@@ -25,3 +26,6 @@
     --app-section-heading-gap: 1rem;
     --app-table-heading-gap: .75rem 1.5rem;
 }
+
+/* Define directly on backdrops for browsers without backdrop inheritance. */
+:root, ::backdrop { --app-dialog-backdrop: #20212b80; }

@@ -2,38 +2,63 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
-use Tests\TestCase;
 
 class DesignPhaseAAccessTest extends TestCase
 {
-    public function test_wrapper_is_get_only_authenticated_and_local_host_only(): void
+    public function createApplication()
     {
-        $this->app->detectEnvironment(fn () => 'local');
-        $router = new Router($this->app['events'], $this->app);
-        $this->app->instance('router', $router);
-        Route::clearResolvedInstance('router');
-        require base_path('routes/design-phase-a.php');
+        $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
+        $app->loadEnvironmentFrom('.env.style-guide-access-test-nonexistent');
+        $app->make(Kernel::class)->bootstrap();
+        $app['config']->set([
+            'database.default' => 'style_guide_access_test_without_database',
+            'session.driver' => 'array',
+            'cache.default' => 'array',
+        ]);
 
-        $route = $router->getRoutes()->match(Request::create('https://tg-inventory-app.test/style-guide/wrapper'));
-        $this->assertContains('auth', $route->gatherMiddleware());
-        $this->assertSame(['GET', 'HEAD'], $route->methods());
-        $this->assertSame('design.phase-a.local.wrapper', $route->getName());
-        foreach (['dev-inventory.tabletopgaymers.org', 'unrelated.example'] as $host) {
-            $this->assertCount(0, array_filter($router->getRoutes()->getRoutes(), fn ($candidate) => $candidate->uri() === 'style-guide/wrapper' && $candidate->getDomain() === $host));
-        }
-        $this->assertSame('design.phase-a.hosted.examples', $router->getRoutes()->match(Request::create('https://dev-inventory.tabletopgaymers.org/style-guide/examples'))->getName());
+        return $app;
     }
 
-    public function test_production_has_no_design_routes(): void
+    public function test_local_wrapper_is_get_only_and_requires_authentication(): void
     {
-        $this->app->detectEnvironment(fn () => 'production');
+        $router = $this->styleGuideRouter('local');
+        $route = $router->getRoutes()->match(Request::create('/style-guide/wrapper'));
+
+        $this->assertSame('design.phase-a.local.wrapper', $route->getName());
+        $this->assertSame(['GET', 'HEAD'], $route->methods());
+        $this->assertContains('auth', $route->gatherMiddleware());
+    }
+
+    public function test_development_guide_requires_authentication_and_omits_wrapper(): void
+    {
+        $routes = $this->styleGuideRouter('development')->getRoutes();
+        $examples = $routes->match(Request::create('/style-guide/examples'));
+
+        $this->assertSame('design.phase-a.hosted.examples', $examples->getName());
+        foreach ($routes as $route) {
+            $this->assertContains('auth', $route->gatherMiddleware());
+            $this->assertNotSame('style-guide/wrapper', $route->uri());
+        }
+    }
+
+    public function test_production_has_no_style_guide_routes(): void
+    {
+        $this->assertCount(0, $this->styleGuideRouter('production')->getRoutes());
+    }
+
+    private function styleGuideRouter(string $environment): Router
+    {
+        $this->app->detectEnvironment(fn () => $environment);
         $router = new Router($this->app['events'], $this->app);
         $this->app->instance('router', $router);
         Route::clearResolvedInstance('router');
         require base_path('routes/design-phase-a.php');
-        $this->assertCount(0, $router->getRoutes());
+
+        return $router;
     }
 }

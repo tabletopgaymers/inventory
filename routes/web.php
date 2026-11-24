@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MicrosoftAuthController;
-use App\Http\Controllers\PlannedPageController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\RelocationController;
 use App\Http\Controllers\UserController;
@@ -56,9 +55,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/relocation/work/{token}/reconciliation', [RelocationController::class, 'saveReconciliation'])->block(120, 10);
     Route::post('/relocation/work/{token}/complete', [RelocationController::class, 'complete'])->block(120, 10);
     Route::get('/relocation/{id}', [RelocationController::class, 'show'])->whereNumber('id')->block(120, 10);
-    foreach (['location-counts'] as $page) {
-        Route::get('/inventory/'.$page, [PlannedPageController::class, 'show'])->defaults('page', $page);
-    }
     Route::get('/inventory/item-history', [InventoryController::class, 'index']);
     Route::get('/inventory/items/{item}', [InventoryController::class, 'show'])->whereNumber('item');
     Route::get('/inventory/items/{item}/edit', [InventoryController::class, 'edit'])->whereNumber('item');

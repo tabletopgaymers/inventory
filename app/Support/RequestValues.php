@@ -122,16 +122,6 @@ class RequestValues
     }
 
     /**
-     * This predicate covers enabled Admin, Manager or Procurement accounts. There is no direct application caller in the current source. Use an action-specific access decision when wiring a new request action.
-     *
-     * @internal
-     */
-    public static function elevated(User $user): bool
-    {
-        return $user->enabled && array_intersect($user->roles(), ['admin', 'manager', 'procurement']) !== [];
-    }
-
-    /**
      * Requires an enabled user with a Microsoft identity in the configured tenant. Ownership and request status are separate action checks.
      *
      * Scope: Domain-specific (Relocation)

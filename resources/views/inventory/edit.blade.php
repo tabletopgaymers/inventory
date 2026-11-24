@@ -5,7 +5,7 @@
 @if($draft['reviewed'])data-pending-draft
 @endif>
 @csrf<input type="hidden" name="_deliberate" value="1"><input type="hidden" name="operation" value="{{ $token }}">
-<x-app.table-region label="Inventory quantity corrections" class="app-list-table-panel">
+<x-app.table-region label="Inventory quantity corrections">
 <x-slot:header><p>New = Set + Adjust. Set is required; blank Adjust means zero. Only Save on the next page records changes.</p></x-slot:header>
 <table class="stock-editor"><thead><tr><th>Location</th><th>Set</th><th>Adjust (optional)</th><th>Rationale (optional)</th><th class="number">Current</th><th class="number">New</th></tr></thead><tbody>
 

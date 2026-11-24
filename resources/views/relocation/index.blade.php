@@ -4,7 +4,7 @@
 <x-app.action variant="new"  href="/relocation/new" />
 @endsection
 @section('content-sections')
-<x-app.table-region label="Relocation requests" class="app-list-table-panel">
+<x-app.table-region label="Relocation requests">
     <table>
         <thead><tr><th>ID</th><th>Title</th><th>Source</th><th>Destination</th><th>Last updated</th><th>Status</th></tr></thead>
         <tbody>

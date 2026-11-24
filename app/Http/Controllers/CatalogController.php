@@ -103,11 +103,18 @@ class CatalogController
         $category = $kind === 'collections' ? $service->record('categories', (int) $row->category_id) : null;
         $children = $kind === 'categories'
             ? $service->records('collections')->where('category_id', $record)->values()
-            : ($kind === 'collections' ? $service->records('items', naturalNames: true)->where('collection_id', $record)->values() : collect());
+            : collect();
+        $collectionItemRows = $kind === 'collections'
+            ? $service->records('items', naturalNames: true)->where('collection_id', $record)->map(fn ($item) => [
+                'item' => ['name' => $item->name, 'sku' => $item->sku, 'link' => ['href' => CatalogRecords::viewUrl('items', $item->id)]],
+                'values' => ['status' => ucfirst($item->state)],
+            ])->values()
+            : collect();
 
         $classification = $kind === 'collections' ? $service->collectionClassification($row) : [];
         return view('catalog.show', PurchaseSupplierReturn::context($request, $kind) + $classification + [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
+            'collectionItemRows' => $collectionItemRows,
             'classificationItemTable' => in_array($kind, ['purposes', 'programs'], true)
                 ? $this->classificationItemTable($service, $kind, $record)
                 : null,

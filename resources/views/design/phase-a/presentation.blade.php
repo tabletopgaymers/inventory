@@ -52,10 +52,10 @@
     <p>A table panel presents tabular information without outer padding. Search, filters and surrounding page actions are separate components. Optional header and footer slots can contain brief context or actions specifically associated with the table.</p>
     <h3>Plain table panel</h3>
     <p>All panel and table frames use the shared <code>--app-radius: 8px</code>. Plain tables and tables with optional sections have the same frame and an inner horizontally scrolling body; headers and footers stay outside that scroll region. Tables grow vertically with the page. Field, button, badge and tab shapes remain separate controls.</p>
-    @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Plain grouped inventory table'])
+    @include('design.phase-a.table-sample', ['tableLabel' => 'Plain grouped inventory table'])
     <h3>Table panel with optional header and footer</h3>
     <p>Use a header, a footer, both or neither. Their content is unrestricted: headings, descriptions and buttons are examples, not requirements. Omitted slots create no empty sections. Header and footer padding aligns with table cells; the table keeps square internal corners within the rounded outer panel.</p>
-    @include('design.phase-a.table-sample', ['tablePanel' => true, 'tableLabel' => 'Grouped inventory table with optional sections', 'tableSections' => true])
+    @include('design.phase-a.table-sample', ['tableLabel' => 'Grouped inventory table with optional sections', 'tableSections' => true])
     <h3>Table conventions</h3>
     <ul>
         <li>Use linked record names for navigation. Keep action buttons and disclosure controls outside table rows.</li>
@@ -65,28 +65,44 @@
         <li>Indent record names beneath group headers with the shared <code>app-grouped-item</code> style. Its padding comes from <code>--app-grouped-item-padding</code>, so changes apply globally.</li>
     </ul>
     <h3 id="items-table">Shared Items Table</h3>
-    <p>Use <code>x-app.items-table</code> inside <code>x-app.table-region</code> for a read-only table of inventory items. The region handles horizontal scrolling. The Items Table provides Item and SKU columns by default and can show collection subheadings and additional columns.</p>
+    <p>Use <code>x-app.items-table</code> inside <code>x-app.table-region</code> for a read-only table of inventory items. The region handles horizontal scrolling.</p>
+    <p>Omit <code>columns</code> to show <strong>Item</strong> and <strong>SKU</strong>. To customize the table, pass the entire <code>columns</code> array in display order. A column with no <code>role</code> uses <code>text</code>.</p>
+    <x-app.table-region label="Items Table column roles">
+        <table>
+            <thead><tr><th scope="col">Role</th><th scope="col">Display</th></tr></thead>
+            <tbody>
+                <tr><th scope="row"><code>item</code></th><td>Item name, linked when the row supplies a URL.</td></tr>
+                <tr><th scope="row"><code>sku</code></th><td>SKU in a compact column that stays on one line.</td></tr>
+                <tr><th scope="row"><code>number</code></th><td>Right-aligned value in a compact column. Integers use thousands separators.</td></tr>
+                <tr><th scope="row"><code>text</code></th><td>Plain text that wraps at word boundaries. This is the default column role.</td></tr>
+                <tr><th scope="row"><code>status</code></th><td>Shared status badge in a compact column that stays on one line.</td></tr>
+            </tbody>
+        </table>
+    </x-app.table-region>
     <ul>
         <li>Column headings wrap at word boundaries. At the <code>columns-wide</code> breakpoint (64rem) and below, each heading cell has a 10ch minimum and heading text has a 25ch maximum. Wider screens let headings use the available space.</li>
-        <li>Item and text values wrap at word boundaries with a 25ch minimum. SKU and numeric values stay on one line in compact columns. Body content can make a column wider than its heading.</li>
+        <li>Item and text values wrap at word boundaries with a 25ch minimum. SKU, number, and status values stay on one line in compact columns. Body content can make a column wider than its heading.</li>
     </ul>
     @php
         $sampleItems = [
             [
                 'item' => ['name' => "I'll Go With You", 'sku' => 'SAMPLE-RIBBON'],
                 'group' => ['key' => 'ribbons', 'category' => 'Badge Ribbon', 'collection' => 'Extra'],
-                'values' => ['total' => 2740, 'location' => 250],
+                'values' => ['total' => 2740, 'central' => 2490, 'dfw' => 200, 'longLocation' => 50, 'status' => 'Active'],
             ],
             [
                 'item' => ['name' => 'Square Terminal w/ Cover & Case #3', 'sku' => 'SAMPLE-TERMINAL'],
                 'group' => ['key' => 'payments', 'category' => 'Donation', 'collection' => 'Cash and Payments'],
-                'values' => ['total' => 2, 'location' => 1],
+                'values' => ['total' => 2, 'central' => 1, 'dfw' => 0, 'longLocation' => 1, 'status' => 'Inactive'],
             ],
         ];
         $sampleItemColumns = [
             ...\App\View\Components\App\ItemsTable::DEFAULT_COLUMNS,
             ['key' => 'total', 'label' => 'Total', 'role' => 'number'],
-            ['key' => 'location', 'label' => 'Dallas–Fort Worth Texas Metroplex', 'role' => 'number'],
+            ['key' => 'central', 'label' => 'Central', 'role' => 'number'],
+            ['key' => 'dfw', 'label' => 'DFW', 'role' => 'number'],
+            ['key' => 'longLocation', 'label' => 'Longer Location Name', 'role' => 'number'],
+            ['key' => 'status', 'label' => 'Status', 'role' => 'status'],
         ];
     @endphp
     <x-app.table-region label="Responsive items table example">

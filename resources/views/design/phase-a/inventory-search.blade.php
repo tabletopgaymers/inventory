@@ -12,7 +12,7 @@
 </div>
 <div id="guide-search-full-results" class="guide-search-results" aria-live="polite"><p>Enter search text or leave it blank, then select Search.</p></div>
 <x-app.collapsible-panel title="Returned data"><pre id="guide-search-json" class="guide-search-data">No search submitted.</pre></x-app.collapsible-panel>
-<x-app.table-region label="Configured inventory search results" class="app-list-table-panel">
+<x-app.table-region label="Configured inventory search results">
 <x-slot:header>
 <h2>Configured filters · controls inside a table header</h2>
 <p>Only Collections is visible. Locations remains enabled but hidden and fixed to Central by the server. Events, In Transit, Ordered and inactive-item options are removed. This example returns active items only.</p>
@@ -52,7 +52,7 @@ return response()-&gt;json($search-&gt;search($request, $config));</code></pre>
 <p class="app-field-help">Existing searches are unchanged. This prototype does not implement saved criteria, export, item selection, stock posting or return-scroll restoration; those belong to the caller.</p>
 </div>
 </details>
-<x-app.table-region label="Existing search integration assessment" class="app-list-table-panel">
+<x-app.table-region label="Existing search integration assessment">
 <x-slot:header>
 <h2>Existing searches and potential replacement</h2>
 </x-slot:header>

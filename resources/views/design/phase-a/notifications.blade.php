@@ -9,7 +9,7 @@
     <p class="notice" role="status">Changes saved. Sample success notice.<br>This multiline message reserves room beside the dismiss control. <a href="/style-guide/forms">View the form examples</a>.</p>
     <p class="warning" role="status">Working changes have not been saved. Sample warning notice.</p>
     <p class="error" role="alert">The record could not be saved. Your entered values have been retained.</p>
-    <p>Success notices disappear after 3 seconds; warnings disappear after 10 seconds. Errors stay until dismissed. All three provide a × dismiss control. New or updated feedback starts a fresh timer; confirmation dialogs do not expire automatically.</p>
+    <p>Success notices disappear after 3 seconds. Warnings and errors stay until dismissed. All three provide a × dismiss control. A new or updated success message starts a fresh timer. Confirmation dialogs do not expire automatically.</p>
 </div>
 </section>
 <x-app.guide-divider />

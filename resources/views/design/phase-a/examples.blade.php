@@ -3,7 +3,7 @@
 @section('intro', 'Current patterns composed into sample screens.')
 @section('guide-content')
 <nav class="app-section-nav" aria-label="On this page"><a href="#users">Users</a><a href="#search">Inventory</a><a href="#item">Item details</a><a href="#requests">Requests</a><a href="#counts">Counts & print</a><a href="#supporting">Catalog & events</a><a href="#wrapper">Application frame</a></nav>
-<x-app.table-region id="users" class="app-list-table-panel" label="Sample user directory"><x-slot:header><h2>Informative user directory</h2><p>List information here; put permitted actions on the linked record page. Basic is omitted from Elevated roles.</p></x-slot:header><table><thead><tr><th>Name</th><th>Email</th><th>Elevated roles</th></tr></thead><tbody>
+<x-app.table-region id="users" label="Sample user directory"><x-slot:header><h2>Informative user directory</h2><p>List information here; put permitted actions on the linked record page. Basic is omitted from Elevated roles.</p></x-slot:header><table><thead><tr><th>Name</th><th>Email</th><th>Elevated roles</th></tr></thead><tbody>
         <tr><td><a href="#guide-user">Sample Administrator</a></td><td>sample@example.test</td><td>admin, manager, procurement</td></tr>
         <tr><td><a href="#profile-example">Sample Volunteer</a></td><td>volunteer@example.test</td><td></td></tr>
     </tbody></table></x-app.table-region>
@@ -35,7 +35,7 @@
     </fieldset>
     <p class="app-field-help">Controls and results here are fictional and inactive. <a href="/style-guide/inventory-search">Try the working search demonstration</a>.</p>
     </div>
-<x-app.table-region class="app-list-table-panel" label="Sample inventory results"><table><thead><tr><th>Item</th><th class="number">Units</th><th class="number">Unit cost</th></tr></thead><tbody>
+<x-app.table-region label="Sample inventory results"><table><thead><tr><th>Item</th><th class="number">Units</th><th class="number">Unit cost</th></tr></thead><tbody>
         <tr class="collection-heading"><th colspan="3">Ribbon : Pronoun</th></tr>
         <tr><td class="app-grouped-item"><a href="#item">They/Them</a></td><td class="number">250</td><td class="number">$0.125</td></tr>
         <tr><td class="app-grouped-item">Any/All</td><td class="number">0</td><td class="number">n/a</td></tr>
@@ -49,7 +49,7 @@
     <p>Ribbon : Pronoun</p>
     <x-app.detail-list variant="fixed" ><dt>Variety</dt><dd>Sample ribbon</dd><dt>Purpose</dt><dd>Convention kit</dd><dt>Notes</dt><dd>Illustrative item metadata.</dd></x-app.detail-list>
     <h3>Recorded activity</h3></div>
-<x-app.table-region class="app-list-table-panel" label="Sample recorded activity"><table><thead><tr><th>Recorded</th><th>Action</th><th class="number">Units</th></tr></thead><tbody><tr><td>11 Oct 2026</td><td>Sample receipt</td><td class="number">250</td></tr></tbody></table></x-app.table-region>
+<x-app.table-region label="Sample recorded activity"><table><thead><tr><th>Recorded</th><th>Action</th><th class="number">Units</th></tr></thead><tbody><tr><td>11 Oct 2026</td><td>Sample receipt</td><td class="number">250</td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">
     <p class="app-field-help">Actual history retains its chronology and actor attribution.</p>
 </div>
@@ -61,7 +61,7 @@
 <x-workflow.steps label="Sample purchase steps">
     @foreach(['Basic info','Material','Review','Procurement','Order','Order charges','Order review'] as $label)<x-app.action  href="#requests" :aria-current="$label === 'Material' ? 'page' : null">{{ $label }}</x-app.action>@endforeach
 </x-workflow.steps>
-<x-app.table-region class="app-list-table-panel" label="Sample requested purchase material">
+<x-app.table-region label="Sample requested purchase material">
 <x-slot:header><x-workflow.heading><h2>Requested material</h2><x-app.action variant="primary" type="button"  :disabled="true">Next ▷</x-app.action></x-workflow.heading></x-slot:header>
 <table><thead><tr><th>Item</th><th class="table-numeric">Qty</th><th class="table-numeric">Est. unit price</th><th class="table-numeric">Est. total</th></tr></thead><tbody><tr class="group-row"><th colspan="4">Other items</th></tr><tr><td class="app-grouped-item">Sample display stand</td><td class="table-numeric">2</td><td class="table-numeric">1.25</td><td class="table-numeric">2.50</td></tr></tbody></table>
 <x-slot:footer><p>Catalog and Other items remain on the request. Procurement records actual order costs separately; receiving requires a final confirmation.</p></x-slot:footer>
@@ -71,7 +71,7 @@
     @foreach(['Basic info','Material','Review','Fulfillment','Tracking','Ship','Reconcile','Confirmation'] as $label)<x-app.action  href="#requests" :aria-current="$label === 'Material' ? 'page' : null">{{ $label }}</x-app.action>@endforeach
 </x-workflow.steps>
 <x-app.guide-divider />
-<x-app.table-region id="counts" class="app-list-table-panel" label="Sample count worksheet"><x-slot:header><h2>Counts and printable information</h2></x-slot:header><table><thead><tr><th>Item</th><th class="number">Expected</th><th>Counted units</th></tr></thead><tbody><tr class="collection-heading"><th colspan="3">Ribbon : Pronoun</th></tr><tr><td class="app-grouped-item">They/Them</td><td class="number">250</td><td><input inputmode="numeric" aria-label="Counted units for They/Them · Pronoun · SKU SAMPLE-THEY" value="0"></td></tr></tbody></table></x-app.table-region>
+<x-app.table-region id="counts" label="Sample count worksheet"><x-slot:header><h2>Counts and printable information</h2></x-slot:header><table><thead><tr><th>Item</th><th class="number">Expected</th><th>Counted units</th></tr></thead><tbody><tr class="collection-heading"><th colspan="3">Ribbon : Pronoun</th></tr><tr><td class="app-grouped-item">They/Them</td><td class="number">250</td><td><input inputmode="numeric" aria-label="Counted units for They/Them · Pronoun · SKU SAMPLE-THEY" value="0"></td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">
     <p>Blank is incomplete; zero is an explicit value. Actual count/receipt review and confirmation keep their existing effects and guards.</p>
     <p class="app-field-help">Print uses white surfaces and hides application navigation/actions. This guide does not submit counts or start printing automatically.</p>
@@ -81,7 +81,7 @@
     <h2>Catalog and event variants</h2>
     <x-workflow.heading><h3>Catalog · Collections</h3><x-app.action variant="new"  href="#supporting" /></x-workflow.heading>
     </div>
-<x-app.table-region class="app-list-table-panel" label="Sample catalog collection"><table><thead><tr><th>Collection</th><th>Category</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun</td><td>Ribbon</td><td><x-app.status-badge status="Active" /></td></tr></tbody></table></x-app.table-region>
+<x-app.table-region label="Sample catalog collection"><table><thead><tr><th>Collection</th><th>Category</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun</td><td>Ribbon</td><td><x-app.status-badge status="Active" /></td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">
     <h3>Sample event</h3><p><x-app.status-badge status="Active" /> Convention kit</p><label>Event name<input value="Sample convention"></label><label>Notes<textarea data-optional rows="2">Check the sample kit.</textarea></label>
     <p class="app-field-help">Editable fields, feedback and explicit workflow verbs share the application styles. Sample inputs do not save a catalog item or event.</p>

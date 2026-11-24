@@ -90,7 +90,7 @@ class InventorySearch
     }
 
     /**
-     * Persists the current browse criteria under the user lock and carries forward the saved Reconcile searches in saved_counts.
+     * Persist the current Inventory browse criteria under the user lock.
      *
      * Scope: Domain-specific (Inventory)
      * Task: Query inventory
@@ -100,10 +100,6 @@ class InventorySearch
     {
         DB::transaction(function () use ($user, $criteria) {
             DB::table('users')->where('id', $user)->lockForUpdate()->firstOrFail();
-            $previous = json_decode(DB::table('inventory_preferences')->where('user_id', $user)->value('criteria') ?? '{}', true);
-            if (is_array($previous) && isset($previous['saved_counts'])) {
-                $criteria['saved_counts'] = $previous['saved_counts'];
-            }
             DB::table('inventory_preferences')->updateOrInsert(['user_id' => $user], ['criteria' => json_encode($criteria, JSON_THROW_ON_ERROR), 'updated_at' => now('UTC')]);
         });
     }

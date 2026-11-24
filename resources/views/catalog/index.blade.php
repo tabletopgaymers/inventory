@@ -17,7 +17,7 @@
 <nav class="app-breadcrumb" aria-label="Breadcrumb"><a href="/catalog/categories">Categories</a><span>›</span><a href="/catalog/categories/{{ $category->id }}">{{ $category->name }}</a>@if($collection)<span>› {{ $collection->name }}</span>@endif</nav>
 <p>Category: <strong>{{ $category->name }}</strong>@if($collection) · Collection: <strong>{{ $collection->name }}</strong>@endif. Only {{ $collection ? 'items in this collection' : 'collections in this category' }} are shown. <a href="/catalog/{{ $kind }}">Show all {{ strtolower($kinds[$kind]) }}</a>.</p>
 @endif
-<x-app.table-region :label="$kinds[$kind].' records'" class="app-list-table-panel">
+<x-app.table-region :label="$kinds[$kind].' records'">
 <table class="catalog-table"><thead><tr><th>{{ $kind === 'categories' ? 'Category' : ($kind === 'collections' ? 'Category/Collection' : 'Name') }}</th>
 @if($kind === 'categories')<th>Description</th><th class="number">Entries</th>
 @elseif($kind === 'collections')<th>Description</th><th>SKU Prefix</th><th class="number">Entries</th>

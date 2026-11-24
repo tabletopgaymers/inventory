@@ -1,4 +1,4 @@
-<x-app.table-region :label="$tableLabel" :class="$tablePanel ? 'app-list-table-panel' : ''">
+<x-app.table-region :label="$tableLabel">
 @if($tableSections ?? false)
     <x-slot:header>
         <x-app.heading-row variant="table" class="app-table-panel-toolbar">

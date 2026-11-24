@@ -53,20 +53,28 @@
             @if($kind === 'purposes')
                 <dt>Examples</dt><dd>{{ filled($record->examples) ? $record->examples : '—' }}</dd>
             @endif
-            @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format($children->count()) }}</a></dd>@endif
+            @if(in_array($kind, ['categories', 'collections']))<dt>{{ $kind === 'categories' ? 'Collections' : 'Items' }}</dt><dd><a href="{{ $kind === 'categories' ? '#catalog-child-table' : '/catalog/items?collection='.$record->id }}">{{ number_format(($kind === 'categories' ? $children : $collectionItemRows)->count()) }}</a></dd>@endif
         </x-app.detail-list>
     @endif
 </div>
 @if($kind === 'categories' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/collections/create?category={{ $record->id }}" /></div>@endif
 @if($kind === 'collections' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/items/create?collection={{ $record->id }}" /></div>@endif
-@if(in_array($kind, ['categories', 'collections']))
-<x-app.table-region :label="$kind === 'categories' ? 'Collections in category' : 'Items in collection'" class="app-list-table-panel" id="catalog-child-table">
-<table class="catalog-table"><thead><tr><th>{{ $kind === 'categories' ? 'Collections' : 'Name' }}</th>@if($kind === 'categories')<th>Description</th>@endif<th>{{ $kind === 'categories' ? 'SKU Prefix' : 'SKU' }}</th>@if($kind === 'categories')<th class="number">Entries</th>@endif<th>Status</th></tr></thead><tbody>
+@if($kind === 'categories')
+<x-app.table-region label="Collections in category" id="catalog-child-table">
+<table class="catalog-table"><thead><tr><th>Collections</th><th>Description</th><th>SKU Prefix</th><th class="number">Entries</th><th>Status</th></tr></thead><tbody>
 @forelse($children as $child)
-<tr><td><a href="{{ $kind === 'categories' ? '/catalog/collections/' : '/catalog/items/' }}{{ $child->id }}">{{ $child->name }}</a></td>@if($kind === 'categories')<td>{{ $child->description ?: '—' }}</td>@endif<td>{{ $kind === 'categories' ? $child->sku_prefix : $child->sku }}</td>@if($kind === 'categories')<td class="number"><a href="/catalog/items?collection={{ $child->id }}">{{ number_format($child->child_count) }}</a></td>@endif<td><x-app.status-badge :status="ucfirst($child->state)" /></td></tr>
-@empty<tr><td colspan="{{ $kind === 'categories' ? 5 : 3 }}">No {{ $kind === 'categories' ? 'collections in this category' : 'items in this collection' }}.</td></tr>
+<tr><td><a href="/catalog/collections/{{ $child->id }}">{{ $child->name }}</a></td><td>{{ $child->description ?: '—' }}</td><td>{{ $child->sku_prefix }}</td><td class="number"><a href="/catalog/items?collection={{ $child->id }}">{{ number_format($child->child_count) }}</a></td><td><x-app.status-badge :status="ucfirst($child->state)" /></td></tr>
+@empty<tr><td colspan="5">No collections in this category.</td></tr>
 @endforelse
 </tbody></table>
+</x-app.table-region>
+@elseif($kind === 'collections')
+<x-app.table-region label="Items in collection" id="catalog-child-table">
+    <x-app.items-table class="catalog-table" :rows="$collectionItemRows" :columns="[
+        ['key' => 'name', 'label' => 'Name', 'role' => 'item'],
+        ['key' => 'sku', 'label' => 'SKU', 'role' => 'sku'],
+        ['key' => 'status', 'label' => 'Status', 'role' => 'status'],
+    ]" empty-message="No items in this collection." />
 </x-app.table-region>
 @endif
 @if($classificationItemTable !== null)

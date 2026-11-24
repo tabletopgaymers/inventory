@@ -1,4 +1,4 @@
-<x-app.table-region label="Display density spacing comparison" class="app-list-table-panel">
+<x-app.table-region label="Display density spacing comparison">
 <x-slot:header><p>Rows marked <strong>Fixed</strong> do not change with Display Density.</p></x-slot:header>
 <table><thead><tr><th>Setting</th><th>Compact</th><th>Standard</th><th>Spacious</th></tr></thead><tbody>
 @foreach([

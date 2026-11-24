@@ -5,7 +5,7 @@
 @endsection
 @section('content-sections')
 @vite('resources/js/saved-lists.js')
-<x-app.table-region label="Saved lists" class="app-list-table-panel">
+<x-app.table-region label="Saved lists">
 <table data-saved-lists><thead><tr>
 @foreach(['ID', 'Name', 'Owner', 'Location', 'Items', 'Updated', 'Status'] as $heading)
     <th scope="col" @if($loop->first) aria-sort="ascending" @endif><x-app.action class="app-table-sort" data-table-sort>{{ $heading }} <span aria-hidden="true">{{ $loop->first ? '↑' : '↕' }}</span></x-app.action></th>

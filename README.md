@@ -72,8 +72,8 @@ by guide JavaScript. Serialized JSON state remains data, not executable styling.
 Standalone Relocation print and Inventory count worksheets use x-print.layout/header
 with print.css/print.js. Count worksheets add inventory-worksheet.css, which imports
 inventory-print.css. Neither standalone view loads app CSS/JS. Event reports use
-their explicit event-report.css entry; events.js imports shared print.js and app.js
-for the normal application page. Keep print geometry isolated.
+the shared print styles loaded by the application shell, and events.js imports
+the shared print control. Keep standalone print geometry isolated.
 
 Purchase and Relocation use singular `/purchase` and `/relocation` routes. The
 old plural routes/controllers/views and their exclusive public progress, invoice
@@ -82,11 +82,10 @@ Shared Purchase services and request/fulfillment tables still support current
 workflows. Events has its own resources/js/events.js entry, replacing requests.js.
 Do not restore compatibility assets or old-record-only handlers.
 
-Remaining historical public sources are baseline.css and design/phase-a
-wrapper/evaluation assets. The nested evaluation package is not the application
-build; its directory also contains the ACTIVE app-input.css source, which must
-remain. Font Awesome Free is locally built in its demo with its license retained;
-it is not loaded site-wide.
+The historical static evaluation build and its public assets are available in
+Git history. The active theme remains in `resources/design/phase-a/app-input.css`
+and is built by root Vite. The Style Guide's Vite demo loads Font Awesome Free
+with its license retained.
 
 Deployment must run `npm ci --include=dev` followed by
 `npm run build` in the Forge release directory before activating the release.

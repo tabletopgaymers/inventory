@@ -189,7 +189,7 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         const key=crypto.randomUUID(),row=document.createElement('tr');row.dataset.invoiceLine='';row.dataset.lineKey=key;row.dataset.group=item?`${item.category} : ${item.collection}`:'Other items';
         const td=()=>document.createElement('td');
         const field=(name,value)=>{const input=document.createElement('input');input.name=`lines[${key}][${name}]`;input.value=value;return input;};
-        const action=td(),remove=createAction({control:'delete'});remove.type='button';remove.classList.add('material-remove');remove.dataset.removeInvoice='';remove.textContent='✕';remove.setAttribute('aria-label',`Remove ${item?.name || 'Other item'}`);action.append(remove);
+        const action=td(),remove=createAction({control:'delete'});remove.type='button';remove.dataset.removeInvoice='';remove.textContent='✕';remove.setAttribute('aria-label',`Remove ${item?.name || 'Other item'}`);action.append(remove);
         const description=td();description.className='app-grouped-item';const name=field('description',item?.name || '');name.dataset.invoiceDescription='';name.maxLength=500;name.readOnly=Boolean(item);name.setAttribute('aria-label','Item description');description.append(name);
         [['item_id',item?.id || '', 'invoiceItem'],['group_label',row.dataset.group,'invoiceGroup'],['source_request_key','','sourceRequestKey']].forEach(([key,value,hook])=>{const input=field(key,value);input.type='hidden';input.dataset[hook]='';description.append(input);});
         if(!item)description.append(form.querySelector('[data-catalog-link-template]').content.cloneNode(true));

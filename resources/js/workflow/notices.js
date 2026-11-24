@@ -1,9 +1,9 @@
 // One timing policy for server-rendered and dynamically reused page banners.
-const delays = {success: 3000, warning: 10000};
+const successDelay = 3000;
 const states = new WeakMap();
 
 /**
- * Times visible success and warning messages after three and ten seconds respectively. Leaves errors visible. An identical visible message keeps its current timer unless restart is requested.
+ * Hides visible success messages after three seconds. Leaves warnings and errors visible until dismissed. An identical visible message keeps its current timer unless restart is requested.
  *
  * Scope: Shared
  * Task: Apply the shared dismissal schedule to a banner
@@ -21,16 +21,16 @@ export function syncNoticeTimer(element, {restart = false} = {}) {
     clearTimeout(previous?.timer);
     const state = {signature, timer: null};
     states.set(element, state);
-    if (!visible || !message || !delays[kind]) return;
+    if (!visible || !message || kind !== 'success') return;
     state.timer = setTimeout(() => {
         const restoreFocus = element.contains(document.activeElement);
         element.hidden = true;
         if (restoreFocus) document.getElementById('app-main')?.focus();
-    }, delays[kind]);
+    }, successDelay);
 }
 
 /**
- * Sets the message, tone and announcement role before starting the relevant dismissal timer. Use a notice element reserved for feedback because its contents are replaced.
+ * Sets the message, tone and announcement role before updating the success dismissal timer. Use a notice element reserved for feedback because its contents are replaced.
  *
  * Scope: Shared
  * Task: Show or replace a page notice

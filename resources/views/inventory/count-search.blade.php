@@ -6,10 +6,6 @@
 <h2>Search</h2>
 <form method="post" action="/inventory/location-counts" data-count-search>@csrf
 <fieldset class="app-entry-fieldset" @if($loadedList) disabled inert @endif>
-{{-- Personal searches are temporarily hidden while Lists are introduced (UW-320).
-@if($saved)<nav aria-label="Personal saved searches">@foreach($saved as $key => $entry)<a href="/inventory/location-counts?saved={{ urlencode($key) }}">{{ $entry['name'] }}</a> @endforeach</nav>@endif
-@if($compatibilityNotice)<p class="warning" role="status">{{ $compatibilityNotice }}</p>@endif
---}}
 @php
     $submittedSearch = $rows === null || !$criteria ? null : [
         'search' => $criteria['search'], 'collections' => $criteria['collections'], 'columns' => [], 'include_inactive' => false,
@@ -29,9 +25,6 @@
 </fieldset>
 </form>
 </section>
-{{-- Retained until the Lists replacement is complete (UW-320).
-<label>Personal search name (optional for Search; required to save criteria)<input name="name" maxlength="100" value="{{ old('name') }}"></label><label class="app-choice"><input type="checkbox" name="overwrite" value="1">Overwrite my existing search with this name</label><x-app.action type="submit" name="action" value="save">Save personal criteria</x-app.action>
---}}
 <x-app.saved-list-selector
     :lists="$lists"
     :loaded-list="$loadedList"
@@ -56,7 +49,7 @@
 </x-app.saved-list-selector>
 </div>
 @if($rows !== null)
-<x-app.table-region label="Count search" class="app-list-table-panel">
+<x-app.table-region label="Count search">
 <x-slot:header>
     <x-app.heading-row variant="table">
         <h2>{{ $loadedList ? $loadedList['name'].' (list)' : 'Search Results' }}</h2>
