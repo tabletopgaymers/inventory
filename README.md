@@ -21,6 +21,15 @@ the location catalog is empty. Existing location catalogs are left unchanged.
 This is installation data, independent of optional catalog seeding; no stock is
 created.
 
+## Code documentation
+
+Document reusable Blade components and PHP or JavaScript helpers alongside
+their definitions. Explain the public interface, defaults, and a typical use.
+For Blade components, include slots or attributes when callers need them.
+
+Keep documentation edits behavior-preserving, including rendered HTML and
+whitespace. Track any defects or functional improvements as separate work.
+
 ## Development deployment
 
 ### Frontend assets
