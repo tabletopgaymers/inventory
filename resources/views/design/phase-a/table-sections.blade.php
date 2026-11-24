@@ -13,7 +13,7 @@
             <h2 id="guide-table-section-title">Ribbon collections</h2>
             <p class="app-field-help">All retained collections in this category.</p>
         </div>
-        <div class="app-actions"><x-app.action variant="new"  href="#guide-table-preview">＋ New</x-app.action></div>
+        <div class="app-actions"><x-app.action variant="new"  href="#guide-table-preview" /></div>
     </x-app.heading-row></x-slot:header>
 
         <table><thead><tr><th>Collection</th><th>Description</th><th>SKU prefix</th><th>Status</th></tr></thead><tbody>

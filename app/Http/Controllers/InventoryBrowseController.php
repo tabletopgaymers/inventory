@@ -7,6 +7,7 @@ use App\Support\BaselineProbe;
 use App\Support\CatalogRecords;
 use App\Support\InventoryBrowseState;
 use App\Support\InventorySearch;
+use App\View\Components\App\ItemsTable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -162,11 +163,47 @@ class InventoryBrowseController
     public function location(Request $request, int $location)
     {
         $this->ready();
-        $row = app(CatalogRecords::class)->record('storage_locations', $location);
+        $locations = app(CatalogRecords::class)->records('storage_locations');
+        $row = $locations->firstWhere('id', $location) ?? abort(404);
         $includeZeroStock = $request->boolean('include_zero_stock');
         $showIncoming = $request->boolean('show_incoming', true);
 
-        return view('inventory.location', ['location' => $row, 'result' => app(InventorySearch::class)->locationResults($location, $includeZeroStock, $showIncoming), 'includeZeroStock' => $includeZeroStock, 'showIncoming' => $showIncoming, 'browse' => $request->query('browse'), 'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager')]);
+        $browse = $request->query('browse');
+        $browse = is_string($browse) && Str::isUuid($browse) ? $browse : null;
+        $result = app(InventorySearch::class)->locationResults($location, $includeZeroStock, $showIncoming);
+        $locationKey = 'storage:'.$location;
+        $columns = [ItemsTable::DEFAULT_COLUMNS[0], ['key' => $locationKey, 'label' => $row->name, 'role' => 'number']];
+        if ($showIncoming && $result['showTransit']) {
+            $columns[] = ['key' => 'incoming_transit', 'label' => 'In Transit', 'role' => 'number'];
+        }
+        if ($showIncoming && $result['showOrdered']) {
+            $columns[] = ['key' => 'incoming_ordered', 'label' => 'Ordered', 'role' => 'number'];
+        }
+        if (count($columns) > 2) {
+            $columns[] = ['key' => 'expected', 'label' => 'Expected', 'role' => 'number'];
+        }
+
+        $rows = array_map(fn ($item) => [
+            'item' => ['name' => $item['name'], 'link' => ['href' => '/inventory/items/'.$item['id'].($browse ? '?browse='.$browse : '')]],
+            'group' => ['key' => $item['collection_id'], 'category' => $item['category'], 'collection' => $item['collection']],
+            'values' => [
+                $locationKey => $item['values'][$locationKey],
+                'incoming_transit' => $item['incoming_transit'],
+                'incoming_ordered' => $item['incoming_ordered'],
+                'expected' => $item['expected'],
+            ],
+        ], $result['rows']);
+
+        $createListUrl = '/catalog/lists/create?'.http_build_query([
+            'location' => $location, 'include_zero_stock' => $includeZeroStock, 'show_incoming' => $showIncoming, 'browse' => $browse,
+        ]);
+
+        return view('inventory.location', [
+            'location' => $row, 'locations' => $locations, 'rows' => $rows, 'columns' => $columns, 'createListUrl' => $createListUrl,
+            'hasIncoming' => $result['showTransit'] || $result['showOrdered'],
+            'includeZeroStock' => $includeZeroStock, 'showIncoming' => $showIncoming, 'browse' => $browse,
+            'canManage' => $request->user()->hasRole('admin') || $request->user()->hasRole('manager'),
+        ]);
     }
 
     public function classification(Request $request, string $kind, int $record)

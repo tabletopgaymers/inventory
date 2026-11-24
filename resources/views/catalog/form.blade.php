@@ -1,9 +1,9 @@
 @extends('layout')
 @php($singular = \App\Support\CatalogRecords::SINGULAR[$kind])
-@section('title', $record ? 'Edit '.$singular.' - '.$record->name : 'New '.$singular)
+@section('title', $record ? 'Edit '.ucfirst($singular).': '.$record->name : 'New '.ucfirst($singular))
 @section('page-actions')
 @if($purchaseReturnUrl)<x-app.action href="{{ $purchaseReturnUrl }}">Return to purchase</x-app.action>@endif
-<x-app.action variant="secondary" href="{{ $record ? $recordBase.$record->id.$purchaseReturnQuery : $indexUrl }}">Cancel</x-app.action>
+<x-app.action variant="danger" href="{{ $record ? $recordBase.$record->id.$purchaseReturnQuery : $indexUrl }}">{{ $record ? 'Discard' : 'Cancel' }}</x-app.action>
 <x-app.action variant="primary" type="submit" class="app-save-progress" form="catalog-form" data-catalog-save aria-busy="false"><span data-save-label>{{ $record ? 'Save' : 'Create' }}</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('title-status')
@@ -60,7 +60,7 @@
 <summary><h2>Set starting inventory</h2></summary>
 <div class="app-collapsible-panel-body">
 <div class="app-columns app-columns-three">
-@foreach($startingLocations as $location)<label>{{ $location->name }}<input type="text" inputmode="numeric" form="catalog-form" name="starting_inventory[{{ $location->id }}]" aria-label="Starting quantity at {{ $location->name }}" value="{{ old('starting_inventory.'.$location->id) }}"></label>@endforeach
+@foreach($startingLocations as $location)<label>{{ $location->name }}<input type="text" inputmode="numeric" data-optional form="catalog-form" name="starting_inventory[{{ $location->id }}]" aria-label="Starting quantity at {{ $location->name }}" value="{{ old('starting_inventory.'.$location->id) }}"></label>@endforeach
 </div>
 </div>
 </details>

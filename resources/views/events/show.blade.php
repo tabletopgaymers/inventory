@@ -1,6 +1,11 @@
 @extends('layout')
 @section('title', $row->name)
 @section('title-status')<x-app.status-badge :status="$row->status" />@endsection
+@if($canManage && $row->status === 'Planning')
+@section('page-actions')
+<x-app.action href="/events/{{ $row->id }}/work/plan">Edit</x-app.action>
+@endsection
+@endif
 @section('content-sections')
 <div class="app-content app-record-content">
 
@@ -9,7 +14,7 @@
 @if($data['notes'] ?? null)<p class="plain-text">{{ $data['notes'] }}</p>@endif
 <p>Default leftover destination: {{ $destinations[$data['default_destination'] ?? ''] ?? 'Not selected or currently unavailable' }}</p>
 <div class="actions">
-@if($canManage && $row->status==='Planning')<a href="/events/{{ $row->id }}/work/plan">Edit planning</a><a class="primary" href="/events/{{ $row->id }}/work/activate">Review activation</a>@endif
+@if($canManage && $row->status==='Planning')<a class="primary" href="/events/{{ $row->id }}/work/activate">Review activation</a>@endif
 @if($canManage && $row->status==='Active')<a href="/events/{{ $row->id }}/work/delivery">Record delivery</a><a class="primary" href="/events/{{ $row->id }}/work/counts">Enter counts / finalize</a>@endif
 @if($row->status==='Finalized')<a class="primary" href="/events/{{ $row->id }}/report">View final report</a>@if($canManage)<a href="/events/{{ $row->id }}/work/correction">Correct report only</a>@endif @endif
 </div>

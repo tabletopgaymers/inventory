@@ -30,14 +30,23 @@ if (form) {
     const itemInput = form.elements.item_ids_json;
     const location = form.elements.storage_location_id;
     const save = document.querySelector('[data-list-save]');
-    let dirty = false, ready = false;
-    const guard = mountUnsavedChanges(form, {isDirty: () => dirty});
+    const saveLabel = save.querySelector('[data-save-label]');
+    const creating = form.dataset.saveMode === 'create';
+    let dirty = form.dataset.saveDirty === 'true', ready = false, submitting = false;
+    const guard = mountUnsavedChanges(form, {isDirty: () => dirty, isBusy: () => submitting});
+    const renderSave = () => {
+        save.classList.toggle('app-save-dirty', dirty);
+        save.disabled = !ready || submitting;
+        save.setAttribute('aria-busy', String(submitting));
+        saveLabel.textContent = submitting ? (creating ? 'Creating…' : 'Saving…') : (creating ? 'Create' : 'Save');
+    };
+    const markDirty = () => { dirty = true; renderSave(); };
     form.addEventListener('invalid', event => {
         const panel = event.target.closest('details');
         if (panel) panel.open = true;
     }, true);
-    form.addEventListener('input', event => { if (event.target.name) dirty = true; });
-    form.addEventListener('change', event => { if (event.target.name) dirty = true; });
+    form.addEventListener('input', event => { if (event.target.name) markDirty(); });
+    form.addEventListener('change', event => { if (event.target.name) markDirty(); });
     location.disabled = true;
     let itemIds = [];
     try { const saved = JSON.parse(itemInput.value); if (Array.isArray(saved)) itemIds = saved; } catch { /* Server validation retains invalid input for correction. */ }
@@ -46,9 +55,9 @@ if (form) {
         onChange: ({selectedItemIds, locationId}) => {
             itemInput.value = JSON.stringify(selectedItemIds);
             location.value = locationId === null ? '' : String(locationId);
-            if (ready) dirty = true;
+            if (ready) markDirty();
         },
-        onReady: () => { ready = true; form.elements.picker_ready.value = '1'; save.disabled = false; location.disabled = false; },
+        onReady: () => { ready = true; form.elements.picker_ready.value = '1'; location.disabled = false; renderSave(); },
     });
     location.addEventListener('change', () => {
         const pickerLocation = root.querySelector('#memory-location');
@@ -56,8 +65,11 @@ if (form) {
         pickerLocation.dispatchEvent(new Event('change'));
     });
     form.addEventListener('submit', event => {
-        if (!ready) { event.preventDefault(); return; }
-        guard.allowDeparture(); save.disabled = true; save.textContent = 'Saving…';
+        if (!ready || submitting) { event.preventDefault(); return; }
+        submitting = true;
+        guard.allowDeparture();
+        form.inert = true;
+        renderSave();
     });
     window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });
 }

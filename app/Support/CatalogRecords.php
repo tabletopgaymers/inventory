@@ -7,7 +7,7 @@ use Illuminate\Validation\ValidationException;
 
 class CatalogRecords
 {
-    public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Locations', 'suppliers' => 'Suppliers', 'purposes' => 'Purposes', 'programs' => 'Programs'];
+    public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Locations', 'purposes' => 'Purposes', 'programs' => 'Programs', 'suppliers' => 'Suppliers'];
     public const SINGULAR = ['categories' => 'category', 'collections' => 'collection', 'items' => 'item', 'storage_locations' => 'location', 'suppliers' => 'supplier', 'purposes' => 'purpose', 'programs' => 'program'];
 
     public static function viewBase(string $kind): string
@@ -66,12 +66,17 @@ class CatalogRecords
         return $this->records($kind)->firstWhere('id', $id) ?? abort(404);
     }
 
-    public function itemsForPurpose(int $purposeId)
+    public function itemsForClassification(string $kind, int $id)
     {
+        $field = match ($kind) {
+            'purposes' => 'collections.purpose_id',
+            'programs' => 'collections.program_id',
+        };
+
         return DB::table('items')
             ->join('collections', 'collections.id', '=', 'items.collection_id')
             ->join('categories', 'categories.id', '=', 'collections.category_id')
-            ->where('collections.purpose_id', $purposeId)
+            ->where($field, $id)
             ->orderBy('categories.name')->orderBy('collections.name')->orderBy('collections.id')
             ->orderByRaw('NATURAL_SORT_KEY(items.name)')->orderBy('items.name')->orderBy('items.id')
             ->get(['items.id', 'items.name', 'items.sku', 'items.collection_id',

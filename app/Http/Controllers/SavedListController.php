@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\SavedList;
+use App\Support\CatalogRecords;
 use App\Support\InventoryBrowseState;
+use App\Support\InventorySearch;
 use App\Support\LocationCountSearch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SavedListController
 {
@@ -24,6 +27,26 @@ class SavedListController
 
     public function create(Request $request)
     {
+        $location = $request->query('location');
+        if ($location !== null) {
+            abort_unless(is_string($location) && ctype_digit($location), 404);
+            $location = app(CatalogRecords::class)->record('storage_locations', (int) $location)->id;
+            $includeZeroStock = $request->boolean('include_zero_stock');
+            $showIncoming = $request->boolean('show_incoming', true);
+            $result = app(InventorySearch::class)->locationResults($location, $includeZeroStock, $showIncoming);
+            $browse = $request->query('browse');
+            $query = http_build_query([
+                'include_zero_stock' => $includeZeroStock, 'show_incoming' => $showIncoming,
+                'browse' => is_string($browse) && Str::isUuid($browse) ? $browse : null,
+            ]);
+
+            return $this->form($request, null, [
+                'itemIds' => array_column($result['rows'], 'id'),
+                'locationId' => $location,
+                'returnUrl' => CatalogRecords::viewUrl('storage_locations', $location).'?'.$query,
+            ]);
+        }
+
         $browse = $request->query('browse');
         if ($browse !== null) {
             $context = $this->inventoryDraft($request, $browse);
@@ -37,7 +60,21 @@ class SavedListController
 
         $context = $request->query('reconcile');
         if ($context === null) {
-            return $this->form($request, null);
+            $purpose = $request->query('purpose');
+            $id = $purpose ?? $request->query('program');
+            if ($id === null) {
+                return $this->form($request, null);
+            }
+
+            abort_unless(is_string($id) && ctype_digit($id), 404);
+            $catalog = app(CatalogRecords::class);
+            $kind = $purpose !== null ? 'purposes' : 'programs';
+            $classification = $catalog->record($kind, (int) $id);
+
+            return $this->form($request, null, [
+                'itemIds' => $catalog->itemsForClassification($kind, $classification->id)->pluck('id')->all(),
+                'returnUrl' => CatalogRecords::viewUrl($kind, $classification->id),
+            ]);
         }
 
         $draft = $this->reconcileDraft($request, $context);

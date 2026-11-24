@@ -1,4 +1,4 @@
-@props(['label', 'presentation' => 'desktop'])
+@props(['label', 'presentation' => 'desktop', 'section' => null])
 @php
     $destinations = \App\Support\AppNavigation::destinations(auth()->user());
 
@@ -9,7 +9,7 @@
     @endif
     @foreach($destinations as $destination)
         @if($presentation === 'section')
-            @if($destination['active'])
+            @if($destination['href'] === $section)
                 @foreach($destination['children'] as $child)
                     <a href="{{ $child['href'] }}" @if($child['current'])aria-current="page"@endif>{{ $child['label'] }}</a>
                 @endforeach

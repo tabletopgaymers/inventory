@@ -108,14 +108,16 @@ class CatalogController
         $classification = $kind === 'collections' ? $service->collectionClassification($row) : [];
         return view('catalog.show', PurchaseSupplierReturn::context($request, $kind) + $classification + [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
-            'purposeTable' => $kind === 'purposes' ? $this->purposeItemTable($service, $record) : null,
+            'classificationItemTable' => in_array($kind, ['purposes', 'programs'], true)
+                ? $this->classificationItemTable($service, $kind, $record)
+                : null,
             'canManage' => $this->canMaintain($request, $kind, $record),
         ]);
     }
 
-    private function purposeItemTable(CatalogRecords $catalog, int $purposeId): array
+    private function classificationItemTable(CatalogRecords $catalog, string $kind, int $id): array
     {
-        $items = $catalog->itemsForPurpose($purposeId);
+        $items = $catalog->itemsForClassification($kind, $id);
         $locations = $catalog->records('storage_locations');
         $balances = app(InventorySearch::class)->storageBalances($items->pluck('id')->all());
 
@@ -126,6 +128,7 @@ class CatalogController
                 'key' => 'storage:'.$location->id,
                 'label' => $location->name,
                 'role' => 'number',
+                'link' => ['href' => CatalogRecords::viewUrl('storage_locations', $location->id)],
                 'nullDisplay' => '0',
             ]),
         ];
@@ -179,6 +182,11 @@ class CatalogController
         $inventoryContext = $kind === 'items' && $request->is('inventory/*');
         $recordBase = $inventoryContext ? '/inventory/items/' : CatalogRecords::viewBase($kind);
         $context = PurchaseSupplierReturn::context($request, $kind) + ['recordBase' => $recordBase, 'actionBase' => $inventoryContext ? $recordBase.$record.'/details' : '/catalog/'.$kind.'/'.$record, 'indexUrl' => $inventoryContext ? '/inventory' : '/catalog/'.$kind];
+        if (! $inventoryContext && $selectedCategory) {
+            $context['indexUrl'] = CatalogRecords::viewUrl('categories', $selectedCategory->id);
+        } elseif (! $inventoryContext && $selectedCollection) {
+            $context['indexUrl'] = CatalogRecords::viewUrl('collections', $selectedCollection->id);
+        }
         $context['startingLocations'] = $kind === 'items' && !$record ? $service->records('storage_locations')->where('state', 'active')->values() : collect();
         $context['selectedCollection'] = $selectedCollection;
         return view('catalog.form', $context + ['kind' => $kind, 'label' => CatalogRecords::KINDS[$kind], 'record' => $row, 'metadata' => $metadata, 'selectedCategory' => $selectedCategory, 'categories' => $service->records('categories'), 'collections' => $service->records('collections'), 'purposes' => $kind === 'collections' ? $service->records('purposes') : collect(), 'programs' => $kind === 'collections' ? $service->records('programs') : collect()]);

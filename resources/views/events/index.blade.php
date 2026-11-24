@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Events')
 @section('page-actions')
-@if($canManage)<x-app.action variant="new"  href="/events/new" title="Create event">＋ New</x-app.action>@endif
+@if($canManage)<x-app.action variant="new"  href="/events/new" title="Create event" />@endif
 @endsection
 @section('content-sections')
 <p class="error" role="alert"><strong>THIS FEATURE IS UNDER DEVELOPMENT.</strong></p>

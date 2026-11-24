@@ -1,5 +1,6 @@
 <x-app.shell>
     <x-slot:title>@yield('title')</x-slot:title>
+    @yield('section-navigation')
     <x-app.page-heading :class="$__env->hasSection('relocation-save') || $__env->hasSection('purchase-save') || $__env->hasSection('page-actions') ? 'app-heading-with-actions' : ''">
         <x-slot:title>@yield('title')</x-slot:title>
         <x-slot:status>@yield('title-status')</x-slot:status>

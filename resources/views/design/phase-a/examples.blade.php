@@ -29,7 +29,7 @@
 </div>
 <x-app.guide-divider />
 <div class="app-content" id="search">
-    <x-workflow.heading><h2>Inventory search</h2><x-app.action variant="new"  href="#supporting">＋ New</x-app.action></x-workflow.heading>
+    <x-workflow.heading><h2>Inventory search</h2><x-app.action variant="new"  href="#supporting" /></x-workflow.heading>
     <fieldset class="app-entry-fieldset" disabled>
     <x-app.inventory-search :definition="['filters'=>[], 'hiddenFilters'=>[], 'defaults'=>['search'=>'','collections'=>[],'columns'=>[]], 'columnGroups'=>['locations'=>[]]]" endpoint="/style-guide/inventory-search/results?profile=full" instance="example-inventory-search" :script="false" />
     </fieldset>
@@ -79,7 +79,7 @@
 <x-app.guide-divider />
 <div class="app-content" id="supporting">
     <h2>Catalog and event variants</h2>
-    <x-workflow.heading><h3>Catalog · Collections</h3><x-app.action variant="new"  href="#supporting">＋ New</x-app.action></x-workflow.heading>
+    <x-workflow.heading><h3>Catalog · Collections</h3><x-app.action variant="new"  href="#supporting" /></x-workflow.heading>
     </div>
 <x-app.table-region class="app-list-table-panel" label="Sample catalog collection"><table><thead><tr><th>Collection</th><th>Category</th><th>Status</th></tr></thead><tbody><tr><td>Pronoun</td><td>Ribbon</td><td><x-app.status-badge status="Active" /></td></tr></tbody></table></x-app.table-region>
 <div class="app-content app-record-content">

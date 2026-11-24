@@ -35,8 +35,8 @@
         </x-app.header>
     <div class="app-workspace">
         <main id="app-main" class="app-main" tabindex="-1">
-            @if($signedIn && request()->is('catalog', 'catalog/*'))
-                <x-app.navigation label="Catalog sections" presentation="section" />
+            @if($signedIn && request()->is('catalog', 'catalog/*', 'inventory/locations/*'))
+                <x-app.navigation label="Catalog sections" presentation="section" section="/catalog" />
             @endif
             {{ $slot }}
         </main>

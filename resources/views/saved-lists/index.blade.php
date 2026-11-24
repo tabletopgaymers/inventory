@@ -1,7 +1,7 @@
 @extends('layout')
 @section('title', 'Lists')
 @section('page-actions')
-<x-app.action variant="new" href="/catalog/lists/create">＋ New</x-app.action>
+<x-app.action variant="new" href="/catalog/lists/create" />
 @endsection
 @section('content-sections')
 @vite('resources/js/saved-lists.js')

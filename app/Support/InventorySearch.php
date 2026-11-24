@@ -167,7 +167,7 @@ class InventorySearch
             if ($item->state !== 'active' && ! $criteria['include_inactive'] && ! $hasStock) {
                 continue;
             }
-            $rows[] = ['id' => (int) $item->id, 'name' => $item->name, 'category' => $item->category_name, 'collection' => $item->collection_name, 'sku' => $item->sku, 'available' => $available, 'values' => $values];
+            $rows[] = ['id' => (int) $item->id, 'name' => $item->name, 'category' => $item->category_name, 'collection' => $item->collection_name, 'collection_id' => (int) $item->collection_id, 'sku' => $item->sku, 'available' => $available, 'values' => $values];
         }
         $columns = array_filter($allColumns, function ($column, $key) use ($criteria, $rows) {
             if ($criteria['columns']) {

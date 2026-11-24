@@ -57,8 +57,8 @@
         </x-app.detail-list>
     @endif
 </div>
-@if($kind === 'categories' && $canManage)<div class="app-actions"><x-app.action variant="new"  href="/catalog/collections/create?category={{ $record->id }}">＋ New</x-app.action></div>@endif
-@if($kind === 'collections' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/items/create?collection={{ $record->id }}">＋ New</x-app.action></div>@endif
+@if($kind === 'categories' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/collections/create?category={{ $record->id }}" /></div>@endif
+@if($kind === 'collections' && $canManage)<div class="app-actions"><x-app.action variant="new" href="/catalog/items/create?collection={{ $record->id }}" /></div>@endif
 @if(in_array($kind, ['categories', 'collections']))
 <x-app.table-region :label="$kind === 'categories' ? 'Collections in category' : 'Items in collection'" class="app-list-table-panel" id="catalog-child-table">
 <table class="catalog-table"><thead><tr><th>{{ $kind === 'categories' ? 'Collections' : 'Name' }}</th>@if($kind === 'categories')<th>Description</th>@endif<th>{{ $kind === 'categories' ? 'SKU Prefix' : 'SKU' }}</th>@if($kind === 'categories')<th class="number">Entries</th>@endif<th>Status</th></tr></thead><tbody>
@@ -69,10 +69,17 @@
 </tbody></table>
 </x-app.table-region>
 @endif
-@if($kind === 'purposes')
+@if($classificationItemTable !== null)
 <x-app.table-region label="Items">
-    <x-slot:header><h2>Items</h2></x-slot:header>
-    <x-app.items-table :rows="$purposeTable['rows']" :columns="$purposeTable['columns']" />
+    <x-slot:header>
+        <x-app.heading-row variant="table">
+            <h2>Items</h2>
+            @if($classificationItemTable['rows']->isNotEmpty())
+                <x-app.action href="/catalog/lists/create?{{ $kind === 'purposes' ? 'purpose' : 'program' }}={{ $record->id }}">Create list</x-app.action>
+            @endif
+        </x-app.heading-row>
+    </x-slot:header>
+    <x-app.items-table :rows="$classificationItemTable['rows']" :columns="$classificationItemTable['columns']" />
 </x-app.table-region>
 @endif
 @endsection

@@ -9,10 +9,11 @@
 @section('title', $ownProfile ? 'My profile' : 'Edit profile: '.$profileUser->displayName())
 @section('page-actions')
 <x-app.action variant="danger"  href="{{ $returnUrl }}">Discard</x-app.action>
-<x-app.action variant="primary" type="submit"  form="profile-form">{{ $editingUser ? 'Save' : 'Confirm' }}</x-app.action>
+<x-app.action variant="primary" type="submit" class="app-save-progress" form="profile-form" data-record-submit="Saving…" aria-busy="false"><span data-save-label>{{ $editingUser ? 'Save' : 'Confirm' }}</span><span class="app-search-spinner" aria-hidden="true"></span></x-app.action>
 @endsection
 @section('content')
-<form id="profile-form" method="post" action="{{ $profileUrl }}">@csrf<input type="hidden" name="_deliberate" value="1">
+@vite('resources/js/record-form.js')
+<form id="profile-form" method="post" action="{{ $profileUrl }}" data-native-record-form data-save-dirty="{{ $errors->any() ? 'true' : 'false' }}">@csrf<input type="hidden" name="_deliberate" value="1">
 @if(!app(\App\Support\BaselineProbe::class)->runtimeState(\Illuminate\Support\Facades\DB::connection())['profilePreferencesReady'])<p class="warning">Profile saving is waiting for the profile preferences migration. Your existing profile is retained.</p>@endif
 <div class="app-columns app-columns-two app-columns-trim">
 <div>
