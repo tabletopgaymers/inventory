@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\DB;
 
 class DailyInventoryPreparation
 {
+    /**
+     * Run the guarded daily inventory migration after prerequisite readiness and compatibility checks pass. Development requires the hosted flag.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Prepare daily inventory schema
+     * @example routes/console.php
+     */
     public function prepare(bool $hosted): bool
     {
         $probe = app(BaselineProbe::class);

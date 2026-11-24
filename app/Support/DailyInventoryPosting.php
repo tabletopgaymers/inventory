@@ -9,6 +9,13 @@ use Illuminate\Validation\ValidationException;
 
 class DailyInventoryPosting
 {
+    /**
+     * Parse a nonnegative whole count, allowing correctly grouped commas. Returns null for blank, and keeps explicit zero as a count.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Post daily inventory changes
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public static function count(mixed $value, string $field): ?int
     {
         if ($value === null || $value === '') {
@@ -25,6 +32,13 @@ class DailyInventoryPosting
         return $number;
     }
 
+    /**
+     * Post reviewed counts for a location and actor. The UUID identifies a retry. Blank rows are skipped and confirmed changes use StockPosting.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Post daily inventory changes
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function counts(int $actor, int $location, string $operation, array $counts, array $rationales): int
     {
         abort_unless(Str::isUuid($operation), 422);
@@ -67,6 +81,13 @@ class DailyInventoryPosting
         }, 3);
     }
 
+    /**
+     * Post an authorized unit cost adjustment for one item. Exact nonnegative decimals are accepted, and zero represents unknown cost. Returns null when no cost change is needed.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Post daily inventory changes
+     * @example app/Http/Controllers/ItemCostController.php
+     */
     public function cost(int $actor, int $itemId, string $operation, string $value, ?string $rationale): ?int
     {
         abort_unless(Str::isUuid($operation), 422);

@@ -1,4 +1,14 @@
-@props(['lists', 'loadAction', 'selectId', 'loadedList' => null, 'resetUrl' => null])
+{{--
+Use for a Saved Lists panel with a required list selection and CSRF-protected Load action. Pass the available collection and a unique select ID. Loaded-list data selects the current list. A reset URL adds Reset.
+
+## Slots
+
+Use loadFields for hidden or additional controls inside the Load form. The default slot renders after it, for example for a separate location form.
+
+## Examples
+
+[Inventory](resources/views/inventory/browse.blade.php) and [Reconcile](resources/views/inventory/count-search.blade.php).
+--}}@props(['lists', 'loadAction', 'selectId', 'loadedList' => null, 'resetUrl' => null])
 
 <x-app.collapsible-panel title="Saved Lists" {{ $attributes->class(['app-saved-list-selector']) }}>
     <form method="post" action="{{ $loadAction }}">

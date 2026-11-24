@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class MicrosoftIdentity
 {
+    /**
+     * Resolve a Microsoft provider result and verified token claims into a local user. This checks the configured tenant and provider object ID against the claims and rejects disabled users.
+     * Resolution can provision account and identity records or refresh the provider email. The authentication controller verifies the token before calling this method.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Resolve a Microsoft identity
+     * @example app/Http/Controllers/MicrosoftAuthController.php
+     */
     public function resolve(object $external, object $claims): User
     {
         if (! is_string($claims->tid ?? null) || ! is_string($claims->oid ?? null)

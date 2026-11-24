@@ -6,6 +6,13 @@ use Illuminate\Support\Facades\DB;
 
 class RequestCatalog
 {
+    /**
+     * Returns only matched item IDs, permitting inactive retained items. Adds optional source and destination storage quantities with zero for a missing balance, or null when no location was supplied.
+     *
+     * Scope: Domain-specific (Purchase, Relocation and Events)
+     * Task: Load display rows for selected catalog items
+     * @example app/Http/Controllers/RelocationController.php
+     */
     public function rows(array $ids, ?int $source = null, ?int $destination = null, bool $naturalNames = false): array
     {
         $criteria = app(InventorySearch::class)->defaults();
@@ -24,6 +31,13 @@ class RequestCatalog
         return $result;
     }
 
+    /**
+     * Applies inventory search criteria, limits matches to active items, drops already selected IDs, and returns the same stock row shape as rows.
+     *
+     * Scope: Domain-specific (Relocation)
+     * Task: Find available catalog selections
+     * @example app/Http/Controllers/RelocationController.php
+     */
     public function selections(array $criteria, array $excluded, ?int $source, ?int $destination, bool $naturalNames = false): array
     {
         $active = app(CatalogRecords::class)->records('items')->where('state', 'active')->pluck('id')->map(fn ($id) => (int) $id)->all();
@@ -33,6 +47,13 @@ class RequestCatalog
         return $this->rows($ids, $source, $destination, $naturalNames);
     }
 
+    /**
+     * Keeps line values and item keys, with lines absent from the catalog result appended in their original order.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Order event lines by catalog display order
+     * @example app/Http/Controllers/EventController.php
+     */
     public function sortItemLines(array $lines): array
     {
         $sorted = [];
@@ -43,6 +64,13 @@ class RequestCatalog
         return $sorted + $lines;
     }
 
+    /**
+     * Returns locations, suppliers, items and collections. Applies optional natural name sorting to items. Entry points decide which records are eligible for each action.
+     *
+     * Scope: Domain-specific (Purchase, Relocation and Events)
+     * Task: Load catalog choices for request forms
+     * @example app/Http/Controllers/EventController.php
+     */
     public function choices(bool $naturalNames = false): array
     {
         return ['locations' => app(CatalogRecords::class)->records('storage_locations'),

@@ -1,4 +1,14 @@
-@props(['endpoint' => '/style-guide/browser-memory-demo/data', 'showLocationSelector' => true, 'showInventory' => true])
+{{--
+Use to search or browse the catalog and manage a set of selected items. Mount the picker JavaScript to initialize the selection and receive changes. Include its stylesheet and supply the permitted snapshot endpoint plus the desired location and quantity visibility.
+
+## Slots
+
+No caller slots. The picker defines its own results header.
+
+## Examples
+
+[Saved List form](resources/views/saved-lists/form.blade.php) and [Browser Memory Demo](/style-guide/browser-memory-demo).
+--}}@props(['endpoint' => '/style-guide/browser-memory-demo/data', 'showLocationSelector' => true, 'showInventory' => true])
 <div data-memory-picker>
 <p class="app-field-help" data-memory-snapshot>Loading catalog and inventory…</p>
 <div class="error" role="alert" data-memory-load-error hidden>Catalog and inventory could not be loaded. Your selections have been kept. <x-app.action type="button" data-memory-retry>Try again</x-app.action></div>

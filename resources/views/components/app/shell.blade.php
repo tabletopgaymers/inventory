@@ -1,4 +1,14 @@
-@props(['title', 'guest' => false])
+{{--
+Use for the complete application document frame. It owns shared assets, header, navigation, density, footer, and shell JavaScript. Most pages extend the shared page layout. Set guest to force the guest presentation.
+
+## Slots
+
+The default slot supplies the main content. Supply title as a named slot or prop.
+
+## Example
+
+[Shared page layout](resources/views/layout.blade.php).
+--}}@props(['title', 'guest' => false])
 @php
     $signedIn = ! $guest && auth()->check();
     $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';

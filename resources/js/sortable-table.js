@@ -1,4 +1,16 @@
 // Plain, ungrouped tables. Use data-sort-value for dates or formatted numbers.
+/**
+ * Mount client-side sorting on a plain table with one ungrouped body. Put a matching button with an indicator span in each sortable column heading.
+ * The first sortable column starts ascending. Each click toggles that column’s direction and updates its indicator and aria-sort state.
+ * Values are compared using the page locale with numeric sorting. For formatted values, supply sortable keys through data-sort-value on the cells.
+ *
+ * Scope: Shared
+ * Task: Sort a table
+ *
+ * @param {HTMLTableElement|null} table The table to mount, if present.
+ * @param {object} [options] Set buttonSelector when the heading buttons use another hook.
+ * @example resources/js/user-directory.js
+ */
 export function mountSortableTable(table, {buttonSelector = '[data-table-sort]'} = {}) {
     const body = table?.tBodies[0];
     if (!body) return;

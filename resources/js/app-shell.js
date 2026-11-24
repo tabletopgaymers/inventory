@@ -102,12 +102,33 @@ import { syncNoticeTimer } from './workflow/notices.js';
     const guards = [];
     const approved = new WeakSet();
     const inFlight = new WeakSet();
+    /**
+     * Add a guard with shouldWarn and explanatory text, and optionally onLeave. The shell uses the first applicable guard for eligible links and appNavigate. Use the unsaved-changes helper when also guarding browser departure.
+     *
+     * Scope: Shared
+     * Task: Register a guard for in-page navigation
+     * @example resources/js/workflow/unsaved-changes.js
+     */
     window.appNavigationGuards = guards;
+    /**
+     * Pass text, the originating control, button labels and decision callbacks. Run the operation in onConfirm. A call can return false while the mobile drawer is closing, with the dialog still pending.
+     *
+     * Scope: Shared
+     * Task: Request confirmation through the shell dialog
+     * @example resources/js/saved-lists.js
+     */
     window.appRequestDecision = mountConfirmationDialog();
     const confirmDeparture = (guard, proceed, origin) => window.appRequestDecision({
         title:'Unsaved changes', message:guard.message, origin,
         cancelLabel:'Keep editing', confirmLabel:'Leave without saving', variant:'danger', onConfirm:proceed
     });
+    /**
+     * Checks registered guards using the origin. Invokes the selected guard's departure callback only when leaving, then assigns the destination URL. Suitable for a clickable row or other non-link control.
+     *
+     * Scope: Shared
+     * Task: Navigate from a control through shell guards
+     * @example resources/js/inventory.js
+     */
     window.appNavigate = (href, origin) => {
         const guard = guards.find(candidate => candidate.shouldWarn(origin));
         const leave = () => { guard?.onLeave?.(); window.location.assign(href); };

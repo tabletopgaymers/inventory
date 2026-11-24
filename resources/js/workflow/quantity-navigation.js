@@ -1,5 +1,12 @@
 const instances = new WeakMap();
 
+/**
+ * Arrow Up moves back and Arrow Down or Enter moves forward in caller-provided order. Skips unavailable inputs and prevents Enter from submitting when the input participates. The caller supplies field grouping and busy state.
+ *
+ * Scope: Shared
+ * Task: Move between quantity inputs by keyboard
+ * @example resources/js/location-counts.js
+ */
 export function mountQuantityNavigation(root, { resolveFields, isBusy = () => false }) {
     if (instances.has(root)) return instances.get(root);
     const keydown = event => {

@@ -7,6 +7,13 @@ use Throwable;
 
 class ReleaseMetadata
 {
+    /**
+     * Return configured branch and revision metadata, using the current Git checkout when it is available in local development. The result includes the modified flag and a validated Preparation ID when applicable.
+     *
+     * Scope: Shared
+     * Task: Show release information
+     * @example resources/views/components/app/footer.blade.php
+     */
     public function current(): array
     {
         $preparationId = config('baseline.preparation_id');

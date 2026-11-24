@@ -120,6 +120,13 @@ class EventWorkflow
         return $clean;
     }
 
+    /**
+     * Validates planning values and current associations under a transaction. Checks revisions when editing Planning events and uses the operation token to return the same event ID on a retry.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Create or update an event plan
+     * @example app/Http/Controllers/EventController.php
+     */
     public function plan(int $actorId, ?int $id, mixed $revision, array $values, string $token): int
     {
         $this->token($token);
@@ -159,6 +166,13 @@ class EventWorkflow
         }, 3);
     }
 
+    /**
+     * Loads the event header and item lines as form values, keeping omitted counts and allocation quantities blank. The controller decides who may use that state.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Read the saved event work state
+     * @example app/Http/Controllers/EventController.php
+     */
     public function data(int $id): array
     {
         $event = DB::table('event_workflows')->where('id', $id)->firstOrFail();
@@ -173,6 +187,13 @@ class EventWorkflow
         return $header + ['name' => $event->name, 'lines' => $lines];
     }
 
+    /**
+     * Routes actions to activation, delivery, counts, finalization or correction as allowed for that mode. Rechecks the actor, saved status and revision in a transaction. Writes require a token and return a duplicate indicator on replay.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Save, review or confirm event work
+     * @example app/Http/Controllers/EventController.php
+     */
     public function work(int $actorId, int $id, mixed $revision, string $mode, array $values, string $action, ?string $token = null): array
     {
         abort_unless(in_array($mode, ['activate', 'delivery', 'counts', 'finalize', 'correction'], true) && in_array($action, ['save', 'review', 'confirm'], true), 422);

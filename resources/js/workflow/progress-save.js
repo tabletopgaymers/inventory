@@ -2,6 +2,13 @@ import { setSaveBusy } from './save-button.js';
 import { showNotice } from './notices.js';
 
 // One transport/lifecycle for workflows; adapters own preparation and domain updates.
+/**
+ * Posts the supplied payload and dispatches result callbacks. Exposes busy state while locking controls, then restores their prior disabled state. The caller prepares data and handles workflow-specific response updates.
+ *
+ * Scope: Shared
+ * Task: Run a single workflow progress save
+ * @example resources/js/relocation.js
+ */
 export function createProgressController(form, { onBusy = () => {} } = {}) {
     let busy = false;
     const button = [...document.querySelectorAll('[data-save-shortcut]')].find(button => button.form === form);
@@ -47,6 +54,13 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
 }
 
 // Purchase adapter: one progress endpoint, generation-based dirty clearing.
+/**
+ * Intercepts Save for a progress request and retains native Next submission with saving feedback. Pass an edit-generation function so the caller knows whether edits occurred during the save.
+ *
+ * Scope: Domain-specific (Purchase)
+ * Task: Wire Purchase Save progress and Next feedback
+ * @example resources/js/purchase-work-invoice.js
+ */
 export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, canSave = () => true, getGeneration = () => 0 }) {
     const controller = createProgressController(form, {onBusy});
     const button = [...document.querySelectorAll('[data-save-shortcut]')].find(button => button.form === form);

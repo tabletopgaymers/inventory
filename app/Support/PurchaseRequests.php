@@ -8,12 +8,25 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseRequests
 {
+    /**
+     * For Draft and Request only. Procurement access permits edits in either status, while ownership alone permits Draft edits. Call with an already-resolved actor and keep the specific action's status and authorization checks.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Check request-stage edit access
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function editable(User $actor, object $row): bool
     {
         return in_array($row->status, ['Draft', 'Request'], true)
             && (RequestValues::manages($actor, 'procurement') || ($row->status === 'Draft' && (int) $row->owner_id === (int) $actor->id));
     }
 
+    /**
+     * Called by saveWork to normalize the title, suggested merchant and details before persistence. Procurement and delivery fields are handled elsewhere.
+     *
+     * @internal
+     * @example app/Support/PurchaseRequests.php
+     */
     public function fields(array $data): array
     {
         return ['title' => RequestValues::text($data['title'] ?? null, 'title', 255, true),
@@ -21,11 +34,24 @@ class PurchaseRequests
             'details' => RequestValues::text($data['details'] ?? null, 'details')];
     }
 
+    /**
+     * Allows procurement staff or an enabled requester creating a purchase or submitting their own. The calling action separately checks that the request can advance from Draft.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Check who can submit a purchase request
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function submitter(User $actor, ?object $row): bool
     {
         return RequestValues::manages($actor, 'procurement') || ($actor->enabled && (! $row || (int) $row->owner_id === (int) $actor->id));
     }
 
+    /**
+     * Called by saveWork to validate bounded item-keyed quantities and reject procurement-only fields. Existing item associations may be retained under the shared association rules.
+     *
+     * @internal
+     * @example app/Support/PurchaseRequests.php
+     */
     public function requestLines(array $data, ?object $row): array
     {
         foreach (['supplier_id', 'receiving_location_id', 'planned_date', 'preparation_notes'] as $field) {
@@ -52,6 +78,13 @@ class PurchaseRequests
         return $lines;
     }
 
+    /**
+     * Persists the request and requested quantities atomically with authorization and revision checks. Retained lines keep stored estimates and notes. Submission advances an eligible request and records the transition. Returns the request ID.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Save or submit request-stage purchase work
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function saveWork(int $actorId, ?int $id, mixed $revision, array $data, bool $submit = false): int
     {
         return DB::transaction(function () use ($actorId, $id, $revision, $data, $submit) {
@@ -93,6 +126,13 @@ class PurchaseRequests
         }, 3);
     }
 
+    /**
+     * Applies the action's owner or procurement rules under a request lock. Checks revision and allowed saved status, then writes the new status and audit activity.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Submit, return or cancel a request
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function transition(int $actorId, int $id, mixed $revision, string $action): void
     {
         abort_unless(in_array($action, ['submit', 'return', 'cancel'], true), 422);
@@ -121,6 +161,13 @@ class PurchaseRequests
         }, 3);
     }
 
+    /**
+     * Validates nonblank note text, resolves the actor, and inserts the note under a request lock. Updates the request timestamp without advancing its revision. The caller owns workspace access.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Append a purchase note
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function note(int $actorId, int $id, mixed $body): void
     {
         $body = RequestValues::text($body, 'note', 5000, true);

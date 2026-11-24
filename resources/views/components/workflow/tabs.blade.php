@@ -1,4 +1,14 @@
-@props(['tabs', 'prefix', 'active', 'label'])
+{{--
+Use for in-page workflow navigation. Supply step keys and labels, a unique prefix, the initial key, and an accessible label. Give each panel the corresponding generated ID and mount the workflow tab controller for interaction.
+
+## Slots
+
+The optional default slot renders next to the tab list for related navigation.
+
+## Examples
+
+[Purchase work](resources/views/purchase/work.blade.php) and [Tab form](/style-guide/tab-form).
+--}}@props(['tabs', 'prefix', 'active', 'label'])
 <div class="workflow-tab-panel">
     <div class="workflow-navigation">
         <div class="workflow-tabs" role="tablist" aria-label="{{ $label }}">

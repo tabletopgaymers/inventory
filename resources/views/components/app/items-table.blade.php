@@ -1,4 +1,14 @@
-<table {{ $attributes->class(['app-items-table']) }}>
+{{--
+Use this for a read-only item table with standard headings, collection subheadings, and an empty state. Place it inside `x-app.table-region` when it needs a panel, scrolling, or actions above or below it.
+
+## Slots
+
+The Items Table takes its content from the constructor inputs. Use the surrounding table region’s slots for supplemental content.
+
+## Examples
+
+See [Presentation → Shared Items Table](/style-guide/presentation#items-table) or [Location Inventory](resources/views/inventory/location.blade.php).
+--}}<table {{ $attributes->class(['app-items-table']) }}>
     <colgroup>
         @foreach($columns as $column)
             <col @class(['table-quantity-column' => in_array($column['role'] ?? null, ['sku', 'number'], true)])>

@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\DB;
 
 class InventoryPreparation
 {
+    /**
+     * Run the guarded inventory migration after prerequisite readiness and compatibility checks pass. Development requires the hosted flag.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Prepare inventory schema
+     * @example routes/console.php
+     */
     public function prepare(bool $hosted): bool
     {
         $probe = app(BaselineProbe::class);
@@ -22,6 +29,13 @@ class InventoryPreparation
             && $probe->schemaState(DB::connection())['inventoryReady'];
     }
 
+    /**
+     * Seed sample inventory once in a supported environment after Inventory is ready. An existing sample marker ends the run. Existing stock and history are retained.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Prepare demo inventory
+     * @example routes/console.php
+     */
     public function demo(bool $hosted): bool
     {
         if (! app()->environment(['local', 'testing', 'development']) || (app()->environment('development') && ! $hosted)

@@ -6,6 +6,13 @@ use App\Models\User;
 
 class AppNavigation
 {
+    /**
+     * Use the current request and enabled user to build the app’s navigation and active states. Disabled or absent users get an empty list. Route authorization belongs to the destination.
+     *
+     * Scope: Shared
+     * Task: Build application navigation
+     * @example resources/views/components/app/navigation.blade.php
+     */
     public static function destinations(?User $user): array
     {
         // Existing read destinations are available to every enabled signed-in user.

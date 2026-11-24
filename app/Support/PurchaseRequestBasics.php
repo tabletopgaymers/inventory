@@ -14,11 +14,25 @@ class PurchaseRequestBasics
         'delivery_choice', 'delivery_name', 'delivery_address', 'delivery_email', 'delivery_phone',
     ];
 
+    /**
+     * Returns blank vendor and delivery fields plus server-owned Other supplier metadata for a new request workspace.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Initialize submitter preferences
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function defaults(): array
     {
         return array_fill_keys(self::FIELDS, '') + ['vendor_other_id' => '', 'vendor_other_baseline' => []];
     }
 
+    /**
+     * Combines saved header values with defaults and refreshes any linked unverified supplier from Catalog. Older requests can fall back to the suggested merchant text.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Load saved submitter preferences
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function load(?object $row): array
     {
         $saved = $row ? RequestStock::header('purchase', $row->id)['request_basics'] ?? null : null;
@@ -29,6 +43,13 @@ class PurchaseRequestBasics
         ] : []);
     }
 
+    /**
+     * Recognizes both the literal Other choice and the selected supplier ID that belongs to a previously saved Other entry. Use the server-owned Other ID when evaluating form data.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Identify the Other supplier selection
+     * @example resources/views/purchase/work.blade.php
+     */
     public static function isOtherVendor(array $values): bool
     {
         return ($values['vendor_choice'] ?? '') === 'other'
@@ -36,6 +57,13 @@ class PurchaseRequestBasics
     }
 
     /** Recover the request's linked Other supplier; IDs come from saved server state, never form input. */
+    /**
+     * Reads the link from saved server state. Refreshes values and the comparison baseline when requested or when recovering a legacy link, and clears that metadata when the supplier can no longer be edited as Other.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Restore a linked Other supplier
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function restoreOtherVendor(array $values, bool $refresh = false): array
     {
         $id = (int) ($values['vendor_other_id'] ?? 0);
@@ -66,6 +94,13 @@ class PurchaseRequestBasics
         return $values;
     }
 
+    /**
+     * Requires vendor and delivery choices, and applies contact and address requirements for Other. Check the validity of catalog and user choices separately with validateChoices.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Build validation rules for request preferences
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function rules(array $input): array
     {
         $rules = [];
@@ -83,6 +118,13 @@ class PurchaseRequestBasics
         return $rules;
     }
 
+    /**
+     * Permits an existing selection that has since become inactive if it matches the prior value. Blank and Other choices pass this association check, so required and free-text validation belong to the caller.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Validate submitter vendor and delivery choices
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function validateChoices(array $values, array $previous): void
     {
         foreach (['vendor_choice', 'delivery_choice'] as $field) {
@@ -104,6 +146,13 @@ class PurchaseRequestBasics
         }
     }
 
+    /**
+     * Reads Other text or the selected supplier's current Catalog name. Returns an empty string when no supported choice resolves.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Resolve the requested supplier name
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function vendorName(array $values): string
     {
         if (self::isOtherVendor($values)) return $values['vendor_name'] ?? '';
@@ -114,6 +163,13 @@ class PurchaseRequestBasics
         return '';
     }
 
+    /**
+     * Resolves selected supplier, location and user names and formats entered Other contact details as multi-line text for the submission snapshot.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Build labels for submitted request history
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function labels(array $values): array
     {
         $vendor = self::vendorName($values);
@@ -135,6 +191,13 @@ class PurchaseRequestBasics
     }
 
     /** Update the linked Unverified Other supplier, or materialize it once, inside the request transaction. */
+    /**
+     * Creates or reuses a same-name supplier and adopts its canonical details. Updates a linked unverified supplier only when the submitted contact details changed and the stored comparison baseline still matches. Call inside the request transaction.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Save or link the Other supplier
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function saveVendor(array $values): array
     {
         if (! self::isOtherVendor($values)) return $values;

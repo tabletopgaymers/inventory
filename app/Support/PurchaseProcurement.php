@@ -11,6 +11,13 @@ class PurchaseProcurement
 {
     public const FIELDS = ['delivery_choice','delivery_name','delivery_address','delivery_email','delivery_phone'];
 
+    /**
+     * Returns a complete set of delivery fields. A selected storage location supplies the current name and address, and a selected user supplies current contact details. Free-text delivery retains the entered values.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Capture delivery contact details
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function delivery(array $basics): array
     {
         $choice = $basics['delivery_choice'] ?? '';
@@ -28,12 +35,26 @@ class PurchaseProcurement
         return array_replace(array_fill_keys(self::FIELDS,''), $values);
     }
 
+    /**
+     * Returns the supplier fields used in order records and audit history. A missing supplier produces an empty snapshot.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Capture supplier details
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function vendorSnapshot(?int $id): array
     {
         $row = $id ? DB::table('catalog_references')->where('kind','suppliers')->find($id) : null;
         return $row ? array_intersect_key((array)$row, array_flip(['id','name','website','contact_name','email','phone','address','notes','state'])) : [];
     }
 
+    /**
+     * Allows an empty, active, or unverified supplier choice. An existing supplier outside those states may remain selected when retained. Locks the chosen supplier row so callers should use their existing transaction.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Validate a supplier in procurement progress
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public static function draftVendor(?int $id, ?int $retained): void
     {
         if (!$id) return;
@@ -41,6 +62,13 @@ class PurchaseProcurement
         if (!$row || (!in_array($row->state,['active','unverified'],true) && $id !== $retained)) throw ValidationException::withMessages(['supplier_id'=>'Choose an active or Unverified supplier.']);
     }
 
+    /**
+     * Requires a verified supplier and complete delivery details, and returns the normalized destination and vendor snapshot. Use receipt mode when validating against the recorded supplier. Run in the caller's transaction for association checks.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Validate and capture actual procurement details
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public static function complete(object $row, array $values, bool $receipt=false): array
     {
         $supplier=RequestValues::id($values['supplier_id'] ?? null,'supplier_id');
@@ -63,6 +91,12 @@ class PurchaseProcurement
         return $delivery + ['supplier_id'=>$supplier,'vendor_snapshot'=>self::vendorSnapshot($supplier),'delivery_type'=>$type,'delivery_source_id'=>$source,'receiving_location_id'=>$type==='storage'?$source:null];
     }
 
+    /**
+     * The recursive predicate belongs to supplier replacement and recognizes the stored supplier keys and selector values used by that operation.
+     *
+     * @internal
+     * @example app/Support/PurchaseProcurement.php
+     */
     public static function references(mixed $data, int $id): bool
     {
         if (!is_array($data)) return false;
@@ -74,6 +108,13 @@ class PurchaseProcurement
         return false;
     }
 
+    /**
+     * Checks procurement access, revision and status, updates the request and matching progress drafts, and records the change. Deletes the old supplier only when requested and no protected reference is found, and reports why it was retained when applicable.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Replace a supplier on an open purchase
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function replace(int $actorId, int $id, mixed $revision, int $replacement, bool $delete): array
     {
         return DB::transaction(function () use ($actorId,$id,$revision,$replacement,$delete) {

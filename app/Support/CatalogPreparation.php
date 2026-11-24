@@ -7,6 +7,13 @@ use Illuminate\Support\Facades\DB;
 
 class CatalogPreparation
 {
+    /**
+     * Run the guarded Catalog migration for a compatible setup. The hosted flag is required for development. Returns true when the migration succeeds and readiness is confirmed.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Prepare catalog schema
+     * @example routes/console.php
+     */
     public function prepare(bool $hosted): bool
     {
         $probe = app(BaselineProbe::class);

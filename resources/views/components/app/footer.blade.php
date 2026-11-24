@@ -1,4 +1,14 @@
-@props(['environment' => null, 'metadata' => null])
+{{--
+Use for application identity, environment, and copyable release information. Use environment and metadata overrides for previews. Stage displays a Preparation ID only when valid release metadata supplies one.
+
+## Slots
+
+No caller slots.
+
+## Example
+
+[Application shell](resources/views/components/app/shell.blade.php) and [Application frame](/style-guide/wrapper).
+--}}@props(['environment' => null, 'metadata' => null])
 @php
     $environment = $environment ?? config('app.env');
     $metadata = $metadata ?? app(\App\Support\ReleaseMetadata::class)->current();

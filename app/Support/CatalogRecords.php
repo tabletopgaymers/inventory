@@ -10,6 +10,13 @@ class CatalogRecords
     public const KINDS = ['categories' => 'Categories', 'collections' => 'Collections', 'items' => 'Items', 'storage_locations' => 'Locations', 'purposes' => 'Purposes', 'programs' => 'Programs', 'suppliers' => 'Suppliers'];
     public const SINGULAR = ['categories' => 'category', 'collections' => 'collection', 'items' => 'item', 'storage_locations' => 'location', 'suppliers' => 'supplier', 'purposes' => 'purpose', 'programs' => 'program'];
 
+    /**
+     * Get the detail URL prefix for a Catalog record kind. Storage locations use their Inventory detail route.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public static function viewBase(string $kind): string
     {
         return match ($kind) {
@@ -18,16 +25,37 @@ class CatalogRecords
         };
     }
 
+    /**
+     * Build the canonical detail URL from a known Catalog kind and record ID.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public static function viewUrl(string $kind, int $id): string
     {
         return self::viewBase($kind).$id;
     }
 
+    /**
+     * Build an item SKU from a collection prefix and item suffix. Use one separator after trimming trailing hyphens from the prefix.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public static function itemSku(string $prefix, string $suffix): string
     {
         return rtrim($prefix, '-').'-'.$suffix;
     }
 
+    /**
+     * Load the records for a supported Catalog kind, including state and metadata where applicable. Use natural name ordering for items when needed.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function records(string $kind, bool $naturalNames = false)
     {
         abort_unless(isset(self::KINDS[$kind]), 404);
@@ -61,11 +89,25 @@ class CatalogRecords
         return $rows;
     }
 
+    /**
+     * Load one record from the supported kind and return 404 when it is absent.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function record(string $kind, int $id): object
     {
         return $this->records($kind)->firstWhere('id', $id) ?? abort(404);
     }
 
+    /**
+     * Load items belonging to collections with the given Purpose or Program. Results are grouped in category and collection order with natural item names.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/SavedListController.php
+     */
     public function itemsForClassification(string $kind, int $id)
     {
         $field = match ($kind) {
@@ -83,6 +125,13 @@ class CatalogRecords
                 'categories.name as category_name', 'collections.name as collection_name']);
     }
 
+    /**
+     * Resolve a collection’s linked Purpose and Program. Returns null for an absent reference.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/InventoryController.php
+     */
     public function collectionClassification(object $collection): array
     {
         return [
@@ -91,6 +140,13 @@ class CatalogRecords
         ];
     }
 
+    /**
+     * Validate the classification selections on a collection being saved, preserving current associations where allowed.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function validateCollectionClassification(array $data, ?object $existing): void
     {
         foreach (['purpose_id' => 'purposes', 'program_id' => 'programs'] as $field => $kind) {
@@ -105,6 +161,13 @@ class CatalogRecords
         }
     }
 
+    /**
+     * Lock a proposed association and validate whether it can be used. Pass the existing association when editing. Call inside the surrounding write transaction.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function activeAssociation(string $kind, int $id, ?int $existing = null): void
     {
         $table = in_array($kind, ['purposes', 'programs', 'suppliers'], true) ? 'catalog_references' : $kind;
@@ -115,6 +178,13 @@ class CatalogRecords
         }
     }
 
+    /**
+     * Recheck Catalog mutation access inside a write transaction using lock-protected account state. Pass the record kind and ID where the operation requires the record-specific rule.
+     *
+     * Scope: Domain-specific (Catalog)
+     * Task: Work with catalog records
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function authorize(int $actor, ?string $kind = null, ?int $record = null): void
     {
         DB::table('authentication_bootstraps')->where('key', 'initial-admin')->lockForUpdate()->firstOrFail();

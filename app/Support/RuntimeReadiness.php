@@ -5,6 +5,12 @@ namespace App\Support;
 /** Lightweight readiness for the current application, not a structural schema audit. */
 class RuntimeReadiness
 {
+    /**
+     * Build and memoize request-local readiness flags for BaselineProbe’s web path. The cache keys the database connection and expires with the request.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database): array
     {
         // Request attributes expire with the request, including in long-lived workers.

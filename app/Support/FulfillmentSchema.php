@@ -9,6 +9,12 @@ class FulfillmentSchema
 
     public const TABLES = ['purchase_fulfillment', 'purchase_fulfillment_lines', 'relocation_fulfillment', 'relocation_fulfillment_lines', 'request_stock_entries'];
 
+    /**
+     * Fulfillment phase audit used by BaselineProbe to assess migration state and live table compatibility.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database, array $tables): array
     {
         $present = array_intersect(self::TABLES, $tables);
@@ -68,6 +74,12 @@ class FulfillmentSchema
         return ['compatible' => true, 'ready' => true];
     }
 
+    /**
+     * Describe the Purchase and Relocation fulfillment tables and constraints used by this class’s schema audit.
+     *
+     * @internal
+     * @example app/Support/FulfillmentSchema.php
+     */
     public function contract(): array
     {
         $id = ['bigint unsigned', false];

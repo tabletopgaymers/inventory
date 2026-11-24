@@ -1,4 +1,11 @@
 // Blade owns markup/classes. Callers own wording, data hooks and business behavior.
+/**
+ * Clones the matching Blade action template and replaces its text. Requires that template on the page. The caller supplies wording, accessible labels for custom controls, and behavior.
+ *
+ * Scope: Shared
+ * Task: Create a button from the shared action style
+ * @example resources/js/item-list-picker.js
+ */
 export function createAction({ variant = 'secondary', control = null, text = '' } = {}) {
     const key = `${variant}:${control || ''}`;
     const template = [...document.querySelectorAll('template[data-action-template]')]

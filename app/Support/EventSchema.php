@@ -9,6 +9,12 @@ class EventSchema
 
     public const TABLES = ['event_workflows', 'event_lines', 'event_operations', 'event_stock_entries'];
 
+    /**
+     * Events phase audit used by BaselineProbe to assess migration state and live table compatibility.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database, array $tables): array
     {
         $present = array_intersect(self::TABLES, $tables);
@@ -68,6 +74,12 @@ class EventSchema
         return ['compatible' => true, 'ready' => true];
     }
 
+    /**
+     * Describe the Events tables and constraints used by this class’s schema audit.
+     *
+     * @internal
+     * @example app/Support/EventSchema.php
+     */
     public function contract(): array
     {
         $id = ['bigint unsigned', false];

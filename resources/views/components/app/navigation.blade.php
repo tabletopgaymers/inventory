@@ -1,4 +1,14 @@
-@props(['label', 'presentation' => 'desktop', 'section' => null])
+{{--
+Use for the signed-in application navigation from AppNavigation. Supply an accessible label. Choose desktop for the sidebar, mobile for the drawer, or section with the matching parent href for a section bar.
+
+## Slots
+
+No caller slots.
+
+## Example
+
+[Application shell](resources/views/components/app/shell.blade.php).
+--}}@props(['label', 'presentation' => 'desktop', 'section' => null])
 @php
     $destinations = \App\Support\AppNavigation::destinations(auth()->user());
 

@@ -8,6 +8,13 @@ use Throwable;
 
 class BaselineProbe
 {
+    /**
+     * Check application, connection, session, and optionally schema prerequisites for setup and runtime entry points. Use the readiness flags to gate dependent work.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Check deployment prerequisites
+     * @example app/Http/Middleware/CheckBaseline.php
+     */
     public function inspect(bool $requireSessions = true, bool $auditSchema = true): array
     {
         $result = [
@@ -58,6 +65,13 @@ class BaselineProbe
         return $result;
     }
 
+    /**
+     * Use for feature readiness with the current database connection. Web requests use request-local readiness. Console callers use the full schema audit.
+     *
+     * Scope: Shared
+     * Task: Check application readiness
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function runtimeState($database): array
     {
         return app()->runningInConsole()
@@ -65,6 +79,13 @@ class BaselineProbe
             : app(RuntimeReadiness::class)->state($database);
     }
 
+    /**
+     * Inspect the database schema and build phase compatibility and readiness flags. This performs the full audit used by guarded setup commands.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Audit schema compatibility
+     * @example routes/console.php
+     */
     public function schemaState($database): array
     {
         $schema = $database->getSchemaBuilder();

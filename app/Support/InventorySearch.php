@@ -9,11 +9,25 @@ use Illuminate\Validation\Rule;
 
 class InventorySearch
 {
+    /**
+     * Get neutral criteria for an unfiltered inventory search.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/InventoryBrowseController.php
+     */
     public function defaults(): array
     {
         return ['search' => '', 'collections' => [], 'columns' => [], 'include_inactive' => false];
     }
 
+    /**
+     * List storage and available source columns by stable keys. Eligibility normally suppresses inactive empty storage locations.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/InventoryBrowseController.php
+     */
     public function columns(bool $eligibleOnly = true): array
     {
         $columns = [];
@@ -32,6 +46,13 @@ class InventorySearch
         return $columns;
     }
 
+    /**
+     * Validate submitted search text, collection IDs, and column keys for Inventory.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/InventoryBrowseController.php
+     */
     public function criteria(Request $request): array
     {
         $data = $request->validate(['search' => ['nullable', 'string', 'max:255', 'not_regex:/[\x00-\x1F\x7F]/u'],
@@ -46,6 +67,13 @@ class InventorySearch
         return ['search' => trim($data['search'] ?? ''), 'collections' => $collections, 'columns' => $columns, 'include_inactive' => (bool) ($data['include_inactive'] ?? false)];
     }
 
+    /**
+     * Read the user’s latest recognized browse criteria or the defaults if none can be recovered.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/InventoryBrowseController.php
+     */
     public function remembered(int $user): array
     {
         $saved = json_decode(DB::table('inventory_preferences')->where('user_id', $user)->value('criteria') ?? '{}', true);
@@ -61,6 +89,13 @@ class InventorySearch
             'include_inactive' => ($saved['include_inactive'] ?? false) === true];
     }
 
+    /**
+     * Persists the current browse criteria under the user lock and carries forward the saved Reconcile searches in saved_counts.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/InventoryBrowseController.php
+     */
     public function remember(int $user, array $criteria): void
     {
         DB::transaction(function () use ($user, $criteria) {
@@ -73,6 +108,13 @@ class InventorySearch
         });
     }
 
+    /**
+     * Return current stock and destination-specific incoming counts for one location. Preserve explicit zero-stock and incoming-display choices when reusing these rows.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/SavedListController.php
+     */
     public function locationResults(int $location, bool $includeZeroStock = false, bool $showIncoming = true): array
     {
         $criteria = $this->defaults();
@@ -116,11 +158,25 @@ class InventorySearch
         return $result;
     }
 
+    /**
+     * Get storage-balance rows for the given item IDs, grouped by item ID. Source balances are queried separately.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function storageBalances(array $itemIds): Collection
     {
         return DB::table('inventory_balances')->whereIntegerInRaw('item_id', $itemIds)->get()->groupBy('item_id');
     }
 
+    /**
+     * Query catalog items and stock for prepared criteria. Optional item IDs restrict membership, and natural-name mode sorts item names accordingly.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Query inventory
+     * @example app/Http/Controllers/InventoryBrowseController.php
+     */
     public function results(array $criteria, bool $naturalNames = false, ?array $itemIds = null): array
     {
         $items = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')->join('categories', 'categories.id', '=', 'collections.category_id')

@@ -1,4 +1,14 @@
-@props(['definition', 'endpoint', 'instance' => null, 'script' => true, 'formMode' => false, 'persistence' => null, 'submitted' => null, 'filterLabel' => 'Filters'])
+{{--
+Use for shared inventory search inputs, filters, and feedback. Supply a prepared definition and the search endpoint. In form mode the surrounding form submits the criteria. In AJAX mode, the consuming page presents the results. Persistent instances need a stable ID or persistence key. Set script to false when the page mounts the adapter itself.
+
+## Slots
+
+Use leading for controls before the search box and extraFilters for consumer-specific filters inside the disclosure. Results are rendered by the caller.
+
+## Examples
+
+[Inventory](resources/views/inventory/browse.blade.php) and [Search inventory guide](/style-guide/inventory-search).
+--}}@props(['definition', 'endpoint', 'instance' => null, 'script' => true, 'formMode' => false, 'persistence' => null, 'submitted' => null, 'filterLabel' => 'Filters'])
 @php
     if ($persistence !== null && ! $instance && empty($persistence['key'])) throw new InvalidArgumentException('A persistent search requires a stable instance ID or persistence key.');
     $instance = $instance ?: 'inventory-search-'.\Illuminate\Support\Str::uuid();

@@ -9,6 +9,12 @@ class RequestSchema
 
     public const TABLES = ['purchase_requests', 'purchase_request_lines', 'purchase_material_lines', 'purchase_request_notes', 'purchase_request_activity', 'relocation_requests', 'relocation_request_lines', 'relocation_request_activity'];
 
+    /**
+     * Request phase audit used by BaselineProbe to assess recorded migration and live table compatibility.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database, array $tables): array
     {
         $present = array_intersect(self::TABLES, $tables);

@@ -1,6 +1,13 @@
 const instances = new WeakMap();
 
 // Callers retain their refresh/save policies; this module owns tab mechanics only.
+/**
+ * Manages visible panels, tab focus, and the current URL query value. Supply a root with the workflow tab and panel hooks. The caller decides loading, save behavior, and when a tab is available.
+ *
+ * Scope: Shared
+ * Task: Activate and navigate workflow tabs
+ * @example resources/js/relocation.js
+ */
 export function mountTabs(root, { initialKey, queryParam = 'tab', removeQueryParams = [], onChange = () => {} } = {}) {
     if (instances.has(root)) return instances.get(root);
     const tabs = [...root.querySelectorAll('[data-workflow-tab]')];

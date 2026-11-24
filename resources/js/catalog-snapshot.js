@@ -1,4 +1,11 @@
 // Shared, per-user snapshot cache. Selections belong to each page, never this cache.
+/**
+ * The shared cache accepts a validated snapshot for up to 15 minutes from its recorded load time. Picker copy uses this same threshold for the current snapshot.
+ *
+ * Scope: Domain-specific (Catalog)
+ * Task: Report browser catalog snapshot age
+ * @example resources/js/item-list-picker.js
+ */
 export const CATALOG_MAX_AGE_MS = 15 * 60 * 1000;
 const version = 1;
 const id = value => Number.isSafeInteger(value) && value > 0;
@@ -11,6 +18,13 @@ const validCatalog = data => data && typeof data === 'object'
     && rows(data.inventory, row => row && id(row.item_id) && id(row.storage_location_id) && Number.isSafeInteger(Number(row.quantity)))
     && (data.central_id === null || id(data.central_id));
 
+/**
+ * Loads a validated per-user snapshot from browser storage or a same-origin JSON endpoint. Force refresh to bypass reuse. Reports cache and storage status and leaves item selections to the caller.
+ *
+ * Scope: Domain-specific (Catalog)
+ * Task: Read or refresh a browser catalog snapshot
+ * @example resources/js/item-list-picker.js
+ */
 export async function loadCatalogSnapshot({userId, endpoint, refresh = false}) {
     if (!/^[1-9]\d*$/.test(String(userId))) throw new Error('A signed-in user is required.');
     const key = `inventory-catalog-snapshot:v${version}:user:${userId}`;

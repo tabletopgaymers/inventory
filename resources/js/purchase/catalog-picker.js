@@ -1,6 +1,13 @@
 import '../inventory-search-controls.js';
 
 // Shared Purchase selection adapter; stage callers own rows, prices and persistence.
+/**
+ * Adapts shared Inventory Search for the request or invoice stage. Excludes existing IDs, applies the line limit, and calls onAdd with chosen items and quantities. The caller owns material rows and save behavior.
+ *
+ * Scope: Domain-specific (Purchase)
+ * Task: Attach purchase search and material selection
+ * @example resources/js/purchase-work-invoice.js
+ */
 export function mountPurchasePicker({root,results,feedback,button,getIds,getCount,onAdd,isBusy=()=>false,stage='request',getDestinationChoice=null}) {
     const cell=(tag,text)=>{ const element=document.createElement(tag); element.textContent=text; return element; };
     const pending=()=>Boolean(results.querySelector('[data-search-item-check]:checked')) || [...results.querySelectorAll('[data-search-quantity]')].some(input=>input.value.trim()!=='');

@@ -1,4 +1,14 @@
-@props(['title', 'subtitle' => null, 'description' => null])
+{{--
+Use for the primary page heading. Supply title and optionally subtitle or description. The shared application layout normally supplies this heading.
+
+## Slots
+
+Use the optional breadcrumb, status, and actions slots. The title can also be supplied as a named slot.
+
+## Example
+
+[Shared page layout](resources/views/layout.blade.php).
+--}}@props(['title', 'subtitle' => null, 'description' => null])
 @isset($breadcrumb)<nav class="app-breadcrumb" aria-label="Breadcrumb">{{ $breadcrumb }}</nav>@endisset
 <x-app.heading-row variant="page" {{ $attributes->class(['app-page-heading']) }}>
     <div><div class="app-title-row"><h1>{{ $title }}</h1>{{ $status ?? '' }}</div><x-app.page-subtitle :subtitle="$subtitle" />@if($description)<p>{{ $description }}</p>@endif</div>

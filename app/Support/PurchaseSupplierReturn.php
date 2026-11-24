@@ -8,6 +8,13 @@ use Illuminate\Support\Str;
 /** Optional Catalog context, restricted to this actor's live Purchase workspace. */
 class PurchaseSupplierReturn
 {
+    /**
+     * Returns optional order-tab URL and query values only for the supplier Catalog route and a procurement user's assigned purchase workspace in the current session. Other requests receive empty return context.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Restore a supplier editor's return to Purchase
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public static function context(Request $request, string $kind): array
     {
         $empty = ['purchaseReturnUrl' => null, 'purchaseReturnQuery' => ''];

@@ -10,6 +10,13 @@ use Illuminate\Validation\ValidationException;
 /** Request estimates only. This class never writes catalog, invoice or inventory data. */
 class PurchaseMaterial
 {
+    /**
+     * Load saved requested material or fall back to the supplied quantities when there are no persisted material rows. Catalog estimates and uncatalogued lines are separate values.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage requested material
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function load(?int $id, array $quantities): array
     {
         $result = ['lines' => $quantities, 'estimates' => [], 'material_names' => [], 'other_lines' => []];
@@ -35,6 +42,12 @@ class PurchaseMaterial
         return $result;
     }
 
+    /**
+     * Normalize an optional nonnegative requested unit estimate from decimal input. Blank represents no estimate.
+     *
+     * @internal
+     * @example app/Support/PurchaseMaterial.php
+     */
     public static function price(mixed $value, string $field): ?string
     {
         if ($value === null || trim((string) $value) === '') return null;
@@ -47,6 +60,13 @@ class PurchaseMaterial
         return (string) BigDecimal::of($value)->strippedOfTrailingZeros();
     }
 
+    /**
+     * Validate the format of a working material draft, including the maximum line count, quantities, estimates, and Other line keys. Allows incomplete draft entry.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage requested material
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function validate(array $work): void
     {
         if (count($work['lines']) + count($work['other_lines']) > 1000) throw ValidationException::withMessages(['lines' => 'Use up to 1,000 material lines.']);
@@ -61,6 +81,13 @@ class PurchaseMaterial
         }
     }
 
+    /**
+     * Collect material errors before submitting the request. Require at least one line, valid quantities, and descriptions for uncatalogued items.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage requested material
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function submissionErrors(array $work): array
     {
         $errors = [];
@@ -78,6 +105,13 @@ class PurchaseMaterial
         return $errors;
     }
 
+    /**
+     * Synchronize catalog and uncatalogued request material lines using their stable keys inside the caller’s save transaction. Removed selections are deleted from the request.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage requested material
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function save(int $id, array $work): void
     {
         $rows = [];

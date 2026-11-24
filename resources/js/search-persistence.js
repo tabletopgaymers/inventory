@@ -1,5 +1,12 @@
 // Each enabled search instance owns a separate per-user storage key. Optional
 // server persistence retains existing account-wide preferences across devices.
+/**
+ * Uses a per-user and per-instance browser key, optionally with a same-origin account preference endpoint. Server-rendered state controls initial values when an endpoint is configured. Use beforeSubmit to coordinate pending writes and resume when returning from browser history.
+ *
+ * Scope: Domain-specific (Inventory search)
+ * Task: Persist criteria and scroll for an individual search
+ * @example resources/js/inventory-search-controls.js
+ */
 export function mountSearchPersistence(root, config, {criteria, apply, changed}) {
     if (!config?.key || !/^[1-9]\d*$/.test(String(config.userId))) return null;
     const storageKey = `inventory-search:v1:user:${config.userId}:instance:${config.key}`;

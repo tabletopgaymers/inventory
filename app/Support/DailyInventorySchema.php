@@ -9,6 +9,12 @@ class DailyInventorySchema
 
     public const TABLES = ['inventory_count_operations', 'inventory_count_items', 'item_cost_entries'];
 
+    /**
+     * Daily inventory phase audit used by BaselineProbe. It compares the live database tables with the migration record and expected schema.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database, array $tables): array
     {
         $present = array_intersect(self::TABLES, $tables);

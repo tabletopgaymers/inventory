@@ -7,6 +7,13 @@ use Illuminate\Validation\ValidationException;
 class PurchaseProgress
 {
     // A bounded raw invoice draft; complete review/confirmation keeps its existing validator.
+    /**
+     * Keeps incomplete values as bounded strings while checking line identity, uniqueness, cost basis, allocation method and draft size. Order and receipt validation still apply when the purchase advances.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Normalize a draft order or receipt
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function invoice(array $data): array
     {
         $clean = [];

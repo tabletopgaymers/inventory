@@ -8,6 +8,13 @@ use Illuminate\Validation\ValidationException;
 
 class RequestValues
 {
+    /**
+     * Validates UTF-8, length and allowed control characters, then trims whitespace. Optional empty text normalizes to null. The 255-character case rejects line breaks and tabs.
+     *
+     * Scope: Domain-specific (Request and Inventory workflows)
+     * Task: Validate and normalize plain text
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function text(mixed $value, string $field, int $max = 5000, bool $required = false): ?string
     {
         if ($value === null && ! $required) {
@@ -25,6 +32,13 @@ class RequestValues
         return $value === '' ? null : $value;
     }
 
+    /**
+     * Accepts grouped thousands up to one billion. Blank mode preserves absent values as null, while bulk mode treats nonempty values with no digits as zero.
+     *
+     * Scope: Domain-specific (Request and Inventory workflows)
+     * Task: Validate whole-unit quantities
+     * @example app/Support/EventWorkflow.php
+     */
     public static function quantity(mixed $value, string $field, bool $blank = false, bool $bulk = false): ?int
     {
         if ($blank && ($value === null || $value === '')) {
@@ -44,6 +58,13 @@ class RequestValues
         return (int) str_replace(',', '', $value);
     }
 
+    /**
+     * Accepts a positive decimal integer of up to 18 digits. Empty input returns null. Callers separately check existence and eligibility.
+     *
+     * Scope: Domain-specific (Request and Inventory workflows)
+     * Task: Parse an optional record identifier
+     * @example app/Http/Controllers/RelocationController.php
+     */
     public static function id(mixed $value, string $field): ?int
     {
         if ($value === null || $value === '') {
@@ -56,6 +77,13 @@ class RequestValues
         return (int) $value;
     }
 
+    /**
+     * Compares a decimal revision with the current record and rejects the upper revision limit. Run against the currently locked row when protecting concurrent writes.
+     *
+     * Scope: Domain-specific (Request and Inventory workflows)
+     * Task: Check the revision before a write
+     * @example app/Support/EventWorkflow.php
+     */
     public static function revision(mixed $value, object $record): void
     {
         if ((! is_int($value) && ! is_string($value)) || ! ctype_digit((string) $value) || (int) $value !== (int) $record->revision) {
@@ -64,6 +92,13 @@ class RequestValues
         abort_if((int) $record->revision >= 4294967295, 409, 'This request needs revision inspection.');
     }
 
+    /**
+     * Locks the same bootstrap row used by access management before locking the user and rechecking enabled state. Use inside a transaction and check the action-specific role separately.
+     *
+     * Scope: Shared
+     * Task: Resolve and lock the acting user before a write
+     * @example app/Support/DailyInventoryPosting.php
+     */
     public static function actor(int $id): User
     {
         // Same global lock as role/profile changes: recheck current access before writes.
@@ -74,16 +109,35 @@ class RequestValues
         return $user;
     }
 
+    /**
+     * The predicate checks the supplied user. For writes that require a current role, resolve the actor under the shared access lock in the surrounding transaction.
+     *
+     * Scope: Shared
+     * Task: Check enabled Admin or specified role access
+     * @example app/Http/Controllers/RelocationController.php
+     */
     public static function manages(User $user, string $role): bool
     {
         return $user->enabled && ($user->hasRole('admin') || $user->hasRole($role));
     }
 
+    /**
+     * This predicate covers enabled Admin, Manager or Procurement accounts. There is no direct application caller in the current source. Use an action-specific access decision when wiring a new request action.
+     *
+     * @internal
+     */
     public static function elevated(User $user): bool
     {
         return $user->enabled && array_intersect($user->roles(), ['admin', 'manager', 'procurement']) !== [];
     }
 
+    /**
+     * Requires an enabled user with a Microsoft identity in the configured tenant. Ownership and request status are separate action checks.
+     *
+     * Scope: Domain-specific (Relocation)
+     * Task: Check eligibility to submit one's own request
+     * @example app/Http/Controllers/RelocationController.php
+     */
     public static function submitsOwn(User $user): bool
     {
         $tenant = config('services.microsoft.tenant');
@@ -92,6 +146,13 @@ class RequestValues
             && DB::table('external_identities')->where('user_id', $user->id)->where('provider', 'microsoft')->where('tenant_id', strtolower($tenant))->exists();
     }
 
+    /**
+     * Appends an actor and action snapshot with optional before/after JSON for the specified request kind. Call inside the transaction governing the associated mutation.
+     *
+     * Scope: Domain-specific (Purchase and Relocation)
+     * Task: Record request activity
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function activity(string $kind, int $id, User $actor, string $action, mixed $before, mixed $after): void
     {
         abort_unless(in_array($kind, ['purchase', 'relocation'], true), 500);
@@ -102,6 +163,13 @@ class RequestValues
         ]);
     }
 
+    /**
+     * Allows null and can retain the exact existing inactive record unless active-only is required. Rechecks the record's state after locking the catalog row and any applicable metadata. Run inside the caller's transaction.
+     *
+     * Scope: Domain-specific (Purchase and Relocation)
+     * Task: Validate and lock a catalog association
+     * @example app/Http/Controllers/RelocationController.php
+     */
     public static function association(string $kind, ?int $id, ?int $existing, string $field, bool $requireActive = false): void
     {
         if ($id === null) {

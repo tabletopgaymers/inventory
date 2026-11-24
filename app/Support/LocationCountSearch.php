@@ -10,6 +10,13 @@ use Illuminate\Validation\ValidationException;
 
 class LocationCountSearch
 {
+    /**
+     * Get an actor-bound count draft by UUID. Invalid or foreign tokens return 404.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function draft(Request $request, string $token): array
     {
         abort_unless(Str::isUuid($token), 404);
@@ -19,6 +26,13 @@ class LocationCountSearch
         return $draft;
     }
 
+    /**
+     * Find the last valid ordinary search token for this actor so a loaded list can return to it.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function lastSearch(Request $request): ?string
     {
         $token = $request->session()->get('location_counts_last_search');
@@ -27,6 +41,13 @@ class LocationCountSearch
         return ($draft['actor'] ?? null) === (int) $request->user()->id ? $token : null;
     }
 
+    /**
+     * Capture the location criteria and item IDs in a new actor-bound draft with blank counts and review. This replaces the count-draft session map, retaining the last ordinary search only for a list-backed draft.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function newDraft(Request $request, array $criteria, array $items, ?array $list = null): string
     {
         $token = (string) Str::uuid();
@@ -47,11 +68,24 @@ class LocationCountSearch
         return $token;
     }
 
+    /**
+     * Determine the default active zero-stock choice from whether the selected location is Central.
+     *
+     * @internal
+     * @example app/Support/LocationCountSearch.php
+     */
     public function zeroStockDefault(int $location): bool
     {
         return DB::table('storage_locations')->where('id', $location)->where('is_central', true)->exists();
     }
 
+    /**
+     * Check whether legacy saved criteria can be represented by the current active-zero-stock setting.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function compatible(array $criteria): bool
     {
         // Old false already meant active zero-stock plus inactive non-zero stock.
@@ -59,6 +93,13 @@ class LocationCountSearch
         return array_key_exists('include_active_zero', $criteria) || ! ($criteria['include_inactive'] ?? false);
     }
 
+    /**
+     * Normalize compatible search criteria for the current count rules. Incompatible older options raise a validation error and leave the stored search unchanged.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function normalize(array $criteria): array
     {
         if (! $this->compatible($criteria)) {
@@ -72,6 +113,13 @@ class LocationCountSearch
         return $criteria;
     }
 
+    /**
+     * Validate the selected location and inventory search fields, and resolve the applicable active zero-stock choice for that location.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function criteria(Request $request): array
     {
         $location = $request->validate(['location_id' => ['required', 'integer', Rule::in(DB::table('storage_locations')->pluck('id')->all())]])['location_id'];
@@ -89,6 +137,13 @@ class LocationCountSearch
         return ['location_id' => (int) $location, 'search' => $criteria['search'], 'collections' => $criteria['collections'], 'include_active_zero' => $includeZero];
     }
 
+    /**
+     * Get the result rows for a count using normalized criteria. Keep nonzero counts and include active zero-stock items when requested.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function rows(array $criteria): array
     {
         $criteria = $this->normalize($criteria);
@@ -101,6 +156,13 @@ class LocationCountSearch
             || (($criteria['include_active_zero'] ?? $this->zeroStockDefault($criteria['location_id'])) && $states[$row['id']]->state === 'active')));
     }
 
+    /**
+     * Read and sort the user’s saved Reconcile searches from Inventory preferences.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function saved(int $user): array
     {
         $preferences = json_decode(DB::table('inventory_preferences')->where('user_id', $user)->value('criteria') ?? '{}', true);
@@ -110,6 +172,13 @@ class LocationCountSearch
         return $saved;
     }
 
+    /**
+     * Store named Reconcile criteria under the user lock. Validate the name and require the overwrite flag to replace an existing search.
+     *
+     * Scope: Domain-specific (Reconcile)
+     * Task: Prepare location counts
+     * @example app/Http/Controllers/LocationCountController.php
+     */
     public function save(int $user, string $name, array $criteria, bool $overwrite): void
     {
         $criteria = $this->normalize($criteria);

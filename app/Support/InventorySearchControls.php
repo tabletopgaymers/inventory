@@ -12,6 +12,13 @@ class InventorySearchControls
 {
     public const FILTERS = ['collections', 'locations', 'events', 'transit', 'ordered', 'inactive'];
 
+    /**
+     * Build the Blade search control definition from allowed filter groups, visible choices, and defaults. Keep configuration aligned with the request endpoint.
+     *
+     * Scope: Domain-specific (Inventory search)
+     * Task: Integrate the search control
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function definition(array $config = []): array
     {
         $filters = array_values(array_intersect(self::FILTERS, $config['filters'] ?? self::FILTERS));
@@ -37,6 +44,13 @@ class InventorySearchControls
         return match ($kind) { 'storage' => 'locations', 'event' => 'events', default => $kind };
     }
 
+    /**
+     * Validate the consumer’s search request against the same definition. Return the versioned row and column payload, respecting configured item exclusions and active-only searches.
+     *
+     * Scope: Domain-specific (Inventory search)
+     * Task: Integrate the search control
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function search(Request $request, array $config = []): array
     {
         $definition = $this->definition($config);

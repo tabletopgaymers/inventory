@@ -191,6 +191,13 @@ import { mountClearableInput } from './clearable-input.js';
         changed();
         return api;
     };
+    /**
+     * Supports native form navigation and same-origin AJAX searches. AJAX callers can prepare the URL and render validated results. Each root retains its own current criteria, submitted criteria, and result API.
+     *
+     * Scope: Domain-specific (Inventory search)
+     * Task: Mount or retrieve a shared search instance
+     * @example resources/js/relocation.js
+     */
     window.appInventorySearch = { mount, get: root => instances.get(root)?.api };
     document.querySelectorAll('[data-inventory-search]').forEach(root => mount(root));
 })();

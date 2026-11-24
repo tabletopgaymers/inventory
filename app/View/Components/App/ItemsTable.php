@@ -14,6 +14,17 @@ class ItemsTable extends Component
 
     public array $sections = [];
 
+    /**
+     * Supply prepared item rows in display order. Adjacent rows sharing a group key form a section.
+     * Use the default Item and SKU columns or pass the complete ordered column list.
+     * Integer number values use quantity formatting. Supply preformatted text when a value needs another format.
+     *
+     * @param iterable $rows Each row supplies item.name, optional item.sku and item.link, optional group with key, category and collection, and custom values indexed by column key.
+     * @param array $columns Each column has a key and label. Its role can be item, sku, number, or text. Optional link contains href and attributes. nullDisplay, blankDisplay, and zeroDisplay customize value placeholders.
+     * @param string $emptyMessage Text shown when the input has no rows.
+     * @param array $collectionTotals Totals keyed by group key. A supplied total displays the section row count against that total.
+     * @example app/Http/Controllers/CatalogController.php
+     */
     public function __construct(
         iterable $rows,
         public array $columns = self::DEFAULT_COLUMNS,

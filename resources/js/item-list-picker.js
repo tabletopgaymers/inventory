@@ -3,6 +3,13 @@ import { mountClearableInput } from './clearable-input.js';
 import './app.js';
 import { loadCatalogSnapshot, CATALOG_MAX_AGE_MS } from './catalog-snapshot.js';
 
+/**
+ * Supports item, collection and category selection with a shared read-only snapshot. Disable browser selection persistence for an editor initialized from saved IDs and location. The caller owns saving and should wait for the ready callback.
+ *
+ * Scope: Domain-specific (Saved Lists and browser catalog)
+ * Task: Mount a catalog item selection panel
+ * @example resources/js/saved-lists.js
+ */
 export async function mountItemListPicker(root, {persistSelection = true, initialItemIds = [], initialLocationId, onChange = () => {}, onReady = () => {}} = {}) {
     const container = root.closest('[data-memory-picker]');
     const showInventory = root.dataset.showInventory !== '0';

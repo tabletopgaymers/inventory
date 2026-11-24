@@ -12,6 +12,12 @@ class PurchaseFulfillment
 {
     public const ZERO_RECEIVED_MESSAGE = 'No items were received. Cancel the purchase after resolving the outcome with the supplier.';
 
+    /**
+     * Check invoice catalog selections against current items and the request’s retained selections. Existing valid draft, request, or fulfillment items can be retained.
+     *
+     * @internal
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public function validateCatalogLines(int $id, int $actor, array $lines, string $mode='order'): void
     {
         $retained = DB::table('purchase_fulfillment_lines')->where('purchase_request_id',$id)->whereNotNull('item_id')->pluck('item_id')->map(fn($item)=>(int)$item)->all();
@@ -24,6 +30,13 @@ class PurchaseFulfillment
         foreach ($lines as $key=>$line) if ($line['item_id']) RequestValues::association('items',$line['item_id'],in_array($line['item_id'],$retained,true)?$line['item_id']:null,'lines.'.$key.'.item_id');
     }
 
+    /**
+     * Build the order preview under procurement, readiness, and revision checks. This validates invoice values and returns the review calculation without posting stock.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function orderReview(int $actorId, int $id, mixed $revision, array $values): array
     {
         return DB::transaction(function () use($actorId,$id,$revision,$values) {
@@ -39,18 +52,36 @@ class PurchaseFulfillment
         },3);
     }
 
+    /**
+     * Read the recorded expected quantities for an Ordered or Shipped request. Other statuses have no open expected quantities.
+     *
+     * @internal
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public function expected(object $row, array $header): array
     {
         if (!in_array($row->status,['Ordered','Shipped'],true)) return [];
         return $header['ordered_quantities'] ?? [];
     }
 
+    /**
+     * Read the most recent order snapshot from the order activity history for receipt comparison.
+     *
+     * @internal
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public function recordedOrder(int $id): array
     {
         $entry=DB::table('purchase_request_activity')->where('purchase_request_id',$id)->whereIn('action',['Marked Ordered','Saved ordered changes'])->orderByDesc('id')->first();
         return json_decode($entry->current ?? '{}',true);
     }
 
+    /**
+     * Validate receipt values under procurement and revision checks, using the recorded order as the source for comparison.
+     *
+     * @internal
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public function receiptReview(int $actorId, int $id, mixed $revision, array $data): array
     {
         return DB::transaction(function () use($actorId,$id,$revision,$data) {
@@ -155,6 +186,13 @@ class PurchaseFulfillment
         },3);
     }
 
+    /**
+     * Load recorded purchase fulfillment and invoice lines with display defaults. Actor-specific progress drafts are loaded separately.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function data(int $id): array
     {
         $row = DB::table('purchase_requests')->where('id', $id)->firstOrFail();
@@ -175,11 +213,25 @@ class PurchaseFulfillment
             'shipped_date' => '', 'received_date' => '', 'shipping_method' => 'line_total', 'discount' => '0.00', 'tax' => '0.00', 'shipping' => '0.00', 'other_fees' => '0.00', 'lines' => $lines];
     }
 
+    /**
+     * Read the saved progress for this actor, request, and order or receipt mode. Use the caller’s authorization and revision checks before relying on it.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function progressDraft(int $actorId, int $id, string $mode): ?array
     {
         return RequestStock::header('purchase', $id)['purchase_progress'][$actorId][$mode] ?? null;
     }
 
+    /**
+     * Read current staged Order values for Procurement, validating both the request revision and any saved draft revision.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function currentOrderValues(int $actorId, int $id, mixed $revision): array
     {
         abort_unless(RequestValues::manages(RequestValues::actor($actorId), 'procurement'), 403);
@@ -191,6 +243,13 @@ class PurchaseFulfillment
         return PurchaseProgress::invoice($draft['values'] ?? $this->data($id));
     }
 
+    /**
+     * Complete receipt for the current recorded purchase under procurement and revision guards. The operation UUID identifies the action retry.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function completeCurrentOrder(int $actorId, int $id, mixed $revision, string $date, string $operation): array
     {
         return DB::transaction(function () use ($actorId, $id, $revision, $date, $operation) {
@@ -215,11 +274,24 @@ class PurchaseFulfillment
         }, 3);
     }
 
+    /**
+     * Validate that receipt values were prepared against the current recorded order operation. A changed order requires reconciliation before continuing.
+     *
+     * @internal
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public function assertReceiptSource(array $header, array $values): void
     {
         if (empty($header['order_operation']) || ($values['source_order_operation'] ?? null)!==$header['order_operation']) throw ValidationException::withMessages(['source_order_operation'=>'The recorded order changed. Your receipt values are retained; reconcile with the updated order before continuing.']);
     }
 
+    /**
+     * Persist an authorized actor’s order or receipt draft under lock. Preserves incomplete work for the selected mode without recording the final operation.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function saveProgress(int $actorId, int $id, mixed $revision, array $data, string $mode): array
     {
         abort_unless(in_array($mode, ['order', 'receipt'], true), 422);
@@ -311,6 +383,13 @@ class PurchaseFulfillment
         }, 3);
     }
 
+    /**
+     * Review or confirm an order or receipt. Confirmation requires an operation UUID and can post workflow changes and stock movements.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function work(int $actorId, int $id, mixed $revision, array $data, string $mode, string $action, ?string $operation = null): array
     {
         abort_unless(in_array($mode, ['order', 'receipt'], true) && in_array($action, ['review', 'confirm'], true), 422);
@@ -365,6 +444,13 @@ class PurchaseFulfillment
         },3);
     }
 
+    /**
+     * Apply a supported fulfillment transition such as shipping, returning to the previous step, or cancellation. Uses authorization, readiness, and revision checks.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Manage purchase fulfillment
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function transition(int $actorId, int $id, mixed $revision, string $action, ?string $date = null): void
     {
         abort_unless(in_array($action, ['shipped', 'backward', 'cancel'], true), 422);

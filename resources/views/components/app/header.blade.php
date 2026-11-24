@@ -1,4 +1,14 @@
-@props(['environment' => null])
+{{--
+Use for the application top bar and its environment indicator. The configured environment supplies the default. Use the environment override for a specimen.
+
+## Slots
+
+Put account and other top-bar controls in the default slot.
+
+## Example
+
+[Application shell](resources/views/components/app/shell.blade.php).
+--}}@props(['environment' => null])
 @php
     $environmentStatus = match ($environment ?? config('app.env')) {
         'local' => ['tone' => 'local', 'label' => 'Local Development'],

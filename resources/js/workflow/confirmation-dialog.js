@@ -1,4 +1,10 @@
 // The shell renders one Blade dialog. Callers supply wording and business actions.
+/**
+ * Mount once from the application shell. Returns the function exposed as appRequestDecision. The shell owns the dialog markup and request serialization.
+ *
+ * @internal
+ * @example resources/js/app-shell.js
+ */
 export function mountConfirmationDialog() {
     const dialog = document.querySelector('[data-confirmation-dialog]');
     if (!dialog) throw new Error('The application confirmation dialog is missing.');

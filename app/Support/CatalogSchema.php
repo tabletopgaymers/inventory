@@ -10,6 +10,12 @@ class CatalogSchema
 
     public const TABLES = ['catalog_metadata', 'catalog_names', 'catalog_references', 'item_metadata', 'item_programs', 'inventory_sources', 'inventory_source_balances', 'inventory_preferences'];
 
+    /**
+     * Catalog phase audit used by BaselineProbe. It compares the live tables and recorded migrations against the Catalog contract.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database, array $tables): array
     {
         $present = array_intersect(self::TABLES, $tables);

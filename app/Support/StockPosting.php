@@ -9,6 +9,13 @@ use Illuminate\Validation\ValidationException;
 
 class StockPosting
 {
+    /**
+     * Post an authorized set or adjustment to storage quantities and record inventory history. Pass a UUID to identify retries. The starting flag is for initial quantities on a newly created item.
+     *
+     * Scope: Domain-specific (Inventory)
+     * Task: Post stock adjustments
+     * @example app/Http/Controllers/InventoryController.php
+     */
     public function post(int $actorId, int $itemId, string $operation, array $rows, bool $starting = false): int
     {
         abort_unless(Str::isUuid($operation), 422);

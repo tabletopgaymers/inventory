@@ -10,6 +10,13 @@ use Illuminate\Validation\ValidationException;
 /** Invoice arithmetic stays rational until the explicitly reconciled cent boundary. */
 class PurchaseCosting
 {
+    /**
+     * Parse a nonnegative USD amount as integer cents with up to two decimal places. A leading decimal point is accepted.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Calculate purchase costs
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function money(mixed $value, string $field): int
     {
         if (is_string($value) && str_starts_with($value,'.')) $value='0'.$value;
@@ -20,11 +27,24 @@ class PurchaseCosting
         return BigDecimal::of($value)->multipliedBy(100)->toScale(0, RoundingMode::Unnecessary)->toInt();
     }
 
+    /**
+     * Convert an exact cent amount to a two-decimal dollar string for display or further decimal arithmetic.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Calculate purchase costs
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function dollars(int $cents): string
     {
         return (string) BigDecimal::of($cents)->dividedBy(100, 2, RoundingMode::Unnecessary);
     }
 
+    /**
+     * Split a charge across weighted invoice lines. Distribute residual cents by largest remainder and preserve input order for ties.
+     *
+     * @internal
+     * @example app/Support/PurchaseCosting.php
+     */
     public static function allocate(int $cents, array $weights, string $field): array
     {
         $total = BigRational::of(0);
@@ -57,6 +77,13 @@ class PurchaseCosting
         return $shares;
     }
 
+    /**
+     * Validate and price a purchase invoice with at least one line. Returns per-line charge allocations, acquisition amounts, and totals without posting inventory.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Calculate purchase costs
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public function calculate(array $data): array
     {
         $input = $data['lines'] ?? [];
@@ -117,6 +144,12 @@ class PurchaseCosting
         return ['lines' => $lines, 'charges' => $charges, 'shipping_method' => $method, 'total' => array_sum(array_column($lines, 'acquisition'))];
     }
 
+    /**
+     * Compute weighted unit cost from held stock and received acquisition value. The receipt-cost rule chooses when to use this arithmetic.
+     *
+     * @internal
+     * @example app/Support/PurchaseCosting.php
+     */
     public static function average(int $held, string $cost, int $received, int $acquisition): string
     {
         $amount = BigDecimal::of(self::dollars($acquisition));
@@ -127,6 +160,13 @@ class PurchaseCosting
         return StockNumbers::cost((string) BigDecimal::of($cost)->multipliedBy($held)->plus($amount)->dividedBy($held + $received, 12, RoundingMode::HalfUp));
     }
 
+    /**
+     * Determine the unit cost at receipt from acquisition cents and positive received units. Use weighted averaging only for lower-cost storage receipts with existing positive stock and known cost.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Calculate purchase costs
+     * @example app/Support/PurchaseFulfillment.php
+     */
     public static function receiptCost(int $held, string $cost, int $received, int $acquisition, bool $storage): string
     {
         $purchase=StockNumbers::cost((string)BigDecimal::of(self::dollars($acquisition))->dividedBy($received,12,RoundingMode::HalfUp));

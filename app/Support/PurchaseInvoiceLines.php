@@ -10,6 +10,13 @@ use Brick\Math\RoundingMode;
 /** Stable row identity is separate from the optional catalog association. */
 class PurchaseInvoiceLines
 {
+    /**
+     * Load the purchase’s requested material into the invoice line format, carrying the requested quantity and estimate as starting values.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Prepare invoice lines
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function requested(int $id): array
     {
         $lines = [];
@@ -30,6 +37,13 @@ class PurchaseInvoiceLines
         return $lines;
     }
 
+    /**
+     * Project prepared invoice lines into display rows with identity, item name, and collection group labels.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Prepare invoice lines
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function rows(array $lines): array
     {
         $rows=[];
@@ -41,6 +55,13 @@ class PurchaseInvoiceLines
         return $rows;
     }
 
+    /**
+     * Validate an invoice line key and recover display identity for catalog and uncatalogued material. Invalid identities raise line validation errors.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Prepare invoice lines
+     * @example app/Http/Controllers/PurchaseController.php
+     */
     public static function identity(int|string $key, array $line): array
     {
         $key = (string) $key;
@@ -58,6 +79,13 @@ class PurchaseInvoiceLines
             'source_request_key' => RequestValues::text($line['source_request_key'] ?? null, 'lines.'.$key.'.source_request_key', 50)];
     }
 
+    /**
+     * Reject a repeated catalog item across invoice lines. Uncatalogued entries may remain separate.
+     *
+     * Scope: Domain-specific (Purchase)
+     * Task: Prepare invoice lines
+     * @example app/Support/PurchaseCosting.php
+     */
     public static function assertUnique(array $lines): void
     {
         $seen = [];

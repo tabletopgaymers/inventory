@@ -3,6 +3,13 @@ import '../app.js';
 const instances = new WeakMap();
 
 // The caller owns dirty/save state. The shell owns the one confirmation UI.
+/**
+ * Uses the shared shell dialog for in-app navigation and the browser unload warning when applicable. Pass current dirty and busy state. Use the returned departure or destroy controls when intentionally leaving or remounting.
+ *
+ * Scope: Shared
+ * Task: Guard a form with unsaved edits
+ * @example resources/js/record-form.js
+ */
 export function mountUnsavedChanges(root, { isDirty, isBusy = () => false,
     message = 'Your changes have not been saved. Keep editing or leave without saving.' }) {
     if (instances.has(root)) return instances.get(root);

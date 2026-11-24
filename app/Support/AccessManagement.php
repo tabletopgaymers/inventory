@@ -10,6 +10,13 @@ class AccessManagement
 {
     public const ROLES = ['basic', 'admin', 'manager', 'procurement'];
 
+    /**
+     * Grant or revoke one supported elevated role under the shared access lock. The service validates actor authorization and protects admin access.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Manage account access
+     * @example app/Http/Controllers/UserController.php
+     */
     public function changeRole(int $actorId, int $targetId, string $role, bool $grant): void
     {
         abort_unless(in_array($role, self::ROLES, true), 422);
@@ -37,11 +44,25 @@ class AccessManagement
         }, 3);
     }
 
+    /**
+     * Disable a user’s sign-in through the guarded account-status transition. The service enforces the admin and self-action rules under the shared access lock.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Manage account access
+     * @example app/Http/Controllers/UserController.php
+     */
     public function disable(int $actorId, int $targetId): void
     {
         $this->setEnabled($actorId, $targetId, false);
     }
 
+    /**
+     * Restore access to a disabled account through the guarded account-status transition.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Manage account access
+     * @example app/Http/Controllers/UserController.php
+     */
     public function enable(int $actorId, int $targetId): void
     {
         $this->setEnabled($actorId, $targetId, true);
@@ -73,6 +94,14 @@ class AccessManagement
         }, 3);
     }
 
+    /**
+     * Persist validated profile data under the shared access lock. Supply the actor when editing another user. The service rechecks access before writing.
+     * The matching initial administrator’s own save can grant Admin, consume the one-time bootstrap, and record the audit.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Save a profile
+     * @example app/Http/Controllers/UserController.php
+     */
     public function saveProfile(int $userId, array $data, ?int $actorId = null): void
     {
         $actorId ??= $userId;

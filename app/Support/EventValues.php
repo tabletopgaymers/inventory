@@ -6,6 +6,13 @@ use Illuminate\Validation\ValidationException;
 
 class EventValues
 {
+    /**
+     * Checks storage or event key syntax and can accept a blank optional value. Eligibility is checked by the workflow against current records.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Validate a destination key
+     * @example app/Support/EventWorkflow.php
+     */
     public static function destination(mixed $value, string $field, bool $optional = false): ?string
     {
         if ($optional && ($value === null || $value === '')) {
@@ -18,6 +25,13 @@ class EventValues
         return $value;
     }
 
+    /**
+     * Accepts up to 1,000 rows and returns a destination-keyed map. Skips empty rows, rejects duplicate destinations, and retains blank quantities for unfinished counts.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Normalize destination allocations
+     * @example app/Support/EventWorkflow.php
+     */
     public static function allocations(mixed $rows, string $field): array
     {
         if (! is_array($rows) || count($rows) > 1000) {
@@ -46,6 +60,13 @@ class EventValues
         return $result;
     }
 
+    /**
+     * Allows a blank count in progress. Finalization requires an explicit count at most equal to brought and complete allocations summing to that count.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Validate remaining stock before allocating it
+     * @example app/Support/EventWorkflow.php
+     */
     public static function counts(mixed $remaining, array $allocations, int $brought, string $field, bool $complete): ?int
     {
         $count = RequestValues::quantity($remaining, $field, true);
@@ -65,6 +86,13 @@ class EventValues
     }
 
     /** Prevent user text becoming spreadsheet formula content, including whitespace prefixes. */
+    /**
+     * Prefixes text beginning with a spreadsheet formula marker, including after whitespace. Continue to use the CSV writer for quoting and field separation.
+     *
+     * Scope: Domain-specific (Events)
+     * Task: Prepare event report values for spreadsheet export
+     * @example app/Http/Controllers/EventController.php
+     */
     public static function csv(mixed $value): string
     {
         $text = (string) $value;

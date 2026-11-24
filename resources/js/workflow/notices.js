@@ -2,6 +2,13 @@
 const delays = {success: 3000, warning: 10000};
 const states = new WeakMap();
 
+/**
+ * Times visible success and warning messages after three and ten seconds respectively. Leaves errors visible. An identical visible message keeps its current timer unless restart is requested.
+ *
+ * Scope: Shared
+ * Task: Apply the shared dismissal schedule to a banner
+ * @example resources/js/app-shell.js
+ */
 export function syncNoticeTimer(element, {restart = false} = {}) {
     const kind = element.matches('.error') ? 'error' : element.matches('.warning') ? 'warning' : element.matches('.notice') ? 'success' : null;
     const message = [...element.childNodes]
@@ -22,6 +29,13 @@ export function syncNoticeTimer(element, {restart = false} = {}) {
     }, delays[kind]);
 }
 
+/**
+ * Sets the message, tone and announcement role before starting the relevant dismissal timer. Use a notice element reserved for feedback because its contents are replaced.
+ *
+ * Scope: Shared
+ * Task: Show or replace a page notice
+ * @example resources/js/relocation.js
+ */
 export function showNotice(element, message, kind = 'success') {
     element.hidden = false;
     element.classList.toggle('error', kind === 'error');
@@ -33,6 +47,13 @@ export function showNotice(element, message, kind = 'success') {
 }
 
 // Kept for existing workflow adapters; repeated mounting does not restart timers.
+/**
+ * Applies the shared notice timing to rendered page banners. Repeating the scan keeps an unchanged banner's running timer.
+ *
+ * Scope: Shared
+ * Task: Synchronize existing feedback banners
+ * @example resources/js/purchase-request.js
+ */
 export function mountNotices() {
     document.querySelectorAll('.notice, .warning, .error').forEach(element => syncNoticeTimer(element));
 }

@@ -10,6 +10,12 @@ class ProfilePreferences
     public const MIGRATION = '2026_10_07_000000_add_user_time_zone';
     public const CONTACT_MIGRATION = '2026_10_11_000000_add_user_contact_preferences';
 
+    /**
+     * Audit the profile preference migration and required users-table columns for BaselineProbe. An optional table listing lets the caller reuse its inspection.
+     *
+     * @internal
+     * @example app/Support/BaselineProbe.php
+     */
     public function state($database, ?array $tables = null): array
     {
         $schema = $database->getSchemaBuilder();
@@ -35,6 +41,13 @@ class ProfilePreferences
             'ready' => $timeReady && $contactReady];
     }
 
+    /**
+     * Run the guarded profile preference migration after authentication and compatibility checks pass. Development requires the hosted flag.
+     *
+     * Scope: Domain-specific (Setup and readiness)
+     * Task: Prepare profile preferences
+     * @example routes/console.php
+     */
     public function prepare(bool $hosted): bool
     {
         $probe = app(BaselineProbe::class);

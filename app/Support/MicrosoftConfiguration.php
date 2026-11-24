@@ -4,11 +4,25 @@ namespace App\Support;
 
 class MicrosoftConfiguration
 {
+    /**
+     * Check whether an input is a string in the hyphenated GUID format expected by Microsoft configuration and claim validation.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Check Microsoft identifiers
+     * @example app/Support/MicrosoftIdentity.php
+     */
     public static function guid(mixed $value): bool
     {
         return is_string($value) && preg_match('/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/iD', $value) === 1;
     }
 
+    /**
+     * Validate configured Microsoft sign-in inputs and their callback relationship before starting the authentication flow.
+     *
+     * Scope: Domain-specific (Identity and access)
+     * Task: Check Microsoft sign-in configuration
+     * @example app/Http/Controllers/MicrosoftAuthController.php
+     */
     public function ready(): bool
     {
         $configuredUrl = config('app.url');
