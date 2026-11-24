@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -115,6 +116,11 @@ class InventorySearch
         return $result;
     }
 
+    public function storageBalances(array $itemIds): Collection
+    {
+        return DB::table('inventory_balances')->whereIntegerInRaw('item_id', $itemIds)->get()->groupBy('item_id');
+    }
+
     public function results(array $criteria, bool $naturalNames = false, ?array $itemIds = null): array
     {
         $items = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')->join('categories', 'categories.id', '=', 'collections.category_id')
@@ -138,7 +144,7 @@ class InventorySearch
         if ($naturalNames) $items->orderByRaw('NATURAL_SORT_KEY(items.name)');
         $items = $items->orderBy('items.name')->orderBy('items.id')->get();
         $ids = $items->pluck('id')->all();
-        $balances = DB::table('inventory_balances')->whereIn('item_id', $ids)->get()->groupBy('item_id');
+        $balances = $this->storageBalances($ids);
         $sources = DB::table('inventory_source_balances')->join('inventory_sources', 'inventory_sources.id', '=', 'inventory_source_balances.source_id')
             ->whereIn('item_id', $ids)->whereIn('kind', ['event', 'transit', 'ordered'])->where('active', true)
             ->select('inventory_source_balances.*', 'inventory_sources.kind')->get()->groupBy('item_id');

@@ -11,6 +11,17 @@
 .app-table-panel-body { min-width: 0; max-width: 100%; overflow-x: auto; }
 .app-table-panel-body:focus-visible { outline: 2px solid var(--app-primary); outline-offset: -2px; }
 .app-shell .app-table-panel thead th { border-radius: 0; }
+.app-items-table td.app-items-table-text { min-width: 25ch; white-space: normal; overflow-wrap: normal; }
+.app-items-table td.app-items-table-sku { white-space: nowrap; }
+.app-shell .app-list-table-panel .app-items-table td.number { white-space: nowrap; overflow-wrap: normal; }
+.app-shell .app-items-table thead th { white-space: normal; overflow-wrap: normal; }
+@media screen and (max-width: theme(--breakpoint-columns-wide)) {
+    .app-shell .app-items-table thead th { min-width: 10ch; }
+    .app-items-table-heading { display: inline-block; max-width: 25ch; }
+}
+@media screen {
+    .app-shell .app-list-table-panel .app-items-table tbody:not(:last-of-type) > tr:last-child > * { border-bottom: 1px solid var(--app-border); }
+}
 .app-shell .app-action.app-table-sort {
     min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent;
     color: inherit; font: inherit; box-shadow: none; white-space: nowrap;

@@ -69,4 +69,10 @@
 </tbody></table>
 </x-app.table-region>
 @endif
+@if($kind === 'purposes')
+<x-app.table-region label="Items">
+    <x-slot:header><h2>Items</h2></x-slot:header>
+    <x-app.items-table :rows="$purposeTable['rows']" :columns="$purposeTable['columns']" />
+</x-app.table-region>
+@endif
 @endsection

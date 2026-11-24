@@ -64,6 +64,34 @@
         <li>Use the normal dark text color for group headings; purple indicates a link.</li>
         <li>Indent record names beneath group headers with the shared <code>app-grouped-item</code> style. Its padding comes from <code>--app-grouped-item-padding</code>, so changes apply globally.</li>
     </ul>
+    <h3 id="items-table">Shared Items Table</h3>
+    <p>Use <code>x-app.items-table</code> inside <code>x-app.table-region</code> for a read-only table of inventory items. The region handles horizontal scrolling. The Items Table provides Item and SKU columns by default and can show collection subheadings and additional columns.</p>
+    <ul>
+        <li>Column headings wrap at word boundaries. At the <code>columns-wide</code> breakpoint (64rem) and below, each heading cell has a 10ch minimum and heading text has a 25ch maximum. Wider screens let headings use the available space.</li>
+        <li>Item and text values wrap at word boundaries with a 25ch minimum. SKU and numeric values stay on one line in compact columns. Body content can make a column wider than its heading.</li>
+    </ul>
+    @php
+        $sampleItems = [
+            [
+                'item' => ['name' => "I'll Go With You", 'sku' => 'SAMPLE-RIBBON'],
+                'group' => ['key' => 'ribbons', 'category' => 'Badge Ribbon', 'collection' => 'Extra'],
+                'values' => ['total' => 2740, 'location' => 250],
+            ],
+            [
+                'item' => ['name' => 'Square Terminal w/ Cover & Case #3', 'sku' => 'SAMPLE-TERMINAL'],
+                'group' => ['key' => 'payments', 'category' => 'Donation', 'collection' => 'Cash and Payments'],
+                'values' => ['total' => 2, 'location' => 1],
+            ],
+        ];
+        $sampleItemColumns = [
+            ...\App\View\Components\App\ItemsTable::DEFAULT_COLUMNS,
+            ['key' => 'total', 'label' => 'Total', 'role' => 'number'],
+            ['key' => 'location', 'label' => 'Dallas–Fort Worth Texas Metroplex', 'role' => 'number'],
+        ];
+    @endphp
+    <x-app.table-region label="Responsive items table example">
+        <x-app.items-table :rows="$sampleItems" :columns="$sampleItemColumns" />
+    </x-app.table-region>
     <div class="app-content" id="compact-nonwrapping-tables">
         <h4>For consideration: compact, nonwrapping tables</h4>
         <p>Jeff liked this pattern while refining Relocation on October 14, 2026. It is implemented in the singular Relocation Material and Review tables and is a candidate for reuse, not a change to every table or the wrapping convention above. When asked for this pattern, use the following details together.</p>

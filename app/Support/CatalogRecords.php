@@ -66,6 +66,18 @@ class CatalogRecords
         return $this->records($kind)->firstWhere('id', $id) ?? abort(404);
     }
 
+    public function itemsForPurpose(int $purposeId)
+    {
+        return DB::table('items')
+            ->join('collections', 'collections.id', '=', 'items.collection_id')
+            ->join('categories', 'categories.id', '=', 'collections.category_id')
+            ->where('collections.purpose_id', $purposeId)
+            ->orderBy('categories.name')->orderBy('collections.name')->orderBy('collections.id')
+            ->orderByRaw('NATURAL_SORT_KEY(items.name)')->orderBy('items.name')->orderBy('items.id')
+            ->get(['items.id', 'items.name', 'items.sku', 'items.collection_id',
+                'categories.name as category_name', 'collections.name as collection_name']);
+    }
+
     public function collectionClassification(object $collection): array
     {
         return [

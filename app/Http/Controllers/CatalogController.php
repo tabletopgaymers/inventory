@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Support\BaselineProbe;
 use App\Support\CatalogRecords;
+use App\Support\InventorySearch;
 use App\Support\PurchaseSupplierReturn;
 use App\Support\StockNumbers;
 use App\Support\StockPosting;
+use App\View\Components\App\ItemsTable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,8 +108,42 @@ class CatalogController
         $classification = $kind === 'collections' ? $service->collectionClassification($row) : [];
         return view('catalog.show', PurchaseSupplierReturn::context($request, $kind) + $classification + [
             'kind' => $kind, 'record' => $row, 'category' => $category, 'children' => $children,
+            'purposeTable' => $kind === 'purposes' ? $this->purposeItemTable($service, $record) : null,
             'canManage' => $this->canMaintain($request, $kind, $record),
         ]);
+    }
+
+    private function purposeItemTable(CatalogRecords $catalog, int $purposeId): array
+    {
+        $items = $catalog->itemsForPurpose($purposeId);
+        $locations = $catalog->records('storage_locations');
+        $balances = app(InventorySearch::class)->storageBalances($items->pluck('id')->all());
+
+        $columns = [
+            ...ItemsTable::DEFAULT_COLUMNS,
+            ['key' => 'total', 'label' => 'Total', 'role' => 'number'],
+            ...$locations->map(fn ($location) => [
+                'key' => 'storage:'.$location->id,
+                'label' => $location->name,
+                'role' => 'number',
+                'nullDisplay' => '0',
+            ]),
+        ];
+
+        $rows = $items->map(function ($item) use ($balances) {
+            $stock = $balances->get($item->id, collect())->mapWithKeys(fn ($balance) => [
+                'storage:'.$balance->storage_location_id => (int) $balance->quantity,
+            ])->all();
+
+            return [
+                'key' => $item->id,
+                'item' => ['name' => $item->name, 'sku' => $item->sku, 'link' => ['href' => CatalogRecords::viewUrl('items', $item->id)]],
+                'group' => ['key' => $item->collection_id, 'category' => $item->category_name, 'collection' => $item->collection_name],
+                'values' => ['total' => array_sum($stock)] + $stock,
+            ];
+        });
+
+        return compact('columns', 'rows');
     }
 
     public function archive(Request $request, string $kind, int $record)
