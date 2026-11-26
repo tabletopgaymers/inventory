@@ -21,7 +21,7 @@ on local and development installations.
 | Shared styles and settings | [CSS entry](resources/css/app.css), [active theme](resources/design/phase-a/app-input.css), [settings and breakpoints](resources/css/settings.css) |
 | Shared behavior | [JavaScript entry](resources/js/app.js), [application shell behavior](resources/js/app-shell.js), [workflow modules](resources/js/workflow) |
 | Print styling | [Shared print tables](resources/css/print-tables.css), [standalone print stylesheet](resources/css/print.css) |
-| Style Guide itself | [Guide routes](routes/design-phase-a.php), [examples](resources/views/design/phase-a), [Guide styles](resources/css/style-guide.css) |
+| Style Guide itself | [Guide routes](routes/style-guide.php), [examples](resources/views/design/phase-a), [Guide styles](resources/css/style-guide.css) |
 
 Start with the shared components and their examples. Update the relevant example
 when changing a public component option or visual standard. Keep form names,

@@ -1,15 +1,12 @@
 <?php
 
-use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\MicrosoftAuthController;
-use App\Http\Controllers\PurchaseController;
-use App\Http\Controllers\RelocationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-if (app()->environment(['local', 'development']) && is_file(__DIR__.'/design-phase-a.php')) {
-    require __DIR__.'/design-phase-a.php';
+if (app()->environment(['local', 'development']) && is_file(__DIR__.'/style-guide.php')) {
+    require __DIR__.'/style-guide.php';
 }
 
 Route::get('/baseline', function (Request $request) {
@@ -27,42 +24,17 @@ Route::get('/signed-out', function (Request $request) {
         'microsoftLogout' => $request->session()->pull('microsoft_logout_requested', false),
     ]);
 });
-Route::middleware('auth')->group(function () {
+
+// Inventory registers in sections to preserve its order around Accounts and Catalog.
+$inventoryRoutes = require __DIR__.'/inventory.php';
+
+Route::middleware('auth')->group(function () use ($inventoryRoutes) {
     Route::view('/', 'home');
-    Route::get('/purchase', [PurchaseController::class, 'index']);
-    Route::get('/purchase/new', [PurchaseController::class, 'create'])->block(120, 10);
-    Route::get('/purchase/work/{token}', [PurchaseController::class, 'work'])->block(120, 10);
-    Route::post('/purchase/work/{token}', [PurchaseController::class, 'save'])->block(120, 10);
-    Route::get('/purchase/work/{token}/search', [PurchaseController::class, 'search'])->block(120, 10);
-    Route::post('/purchase/work/{token}/invoice', [PurchaseController::class, 'invoice'])->block(120, 10);
-    Route::post('/purchase/work/{token}/receive', [PurchaseController::class, 'receive'])->block(120, 10);
-    Route::post('/purchase/work/{token}/note', [PurchaseController::class, 'note'])->block(120, 10);
-    Route::post('/purchase/work/{token}/transition', [PurchaseController::class, 'transition'])->block(120, 10);
-    Route::get('/purchase/{id}', [PurchaseController::class, 'show'])->whereNumber('id')->block(120, 10);
-    Route::get('/relocation', [RelocationController::class, 'index']);
-    Route::get('/relocation/new', [RelocationController::class, 'create'])->block(120, 10);
-    Route::get('/relocation/work/{token}', [RelocationController::class, 'work'])->block(120, 10);
-    Route::get('/relocation/work/{token}/print', [RelocationController::class, 'print'])->block(120, 10);
-    Route::post('/relocation/work/{token}', [RelocationController::class, 'save'])->block(120, 10);
-    Route::get('/relocation/work/{token}/search', [RelocationController::class, 'search'])->block(120, 10);
-    Route::get('/relocation/work/{token}/balances', [RelocationController::class, 'balances'])->block(120, 10);
-    Route::post('/relocation/work/{token}/accept', [RelocationController::class, 'accept'])->block(120, 10);
-    Route::post('/relocation/work/{token}/fulfillment', [RelocationController::class, 'saveFulfillment'])->block(120, 10);
-    Route::post('/relocation/work/{token}/basic', [RelocationController::class, 'saveAcceptedBasic'])->block(120, 10);
-    Route::post('/relocation/work/{token}/tracking', [RelocationController::class, 'saveTracking'])->block(120, 10);
-    Route::post('/relocation/work/{token}/ship', [RelocationController::class, 'ship'])->block(120, 10);
-    Route::post('/relocation/work/{token}/receive', [RelocationController::class, 'receive'])->block(120, 10);
-    Route::post('/relocation/work/{token}/reconciliation', [RelocationController::class, 'saveReconciliation'])->block(120, 10);
-    Route::post('/relocation/work/{token}/complete', [RelocationController::class, 'complete'])->block(120, 10);
-    Route::get('/relocation/{id}', [RelocationController::class, 'show'])->whereNumber('id')->block(120, 10);
-    Route::get('/inventory/item-history', [InventoryController::class, 'index']);
-    Route::get('/inventory/items/{item}', [InventoryController::class, 'show'])->whereNumber('item');
-    Route::get('/inventory/items/{item}/edit', [InventoryController::class, 'edit'])->whereNumber('item');
-    Route::post('/inventory/items/{item}/preview', [InventoryController::class, 'preview'])->whereNumber('item');
-    Route::get('/inventory/items/{item}/review/{operation}', [InventoryController::class, 'review'])->whereNumber('item');
-    Route::post('/inventory/items/{item}/review/{operation}', [InventoryController::class, 'save'])->whereNumber('item');
-    Route::get('/inventory/adjustments/{adjustment}', [InventoryController::class, 'adjustment'])->whereNumber('adjustment');
-    Route::get('/inventory/adjustments/{adjustment}/result', [InventoryController::class, 'result'])->whereNumber('adjustment');
+
+    require __DIR__.'/purchase.php';
+    require __DIR__.'/relocation.php';
+    $inventoryRoutes['items']();
+
     Route::get('/profile', [UserController::class, 'profile']);
     Route::post('/profile', [UserController::class, 'saveProfile']);
     Route::get('/users', [UserController::class, 'directory']);
@@ -72,9 +44,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/users/{user}/enable', [UserController::class, 'enable']);
 });
 
-require __DIR__.'/phase-five.php';
+Route::middleware('auth')->group(function () use ($inventoryRoutes) {
+    $inventoryRoutes['reconcileAndItemMaintenance']();
+    require __DIR__.'/catalog.php';
+    $inventoryRoutes['browse']();
+});
 
-require __DIR__.'/phase-eight.php';
+require __DIR__.'/events.php';
 
 // Unknown page links follow the same sign-in flow before displaying the safe 404.
 Route::fallback(fn () => abort(404))->middleware('auth');

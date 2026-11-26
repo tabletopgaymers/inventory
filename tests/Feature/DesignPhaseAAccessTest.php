@@ -60,7 +60,7 @@ class DesignPhaseAAccessTest extends TestCase
         $router = new Router($this->app['events'], $this->app);
         $this->app->instance('router', $router);
         Route::clearResolvedInstance('router');
-        require base_path('routes/design-phase-a.php');
+        require base_path('routes/style-guide.php');
 
         return $router;
     }

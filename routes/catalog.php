@@ -1,0 +1,23 @@
+<?php
+
+use App\Http\Controllers\CatalogController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/catalog', [CatalogController::class, 'index']);
+Route::get('/catalog/lists', [\App\Http\Controllers\SavedListController::class, 'index']);
+Route::get('/catalog/lists/create', [\App\Http\Controllers\SavedListController::class, 'create']);
+Route::post('/catalog/lists/create', [\App\Http\Controllers\SavedListController::class, 'save']);
+Route::get('/catalog/lists/data', [\App\Http\Controllers\CatalogSnapshotController::class, 'data']);
+Route::get('/catalog/lists/{id}', [\App\Http\Controllers\SavedListController::class, 'show'])->whereNumber('id');
+Route::get('/catalog/lists/{id}/edit', [\App\Http\Controllers\SavedListController::class, 'edit'])->whereNumber('id');
+Route::post('/catalog/lists/{id}/edit', [\App\Http\Controllers\SavedListController::class, 'save'])->whereNumber('id');
+Route::get('/catalog/lists/{id}/copy', [\App\Http\Controllers\SavedListController::class, 'copy'])->whereNumber('id');
+Route::post('/catalog/lists/{id}/delete', [\App\Http\Controllers\SavedListController::class, 'delete'])->whereNumber('id');
+Route::get('/catalog/{kind}', [CatalogController::class, 'index']);
+Route::get('/catalog/{kind}/create', [CatalogController::class, 'form']);
+Route::get('/catalog/{kind}/{record}', [CatalogController::class, 'show'])->whereIn('kind', array_keys(\App\Support\CatalogRecords::KINDS))->whereNumber('record');
+Route::post('/catalog/{kind}/create', [CatalogController::class, 'save']);
+Route::get('/catalog/{kind}/{record}/edit', [CatalogController::class, 'form'])->whereNumber('record');
+Route::post('/catalog/{kind}/{record}/edit', [CatalogController::class, 'save'])->whereNumber('record');
+Route::get('/catalog/{kind}/{record}/archive', [CatalogController::class, 'archive'])->whereNumber('record');
+Route::post('/catalog/{kind}/{record}/lifecycle', [CatalogController::class, 'lifecycle'])->whereNumber('record');

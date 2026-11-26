@@ -45,7 +45,7 @@
     <h3>Code entry points and reuse</h3>
     <ul>
         <li><code>app/Http/Controllers/BrowserMemoryDemoController.php</code>: lightweight demo page shell. <code>CatalogSnapshotController.php</code> supplies the shared read-only snapshot, also available to authenticated Catalog Lists.</li>
-        <li><code>routes/design-phase-a.php</code>: authenticated, local/development-only <code>GET /style-guide/browser-memory-demo</code> and <code>GET /style-guide/browser-memory-demo/data</code>. The latter returns <code>{catalog}</code> with private/no-store HTTP caching.</li>
+        <li><code>routes/style-guide.php</code>: authenticated, local/development-only <code>GET /style-guide/browser-memory-demo</code> and <code>GET /style-guide/browser-memory-demo/data</code>. The latter returns <code>{catalog}</code> with private/no-store HTTP caching.</li>
         <li><code>resources/js/catalog-snapshot.js</code>: reusable <code>loadCatalogSnapshot({userId, endpoint})</code> and <code>CATALOG_MAX_AGE_MS</code>. It returns the catalog, original loadedAt, cache source and persistence status. A cache hit avoids requesting the JSON endpoint.</li>
         <li><code>resources/js/item-list-picker.js</code>: shared hierarchy search, selection and location display. <code>resources/js/browser-memory-demo.js</code> mounts it with demo-specific localStorage selection persistence; Catalog Lists supplies database-backed selections instead.</li>
         <li><code>resources/views/components/app/item-list-picker.blade.php</code> and <code>resources/css/item-list-picker.css</code>: shared picker panels, table and presentation. The demo imports these through its own entries. Assets are registered in <code>vite.config.js</code>.</li>
