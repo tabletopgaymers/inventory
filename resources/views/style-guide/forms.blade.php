@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Forms')
 @section('intro', 'Shared fields, form actions, and feedback.')
 @section('guide-content')

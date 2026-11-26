@@ -1,8 +1,8 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Application frame')
 @section('intro', 'The current shared application frame, environment status bars and a sample two-panel user page.')
 @section('guide-content')
-@include('design.phase-a.user-example')
+@include('style-guide.user-example')
 <x-app.guide-divider />
 <div class="app-content" id="profile-example">
     <h2>Shared frame and panels</h2>

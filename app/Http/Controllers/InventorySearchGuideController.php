@@ -28,7 +28,7 @@ class InventorySearchGuideController
     {
         $this->ready();
         $service = app(InventorySearchControls::class);
-        return view('design.phase-a.inventory-search', ['fullDefinition' => $service->definition($this->configuration('full')),
+        return view('style-guide.inventory-search', ['fullDefinition' => $service->definition($this->configuration('full')),
             'pickerDefinition' => $service->definition($this->configuration('picker'))]);
     }
 

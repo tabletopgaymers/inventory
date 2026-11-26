@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Vite demo')
 @section('intro', 'An isolated asset-build demonstration. Existing pages continue using their public assets.')
 @section('guide-content')

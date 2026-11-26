@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Optional table headers and footers')
 @section('intro', 'Optional sections supported by the shared table-panel component.')
 @section('guide-content')

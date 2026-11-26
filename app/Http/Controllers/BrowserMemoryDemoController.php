@@ -7,7 +7,7 @@ class BrowserMemoryDemoController
 {
     public function index()
     {
-        return response()->view('design.phase-a.browser-memory-demo')
+        return response()->view('style-guide.browser-memory-demo')
             ->header('Cache-Control', 'private, no-store');
     }
 

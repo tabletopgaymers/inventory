@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-/** Read-only complete Phase 6 intake recovery contract. No installer in this bridge. */
+/** Read-only schema checks for purchase and relocation request intake. */
 class RequestSchema
 {
     public const MIGRATION = '2026_10_06_030000_create_request_intake_tables';
@@ -10,7 +10,7 @@ class RequestSchema
     public const TABLES = ['purchase_requests', 'purchase_request_lines', 'purchase_material_lines', 'purchase_request_notes', 'purchase_request_activity', 'relocation_requests', 'relocation_request_lines', 'relocation_request_activity'];
 
     /**
-     * Request phase audit used by BaselineProbe to assess recorded migration and live table compatibility.
+     * Request intake schema audit used by BaselineProbe to assess recorded migration and live table compatibility.
      *
      * @internal
      * @example app/Support/BaselineProbe.php

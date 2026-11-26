@@ -1,5 +1,5 @@
-@extends('design.phase-a.layout')
-@section('title', 'Tab form')
+@extends('style-guide.layout')
+@section('title', 'Tabbed form')
 @section('intro', 'Demo values are retained in this browser. Switch tabs to work with different sections of one form.')
 @section('guide-content')
 <form class="app-panel-stack" id="guide-tab-form">

@@ -1,5 +1,5 @@
 /* Existing theme and app rules stay in one source during incremental extraction. */
-@import '../design/phase-a/app-input.css';
+@import './theme.css';
 @import './settings.css';
 @import './actions.css';
 @import './status-badges.css';

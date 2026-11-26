@@ -50,7 +50,7 @@ Composer development dependencies installed (`composer install`). Keep
 configuration and route caches out of this checkout.
 
 ```sh
-php vendor/bin/phpunit --no-configuration --bootstrap vendor/autoload.php tests/Feature/DesignPhaseAAccessTest.php
+php vendor/bin/phpunit --no-configuration --bootstrap vendor/autoload.php tests/Feature/StyleGuideAccessTest.php
 php vendor/bin/phpunit --no-configuration --bootstrap vendor/autoload.php tests/Feature/UserAccountAccessTest.php
 ```
 

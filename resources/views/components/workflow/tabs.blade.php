@@ -7,7 +7,7 @@ The optional default slot renders next to the tab list for related navigation.
 
 ## Examples
 
-[Purchase work](resources/views/purchase/work.blade.php) and [Tab form](/style-guide/tab-form).
+[Purchase work](resources/views/purchase/work.blade.php) and [Tabbed form](/style-guide/tab-form).
 --}}@props(['tabs', 'prefix', 'active', 'label'])
 <div class="workflow-tab-panel">
     <div class="workflow-navigation">

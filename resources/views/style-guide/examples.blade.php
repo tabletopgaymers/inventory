@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Example uses')
 @section('intro', 'Current patterns composed into sample screens.')
 @section('guide-content')
@@ -8,7 +8,7 @@
         <tr><td><a href="#profile-example">Sample Volunteer</a></td><td>volunteer@example.test</td><td></td></tr>
     </tbody></table></x-app.table-region>
 <x-app.guide-divider />
-@include('design.phase-a.user-example')
+@include('style-guide.user-example')
 <x-app.guide-divider />
 <div class="app-content" id="profile-example">
 <x-workflow.heading><h2>Profile editing</h2><div class="app-actions"><x-app.action variant="danger" type="button" >Discard</x-app.action><x-app.action variant="primary" type="button" >Save</x-app.action></div></x-workflow.heading>

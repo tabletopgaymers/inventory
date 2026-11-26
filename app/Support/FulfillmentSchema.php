@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-/** Exact additive Phase 7 contract; absent is compatible, partial is never ready. */
+/** Additive purchase and relocation fulfillment schema contract. An absent schema is compatible; a partial schema is never ready. */
 class FulfillmentSchema
 {
     public const MIGRATION = '2026_10_07_010000_create_fulfillment_tables';
@@ -10,7 +10,7 @@ class FulfillmentSchema
     public const TABLES = ['purchase_fulfillment', 'purchase_fulfillment_lines', 'relocation_fulfillment', 'relocation_fulfillment_lines', 'request_stock_entries'];
 
     /**
-     * Fulfillment phase audit used by BaselineProbe to assess migration state and live table compatibility.
+     * Fulfillment schema audit used by BaselineProbe to assess migration state and live table compatibility.
      *
      * @internal
      * @example app/Support/BaselineProbe.php

@@ -7,7 +7,7 @@ class SavedListSchema
     public const TABLES = ['saved_lists', 'saved_list_items'];
 
     /**
-     * Saved Lists phase audit used by BaselineProbe to assess the recorded migration and live table contract.
+     * Saved Lists schema audit used by BaselineProbe to assess the recorded migration and live table contract.
      *
      * @internal
      * @example app/Support/BaselineProbe.php

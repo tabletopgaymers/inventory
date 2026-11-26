@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Browser Memory Demo')
 @section('guide-notice-in-panel', 'true')
 @section('guide-content')

@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Workflow components')
 @section('intro', 'Shared components used by Purchase and Relocation. These examples do not save data.')
 @section('guide-content')

@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 
-class DesignPhaseAAccessTest extends TestCase
+class StyleGuideAccessTest extends TestCase
 {
     public function createApplication()
     {
@@ -32,7 +32,7 @@ class DesignPhaseAAccessTest extends TestCase
         $router = $this->styleGuideRouter('local');
         $route = $router->getRoutes()->match(Request::create('/style-guide/wrapper'));
 
-        $this->assertSame('design.phase-a.local.wrapper', $route->getName());
+        $this->assertSame('style-guide.local.wrapper', $route->getName());
         $this->assertSame(['GET', 'HEAD'], $route->methods());
         $this->assertContains('auth', $route->gatherMiddleware());
     }
@@ -42,7 +42,7 @@ class DesignPhaseAAccessTest extends TestCase
         $routes = $this->styleGuideRouter('development')->getRoutes();
         $examples = $routes->match(Request::create('/style-guide/examples'));
 
-        $this->assertSame('design.phase-a.hosted.examples', $examples->getName());
+        $this->assertSame('style-guide.hosted.examples', $examples->getName());
         foreach ($routes as $route) {
             $this->assertContains('auth', $route->gatherMiddleware());
             $this->assertNotSame('style-guide/wrapper', $route->uri());

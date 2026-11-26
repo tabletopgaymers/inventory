@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Presentation')
 @section('intro', 'Typography, spacing, headings and information surfaces.')
 @section('guide-content')
@@ -23,7 +23,7 @@
     <h3>Settings</h3>
     <p class="app-field-help">This table reads shared CSS tokens for all three presets. Breakpoints are compiled from those same theme tokens; fixed rows and merged cells are detected automatically. The panel-padding and line-height pixel figures are rendered measurements. Relative values remain in rem; rendered measurements use pixels at the current viewport and zoom. Your saved density is unchanged.</p>
 </div>
-@include('design.phase-a.density-settings')
+@include('style-guide.density-settings')
 </section>
 <x-app.guide-divider />
 <section id="titles" aria-labelledby="titles-title">
@@ -52,10 +52,10 @@
     <p>A table panel presents tabular information without outer padding. Search, filters and surrounding page actions are separate components. Optional header and footer slots can contain brief context or actions specifically associated with the table.</p>
     <h3>Plain table panel</h3>
     <p>All panel and table frames use the shared <code>--app-radius: 8px</code>. Plain tables and tables with optional sections have the same frame and an inner horizontally scrolling body; headers and footers stay outside that scroll region. Tables grow vertically with the page. Field, button, badge and tab shapes remain separate controls.</p>
-    @include('design.phase-a.table-sample', ['tableLabel' => 'Plain grouped inventory table'])
+    @include('style-guide.table-sample', ['tableLabel' => 'Plain grouped inventory table'])
     <h3>Table panel with optional header and footer</h3>
     <p>Use a header, a footer, both or neither. Their content is unrestricted: headings, descriptions and buttons are examples, not requirements. Omitted slots create no empty sections. Header and footer padding aligns with table cells; the table keeps square internal corners within the rounded outer panel.</p>
-    @include('design.phase-a.table-sample', ['tableLabel' => 'Grouped inventory table with optional sections', 'tableSections' => true])
+    @include('style-guide.table-sample', ['tableLabel' => 'Grouped inventory table with optional sections', 'tableSections' => true])
     <h3>Table conventions</h3>
     <ul>
         <li>Use linked record names for navigation. Keep action buttons and disclosure controls outside table rows.</li>

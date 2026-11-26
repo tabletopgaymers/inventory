@@ -80,7 +80,7 @@ class BaselineProbe
     }
 
     /**
-     * Inspect the database schema and build phase compatibility and readiness flags. This performs the full audit used by guarded setup commands.
+     * Inspect the database schema and build feature compatibility and readiness flags. This performs the full audit used by guarded setup commands.
      *
      * Scope: Domain-specific (Setup and readiness)
      * Task: Audit schema compatibility

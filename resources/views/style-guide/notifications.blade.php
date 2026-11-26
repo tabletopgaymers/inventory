@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Notifications')
 @section('intro', 'Notices, confirmation dialogs and warnings about unsaved work.')
 @section('guide-content')

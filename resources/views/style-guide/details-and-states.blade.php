@@ -1,6 +1,6 @@
-@extends('design.phase-a.layout')
-@section('title', 'Orphaned examples')
-@section('intro', 'Temporary holding page for examples outside the three main component pages.')
+@extends('style-guide.layout')
+@section('title', 'Details and states')
+@section('intro', 'Examples of record details, notes, loading states, sign-in feedback and role actions.')
 @section('guide-content')
 <div class="app-content"><h2>Record details</h2><x-app.detail-list variant="content" ><dt>Name</dt><dd>Sample Administrator</dd><dt>MS account</dt><dd>sample@example.test</dd><dt>Elevated roles</dt><dd>admin, manager, procurement</dd><dt>Time zone</dt><dd>America/Chicago</dd></x-app.detail-list><p>Use a definition list for labeled values. See the complete <a href="/style-guide/examples#users">user example</a>.</p></div>
 <x-app.guide-divider />

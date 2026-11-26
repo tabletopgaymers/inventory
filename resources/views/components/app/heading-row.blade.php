@@ -7,6 +7,6 @@ Put the heading, supplemental content, and actions in the default slot.
 
 ## Example
 
-[Table specimen](resources/views/design/phase-a/table-sample.blade.php).
+[Table specimen](resources/views/style-guide/table-sample.blade.php).
 --}}@props(['variant' => 'section'])
 <div {{ $attributes->class(['app-heading-row', 'app-heading-row-'.$variant]) }}>{{ $slot }}</div>

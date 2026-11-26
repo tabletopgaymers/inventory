@@ -1,19 +1,19 @@
 @import "tailwindcss" source(none);
 
-@source "../../views/components/app";
-@source "../../views/components/workflow";
-@source "../../views/purchase";
-@source "../../views/relocation";
-@source "../../views/catalog";
-@source "../../views/inventory";
-@source "../../views/layout.blade.php";
-@source "../../views/home.blade.php";
-@source "../../views/login.blade.php";
-@source "../../views/signed-out.blade.php";
-@source "../../views/profile.blade.php";
-@source "../../views/users.blade.php";
-@source "../../views/user-show.blade.php";
-@source "../../views/welcome.blade.php";
+@source "../views/components/app";
+@source "../views/components/workflow";
+@source "../views/purchase";
+@source "../views/relocation";
+@source "../views/catalog";
+@source "../views/inventory";
+@source "../views/layout.blade.php";
+@source "../views/home.blade.php";
+@source "../views/login.blade.php";
+@source "../views/signed-out.blade.php";
+@source "../views/profile.blade.php";
+@source "../views/users.blade.php";
+@source "../views/user-show.blade.php";
+@source "../views/welcome.blade.php";
 
 @layer base {
   :root {

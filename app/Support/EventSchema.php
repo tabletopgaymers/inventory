@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-/** Exact additive Phase 8 contract; absent is compatible, partial is never ready. */
+/** Additive Events schema contract. An absent schema is compatible; a partial schema is never ready. */
 class EventSchema
 {
     public const MIGRATION = '2026_10_07_020000_create_event_tables';
@@ -10,7 +10,7 @@ class EventSchema
     public const TABLES = ['event_workflows', 'event_lines', 'event_operations', 'event_stock_entries'];
 
     /**
-     * Events phase audit used by BaselineProbe to assess migration state and live table compatibility.
+     * Events schema audit used by BaselineProbe to assess migration state and live table compatibility.
      *
      * @internal
      * @example app/Support/BaselineProbe.php

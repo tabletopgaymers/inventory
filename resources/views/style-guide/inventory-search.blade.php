@@ -1,4 +1,4 @@
-@extends('design.phase-a.layout')
+@extends('style-guide.layout')
 @section('title', 'Search inventory')
 @section('guide-notice')This page searches current development inventory. Searches are read-only: they do not save records, change stock or overwrite saved search preferences.@endsection
 @section('guide-content')

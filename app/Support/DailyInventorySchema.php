@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-/** Read-only future Phase 5 count/cost recovery contract. No installer in checkpoint 1. */
+/** Read-only schema checks for inventory counts and item costs. */
 class DailyInventorySchema
 {
     public const MIGRATION = '2026_10_06_020000_create_daily_inventory_tables';
@@ -10,7 +10,7 @@ class DailyInventorySchema
     public const TABLES = ['inventory_count_operations', 'inventory_count_items', 'item_cost_entries'];
 
     /**
-     * Daily inventory phase audit used by BaselineProbe. It compares the live database tables with the migration record and expected schema.
+     * Daily inventory schema audit used by BaselineProbe. It compares the live database tables with the migration record and expected schema.
      *
      * @internal
      * @example app/Support/BaselineProbe.php

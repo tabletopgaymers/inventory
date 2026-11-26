@@ -12,7 +12,7 @@ class InventorySchema
     public const TABLES = ['categories', 'collections', 'items', 'storage_locations', 'inventory_balances', 'inventory_adjustments', 'inventory_adjustment_entries'];
 
     /**
-     * Inventory phase audit used by BaselineProbe. It incorporates the later classification migration when determining the expected contract.
+     * Inventory schema audit used by BaselineProbe. It incorporates the later classification migration when determining the expected contract.
      *
      * @internal
      * @example app/Support/BaselineProbe.php

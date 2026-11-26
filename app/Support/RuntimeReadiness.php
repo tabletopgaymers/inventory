@@ -23,7 +23,7 @@ class RuntimeReadiness
         $required = array_map(fn ($path) => basename($path, '.php'), glob(database_path('migrations/*.php')));
         $applied = $database->table('migrations')->pluck('migration')->all();
         $ready = $required !== [] && array_diff($required, $applied) === [];
-        // Web routes serve the complete current application. Phased preparation
+        // Web routes serve the complete current application. Guarded schema preparation
         // and compatibility decisions continue to use BaselineProbe::schemaState.
         $state = array_fill_keys([
             'ready', 'authenticationReady', 'profilePreferencesReady', 'inventoryReady',

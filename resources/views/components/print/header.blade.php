@@ -7,7 +7,7 @@ No caller slots.
 
 ## Examples
 
-[Relocation worksheet](resources/views/relocation/print.blade.php) and [Print specimen](resources/views/design/phase-a/print.blade.php).
+[Relocation worksheet](resources/views/relocation/print.blade.php) and [Print specimen](resources/views/style-guide/print.blade.php).
 --}}@props(['values', 'notes' => '', 'notesLabel' => 'Notes'])
 <div class="print-header">
     <dl class="print-details">
