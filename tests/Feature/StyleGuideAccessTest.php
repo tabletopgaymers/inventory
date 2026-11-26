@@ -27,17 +27,20 @@ class StyleGuideAccessTest extends TestCase
         return $app;
     }
 
-    public function test_local_wrapper_is_get_only_and_requires_authentication(): void
+    public function test_local_application_frame_and_wrapper_alias_are_get_only_and_require_authentication(): void
     {
-        $router = $this->styleGuideRouter('local');
-        $route = $router->getRoutes()->match(Request::create('/style-guide/wrapper'));
+        $routes = $this->styleGuideRouter('local')->getRoutes();
+        $frame = $routes->match(Request::create('/style-guide/application-frame'));
+        $alias = $routes->match(Request::create('/style-guide/wrapper'));
 
-        $this->assertSame('style-guide.local.wrapper', $route->getName());
-        $this->assertSame(['GET', 'HEAD'], $route->methods());
-        $this->assertContains('auth', $route->gatherMiddleware());
+        $this->assertSame('style-guide.local.application-frame', $frame->getName());
+        foreach ([$frame, $alias] as $route) {
+            $this->assertSame(['GET', 'HEAD'], $route->methods());
+            $this->assertContains('auth', $route->gatherMiddleware());
+        }
     }
 
-    public function test_development_guide_requires_authentication_and_omits_wrapper(): void
+    public function test_development_guide_requires_authentication_and_omits_application_frame(): void
     {
         $routes = $this->styleGuideRouter('development')->getRoutes();
         $examples = $routes->match(Request::create('/style-guide/examples'));
@@ -45,6 +48,7 @@ class StyleGuideAccessTest extends TestCase
         $this->assertSame('style-guide.hosted.examples', $examples->getName());
         foreach ($routes as $route) {
             $this->assertContains('auth', $route->gatherMiddleware());
+            $this->assertNotSame('style-guide/application-frame', $route->uri());
             $this->assertNotSame('style-guide/wrapper', $route->uri());
         }
     }

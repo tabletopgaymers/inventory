@@ -32,15 +32,15 @@
     <h2>Explore the guide</h2>
     <p><a href="/style-guide/presentation">Presentation</a> covers display density, titles, information panels, table panels, responsive columns and status indicators.</p>
     <p><a href="/style-guide/forms">Forms</a> covers input types, numeric values, buttons, save-progress states and validation errors.</p>
-    <p><a href="/style-guide/tab-form">Tabbed form</a> demonstrates five sections of one form with values retained in browser storage.</p>
+    <p><a href="/style-guide/tabbed-form">Tabbed form</a> demonstrates five sections of one form with values retained in browser storage.</p>
     <p><a href="/style-guide/workflow">Workflow components</a> demonstrates the real shared tabs, panels, table options, quantity navigation, unsaved-change handling and standalone print foundation.</p>
     <p><a href="/style-guide/vite-demo">Vite demo</a> demonstrates built assets and locally hosted Font Awesome Free.</p>
     <p><a href="/style-guide/browser-memory-demo">Browser Memory Demo</a> searches a catalog snapshot and builds an inventory list entirely in browser memory.</p>
     <p><a href="/style-guide/notifications">Notifications</a> covers notices, brief modal confirmations, high-impact actions and unsaved changes warnings.</p>
-    <p><a href="/style-guide/orphaned">Details and states</a> covers record details, permanent notes, loading states, account feedback and role actions.</p>
+    <p><a href="/style-guide/details-and-states">Details and states</a> covers record details, permanent notes, loading states, account feedback and role actions.</p>
     <p><a href="/style-guide/examples">Example uses</a> combines these into user, inventory, request, count, catalog and event examples.</p>
     @if(request()->getHost() === 'tg-inventory-app.test')
-    <p><a href="/style-guide/wrapper">Application frame</a> shows the current shared header, navigation and a two-panel user example. Its <a href="/style-guide/wrapper#environment-indicators">Environment indicators</a> section previews each environment’s top bar.</p>
+    <p><a href="/style-guide/application-frame">Application frame</a> shows the current shared header, navigation and a two-panel user example. Its <a href="/style-guide/application-frame#environment-indicators">Environment indicators</a> section previews each environment’s top bar.</p>
     @endif
     <p>Sample data is illustrative. Account permissions and business rules still govern the actual application.</p>
 </div>

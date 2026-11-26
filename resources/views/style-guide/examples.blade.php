@@ -89,6 +89,6 @@
 <x-app.guide-divider />
 <div class="app-content" id="wrapper">
     <h2>Current application frame</h2><p>This page already uses the actual header, account menu, navigation, environment status bar and footer. Desktop navigation begins at 50rem (800px at the default font size); smaller widths use Menu.</p>
-    @if(request()->getHost() === 'tg-inventory-app.test')<p><a href="/style-guide/wrapper">Open the focused application-frame example</a>.</p>@endif
+    @if(request()->getHost() === 'tg-inventory-app.test')<p><a href="/style-guide/application-frame">Open the focused application-frame example</a>.</p>@endif
 </div>
 @endsection

@@ -7,7 +7,7 @@ No caller slots.
 
 ## Example
 
-[Application shell](resources/views/components/app/shell.blade.php) and [Application frame](/style-guide/wrapper).
+[Application shell](resources/views/components/app/shell.blade.php) and [Application frame](/style-guide/application-frame).
 --}}@props(['environment' => null, 'metadata' => null])
 @php
     $environment = $environment ?? config('app.env');
