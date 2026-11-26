@@ -14,7 +14,7 @@ The default slot supplies the main content. Supply title as a named slot or prop
     $displayDensity = $signedIn ? (auth()->user()->display_density ?? 'standard') : 'standard';
 @endphp
 <!doctype html>
-<html lang="en" data-theme="tg-app">
+<html lang="en">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <x-app.document-title :title="$title.' · TG Inventory'" />

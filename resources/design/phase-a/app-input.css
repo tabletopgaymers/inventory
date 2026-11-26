@@ -15,20 +15,21 @@
 @source "../../views/user-show.blade.php";
 @source "../../views/welcome.blade.php";
 
-@plugin "daisyui" { themes: false; }
-@plugin "daisyui/theme" {
-  name: "tg-app"; default: true; color-scheme: light;
-  --color-base-100: #ffffff; --color-base-200: #f5f5f7; --color-base-300: #d5d5df;
-  --color-base-content: #20212b; --color-primary: #5b21b6; --color-primary-content: #ffffff;
-  --color-secondary: #4b5563; --color-secondary-content: #ffffff;
-  --color-accent: #0f766e; --color-accent-content: #ffffff;
-  --color-neutral: #30323d; --color-neutral-content: #ffffff;
-  --color-info: #e0f2fe; --color-info-content: #0c4a6e;
-  --color-success: #dcfce7; --color-success-content: #14532d;
-  --color-warning: #fef3c7; --color-warning-content: #78350f;
-  --color-error: #fee2e2; --color-error-content: #991b1b;
-  --radius-selector: .375rem; --radius-field: .375rem; --radius-box: .75rem;
-  --size-selector: .25rem; --size-field: .25rem; --border: 1px; --depth: 0; --noise: 0;
+@layer base {
+  :root {
+    --app-page: #f5f5f7;
+    --app-surface: #ffffff;
+    --app-border: #d5d5df;
+    --app-text: #20212b;
+    --app-primary: #5b21b6;
+    --app-success-surface: #dcfce7;
+    --app-success-text: #14532d;
+    color-scheme: light;
+    background-color: var(--app-surface);
+    color: var(--app-text);
+    scrollbar-color: currentColor transparent;
+    scrollbar-color: color-mix(in oklch, currentColor 35%, transparent) transparent;
+  }
 }
 
 .app-shell {
@@ -47,9 +48,7 @@
   --app-button-font-size: var(--app-control-font-size);
   --app-button-min-height: var(--app-control-height);
   --app-density-catalog-y: .375rem; --app-density-detail-gap: .5rem;
-  --app-page: var(--color-base-200); --app-surface: var(--color-base-100);
-  --app-border: var(--color-base-300); --app-text: var(--color-base-content);
-  --app-primary: var(--color-primary); --app-muted: #595965; --app-danger: #991b1b;
+  --app-muted: #595965; --app-danger: #991b1b;
   --app-space: .25rem;
   --app-table-heading-surface: #e5dfef; --app-table-group-surface: #f4f2f8;
   --app-grouped-item-padding: 1.6rem;

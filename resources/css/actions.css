@@ -14,8 +14,8 @@
     --app-action-new-hover: #166534;
     --app-action-primary-hover: #4c1d95;
     --app-action-danger-hover: #991b1b;
-    --app-action-changed-surface: var(--color-success, #d1fae5);
-    --app-action-changed-color: var(--color-success-content, #065f46);
+    --app-action-changed-surface: var(--app-success-surface, #d1fae5);
+    --app-action-changed-color: var(--app-success-text, #065f46);
     --app-control-delete-color: #b91c1c;
     --app-control-delete-size: .9375rem;
     --app-control-delete-weight: 700;

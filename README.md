@@ -50,10 +50,10 @@ remove the stale marker only after confirming Vite is stopped. Use
 `public/build/`; generated assets are built during deployment, not committed.
 
 The common shell loads `resources/css/app.css` and `resources/js/app.js`
-through Laravel Vite. CSS imports the existing Tailwind/daisyUI theme from
-`resources/design/phase-a/app-input.css`, shared workflow/panel rules, search
-controls and Save progress shortcut styles. Edit resource sources, never generated
-public/build assets or manual filename hashes.
+through Laravel Vite. CSS imports the Tailwind entry and Inventory theme
+from `resources/design/phase-a/app-input.css`, plus shared workflow and panel
+rules, search controls, and Save progress shortcut styles. Edit resource sources.
+Vite generates assets and filename hashes in `public/build/`.
 
 The JS app entry initializes the shell then Save progress shortcuts. Active page
 entries that depend on shell APIs import this same cached module explicitly;
