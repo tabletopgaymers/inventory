@@ -1,17 +1,16 @@
 # Style Guide
 
-Open the [in-app Style Guide](https://tg-inventory-app.test/style-guide) for
-current visual standards and live examples. The guide is available to signed-in
-users on local and development installations.
+Open the `/style-guide` route on your running Inventory site for current
+visual standards and live examples. The guide is available to signed-in users
+on local and development installations.
 
-- [Presentation](https://tg-inventory-app.test/style-guide/presentation) covers
-  spacing, density, panels, tables, and status badges.
-- [Forms](https://tg-inventory-app.test/style-guide/forms) covers fields and actions.
-- [Notifications](https://tg-inventory-app.test/style-guide/notifications) covers
-  messages, confirmation, and unsaved changes.
-- [Workflow](https://tg-inventory-app.test/style-guide/workflow) and
-  [Print](https://tg-inventory-app.test/style-guide/print) show workflow controls
-  and printed layout.
+- Presentation (`/style-guide/presentation`) covers spacing, density, panels,
+  tables, and status badges.
+- Forms (`/style-guide/forms`) covers fields and actions.
+- Notifications (`/style-guide/notifications`) covers messages, confirmation,
+  and unsaved changes.
+- Workflow (`/style-guide/workflow`) and Print (`/style-guide/print`) show
+  workflow controls and printed layout.
 
 ## Where to make changes
 

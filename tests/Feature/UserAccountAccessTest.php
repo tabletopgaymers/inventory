@@ -27,6 +27,9 @@ class UserAccountAccessTest extends TestCase
     {
         $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
         // No development secrets, external database, real sessions or provider calls.
+        if ($app->configurationIsCached() || $app->routesAreCached()) {
+            throw new \RuntimeException('Use an uncached disposable checkout for contributor checks.');
+        }
         $app->loadEnvironmentFrom('.env.account-access-test-nonexistent');
         $app->make(Kernel::class)->bootstrap();
         $app->detectEnvironment(fn () => 'testing');
@@ -47,6 +50,7 @@ class UserAccountAccessTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->withoutVite();
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
         $migration = require base_path('database/migrations/2026_10_05_010000_create_authentication_tables.php');
         $migration->up();
@@ -208,22 +212,23 @@ class UserAccountAccessTest extends TestCase
         $this->assertSame(1, $xpath->query('//form[@id="user-role-admin-form"]/button[@disabled]')->length);
         $this->assertSame(1, $xpath->query('//button[@id="user-disable-trigger" and @disabled]')->length);
         foreach (['manager', 'procurement'] as $role) {
-            $this->assertSame(1, $xpath->query('//form[@id="user-role-'.$role.'-form"]/button[@type="button" and @aria-controls="user-role-dialog" and not(@disabled)]')->length);
+            $this->assertSame(1, $xpath->query('//form[@id="user-role-'.$role.'-form"]/button[@type="button" and @aria-controls="app-confirmation-dialog" and not(@disabled)]')->length);
         }
-        $this->assertSame(1, $xpath->query('//dialog[@id="user-role-dialog"]')->length);
-        $this->assertSame(0, $xpath->query('//dialog[@id="user-disable-dialog"]')->length);
+        $this->assertSame(1, $xpath->query('//dialog[@id="app-confirmation-dialog"]')->length);
         $target = $this->account(['manager']);
         $other = view('user-show', ['user' => $target])->render();
         $this->assertStringContainsString('data-role-label="Grant admin"', $other);
         $this->assertStringContainsString('data-role-label="Remove manager"', $other);
-        $this->assertStringContainsString('id="user-disable-dialog"', $other);
+        $dom->loadHTML($other, LIBXML_NOERROR | LIBXML_NOWARNING);
+        $xpath = new \DOMXPath($dom);
+        $this->assertSame(1, $xpath->query('//button[@id="user-disable-trigger" and @aria-controls="app-confirmation-dialog" and not(@disabled)]')->length);
         foreach (['manager', 'procurement'] as $role) {
             $owner = $this->account([$role]);
             Auth::setUser($owner);
             $dom->loadHTML(view('user-show', ['user' => $owner])->render(), LIBXML_NOERROR | LIBXML_NOWARNING);
             $xpath = new \DOMXPath($dom);
             $this->assertSame(1, $xpath->query('//form[@id="user-role-'.$role.'-form"]/button[@type="button" and not(@disabled)]')->length);
-            $this->assertSame(1, $xpath->query('//dialog[@id="user-role-dialog"]')->length);
+            $this->assertSame(1, $xpath->query('//dialog[@id="app-confirmation-dialog"]')->length);
             $this->assertSame(0, $xpath->query('//button[@id="user-disable-trigger"]')->length);
         }
     }
@@ -310,7 +315,7 @@ class UserAccountAccessTest extends TestCase
         $target = $this->account([]);
         $request = $this->callbackRequest($target);
         $response = (new MicrosoftAuthController)->callback($request);
-        $this->assertSame(url('/'), $response->getTargetUrl());
+        $this->assertSame(url('/profile'), $response->getTargetUrl());
         $this->assertTrue(Auth::check());
         $this->assertTrue($request->session()->get('authentication.remember'));
         $this->assertSame([], $target->roles());
@@ -418,19 +423,23 @@ class UserAccountAccessTest extends TestCase
         $admin = $this->account(['admin']);
         Auth::setUser($admin);
         $userView = view('user-show', ['user' => $target])->render();
-        $this->assertStringContainsString('href="/profile?user='.$target->id.'">Edit', $userView);
+        $editLink = '#<a[^>]+href="/profile\?user='.$target->id.'"[^>]*>\s*Edit\s*</a>#';
+        $this->assertMatchesRegularExpression($editLink, $userView);
         $this->assertStringNotContainsString('All users', $userView);
         $request = Request::create('/profile?user='.$target->id);
         $request->setUserResolver(fn () => $admin);
+        $this->app->instance('request', $request);
         $editor = (new UserController)->profile($request);
         $this->assertSame($target->id, $editor->getData()['profileUser']->id);
         $html = $editor->render();
         $this->assertStringContainsString('action="/profile?user='.$target->id.'"', $html);
         $this->assertStringContainsString('America/New_York', $html);
         Auth::setUser($target);
-        $this->assertStringContainsString('href="/profile">Edit', view('user-show', ['user' => $target])->render());
+        $this->assertMatchesRegularExpression($editLink, view('user-show', ['user' => $target])->render());
         Auth::setUser($this->account(['manager']));
-        $this->assertStringNotContainsString('>Edit</a>', view('user-show', ['user' => $target])->render());
+        $dom = new \DOMDocument;
+        $dom->loadHTML(view('user-show', ['user' => $target])->render(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $this->assertSame(0, (new \DOMXPath($dom))->query('//a[normalize-space(.)="Edit"]')->length);
     }
     private function profileRequest(User $actor, array $data): Request
     {
@@ -444,9 +453,9 @@ class UserAccountAccessTest extends TestCase
 
     public function test_new_account_defaults_and_subsequent_sign_in_preserve_user_edits(): void
     {
-        foreach (['member@tabletopgaymers.org',
-            'delugeia_gmail.com#EXT#@tabletopgaymers.onmicrosoft.com',
-            'outsider@example.test', 'fake#EXT#@tabletopgaymers.org'] as $account) {
+        foreach (['member@organization.example.test',
+            'guest_example.test#EXT#@tenant.example.test',
+            'outsider@example.test', 'fake#EXT#@organization.example.test'] as $account) {
             $object = sprintf('22222222-2222-2222-2222-%012d', User::count() + 1);
             $external = new class($object, $account) {
                 public array $user = ['givenName' => 'Synthetic', 'surname' => 'Member'];
@@ -478,7 +487,7 @@ class UserAccountAccessTest extends TestCase
             'mailing_address' => "  Synthetic Person\n<script>example</script>\nFourth line  ",
             'roles' => ['admin'], 'enabled' => false, 'provider_email' => 'forged@example.test']);
         $response = (new UserController)->saveProfile($this->profileRequest($owner, $data), new AccessManagement);
-        $this->assertSame(url('/profile'), $response->getTargetUrl());
+        $this->assertSame(url('/'), $response->getTargetUrl());
         $saved = $owner->fresh();
         $this->assertSame('123-456-7890', $saved->mobile_number);
         $this->assertSame($data['mailing_address'], $saved->mailing_address);

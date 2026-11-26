@@ -6,7 +6,7 @@
         <dt>First name</dt><dd>Sample</dd>
         <dt>Last name</dt><dd>Administrator</dd>
         <dt>Elevated roles</dt><dd>admin, manager, procurement</dd>
-        <dt>Microsoft account</dt><dd>sample@tabletopgaymers.org</dd>
+        <dt>Microsoft account</dt><dd>sample@example.org</dd>
     </x-app.detail-list>
     </div>
     <div>

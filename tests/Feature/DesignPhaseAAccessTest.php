@@ -13,6 +13,9 @@ class DesignPhaseAAccessTest extends TestCase
     public function createApplication()
     {
         $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
+        if ($app->configurationIsCached() || $app->routesAreCached()) {
+            throw new \RuntimeException('Use an uncached disposable checkout for contributor checks.');
+        }
         $app->loadEnvironmentFrom('.env.style-guide-access-test-nonexistent');
         $app->make(Kernel::class)->bootstrap();
         $app['config']->set([

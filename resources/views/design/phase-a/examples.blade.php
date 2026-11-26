@@ -16,7 +16,7 @@
     <div>
     <label>First name<input required value="Sample"></label><label>Last name<input required value="Administrator"></label>
     <label>Elevated roles<input readonly value="admin, manager, procurement"></label>
-    <label>Microsoft account<input readonly value="sample@tabletopgaymers.org"></label>
+    <label>Microsoft account<input readonly value="sample@example.org"></label>
     </div>
     <div>
     <label>Personal email<input data-optional type="email" placeholder="youremail@yourprovider.com"></label>
