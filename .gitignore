@@ -1,34 +1,30 @@
+# Local environment, credentials, and private material
+.env
+.env.*
+!.env.example
+auth.json
+/storage/*.key
+/_data/
+/_private/
+/_secrets/
+/.baseline-staging/
+
+# Dependencies and package manager logs
 /vendor/
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Generated Laravel public assets
-/public/storage
-/public/hot
+# Generated assets and local databases
 /public/build
+/public/hot
+/public/storage
+/database/*.sqlite
+/database/*.sqlite-*
 
-storage/*.key
-.env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
-
-/storage/pail
-.phpactor.json
-auth.json
-
-# Local baseline privacy and generated files
-.env.*
-!.env.example
-/_data/
-/_private/
-/_secrets/
-/.baseline-staging/
-/.phpunit.cache/
-/bootstrap/cache/*.php
-/bootstrap/cache/revision
-/storage/logs/*
-/.baseline-reinstall/
+# Local development tools
 /.idea/
+/.codex/config.toml
+.phpactor.json
+/.phpunit.cache/
+.phpunit.result.cache
