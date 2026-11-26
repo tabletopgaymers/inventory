@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
-class LocationCountController
+class ReconcileController
 {
     private function ready(): void
     {
@@ -76,7 +76,7 @@ class LocationCountController
             $request->session()->put('location_counts.'.$token.'.displayed_items', array_column($result, 'id'));
         }
 
-        return view('inventory.count-search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token,
+        return view('reconcile.search', ['criteria' => $criteria, 'rows' => $result, 'token' => $token,
             'lists' => $this->availableLists($request)->orderBy('name')->orderBy('id')->get(['id', 'name']),
             'loadedList' => $loadedList, 'listLocation' => $listLocation, 'lastSearch' => app(LocationCountSearch::class)->lastSearch($request),
             'locations' => app(CatalogRecords::class)->records('storage_locations'),
@@ -92,7 +92,7 @@ class LocationCountController
         $this->ready();
         $action = $request->validate(['action' => ['required', 'in:search,show_all,reset']])['action'];
         if ($action === 'reset') {
-            return redirect('/inventory/location-counts');
+            return to_route('reconcile.index');
         }
         $service = app(LocationCountSearch::class);
         $criteria = $service->criteria($request);
@@ -102,7 +102,7 @@ class LocationCountController
         try {
             $token = app(LocationCountSearch::class)->newDraft($request, $criteria, array_column($service->rows($criteria), 'id'));
 
-            return redirect('/inventory/location-counts?context='.$token);
+            return to_route('reconcile.index', ['context' => $token]);
         } catch (QueryException) {
             return back()->withInput()->with('error', 'Search could not be completed. Your inputs are retained; try again.');
         }
@@ -123,7 +123,7 @@ class LocationCountController
         $token = app(LocationCountSearch::class)->newDraft($request, ['location_id' => $location === null ? null : (int) $location], $items,
             ['id' => $list->id, 'name' => $list->name]);
 
-        return redirect('/inventory/location-counts?context='.$token);
+        return to_route('reconcile.index', ['context' => $token]);
     }
 
     public function listLocation(Request $request, string $token)
@@ -138,7 +138,7 @@ class LocationCountController
             $token = app(LocationCountSearch::class)->newDraft($request, ['location_id' => $location], $draft['items'], $draft['list']);
         }
 
-        return redirect('/inventory/location-counts?context='.$token);
+        return to_route('reconcile.index', ['context' => $token]);
     }
 
     public function worksheet(Request $request, string $token)
@@ -151,7 +151,7 @@ class LocationCountController
         }
         $rows = isset($draft['list']) ? $this->rows($draft) : app(LocationCountSearch::class)->rows($draft['criteria']);
 
-        return view('inventory.count-worksheet', ['location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id']), 'rows' => $rows]);
+        return view('reconcile.worksheet', ['location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id']), 'rows' => $rows]);
     }
 
     public function enter(Request $request, string $token)
@@ -161,7 +161,7 @@ class LocationCountController
         if (isset($draft['list'], $draft['result'])) {
             $nextToken = app(LocationCountSearch::class)->newDraft($request, $draft['criteria'], $draft['items'], $draft['list']);
 
-            return redirect('/inventory/location-counts/'.$nextToken.'/enter');
+            return to_route('reconcile.enter', ['token' => $nextToken]);
         }
         abort_if(isset($draft['result']), 409, 'This count has already been saved.');
         if (isset($draft['list'])) {
@@ -171,7 +171,7 @@ class LocationCountController
             $request->session()->put('location_counts.'.$token, $draft);
         }
 
-        return view('inventory.count-enter', ['draft' => $draft, 'rows' => $this->rows($draft), 'token' => $token, 'location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id'])]);
+        return view('reconcile.enter', ['draft' => $draft, 'rows' => $this->rows($draft), 'token' => $token, 'location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id'])]);
     }
 
     public function review(Request $request, string $token)
@@ -197,7 +197,7 @@ class LocationCountController
         }
         $request->session()->put('location_counts.'.$token, $draft);
 
-        return redirect('/inventory/location-counts/'.$token.'/review');
+        return to_route('reconcile.review', ['token' => $token]);
     }
 
     public function reviewed(Request $request, string $token)
@@ -206,7 +206,7 @@ class LocationCountController
         $draft = $this->draft($request, $token);
         abort_unless($draft['reviewed'], 409);
 
-        return view('inventory.count-review', ['draft' => $draft, 'rows' => array_values(array_filter($this->rows($draft), fn ($row) => in_array($row['id'], $draft['review_ids'], true))), 'token' => $token, 'location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id'])]);
+        return view('reconcile.review', ['draft' => $draft, 'rows' => array_values(array_filter($this->rows($draft), fn ($row) => in_array($row['id'], $draft['review_ids'], true))), 'token' => $token, 'location' => app(CatalogRecords::class)->record('storage_locations', $draft['criteria']['location_id'])]);
     }
 
     public function save(Request $request, string $token)
@@ -214,7 +214,7 @@ class LocationCountController
         $this->access($request);
         $draft = $this->draft($request, $token);
         if (isset($draft['result'])) {
-            return redirect('/inventory/location-counts/results/'.$draft['result']);
+            return to_route('reconcile.result', ['operation' => $draft['result']]);
         }
         abort_unless($draft['reviewed'], 409);
         $data = $request->validate(['action' => ['required', 'in:save,edit'], 'rationales' => ['nullable', 'array'], 'rationales.*' => ['nullable', 'string', 'max:1000', 'not_regex:/[\x00-\x1F\x7F]/u']]);
@@ -225,7 +225,7 @@ class LocationCountController
         $draft['rationales'] = $rationales;
         $request->session()->put('location_counts.'.$token, $draft);
         if ($data['action'] === 'edit') {
-            return redirect('/inventory/location-counts/'.$token.'/enter');
+            return to_route('reconcile.enter', ['token' => $token]);
         }
         $counts = array_intersect_key($draft['counts'], array_flip($draft['review_ids']));
         try {
@@ -236,7 +236,7 @@ class LocationCountController
         $draft['result'] = $id;
         $request->session()->put('location_counts.'.$token, $draft);
 
-        return redirect('/inventory/location-counts/results/'.$id);
+        return to_route('reconcile.result', ['operation' => $id]);
     }
 
     public function result(Request $request, int $operation)
@@ -244,12 +244,12 @@ class LocationCountController
         $this->ready();
         $row = DB::table('inventory_count_operations')->where('id', $operation)->firstOrFail();
         $draft = $request->session()->get('location_counts.'.$row->operation_id);
-        $returnUrl = '/inventory/location-counts';
+        $returnUrl = route('reconcile.index', absolute: false);
         if (isset($draft['list']) && $draft['actor'] === (int) $request->user()->id
             && ($request->user()->hasRole('admin') || $request->user()->hasRole('manager'))) {
-            $returnUrl .= '?context='.$row->operation_id;
+            $returnUrl = route('reconcile.index', ['context' => $row->operation_id], absolute: false);
         }
 
-        return view('inventory.count-result', ['operation' => $row, 'returnUrl' => $returnUrl, 'location' => app(CatalogRecords::class)->record('storage_locations', $row->storage_location_id), 'changes' => DB::table('inventory_count_items')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_count_items.inventory_adjustment_id')->where('inventory_count_operation_id', $operation)->orderByRaw('NATURAL_SORT_KEY(item_name)')->orderBy('item_name')->get()]);
+        return view('reconcile.result', ['operation' => $row, 'returnUrl' => $returnUrl, 'location' => app(CatalogRecords::class)->record('storage_locations', $row->storage_location_id), 'changes' => DB::table('inventory_count_items')->join('inventory_adjustments', 'inventory_adjustments.id', '=', 'inventory_count_items.inventory_adjustment_id')->where('inventory_count_operation_id', $operation)->orderByRaw('NATURAL_SORT_KEY(item_name)')->orderBy('item_name')->get()]);
     }
 }

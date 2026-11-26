@@ -13,7 +13,7 @@ class DailyInventoryPosting
      *
      * Scope: Domain-specific (Inventory)
      * Task: Post daily inventory changes
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public static function count(mixed $value, string $field): ?int
     {
@@ -36,7 +36,7 @@ class DailyInventoryPosting
      *
      * Scope: Domain-specific (Inventory)
      * Task: Post daily inventory changes
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public function counts(int $actor, int $location, string $operation, array $counts, array $rationales): int
     {

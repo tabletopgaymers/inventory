@@ -6,6 +6,7 @@
 @source "../views/relocation";
 @source "../views/catalog";
 @source "../views/inventory";
+@source "../views/reconcile";
 @source "../views/layout.blade.php";
 @source "../views/home.blade.php";
 @source "../views/login.blade.php";

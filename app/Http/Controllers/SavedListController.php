@@ -230,7 +230,7 @@ class SavedListController
 
         $destination = $reconcileContext === null
             ? '/catalog/lists/'.$list->id
-            : '/inventory/location-counts?context='.$reconcileContext;
+            : route('reconcile.index', ['context' => $reconcileContext], absolute: false);
         if ($browse !== null) {
             $destination = '/inventory/results/'.$browse;
         }

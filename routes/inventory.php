@@ -4,7 +4,6 @@ use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\InventoryBrowseController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ItemCostController;
-use App\Http\Controllers\LocationCountController;
 use Illuminate\Support\Facades\Route;
 
 return [
@@ -18,17 +17,7 @@ return [
         Route::get('/inventory/adjustments/{adjustment}', [InventoryController::class, 'adjustment'])->whereNumber('adjustment');
         Route::get('/inventory/adjustments/{adjustment}/result', [InventoryController::class, 'result'])->whereNumber('adjustment');
     },
-    'reconcileAndItemMaintenance' => static function (): void {
-        Route::get('/inventory/location-counts', [LocationCountController::class, 'index']);
-        Route::post('/inventory/location-counts', [LocationCountController::class, 'search']);
-        Route::post('/inventory/location-counts/load-list', [LocationCountController::class, 'loadList']);
-        Route::post('/inventory/location-counts/{token}/list-location', [LocationCountController::class, 'listLocation']);
-        Route::get('/inventory/location-counts/results/{operation}', [LocationCountController::class, 'result'])->whereNumber('operation');
-        Route::get('/inventory/location-counts/{token}/worksheet', [LocationCountController::class, 'worksheet']);
-        Route::get('/inventory/location-counts/{token}/enter', [LocationCountController::class, 'enter']);
-        Route::post('/inventory/location-counts/{token}/review', [LocationCountController::class, 'review']);
-        Route::get('/inventory/location-counts/{token}/review', [LocationCountController::class, 'reviewed']);
-        Route::post('/inventory/location-counts/{token}/save', [LocationCountController::class, 'save']);
+    'itemMaintenance' => static function (): void {
         Route::get('/inventory/items/{item}/cost', [ItemCostController::class, 'edit'])->whereNumber('item');
         Route::get('/inventory/items/create', [CatalogController::class, 'itemForm']);
         Route::post('/inventory/items/create', [CatalogController::class, 'itemSave']);

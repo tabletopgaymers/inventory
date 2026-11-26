@@ -34,7 +34,7 @@
             @if($rows !== [])
                 <x-app.action :href="$createListUrl">Create list</x-app.action>
             @endif
-            <form method="post" action="/inventory/location-counts">
+            <form method="post" action="{{ route('reconcile.search', absolute: false) }}">
                 @csrf
                 <input type="hidden" name="location_id" value="{{ $location->id }}">
                 <input type="hidden" name="zero_stock_location" value="{{ $location->id }}">

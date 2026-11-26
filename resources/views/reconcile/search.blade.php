@@ -4,7 +4,7 @@
 <div class="app-columns app-columns-main-sidebar">
 <section class="app-content app-record-content">
 <h2>Search</h2>
-<form method="post" action="/inventory/location-counts" data-count-search>@csrf
+<form method="post" action="{{ route('reconcile.search', absolute: false) }}" data-count-search>@csrf
 <fieldset class="app-entry-fieldset" @if($loadedList) disabled inert @endif>
 @php
     $submittedSearch = $rows === null || !$criteria ? null : [
@@ -12,7 +12,7 @@
         'extras' => ['location_id' => (string) $criteria['location_id'], 'zero_stock_location' => (string) $criteria['location_id'], 'include_active_zero' => (bool) ($criteria['include_active_zero'] ?? false)],
     ];
 @endphp
-<x-app.inventory-search :definition="$searchDefinition" endpoint="/inventory/location-counts" instance="reconcile-search" :script="false" :form-mode="true" filter-label="Collection filters" :submitted="$submittedSearch" :persistence="$loadedList ? null : ['key' => 'reconcile', 'restore' => $criteria === null && !$errors->any()]">
+<x-app.inventory-search :definition="$searchDefinition" :endpoint="route('reconcile.search', absolute: false)" instance="reconcile-search" :script="false" :form-mode="true" filter-label="Collection filters" :submitted="$submittedSearch" :persistence="$loadedList ? null : ['key' => 'reconcile', 'restore' => $criteria === null && !$errors->any()]">
     <x-slot:leading>
         <select name="location_id" data-is-extra required aria-label="Location"><option value="">Select Location</option>@foreach($locations as $location)<option value="{{ $location->id }}" data-central="{{ $location->is_central ? '1' : '0' }}" @selected(old('location_id', $criteria['location_id'] ?? null) == $location->id)>{{ $location->name }}@if($location->state !== 'active') ({{ $location->state }})@endif</option>@endforeach</select>
     </x-slot:leading>
@@ -28,14 +28,14 @@
 <x-app.saved-list-selector
     :lists="$lists"
     :loaded-list="$loadedList"
-    load-action="/inventory/location-counts/load-list"
-    :reset-url="$loadedList ? ($lastSearch === null ? '/inventory/location-counts' : '/inventory/location-counts?context='.$lastSearch) : null"
+    :load-action="route('reconcile.load-list', absolute: false)"
+    :reset-url="$loadedList ? route('reconcile.index', $lastSearch === null ? [] : ['context' => $lastSearch], absolute: false) : null"
     select-id="reconcile-list"
     class="app-columns-fields"
     open
 >
 @if($loadedList)
-<form method="post" action="/inventory/location-counts/{{ $token }}/list-location" data-list-location>
+<form method="post" action="{{ route('reconcile.list-location', ['token' => $token], absolute: false) }}" data-list-location>
     @csrf
     <x-app.field label="Count location" for="reconcile-list-location" name="list_location_id">
         <select id="reconcile-list-location" name="list_location_id" required>
@@ -60,8 +60,8 @@
             @else
                 <x-app.action href="/catalog/lists/create?reconcile={{ $token }}">{{ $loadedList ? 'Copy list' : 'Create list' }}</x-app.action>
             @endif
-            <x-app.action href="/inventory/location-counts/{{ $token }}/worksheet" target="_blank" rel="noopener" :disabled="!$canUseResults">Print worksheet</x-app.action>
-            @if($canCount)<x-app.action href="/inventory/location-counts/{{ $token }}/enter" :disabled="!$canUseResults">Reconcile inventory</x-app.action>@endif
+            <x-app.action :href="route('reconcile.worksheet', ['token' => $token], absolute: false)" target="_blank" rel="noopener" :disabled="!$canUseResults">Print worksheet</x-app.action>
+            @if($canCount)<x-app.action :href="route('reconcile.enter', ['token' => $token], absolute: false)" :disabled="!$canUseResults">Reconcile inventory</x-app.action>@endif
         </div>
     </x-app.heading-row>
 </x-slot:header>

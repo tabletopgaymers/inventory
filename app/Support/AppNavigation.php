@@ -35,7 +35,7 @@ class AppNavigation
             ['href' => '/inventory', 'label' => 'Inventory', 'active' => request()->is('inventory', 'inventory/*') && ! request()->is('inventory/location-counts', 'inventory/location-counts/*'), 'children' => []],
             ['href' => '/relocation', 'label' => 'Relocation Request', 'active' => request()->is('relocation', 'relocation/*'), 'children' => []],
             ['href' => '/purchase', 'label' => 'Purchase Request', 'active' => request()->is('purchase', 'purchase/*'), 'children' => []],
-            ['href' => '/inventory/location-counts', 'label' => 'Reconcile', 'active' => request()->is('inventory/location-counts', 'inventory/location-counts/*'), 'children' => []],
+            ['href' => route('reconcile.index', absolute: false), 'label' => 'Reconcile', 'active' => request()->routeIs('reconcile.*'), 'children' => []],
             ['href' => '/catalog', 'label' => 'Catalog', 'active' => request()->is('catalog', 'catalog/*'), 'children' => $catalog],
             ['href' => '/users', 'label' => 'Users', 'active' => request()->is('users', 'users/*'), 'children' => []],
             ['href' => '/events', 'label' => 'Events (dev)', 'active' => request()->is('events', 'events/*'), 'children' => [], 'footer' => true],

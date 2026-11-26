@@ -14,7 +14,7 @@ class LocationCountSearch
      *
      * Scope: Domain-specific (Reconcile)
      * Task: Prepare location counts
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public function draft(Request $request, string $token): array
     {
@@ -30,7 +30,7 @@ class LocationCountSearch
      *
      * Scope: Domain-specific (Reconcile)
      * Task: Prepare location counts
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public function lastSearch(Request $request): ?string
     {
@@ -45,7 +45,7 @@ class LocationCountSearch
      *
      * Scope: Domain-specific (Reconcile)
      * Task: Prepare location counts
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public function newDraft(Request $request, array $criteria, array $items, ?array $list = null): string
     {
@@ -83,7 +83,7 @@ class LocationCountSearch
      *
      * Scope: Domain-specific (Reconcile)
      * Task: Prepare location counts
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public function criteria(Request $request): array
     {
@@ -104,7 +104,7 @@ class LocationCountSearch
      *
      * Scope: Domain-specific (Reconcile)
      * Task: Prepare location counts
-     * @example app/Http/Controllers/LocationCountController.php
+     * @example app/Http/Controllers/ReconcileController.php
      */
     public function rows(array $criteria): array
     {

@@ -4,7 +4,7 @@
     $saveUrl = $list ? '/catalog/lists/'.$list->id.'/edit' : '/catalog/lists/create';
     if ($reconcileContext !== null) {
         $saveUrl .= '?reconcile='.$reconcileContext;
-        $returnUrl = '/inventory/location-counts?context='.$reconcileContext;
+        $returnUrl = route('reconcile.index', ['context' => $reconcileContext], absolute: false);
     } elseif ($browseContext !== null) {
         $saveUrl .= '?browse='.$browseContext;
         $returnUrl = '/inventory/results/'.$browseContext;

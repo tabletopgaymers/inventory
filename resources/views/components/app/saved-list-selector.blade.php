@@ -7,7 +7,7 @@ Use loadFields for hidden or additional controls inside the Load form. The defau
 
 ## Examples
 
-[Inventory](resources/views/inventory/browse.blade.php) and [Reconcile](resources/views/inventory/count-search.blade.php).
+[Inventory](resources/views/inventory/browse.blade.php) and [Reconcile](resources/views/reconcile/search.blade.php).
 --}}@props(['lists', 'loadAction', 'selectId', 'loadedList' => null, 'resetUrl' => null])
 
 <x-app.collapsible-panel title="Saved Lists" {{ $attributes->class(['app-saved-list-selector', 'app-collapsible-panel-mobile-padding']) }}>

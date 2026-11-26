@@ -1,0 +1,17 @@
+@extends('layout')
+@section('title', 'Reconcile · '.$location->name)
+@section('error-summary')
+@foreach($errors->messages() as $key => $messages)
+    @php($errorItem = str_starts_with($key, 'counts.') ? collect($rows)->firstWhere('id', (int)substr($key, 7)) : null)
+    @foreach($messages as $message)
+        <p>@if($errorItem)<a href="#count-{{ $errorItem['id'] }}">{{ $errorItem['name'] }} · {{ $errorItem['sku'] }}: {{ $message }}</a>@else{{ $message }}@endif</p>
+    @endforeach
+@endforeach
+@endsection
+@section('content-sections')
+<div class="app-content">
+<p>Enter actual individual counts. Blank skips an item. Zero explicitly clears its quantity. Counts do not change inventory until reviewed and saved.</p>
+</div>
+<form class="app-panel-stack" method="post" action="{{ route('reconcile.review.submit', ['token' => $token], absolute: false) }}" data-unsaved data-count-entry>@csrf
+<x-app.table-region label="Count entry" :nowrap="true" :quantity-fields="true" numeric="after-first"><table><colgroup><col><col class="table-quantity-column"><col class="table-quantity-column"></colgroup><thead><tr><th>Item</th><th class="number">Recorded</th><th>Actual count (optional)</th></tr></thead><tbody>@php($group = null)@forelse($rows as $row)@if($group !== $row['category'].' : '.$row['collection'])@php($group = $row['category'].' : '.$row['collection'])<tr class="collection-heading"><th colspan="3">{{ $group }}</th></tr>@endif<tr><td class="app-grouped-item"><label for="count-{{ $row['id'] }}">{{ $row['name'] }}</label></td><td class="number">{{ number_format($row['values']['storage:'.$location->id]) }}</td><td><input id="count-{{ $row['id'] }}" name="counts[{{ $row['id'] }}]" inputmode="numeric" data-count @if($errors->has('counts.'.$row['id']))aria-invalid="true" aria-describedby="count-{{ $row['id'] }}-error"@endif value="{{ old('counts.'.$row['id'], $draft['counts'][$row['id']] ?? '') }}">@error('counts.'.$row['id'])<p id="count-{{ $row['id'] }}-error" class="app-field-error">{{ $message }}</p>@enderror</td></tr>@empty<tr><td colspan="3">No items selected.</td></tr>@endforelse</tbody></table></x-app.table-region><div class="app-content"><div class="actions"><x-app.action variant="danger"  :href="route('reconcile.index', ['context' => $token], absolute: false)">Cancel</x-app.action><x-app.action variant="primary" type="submit" >Next ▷</x-app.action></div></div></form>@vite('resources/js/catalog.js')@vite('resources/js/location-counts.js')
+@endsection

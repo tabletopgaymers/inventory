@@ -45,7 +45,8 @@ Route::middleware('auth')->group(function () use ($inventoryRoutes) {
 });
 
 Route::middleware('auth')->group(function () use ($inventoryRoutes) {
-    $inventoryRoutes['reconcileAndItemMaintenance']();
+    require __DIR__.'/reconcile.php';
+    $inventoryRoutes['itemMaintenance']();
     require __DIR__.'/catalog.php';
     $inventoryRoutes['browse']();
 });
