@@ -10,6 +10,7 @@ use App\Support\MicrosoftConfiguration;
 use App\Support\MicrosoftIdentity;
 use App\Support\ProfilePreferences;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class UserAccountAccessTest extends TestCase
     {
         $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
         // No development secrets, external database, real sessions or provider calls.
-        if ($app->configurationIsCached() || $app->routesAreCached()) {
+        if ($app->configurationIsCached() || (new Filesystem)->exists($app->getCachedRoutesPath())) {
             throw new \RuntimeException('Use an uncached disposable checkout for contributor checks.');
         }
         $app->loadEnvironmentFrom('.env.account-access-test-nonexistent');
@@ -52,8 +53,12 @@ class UserAccountAccessTest extends TestCase
         parent::setUp();
         $this->withoutVite();
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
-        $migration = require base_path('database/migrations/2026_10_05_010000_create_authentication_tables.php');
+        $authenticationMigration = '2026_10_05_010000_create_authentication_tables';
+        $migration = require base_path('database/migrations/'.$authenticationMigration.'.php');
         $migration->up();
+        $repository = $this->app->make('migration.repository');
+        $repository->createRepository();
+        $repository->log($authenticationMigration, 1);
         Schema::table('users', fn ($table) => $table->string('time_zone')->nullable());
         (require base_path('database/migrations/2026_10_11_000000_add_user_contact_preferences.php'))->up();
         (require base_path('database/migrations/2026_11_06_230000_remove_user_tg_email_confirmation.php'))->up();

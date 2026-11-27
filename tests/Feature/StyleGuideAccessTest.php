@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -13,7 +14,7 @@ class StyleGuideAccessTest extends TestCase
     public function createApplication()
     {
         $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
-        if ($app->configurationIsCached() || $app->routesAreCached()) {
+        if ($app->configurationIsCached() || (new Filesystem)->exists($app->getCachedRoutesPath())) {
             throw new \RuntimeException('Use an uncached disposable checkout for contributor checks.');
         }
         $app->loadEnvironmentFrom('.env.style-guide-access-test-nonexistent');
