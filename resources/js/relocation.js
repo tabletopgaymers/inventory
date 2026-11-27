@@ -744,7 +744,10 @@ import './inventory-search-controls.js';
                 form.elements.namedItem(name).value = value ?? '';
             });
             Object.entries(result.lines || {}).forEach(([item, value]) => { form.elements.namedItem(`lines[${item}]`).value = value ?? ''; });
-            if (result.addedStages) requestedRows().forEach(row => { row.dataset.addedStage = result.addedStages[row.dataset.materialItem]; });
+            if (result.addedStages) requestedRows().forEach(row => {
+                const stage = result.addedStages[row.dataset.materialItem];
+                if (stage === 'requested' || stage === 'fulfillment' || stage === 'reconciliation') row.dataset.addedStage = stage;
+            });
             if ('requestedDate' in result) form.querySelector('[data-ship-requested-date]').textContent = result.requestedDate || '—';
             if (result.shippingDate) form.querySelector('[data-shipping-date]').value = result.shippingDate;
             if (result.fulfillerName) form.querySelector('[data-ship-fulfiller]').textContent = result.fulfillerName;
