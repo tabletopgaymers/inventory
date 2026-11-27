@@ -151,7 +151,10 @@ import { mountPurchasePicker } from './purchase/catalog-picker.js';
         const fields = Object.fromEntries([...row.querySelectorAll('[data-invoice-field]')].map(input => [input.dataset.invoiceField, input]));
         try {
             const quantity = decimal(fields.quantity.value.replaceAll(',', ''), 0);
-            if (quantity > 1000000000n) throw Error('quantity');
+            if (quantity > 1000000000n) {
+                row.querySelector('[data-line-total]').textContent = '—';
+                return;
+            }
             if (quantity === 0n) {
                 fields.cost.value='0.00'; row.querySelector('[data-line-basis]').value='unit';
                 row.querySelector('[data-line-total]').textContent=format(decimal(fields.fee.value,2),2); return;

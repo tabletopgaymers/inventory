@@ -262,11 +262,10 @@ import './inventory-search-controls.js';
         requestedRows().forEach(row => url.searchParams.append('items[]', row.dataset.materialItem));
         try {
             const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            if (!response.ok) throw new Error('Balance refresh failed');
-            const data = await response.json();
+            const data = response.ok ? await response.json() : null;
             if (generation !== balanceGeneration) return;
             requestedRows().forEach(row => {
-                const values = data.balances[row.dataset.materialItem];
+                const values = response.ok ? data.balances[row.dataset.materialItem] : undefined;
                 row.dataset.sourceBalance = values?.source ?? '';
                 row.dataset.destinationBalance = values?.destination ?? '';
             });

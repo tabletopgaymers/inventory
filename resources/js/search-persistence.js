@@ -51,11 +51,11 @@ export function mountSearchPersistence(root, config, {criteria, apply, changed})
         if (!endpoint) return Promise.resolve();
         const data = payload();
         queue = queue.catch(() => {}).then(async () => {
+            const failure = 'Search settings could not be remembered. Select Search to retry saving your settings.';
             try {
                 const response = await fetch(endpoint, {method: 'POST', body: data, credentials: 'same-origin', headers: {Accept: 'application/json'}, signal: AbortSignal.timeout(10000)});
-                if (!response.ok) throw new Error();
-                report('');
-            } catch { report('Search settings could not be remembered. Select Search to retry saving your settings.'); }
+                report(response.ok ? '' : failure);
+            } catch { report(failure); }
         });
         return queue;
     };

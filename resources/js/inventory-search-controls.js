@@ -101,24 +101,42 @@ import { mountClearableInput } from './clearable-input.js';
             root.setAttribute('aria-busy', 'true');
             emit('busy', { busy: true });
             message('Searching…');
+            const reportFailure = reason => {
+                message(reason, true);
+                emit('error', { message: feedback.textContent });
+                changed();
+            };
+            const originError = 'Search must use an endpoint on this site.';
             try {
                 const url = new URL(options.endpoint || root.dataset.endpoint, location.href);
-                if (url.origin !== location.origin) throw new Error('Search must use an endpoint on this site.');
+                if (url.origin !== location.origin) {
+                    reportFailure(originError);
+                    return;
+                }
                 url.searchParams.set('search', next.search);
                 url.searchParams.set('include_inactive', next.include_inactive ? '1' : '0');
                 for (const key of ['collections[]', 'columns[]']) url.searchParams.delete(key);
                 next.collections.forEach(id => url.searchParams.append('collections[]', id));
                 next.columns.forEach(key => url.searchParams.append('columns[]', key));
                 options.prepareUrl?.(url, next);
-                if (url.origin !== location.origin) throw new Error('Search must use an endpoint on this site.');
+                if (url.origin !== location.origin) {
+                    reportFailure(originError);
+                    return;
+                }
                 let data;
                 if (options.request) data = await options.request(url, next, action);
                 else {
                     const response = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
                     data = await response.json();
-                    if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Search could not be completed.');
+                    if (!response.ok) {
+                        reportFailure(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Search could not be completed.');
+                        return;
+                    }
                 }
-                if (!Array.isArray(data.rows) || !data.columns || data.schema_version !== 1) throw new Error('The search response could not be read.');
+                if (!Array.isArray(data.rows) || !data.columns || data.schema_version !== 1) {
+                    reportFailure('The search response could not be read.');
+                    return;
+                }
                 options.render?.(data, root);
                 result = data;
                 submittedInputs = next;
@@ -128,9 +146,7 @@ import { mountClearableInput } from './clearable-input.js';
                 persistence?.schedule();
                 return data;
             } catch (error) {
-                message(error instanceof SyntaxError || error instanceof TypeError ? 'Search could not be completed. Check your connection or sign in again.' : error.message, true);
-                emit('error', { message: feedback.textContent });
-                changed();
+                reportFailure(error instanceof SyntaxError || error instanceof TypeError ? 'Search could not be completed. Check your connection or sign in again.' : error.message);
             } finally {
                 busy = false;
                 controls.forEach(([control, disabled]) => { control.disabled = disabled; });
@@ -155,14 +171,6 @@ import { mountClearableInput } from './clearable-input.js';
             changed();
             persistence?.schedule();
         };
-        root.querySelectorAll('[data-is-action]').forEach(button => button.addEventListener('click', event => {
-            event.stopPropagation();
-            if (config.formMode) event.preventDefault();
-            const action = button.dataset.isAction;
-            if (action === 'reset' && config.formMode) submitForm('reset');
-            else if (action === 'reset' || action === 'clear') clear(action === 'reset');
-            else search(action);
-        }));
         text.addEventListener('keydown', event => {
             if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); event.stopPropagation(); search(); }
         });
@@ -187,6 +195,15 @@ import { mountClearableInput } from './clearable-input.js';
             getState: () => ({ pending: criteria(), submitted: result?.criteria || submittedInputs, result, busy }),
             persistence,
             navigateWithPreferences: destination => { if (config.formMode && persistence?.endpoint) return submitForm('search', destination); } };
+        root.querySelectorAll('[data-is-action]').forEach(button => button.addEventListener('click', event => {
+            event.stopPropagation();
+            if (config.formMode) event.preventDefault();
+            const action = button.dataset.isAction;
+            if (action === 'reset') api.reset();
+            else if (action === 'clear') api.clearFilters();
+            else if (action === 'all') api.showAll();
+            else search(action);
+        }));
         instances.set(root, { api, options });
         changed();
         return api;

@@ -123,6 +123,11 @@ import './app.js';
         lockedFields = editable;
         let navigating = false;
         let focusFeedback = false;
+        const showFailure = message => {
+            retainedError = true;
+            focusFeedback = true;
+            show(message, true);
+        };
         busy = true;
         editable.forEach(field => { field.disabled = true; });
         render();
@@ -139,17 +144,19 @@ import './app.js';
                     focusFeedback = true;
                     return;
                 }
-                throw new Error(result.message || 'The record could not be saved. Your inputs are retained.');
+                showFailure(result.message || 'The record could not be saved. Your inputs are retained.');
+                return;
             }
-            if (!Number.isInteger(result.id) || result.id < 1) throw new Error('The save response could not be confirmed. Your inputs are retained.');
+            if (!Number.isInteger(result.id) || result.id < 1) {
+                showFailure('The save response could not be confirmed. Your inputs are retained.');
+                return;
+            }
             baseline = submitted;
             retainedError = false;
             window.location.assign(result.redirect || form.dataset.recordBase + result.id);
             navigating = true;
         } catch (error) {
-            retainedError = true;
-            focusFeedback = true;
-            show(error instanceof SyntaxError || error instanceof TypeError ? 'The record could not be saved. Your inputs are retained; check your connection or sign in again if your session expired.' : error.message, true);
+            showFailure(error instanceof SyntaxError || error instanceof TypeError ? 'The record could not be saved. Your inputs are retained; check your connection or sign in again if your session expired.' : error.message);
         } finally {
             if (!navigating) {
                 busy = false;

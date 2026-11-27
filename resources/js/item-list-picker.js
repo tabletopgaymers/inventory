@@ -14,7 +14,13 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
     const container = root.closest('[data-memory-picker]');
     const showInventory = root.dataset.showInventory !== '0';
     const snapshotLabel = container.querySelector('[data-memory-snapshot]');
+    const showUnavailable = () => {
+        snapshotLabel.textContent = 'Catalog and inventory unavailable.';
+        container.querySelector('[data-memory-load-error]').hidden = false;
+        container.querySelector('[data-memory-retry]').addEventListener('click', () => window.location.reload());
+    };
     let snapshot;
+    let missingSavedLocation;
     try {
         const options = {userId: root.dataset.userId, endpoint: root.dataset.catalogUrl};
         snapshot = await loadCatalogSnapshot(options);
@@ -24,12 +30,14 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
         if (!persistSelection && (missingLocation() || initialItemIds.some(id => !snapshot.catalog.items.some(item => item.id === Number(id))))) {
             snapshot = await loadCatalogSnapshot({...options, refresh: true});
         }
-        if (!persistSelection && missingLocation()) throw new Error('The saved location could not be resolved.');
+        missingSavedLocation = !persistSelection && missingLocation();
     }
     catch {
-        snapshotLabel.textContent = 'Catalog and inventory unavailable.';
-        container.querySelector('[data-memory-load-error]').hidden = false;
-        container.querySelector('[data-memory-retry]').addEventListener('click', () => window.location.reload());
+        showUnavailable();
+        return;
+    }
+    if (missingSavedLocation) {
+        showUnavailable();
         return;
     }
     const catalog = snapshot.catalog;
