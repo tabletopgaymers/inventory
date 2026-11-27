@@ -2,13 +2,14 @@
 @section('title', 'Example uses')
 @section('intro', 'Current patterns composed into sample screens.')
 @section('guide-content')
+@php($userExampleId = 'guide-user')
 <nav class="app-section-nav" aria-label="On this page"><a href="#users">Users</a><a href="#search">Inventory</a><a href="#item">Item details</a><a href="#requests">Requests</a><a href="#counts">Counts & print</a><a href="#supporting">Catalog & events</a><a href="#wrapper">Application frame</a></nav>
 <x-app.table-region id="users" label="Sample user directory"><x-slot:header><h2>Informative user directory</h2><p>List information here; put permitted actions on the linked record page. Basic is omitted from Elevated roles.</p></x-slot:header><table><thead><tr><th>Name</th><th>Email</th><th>Elevated roles</th></tr></thead><tbody>
-        <tr><td><a href="#guide-user">Sample Administrator</a></td><td>sample@example.test</td><td>admin, manager, procurement</td></tr>
+        <tr><td><a href="#{{ $userExampleId }}">Sample Administrator</a></td><td>sample@example.test</td><td>admin, manager, procurement</td></tr>
         <tr><td><a href="#profile-example">Sample Volunteer</a></td><td>volunteer@example.test</td><td></td></tr>
     </tbody></table></x-app.table-region>
 <x-app.guide-divider />
-@include('style-guide.user-example')
+@include('style-guide.user-example', ['anchorId' => $userExampleId])
 <x-app.guide-divider />
 <div class="app-content" id="profile-example">
 <x-workflow.heading><h2>Profile editing</h2><div class="app-actions"><x-app.action variant="danger" type="button" >Discard</x-app.action><x-app.action variant="primary" type="button" >Save</x-app.action></div></x-workflow.heading>

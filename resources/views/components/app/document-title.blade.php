@@ -1,5 +1,5 @@
 {{--
-Use in the document head to format the browser-tab title. Supply the complete base title. The configured environment determines whether LCL, DEV, or STG is added.
+Use inside the document's title element to format the browser-tab title. Supply the complete base title. The configured environment determines whether LCL, DEV, or STG is added.
 
 ## Slots
 
@@ -17,4 +17,4 @@ No caller slots.
         default => '',
     };
 @endphp
-<title>{{ $environmentPrefix !== '' ? $environmentPrefix.' · '.$title : $title }}</title>
+{{ $environmentPrefix !== '' ? $environmentPrefix.' · '.$title : $title }}

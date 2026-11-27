@@ -1,4 +1,4 @@
-<div class="app-content" id="guide-user">
+<div class="app-content" id="{{ $anchorId ?? 'guide-user' }}">
 <x-workflow.heading><h2>Sample Administrator</h2><x-app.action  href="#profile-example">Edit</x-app.action></x-workflow.heading>
     <div class="app-columns app-columns-two app-columns-trim">
     <div>

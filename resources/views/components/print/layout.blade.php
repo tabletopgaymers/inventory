@@ -12,7 +12,7 @@ The default slot contains the material that follows the title.
 <!doctype html>
 <html lang="en"><head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <x-app.document-title :title="$documentTitle ?? $title" />
+    <title><x-app.document-title :title="$documentTitle ?? $title" /></title>
     <x-app.favicon />
     @vite(array_merge(['resources/css/print.css', 'resources/js/print.js'], $styles))
 </head><body class="print-page {{ $bodyClass }}"><main>
