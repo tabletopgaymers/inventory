@@ -10,12 +10,16 @@
   "license": "MIT",
   "require": {
     "php": "~8.5.0",
+    "ext-mbstring": "*",
+    "ext-pdo": "*",
     "laravel/framework": "^13.44.1",
     "laravel/socialite": "^5.31",
     "laravel/tinker": "^3.0",
     "socialiteproviders/microsoft": "^4.10"
   },
   "require-dev": {
+    "ext-dom": "*",
+    "ext-libxml": "*",
     "laravel/pint": "^1.27",
     "mockery/mockery": "^1.6",
     "nunomaduro/collision": "^8.6",

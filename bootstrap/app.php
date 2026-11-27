@@ -28,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
                 && in_array($exception->getStatusCode(), [403, 404], true)) {
                 return response()->view('errors.page-unavailable', [], $exception->getStatusCode());
             }
+
+            return null;
         });
         // Provider responses and SQL bindings may contain private data. Authentication
         // routes handle safe restart errors; database diagnostics stay out of logs.
@@ -36,11 +38,15 @@ return Application::configure(basePath: dirname(__DIR__))
             if (CheckBaseline::isSessionFailure($exception, request())) {
                 return false;
             }
+
+            return null;
         });
         $exceptions->render(function (PDOException $exception, Request $request) {
             if (CheckBaseline::isSessionFailure($exception, $request)) {
                 return CheckBaseline::sessionFailureResponse($request);
             }
+
+            return null;
         });
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
