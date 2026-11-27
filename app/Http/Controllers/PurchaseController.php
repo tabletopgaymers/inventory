@@ -341,7 +341,7 @@ class PurchaseController
                 'estimates' => ['nullable','array','max:1000'], 'estimates.*' => ['nullable','string','max:30'],
                 'other_lines' => ['nullable','array','max:1000'], 'other_lines.*' => ['array:description,quantity,unit'],
                 'other_lines.*.description' => ['nullable','string','max:500'], 'other_lines.*.quantity' => ['nullable','string','max:30'],
-                'other_lines.*.unit' => ['nullable','string','max:30'], 'remove_other' => ['nullable','uuid'],
+                'other_lines.*.unit' => ['nullable','string','max:30'], 'remove_other' => ['required_if:action,remove_other','nullable','uuid'],
                 'selected' => ['nullable','array','max:1000'], 'selected.*' => ['integer','distinct','min:1'],
                 'add_quantities' => ['nullable','array','max:1000'], 'add_quantities.*' => ['nullable','string','max:30'],
             ] + PurchaseRequestBasics::rules(array_replace($request->all(), ['vendor_other_id' => $work['vendor_other_id'] ?? ''])), [], [
@@ -394,7 +394,7 @@ class PurchaseController
                 $values['material_dirty'] = true;
                 $request->session()->put('purchase_workspace.'.$token, $values);
 
-                return redirect('/purchase/work/'.$token.'?tab='.($action === 'next' ? 'review' : 'material'));
+                return redirect('/purchase/work/'.$token.'?tab=material');
             }
             $submit = $action === 'submit';
             if ($submit && ($errors = $this->requestErrors($values))) throw ValidationException::withMessages($errors);
