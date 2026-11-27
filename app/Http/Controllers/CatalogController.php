@@ -413,7 +413,8 @@ class CatalogController
         DB::transaction(function () use ($request, $kind, $record, $data) {
             $service = app(CatalogRecords::class);
             $service->authorize((int) $request->user()->id, $kind, $record);
-            $row = $service->record($kind, $record);
+            // Check the record belongs to the requested kind before locking the backing row.
+            $service->record($kind, $record);
             $reference = in_array($kind, ['suppliers', 'purposes', 'programs'], true);
             DB::table($reference ? 'catalog_references' : $kind)->where('id', $record)->lockForUpdate()->firstOrFail();
             $row = $service->record($kind, $record);

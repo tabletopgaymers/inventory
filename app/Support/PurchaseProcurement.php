@@ -77,7 +77,7 @@ class PurchaseProcurement
         if ((self::vendorSnapshot($supplier)['state'] ?? null)==='unverified') throw ValidationException::withMessages(['supplier_id'=>'Verify the supplier before continuing.']);
         $delivery=[];
         foreach (self::FIELDS as $field) $delivery[$field]=RequestValues::text($values[$field] ?? null,$field,$field==='delivery_address'?5000:255,in_array($field,['delivery_choice','delivery_name','delivery_address'],true)) ?? '';
-        $choice=$delivery['delivery_choice']; $type=null; $source=null;
+        $choice=$delivery['delivery_choice']; $source=null;
         if (preg_match('/\Alocation:([1-9][0-9]*)\z/D',$choice,$match)) {
             $type='storage';$source=RequestValues::id($match[1],'delivery_choice');
             RequestValues::association('storage_locations',$source,$row->receiving_location_id,'delivery_choice');

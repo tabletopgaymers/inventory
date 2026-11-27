@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use App\Support\BaselineProbe;
 use Closure;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Session\DatabaseSessionHandler;
 use PDOException;
@@ -26,7 +25,7 @@ class CheckBaseline
 
     public static function isSessionFailure(Throwable $exception, Request $request): bool
     {
-        if (! ($exception instanceof QueryException || $exception instanceof PDOException)
+        if (! ($exception instanceof PDOException)
             || ! ($request->attributes->get('baseline')['ready'] ?? false)) {
             return false;
         }
