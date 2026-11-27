@@ -87,7 +87,7 @@ class InventoryBrowseController
         $context = app(InventoryBrowseState::class)->context($request, $token);
         $result = app(InventorySearch::class)->results($context['submitted'], naturalNames: true, itemIds: $context['list']['items'] ?? null);
         $context['export'] = $result;
-        $context['export_expires'] = now()->timestamp + 1800;
+        $context['export_expires'] = now()->getTimestamp() + 1800;
         $request->session()->put('inventory_browse.'.$token, $context);
 
         return $this->render($request, $context['pending'], $result, $token, $context);
@@ -141,11 +141,12 @@ class InventoryBrowseController
     {
         $this->ready();
         $context = app(InventoryBrowseState::class)->context($request, $token);
-        abort_unless(isset($context['export']) && $context['export_expires'] >= now()->timestamp && count($context['export']['rows']) > 0, 410, 'Displayed results expired. Return to results to refresh before downloading.');
+        abort_unless(isset($context['export']) && $context['export_expires'] >= now()->getTimestamp() && count($context['export']['rows']) > 0, 410, 'Displayed results expired. Return to results to refresh before downloading.');
         $result = $context['export'];
+        $stream = fopen('php://output', 'w');
+        abort_if($stream === false, 500, 'Inventory CSV output could not be opened.');
 
-        return response()->streamDownload(function () use ($result) {
-            $stream = fopen('php://output', 'w');
+        return response()->streamDownload(function () use ($result, $stream) {
             $safeText = fn ($value) => preg_match('/\A[\s]*[=+\-@]/u', $value) ? "'".$value : $value;
             fputcsv($stream, array_map($safeText, array_merge(['Category', 'Collection', 'Name', 'Available'], array_column($result['columns'], 'name'))), escape: '');
             foreach ($result['rows'] as $row) {

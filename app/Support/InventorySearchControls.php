@@ -90,7 +90,8 @@ class InventorySearchControls
         }
         $rows = [];
         foreach ($result['rows'] as $row) {
-            $classification = $classifications[$row['id']];
+            $classification = $classifications->get($row['id']);
+            if ($classification === null) continue;
             if (($config['activeOnly'] ?? false) && $classification->state !== 'active') continue;
             if (in_array($row['id'], array_map('intval', $config['excludeIds'] ?? []), true)) continue;
             $row += ['item_id' => $row['id'], 'category_id' => (int) $classification->category_id,
