@@ -1,6 +1,8 @@
 @import './actions.css';
 @import './print-tables.css';
 /* Standalone print entry: no application framework/reset or density imports. */
+/* print.js overrides the default after measuring the SKU cells. */
+:root { --app-print-sku-width: 1%; }
 body { font-family: system-ui, sans-serif; color: #000; margin: 1.5rem; }
 main { max-width: 65rem; margin: auto; }
 h1 { font-size: 1.4rem; }
@@ -13,7 +15,7 @@ h1 { font-size: 1.4rem; }
 .print-notes p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 /* Document-specific column sizing and space for handwriting. */
 col.print-quantity-column { width: var(--app-print-writing-width); }
-col.print-sku-column { width: var(--app-print-sku-width, 1%); }
+col.print-sku-column { width: var(--app-print-sku-width); }
 .print-sku { white-space: nowrap; }
 .print-quantity { height: 2rem; }
 @media print { body { margin: 0; } button { display: none; } }
