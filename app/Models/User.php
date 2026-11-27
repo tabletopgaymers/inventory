@@ -5,6 +5,14 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property int $id
+ * @property string $first_name
+ * @property string $last_name
+ * @property string|null $provider_email
+ * @property string|null $personal_email
+ * @property bool $enabled
+ */
 class User extends Authenticatable
 {
     public const DISPLAY_DENSITIES = ['compact' => 'Compact', 'standard' => 'Standard', 'spacious' => 'Spacious'];

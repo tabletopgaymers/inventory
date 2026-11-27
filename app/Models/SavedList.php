@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @property int $id
+ * @property int $owner_id
+ * @property bool $shared
+ */
 class SavedList extends Model
 {
     public const STATUSES = ['active' => 'Active', 'inactive' => 'Inactive'];
