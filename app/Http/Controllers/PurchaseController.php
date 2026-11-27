@@ -156,7 +156,7 @@ class PurchaseController
                 }
                 unset($line);
             }
-            if ($mode === 'order' && !isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
+            if (!isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
                 // Only a genuinely new workspace without a saved invoice gets the request seed.
                 if (!$saved) $values['lines']=\App\Support\PurchaseInvoiceLines::requested($row->id);
                 $values['lines_initialized']=true;
@@ -171,7 +171,7 @@ class PurchaseController
             $work['invoices'][$mode]=$invoice;
             $request->session()->put('purchase_workspace.'.$token,$work);
         }
-        if ($mode === 'order' && !isset($invoice['values']['lines_initialized']) && !isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
+        if (!isset($invoice['values']['lines_initialized']) && !isset(RequestStock::header('purchase',$row->id)['order_operation'])) {
             // Existing workspace values may include unsaved Next/add/recalculate edits, including an intentional empty set.
             foreach ($invoice['values']['lines'] as $key=>&$line) $line = array_replace(\App\Support\PurchaseInvoiceLines::identity($key,$line),$line);
             unset($line);
@@ -201,7 +201,8 @@ class PurchaseController
             } catch (ValidationException $e) {
                 $reviewErrors = $e->errors();
                 try {
-                    if ($mode==='order') { $this->invoiceComplete($values, false, $mode); $preview = app(PurchaseCosting::class)->calculate($values); }
+                    $this->invoiceComplete($values, false, $mode);
+                    $preview = app(PurchaseCosting::class)->calculate($values);
                 } catch (ValidationException) { /* Keep entered values visible while unfinished. */ }
             } catch (HttpException $e) {
                 if ($e->getStatusCode() !== 409) throw $e;
@@ -211,7 +212,7 @@ class PurchaseController
         if ($tab === 'order-review' && $row->status === 'Draft') $reviewErrors['status']=['Submit this request before recording an order.'];
         $locationStocks = DB::table('inventory_balances')->where('storage_location_id', (int) ($values['receiving_location_id'] ?: 0))->pluck('quantity', 'item_id')->all();
 
-        if ($row->status === 'Received' && $mode === 'order' && ! $recordedOrder) $reviewErrors = ['order' => ['The recorded order snapshot is unavailable. View Receive for the final receipt.']];
+        if ($row->status === 'Received' && ! $recordedOrder) $reviewErrors = ['order' => ['The recorded order snapshot is unavailable. View Receive for the final receipt.']];
         try { $reviewDate = \App\Support\DisplayDates::businessDate($values['ordered_date']); }
         catch (\Throwable) { $reviewDate = '—'; }
 
