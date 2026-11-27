@@ -7,6 +7,8 @@ import { showNotice } from './notices.js';
  *
  * Scope: Shared
  * Task: Run a single workflow progress save
+ * @param {HTMLFormElement} form
+ * @param {{onBusy?: function(boolean): void}} [options] Runs when the save acquires or releases its lock.
  * @example resources/js/relocation.js
  */
 export function createProgressController(form, { onBusy = () => {} } = {}) {
@@ -59,6 +61,13 @@ export function createProgressController(form, { onBusy = () => {} } = {}) {
  *
  * Scope: Domain-specific (Purchase)
  * Task: Wire Purchase Save progress and Next feedback
+ * @param {HTMLFormElement} form
+ * @param {Object} options
+ * @param {function(Object, {unchanged: boolean}): void} options.onSaved
+ * @param {HTMLElement} options.feedback
+ * @param {function(boolean): void} [options.onBusy]
+ * @param {function(): boolean} [options.canSave]
+ * @param {function(): number} [options.getGeneration]
  * @example resources/js/purchase-work-invoice.js
  */
 export function mountProgressSave(form, { onSaved, feedback, onBusy = () => {}, canSave = () => true, getGeneration = () => 0 }) {
