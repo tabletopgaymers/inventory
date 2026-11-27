@@ -15,6 +15,7 @@ import { mountClearableInput } from './clearable-input.js';
         const filters = root.querySelector('[data-is-filters]');
         const feedback = root.querySelector('[data-is-feedback]');
         const pending = root.querySelector('[data-is-pending]');
+        const form = config.formMode ? root.closest('form') : null;
         let busy = false;
         let result = null;
         let submittedInputs = config.submitted || null;
@@ -46,6 +47,11 @@ import { mountClearableInput } from './clearable-input.js';
             feedback.className = error ? 'error' : 'app-field-help';
             feedback.setAttribute('role', error ? 'alert' : 'status');
         };
+        const reportFailure = reason => {
+            message(reason, true);
+            emit('error', { message: feedback.textContent });
+            changed();
+        };
         const apply = saved => {
             if (!saved || typeof saved.search !== 'string' || saved.search.length > 255
                 || !Array.isArray(saved.collections) || !saved.collections.every(Number.isSafeInteger)
@@ -65,25 +71,44 @@ import { mountClearableInput } from './clearable-input.js';
         };
         const submitForm = async (action, destination = null) => {
             if (busy) return;
-            const form = root.closest('form');
-            if (!form) throw new Error('Form search requires a surrounding form.');
-            if (!form.reportValidity()) return;
-            const endpoint = new URL(destination ? persistence.endpoint : root.dataset.endpoint, location.href);
-            if (endpoint.origin !== location.origin) throw new Error('Search must use this site.');
-            if (action === 'all') text.value = '';
-            if (action === 'reset') apply({search: '', collections: [], columns: [], include_inactive: false});
-            if (filters) filters.open = false;
-            busy = true; root.setAttribute('aria-busy', 'true');
-            root.querySelector(`[data-is-action="${action}"]`)?.setAttribute('aria-busy', 'true');
-            message(action === 'save' ? 'Saving…' : 'Searching…'); emit('busy', {busy: true});
-            await persistence?.beforeSubmit();
-            if (form.elements.scroll) form.elements.scroll.value = String(Math.round(window.scrollY));
-            if (form.elements.destination) form.elements.destination.value = destination || '';
-            form.action = endpoint.href;
-            let field = form.querySelector('[data-is-form-action]');
-            if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = 'action'; field.dataset.isFormAction = ''; form.append(field); }
-            field.value = action === 'all' ? 'show_all' : action;
-            form.submit();
+            if (!form) {
+                reportFailure('Form search requires a surrounding form.');
+                return;
+            }
+            let button = null;
+            try {
+                if (!form.reportValidity()) return;
+                const endpoint = new URL(destination ? persistence.endpoint : root.dataset.endpoint, location.href);
+                if (endpoint.origin !== location.origin) {
+                    reportFailure('Search must use this site.');
+                    return;
+                }
+                if (action === 'all') text.value = '';
+                if (action === 'reset') apply({search: '', collections: [], columns: [], include_inactive: false});
+                if (filters) filters.open = false;
+                button = root.querySelector(`[data-is-action="${action}"]`);
+                busy = true;
+                root.setAttribute('aria-busy', 'true');
+                button?.setAttribute('aria-busy', 'true');
+                message(action === 'save' ? 'Saving…' : 'Searching…'); emit('busy', {busy: true});
+                await persistence?.beforeSubmit();
+                if (form.elements.scroll) form.elements.scroll.value = String(Math.round(window.scrollY));
+                if (form.elements.destination) form.elements.destination.value = destination || '';
+                form.action = endpoint.href;
+                let field = form.querySelector('[data-is-form-action]');
+                if (!field) { field = document.createElement('input'); field.type = 'hidden'; field.name = 'action'; field.dataset.isFormAction = ''; form.append(field); }
+                field.value = action === 'all' ? 'show_all' : action;
+                form.submit();
+            } catch {
+                if (busy) {
+                    busy = false;
+                    persistence?.resume();
+                    root.setAttribute('aria-busy', 'false');
+                    button?.setAttribute('aria-busy', 'false');
+                    emit('busy', {busy: false});
+                }
+                reportFailure('Search could not be submitted. Try again.');
+            }
         };
         const search = async (action = 'search') => {
             if (busy) return;
@@ -101,11 +126,6 @@ import { mountClearableInput } from './clearable-input.js';
             root.setAttribute('aria-busy', 'true');
             emit('busy', { busy: true });
             message('Searching…');
-            const reportFailure = reason => {
-                message(reason, true);
-                emit('error', { message: feedback.textContent });
-                changed();
-            };
             const originError = 'Search must use an endpoint on this site.';
             try {
                 const url = new URL(options.endpoint || root.dataset.endpoint, location.href);
@@ -172,18 +192,18 @@ import { mountClearableInput } from './clearable-input.js';
             persistence?.schedule();
         };
         text.addEventListener('keydown', event => {
-            if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); event.stopPropagation(); search(); }
+            if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); event.stopPropagation(); void search(); }
         });
         const edited = () => { changed(); persistence?.schedule(); };
         root.addEventListener('input', edited);
         root.addEventListener('change', edited);
         persistence = mountSearchPersistence(root, config.persistence, {criteria, apply, changed});
         clearInput = mountClearableInput(text, root.querySelector('[data-is-clear-text]'));
-        if (config.formMode) {
-            root.closest('form').addEventListener('submit', event => {
+        if (form) {
+            form.addEventListener('submit', event => {
                 event.preventDefault();
-                if (event.submitter && !root.contains(event.submitter)) submitForm(event.submitter.value || 'search');
-                else search();
+                if (event.submitter && !root.contains(event.submitter)) void submitForm(event.submitter.value || 'search');
+                else void search();
             });
             window.addEventListener('pageshow', event => {
                 busy = false; persistence?.resume(); root.setAttribute('aria-busy', 'false');
@@ -199,10 +219,10 @@ import { mountClearableInput } from './clearable-input.js';
             event.stopPropagation();
             if (config.formMode) event.preventDefault();
             const action = button.dataset.isAction;
-            if (action === 'reset') api.reset();
+            if (action === 'reset') void api.reset();
             else if (action === 'clear') api.clearFilters();
-            else if (action === 'all') api.showAll();
-            else search(action);
+            else if (action === 'all') void api.showAll();
+            else void search(action);
         }));
         instances.set(root, { api, options });
         changed();
