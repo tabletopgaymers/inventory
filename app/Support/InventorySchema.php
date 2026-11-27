@@ -14,7 +14,7 @@ class InventorySchema
     public const TABLES = ['categories', 'collections', 'items', 'storage_locations', 'inventory_balances', 'inventory_adjustments', 'inventory_adjustment_entries'];
 
     /**
-     * Inventory schema audit used by BaselineProbe. It incorporates the later classification migration when determining the expected contract.
+     * Audit the exact Inventory table shape for the recorded classification and Catalog owner migrations.
      *
      * @internal
      * @example app/Support/BaselineProbe.php
@@ -43,6 +43,14 @@ class InventorySchema
                     $column['nullable'], $column['auto_increment'],
                 ];
                 if ($column['generation'] !== null) {
+                    return ['compatible' => false, 'ready' => false];
+                }
+                if ($catalogOwnersExpanded && $column['name'] === 'state'
+                    && ! in_array($column['default'], ['active', "'active'"], true)) {
+                    return ['compatible' => false, 'ready' => false];
+                }
+                if ($table === 'storage_locations' && $column['name'] === 'mailing_address'
+                    && ! in_array($column['default'], ['address missing', "'address missing'"], true)) {
                     return ['compatible' => false, 'ready' => false];
                 }
             }
@@ -86,7 +94,7 @@ class InventorySchema
             }
         }
 
-        return ['compatible' => true, 'ready' => true];
+        return ['compatible' => true, 'ready' => $catalogOwnersExpanded];
     }
 
     private function contract(bool $classified, bool $catalogOwnersExpanded): array

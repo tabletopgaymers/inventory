@@ -234,13 +234,15 @@ class CatalogController
         $this->ready();
         abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
         abort_unless($this->canMaintain($request, $kind, $record), 403);
-        $rules = ['name' => $this->text(true), 'description' => $this->text(false, 5000), 'notes' => $this->text(false, 5000)];
+        $rules = ['name' => $this->text(true)];
+        if (in_array($kind, ['categories', 'collections', 'storage_locations'], true)) {
+            $rules['description'] = $this->text(false, 5000);
+        }
         if ($kind === 'storage_locations') {
             $rules['mailing_address'] = array_replace($this->multilineText(), [0 => 'required']);
         }
         if (in_array($kind, ['purposes', 'programs'], true)) {
             $rules['description'] = $this->multilineText();
-            unset($rules['notes']);
         }
         if ($kind === 'purposes') {
             $rules['examples'] = $this->multilineText();
@@ -292,6 +294,12 @@ class CatalogController
                 $values = ['name' => trim($data['name']), 'updated_at' => now('UTC')];
                 if ($values['name'] === '') {
                     throw ValidationException::withMessages(['name' => 'Enter a nonblank name.']);
+                }
+                if (in_array($kind, ['categories', 'collections', 'storage_locations'], true)) {
+                    $values['description'] = $data['description'] ?? null;
+                }
+                if ($kind === 'storage_locations') {
+                    $values['mailing_address'] = $data['mailing_address'];
                 }
                 if ($kind === 'collections') {
                     DB::table('categories')->where('id', $data['category_id'])->lockForUpdate()->firstOrFail();
@@ -350,16 +358,8 @@ class CatalogController
                     $values['created_at'] = now('UTC');
                     $id = DB::table($table)->insertGetId($values);
                 }
-                if (! $reference) {
-                    $existing = DB::table('catalog_metadata')->where(['kind' => $kind, 'record_id' => $id])->first();
-                    $catalogMetadata = ['state' => $existing->state ?? 'active', 'description' => $data['description'] ?? null, 'notes' => $data['notes'] ?? null, 'updated_at' => now('UTC')];
-                    if ($kind === 'storage_locations') {
-                        $catalogMetadata['mailing_address'] = $data['mailing_address'] ?? null;
-                    }
-                    DB::table('catalog_metadata')->updateOrInsert(['kind' => $kind, 'record_id' => $id], $catalogMetadata);
-                    if ($kind !== 'items') {
-                        DB::table('catalog_names')->updateOrInsert(['kind' => $kind, 'record_id' => $id], ['parent_id' => $kind === 'collections' ? $values['category_id'] : 0, 'name' => $values['name']]);
-                    }
+                if (! $reference && $kind !== 'items') {
+                    DB::table('catalog_names')->updateOrInsert(['kind' => $kind, 'record_id' => $id], ['parent_id' => $kind === 'collections' ? $values['category_id'] : 0, 'name' => $values['name']]);
                 }
                 if ($kind === 'items') {
                     $meta = ['updated_at' => now('UTC')];
@@ -409,15 +409,17 @@ class CatalogController
     public function lifecycle(Request $request, string $kind, int $record)
     {
         $this->ready();
+        abort_unless(isset(CatalogRecords::KINDS[$kind]), 404);
         $data = $request->validate(['action' => ['required', 'in:activate,inactivate,archive,restore'], 'confirm' => ['required_if:action,archive', 'accepted_if:action,archive']]);
         DB::transaction(function () use ($request, $kind, $record, $data) {
             $service = app(CatalogRecords::class);
             $service->authorize((int) $request->user()->id, $kind, $record);
-            // Check the record belongs to the requested kind before locking the backing row.
-            $service->record($kind, $record);
             $reference = in_array($kind, ['suppliers', 'purposes', 'programs'], true);
-            DB::table($reference ? 'catalog_references' : $kind)->where('id', $record)->lockForUpdate()->firstOrFail();
-            $row = $service->record($kind, $record);
+            $query = DB::table($reference ? 'catalog_references' : $kind)->where('id', $record);
+            if ($reference) {
+                $query->where('kind', $kind);
+            }
+            $row = $query->lockForUpdate()->firstOrFail();
             if ($kind === 'storage_locations' && $row->is_central && $data['action'] !== 'activate') {
                 throw ValidationException::withMessages(['action' => 'Central must remain the distinguished active storage location.']);
             }
@@ -425,12 +427,7 @@ class CatalogController
             $state = match ($data['action']) {
                 'activate' => 'active', 'archive' => 'archived', default => 'inactive'
             };
-            if ($reference) {
-                DB::table('catalog_references')->where('id', $record)->update(['state' => $state, 'updated_at' => now('UTC')]);
-            } else {
-                $existing = DB::table('catalog_metadata')->where(['kind' => $kind, 'record_id' => $record])->first();
-                DB::table('catalog_metadata')->updateOrInsert(['kind' => $kind, 'record_id' => $record], ['state' => $state, 'description' => $existing->description ?? null, 'notes' => $existing->notes ?? null, 'updated_at' => now('UTC')]);
-            }
+            $query->update(['state' => $state, 'updated_at' => now('UTC')]);
         }, 3);
 
         if ($kind === 'suppliers') return redirect(CatalogRecords::viewUrl($kind, $record).PurchaseSupplierReturn::context($request, $kind)['purchaseReturnQuery'])->with('success', 'Supplier status updated; request history retained.');

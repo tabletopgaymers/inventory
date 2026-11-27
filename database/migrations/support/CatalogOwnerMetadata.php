@@ -29,7 +29,7 @@ final class CatalogOwnerMetadata
             if (! $schema->hasTable($table)) {
                 throw new LogicException("Catalog owner table is missing: {$table}.");
             }
-            foreach (array_intersect($fields, $schema->getColumnListing($table)) as $field) {
+            foreach (array_intersect($fields, array_map(strtolower(...), $schema->getColumnListing($table))) as $field) {
                 $existing[] = "{$table}.{$field}";
             }
         }
@@ -37,6 +37,7 @@ final class CatalogOwnerMetadata
             throw new LogicException('Catalog owner columns already exist. Inspect migration progress before repair: '.implode(', ', $existing));
         }
 
+        self::assertLegacyShape($db);
         self::assertLegacy($db);
         foreach (self::FIELDS as $table => $fields) {
             $schema->table($table, function (Blueprint $blueprint) use ($fields) {
@@ -50,8 +51,42 @@ final class CatalogOwnerMetadata
             });
         }
 
+        self::refresh($db);
+    }
+
+    /** Require the historical expansion contract before final copy and drop. */
+    public static function assertExpanded(Connection $db): void
+    {
+        if (! $db->table('migrations')->where('migration', '2026_11_27_000000_expand_catalog_owner_metadata')->exists()) {
+            throw new LogicException('The Catalog owner expansion is not recorded. Inspect before cutover.');
+        }
+        $contracts = [
+            'state' => ['varchar(10)', false, ['active', "'active'"]],
+            'description' => ['text', true, [null, 'NULL']],
+            'mailing_address' => ['text', false, [self::MISSING_ADDRESS, "'".self::MISSING_ADDRESS."'"]],
+        ];
+        $schema = $db->getSchemaBuilder();
+        foreach (self::FIELDS as $table => $fields) {
+            $columns = array_column($schema->getColumns($table), null, 'name');
+            foreach ($fields as $field) {
+                $column = $columns[$field] ?? null;
+                [$type, $nullable, $defaults] = $contracts[$field];
+                if (! $column || strtolower($column['type']) !== $type || $column['nullable'] !== $nullable
+                    || $column['auto_increment'] || $column['generation'] !== null || ! in_array($column['default'], $defaults, true)) {
+                    throw new LogicException("Expanded Catalog field {$table}.{$field} does not match its contract. Inspect before cutover.");
+                }
+            }
+        }
+    }
+
+    /** Copy the last legacy values and verify them before the legacy table is retired. */
+    public static function refresh(Connection $db): array
+    {
+        self::assertLegacyShape($db);
+
         // MariaDB commits each ALTER independently. Only the value copy and its checks are transactional.
-        $db->transaction(function () use ($db) {
+        return $db->transaction(function () use ($db) {
+            $counts = self::assertLegacy($db);
             $notes = self::itemNotesFingerprint($db);
             foreach (self::FIELDS as $table => $fields) {
                 self::rows($db, $table, $fields)->chunkById(500, function ($rows) use ($db, $table, $fields) {
@@ -67,6 +102,8 @@ final class CatalogOwnerMetadata
             if ($notes !== self::itemNotesFingerprint($db)) {
                 throw new LogicException('Canonical Item notes changed during the Catalog owner copy.');
             }
+
+            return $counts;
         });
     }
 
@@ -112,8 +149,40 @@ final class CatalogOwnerMetadata
                 $join->on('metadata.record_id', '=', 'location.id')->where('metadata.kind', 'storage_locations');
             })
             ->where('location.is_central', true)->where('metadata.state', '<>', 'active')->count();
+        $counts['central_locations'] = $db->table('storage_locations')->where('is_central', true)->count();
 
         return $counts;
+    }
+
+    private static function assertLegacyShape(Connection $db): void
+    {
+        $schema = $db->getSchemaBuilder();
+        $columns = [];
+        foreach ($schema->getColumns('catalog_metadata') as $column) {
+            if ($column['generation'] !== null) {
+                throw new LogicException('The legacy Catalog metadata table has generated columns. Inspect before removal.');
+            }
+            $columns[$column['name']] = [preg_replace('/\bbigint\(\d+\)/', 'bigint', strtolower($column['type'])), $column['nullable'], $column['auto_increment']];
+        }
+        $expected = [
+            'id' => ['bigint unsigned', false, true],
+            'kind' => ['varchar(30)', false, false],
+            'record_id' => ['bigint unsigned', false, false],
+            'state' => ['varchar(10)', false, false],
+            'description' => ['text', true, false],
+            'notes' => ['text', true, false],
+            'created_at' => ['timestamp', true, false],
+            'updated_at' => ['timestamp', true, false],
+            'mailing_address' => ['text', true, false],
+        ];
+        $indexes = $schema->getIndexes('catalog_metadata');
+        $primary = array_column(array_filter($indexes, fn ($index) => $index['primary']), 'columns');
+        $unique = array_column(array_filter($indexes, fn ($index) => $index['unique'] && ! $index['primary']), 'columns');
+        $table = $db->selectOne('SELECT ENGINE AS engine FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', ['catalog_metadata']);
+        if ($columns != $expected || $primary !== [['id']] || $unique !== [['kind', 'record_id']]
+            || $schema->getForeignKeys('catalog_metadata') !== [] || strtolower($table->engine ?? '') !== 'innodb') {
+            throw new LogicException('The legacy Catalog metadata table does not match its historical columns and keys. Inspect before removal.');
+        }
     }
 
     public static function verifyCopy(Connection $db): void
@@ -130,14 +199,17 @@ final class CatalogOwnerMetadata
         }
     }
 
-    private static function assertLegacy(Connection $db): void
+    private static function assertLegacy(Connection $db): array
     {
-        $blocking = array_filter(array_intersect_key(self::legacyAssessment($db), array_flip([
+        $counts = self::legacyAssessment($db);
+        $blocking = array_filter(array_intersect_key($counts, array_flip([
             'unknown_kind', 'orphan', 'invalid_state', 'inactive_central',
         ])));
         if ($blocking !== []) {
             throw new LogicException('Catalog metadata needs inspection: '.json_encode($blocking, JSON_THROW_ON_ERROR));
         }
+
+        return $counts;
     }
 
     private static function rows(Connection $db, string $table, array $fields)

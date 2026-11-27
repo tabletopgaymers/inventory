@@ -1,6 +1,5 @@
 <?php
 
-use App\Support\CatalogSchema;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -109,7 +108,7 @@ return new class extends Migration
         if (! app()->environment('testing')) {
             throw new LogicException('Retain catalog metadata; use compatible source recovery.');
         }
-        foreach (array_reverse(CatalogSchema::TABLES) as $table) {
+        foreach (['inventory_preferences', 'inventory_source_balances', 'inventory_sources', 'item_programs', 'item_metadata', 'catalog_references', 'catalog_names', 'catalog_metadata'] as $table) {
             Schema::dropIfExists($table);
         }
     }

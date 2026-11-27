@@ -82,8 +82,7 @@ class InventorySearchControls
         sort($criteria['columns']);
         $result = app(InventorySearch::class)->results($criteria, naturalNames: true);
         $classifications = DB::table('items')->join('collections', 'collections.id', '=', 'items.collection_id')
-            ->leftJoin('catalog_metadata as metadata', fn ($join) => $join->on('metadata.record_id', '=', 'items.id')->where('metadata.kind', 'items'))
-            ->whereIn('items.id', array_column($result['rows'], 'id'))->select('items.id', 'items.collection_id', 'collections.category_id', DB::raw("COALESCE(metadata.state, 'active') as state"))->get()->keyBy('id');
+            ->whereIn('items.id', array_column($result['rows'], 'id'))->select('items.id', 'items.collection_id', 'collections.category_id', 'items.state')->get()->keyBy('id');
         $allowedKeys = [];
         foreach (app(InventorySearch::class)->columns(false) as $key => $column) {
             if (in_array($this->group($column['kind']), $definition['filters'], true)) $allowedKeys[] = $key;

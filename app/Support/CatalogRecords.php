@@ -50,7 +50,7 @@ class CatalogRecords
     }
 
     /**
-     * Load the records for a supported Catalog kind, including state and metadata where applicable. Use natural name ordering for items when needed.
+     * Load Catalog records and their owned fields. Use natural name ordering for items when needed.
      *
      * Scope: Domain-specific (Catalog)
      * Task: Work with catalog records
@@ -62,9 +62,7 @@ class CatalogRecords
         if (in_array($kind, ['suppliers', 'purposes', 'programs'], true)) {
             return DB::table('catalog_references')->where('kind', $kind)->orderBy('name')->get();
         }
-        $query = DB::table($kind.' as record')->leftJoin('catalog_metadata as metadata', function ($join) use ($kind) {
-            $join->on('metadata.record_id', '=', 'record.id')->where('metadata.kind', $kind);
-        })->select('record.*', DB::raw("COALESCE(metadata.state, 'active') as state"), 'metadata.description', 'metadata.notes', 'metadata.mailing_address');
+        $query = DB::table($kind.' as record');
         if ($kind === 'storage_locations') {
             $query->orderByDesc('record.is_central');
         }
@@ -170,9 +168,13 @@ class CatalogRecords
      */
     public function activeAssociation(string $kind, int $id, ?int $existing = null): void
     {
-        $table = in_array($kind, ['purposes', 'programs', 'suppliers'], true) ? 'catalog_references' : $kind;
-        DB::table($table)->where('id', $id)->lockForUpdate()->firstOrFail();
-        $record = $this->record($kind, $id);
+        abort_unless(isset(self::KINDS[$kind]), 404);
+        $reference = in_array($kind, ['purposes', 'programs', 'suppliers'], true);
+        $owner = DB::table($reference ? 'catalog_references' : $kind)->where('id', $id);
+        if ($reference) {
+            $owner->where('kind', $kind);
+        }
+        $record = $owner->lockForUpdate()->firstOrFail();
         if ($record->state !== 'active' && $id !== $existing) {
             throw ValidationException::withMessages([$kind => 'Choose an active destination. Existing retired associations may be retained.']);
         }

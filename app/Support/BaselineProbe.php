@@ -89,7 +89,8 @@ class BaselineProbe
     public function schemaState($database): array
     {
         $schema = $database->getSchemaBuilder();
-        $tables = $schema->getTableListing(null, false);
+        $name = in_array($database->getDriverName(), ['mysql', 'mariadb'], true) ? $database->getDatabaseName() : null;
+        $tables = $schema->getTableListing($name, false);
         $authentication = [
             'users' => ['id', 'first_name', 'last_name', 'provider_email', 'enabled', 'created_at', 'updated_at'],
             'external_identities' => ['id', 'user_id', 'provider', 'tenant_id', 'object_id', 'created_at', 'updated_at'],
@@ -140,8 +141,8 @@ class BaselineProbe
         return [
             'authenticationReady' => $authReady,
             'profilePreferencesReady' => $authReady && $preferences['ready'],
-            'inventoryReady' => $inventory['ready'],
-            'catalogReady' => $catalog['ready'],
+            'inventoryReady' => $known && $inventory['ready'] && $catalog['ready'],
+            'catalogReady' => $known && $inventory['ready'] && $catalog['ready'],
             'dailyInventoryReady' => $daily['ready'],
             'requestsReady' => $known && $recorded && $compatible && $requests['ready'] && $daily['ready'],
             'fulfillmentReady' => $known && $recorded && $compatible && $requests['ready'] && $fulfillment['ready'],

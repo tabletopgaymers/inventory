@@ -154,7 +154,7 @@ class RequestValues
     }
 
     /**
-     * Allows null and can retain the exact existing inactive record unless active-only is required. Rechecks the record's state after locking the catalog row and any applicable metadata. Run inside the caller's transaction.
+     * Allows null and can retain the exact existing inactive record unless active-only is required. Rechecks state on the locked owner row inside the caller's transaction.
      *
      * Scope: Domain-specific (Purchase and Relocation)
      * Task: Validate and lock a catalog association
@@ -170,13 +170,12 @@ class RequestValues
         if (! $record || ($record->state !== 'active' && ($requireActive || $id !== $existing))) {
             throw ValidationException::withMessages([$field => 'Choose an active '.$kind.' record. Saved retired associations can be retained in a draft.']);
         }
-        $table = $kind === 'suppliers' ? 'catalog_references' : $kind;
-        DB::table($table)->where('id', $id)->lockForUpdate()->firstOrFail();
-        // Re-read metadata under its row lock after locking the catalog record.
-        if ($kind !== 'suppliers') {
-            DB::table('catalog_metadata')->where('kind', $kind)->where('record_id', $id)->lockForUpdate()->first();
+        $reference = in_array($kind, ['suppliers', 'purposes', 'programs'], true);
+        $owner = DB::table($reference ? 'catalog_references' : $kind)->where('id', $id);
+        if ($reference) {
+            $owner->where('kind', $kind);
         }
-        $record = $records->records($kind)->firstWhere('id', $id);
+        $record = $owner->lockForUpdate()->first();
         if (! $record || ($record->state !== 'active' && ($requireActive || $id !== $existing))) {
             throw ValidationException::withMessages([$field => 'That selection is no longer active. Reload the catalog choices.']);
         }

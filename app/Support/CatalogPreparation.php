@@ -2,13 +2,12 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class CatalogPreparation
 {
     /**
-     * Run the guarded Catalog migration for a compatible setup. The hosted flag is required for development. Returns true when the migration succeeds and readiness is confirmed.
+     * Verify Catalog preparation for the legacy command name. Apply schema changes with the ordered application migrations. The hosted flag is required for development.
      *
      * Scope: Domain-specific (Setup and readiness)
      * Task: Prepare catalog schema
@@ -20,12 +19,6 @@ class CatalogPreparation
         if (! $probe->inspect()['ready'] || (app()->environment('development') && ! $hosted)) {
             return false;
         }
-        $state = $probe->schemaState(DB::connection());
-        if (! $state['inventoryReady'] || ! $state['canPrepare']) {
-            return false;
-        }
-
-        return Artisan::call('migrate', ['--force' => true, '--no-interaction' => true, '--path' => 'database/migrations/'.CatalogSchema::MIGRATION.'.php']) === 0
-            && $probe->schemaState(DB::connection())['catalogReady'];
+        return $probe->schemaState(DB::connection())['catalogReady'];
     }
 }

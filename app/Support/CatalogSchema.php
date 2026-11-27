@@ -2,13 +2,14 @@
 
 namespace App\Support;
 
-/** Additive Catalog schema contract. Existing stock tables remain unchanged. */
+/** Current Catalog schema and cutover ledger contract. */
 class CatalogSchema
 {
     public const MIGRATION = '2026_10_06_010000_create_catalog_tables';
     public const PURPOSE_DETAILS_MIGRATION = '2026_11_09_220000_add_purpose_details_to_catalog_references';
+    public const OWNER_CUTOVER_MIGRATION = '2026_11_27_010000_finish_catalog_owner_metadata';
 
-    public const TABLES = ['catalog_metadata', 'catalog_names', 'catalog_references', 'item_metadata', 'item_programs', 'inventory_sources', 'inventory_source_balances', 'inventory_preferences'];
+    public const TABLES = ['catalog_names', 'catalog_references', 'item_metadata', 'item_programs', 'inventory_sources', 'inventory_source_balances', 'inventory_preferences'];
 
     /**
      * Catalog schema audit used by BaselineProbe. It compares the live tables and recorded migrations against the Catalog contract.
@@ -21,14 +22,15 @@ class CatalogSchema
         $present = array_intersect(self::TABLES, $tables);
         $recorded = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::MIGRATION)->exists();
         $purposeDetails = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::PURPOSE_DETAILS_MIGRATION)->exists();
+        $cutover = in_array('migrations', $tables, true) && $database->table('migrations')->where('migration', self::OWNER_CUTOVER_MIGRATION)->exists();
         if ($present === []) {
-            return ['compatible' => ! $recorded && ! $purposeDetails, 'ready' => false];
+            return ['compatible' => ! $recorded && ! $purposeDetails && ! $cutover, 'ready' => false];
         }
-        if (count($present) !== count(self::TABLES) || ! $recorded) {
+        if (count($present) !== count(self::TABLES) || ! $recorded || ! $purposeDetails || ! $cutover) {
             return ['compatible' => false, 'ready' => false];
         }
         $schema = $database->getSchemaBuilder();
-        foreach ($this->columns($purposeDetails) as $table => $columns) {
+        foreach ($this->columns() as $table => $columns) {
             $actual = [];
             foreach ($schema->getColumns($table) as $column) {
                 $actual[$column['name']] = [preg_replace('/\b(bigint|int)\(\d+\)/', '$1', strtolower($column['type'])), $column['nullable']];
@@ -84,17 +86,14 @@ class CatalogSchema
         return ['compatible' => true, 'ready' => true];
     }
 
-    private function columns(bool $purposeDetails): array
+    private function columns(): array
     {
         $id = ['bigint unsigned', false];
         $text = ['varchar(255)', true];
         $timestamps = ['created_at' => ['timestamp', true], 'updated_at' => ['timestamp', true]];
-        $purposeColumns = $purposeDetails ? ['description' => ['text', true], 'examples' => ['text', true]] : [];
+        $purposeColumns = ['description' => ['text', true], 'examples' => ['text', true]];
 
         return [
-            // TODO: Retire unused Notes for category, collection and location records.
-            // Description is validated as single-line text; mailing_address allows line breaks.
-            'catalog_metadata' => ['id' => $id, 'kind' => ['varchar(30)', false], 'record_id' => $id, 'state' => ['varchar(10)', false], 'description' => ['text', true], 'notes' => ['text', true], 'mailing_address' => ['text', true]] + $timestamps,
             'catalog_names' => ['id' => $id, 'kind' => ['varchar(30)', false], 'parent_id' => $id, 'name' => ['varchar(255)', false], 'record_id' => $id],
             'catalog_references' => ['id' => $id, 'kind' => ['varchar(30)', false], 'name' => ['varchar(255)', false], 'state' => ['varchar(10)', false], 'contact_name' => $text, 'email' => $text, 'phone' => $text, 'website' => $text, 'address' => ['text', true], 'notes' => ['text', true]] + $timestamps + $purposeColumns,
             'item_metadata' => ['item_id' => $id, 'variety' => $text, 'purpose_id' => ['bigint unsigned', true], 'bundle_type' => $text, 'bundle_quantity' => ['int unsigned', true], 'irs_fmv' => ['decimal(24,12)', true], 'in_person_ask' => ['decimal(24,12)', true], 'online_ask' => ['decimal(24,12)', true], 'notes' => ['text', true]] + $timestamps,
@@ -107,11 +106,11 @@ class CatalogSchema
 
     private function unique(): array
     {
-        return ['catalog_metadata' => ['id', 'kind,record_id'], 'catalog_names' => ['id', 'kind,parent_id,name', 'kind,record_id'], 'catalog_references' => ['id', 'kind,name'], 'item_metadata' => ['item_id'], 'item_programs' => ['item_id,program_id'], 'inventory_sources' => ['id', 'kind,name'], 'inventory_source_balances' => ['id', 'item_id,source_id'], 'inventory_preferences' => ['user_id']];
+        return ['catalog_names' => ['id', 'kind,parent_id,name', 'kind,record_id'], 'catalog_references' => ['id', 'kind,name'], 'item_metadata' => ['item_id'], 'item_programs' => ['item_id,program_id'], 'inventory_sources' => ['id', 'kind,name'], 'inventory_source_balances' => ['id', 'item_id,source_id'], 'inventory_preferences' => ['user_id']];
     }
 
     private function foreign(): array
     {
-        return ['catalog_metadata' => [], 'catalog_names' => [], 'catalog_references' => [], 'item_metadata' => ['item_id:items:id', 'purpose_id:catalog_references:id'], 'item_programs' => ['item_id:items:id', 'program_id:catalog_references:id'], 'inventory_sources' => [], 'inventory_source_balances' => ['item_id:items:id', 'source_id:inventory_sources:id'], 'inventory_preferences' => ['user_id:users:id']];
+        return ['catalog_names' => [], 'catalog_references' => [], 'item_metadata' => ['item_id:items:id', 'purpose_id:catalog_references:id'], 'item_programs' => ['item_id:items:id', 'program_id:catalog_references:id'], 'inventory_sources' => [], 'inventory_source_balances' => ['item_id:items:id', 'source_id:inventory_sources:id'], 'inventory_preferences' => ['user_id:users:id']];
     }
 }

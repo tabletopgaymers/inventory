@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Support\CatalogRecords;
+use App\Support\CatalogSchema;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -18,6 +19,10 @@ class CatalogSeeder extends Seeder
         $connection = DB::connection();
         if (! in_array($connection->getConfig('driver'), ['mysql', 'mariadb'], true)) {
             throw new LogicException('Catalog seeding requires the configured MySQL/MariaDB database connection.');
+        }
+        if (! $connection->getSchemaBuilder()->hasTable('migrations')
+            || ! $connection->table('migrations')->where('migration', CatalogSchema::OWNER_CUTOVER_MIGRATION)->exists()) {
+            throw new LogicException('Run the ordered application migrations before catalog seeding.');
         }
         $rows = $this->readRows($file ?? database_path('fixtures/catalog.csv'));
 
@@ -52,14 +57,18 @@ class CatalogSeeder extends Seeder
                     $classifications[$collection] = $classification;
                 }
                 $item = $this->record('items', ['sku' => $row['Sku']], ['collection_id' => $collection, 'name' => $row['Item'], 'sku_suffix' => $row['SkuPost'], 'unit_cost' => '0'], $created);
-                $this->metadata('categories', $category, ['description' => $row['CategoryDescription'] ?? null]);
-                $this->metadata('collections', $collection, ['description' => $row['CollectionDescription'] ?? null]);
-                $this->metadata('items', $item, ['description' => $row['ItemDescription'] ?? null, 'notes' => $row['Notes'] ?? null]);
+                $this->description('categories', $category, $row['CategoryDescription'] ?? null);
+                $this->description('collections', $collection, $row['CollectionDescription'] ?? null);
+                // ItemDescription is accepted in legacy exports. Item Notes have a separate owner.
                 $details = array_filter(['notes' => $row['Notes'] ?? null, 'variety' => $row['Variety'] ?? null], fn ($value) => $value !== null && $value !== '');
-                if (! DB::table('item_metadata')->where('item_id', $item)->exists()) {
+                $existingDetails = DB::table('item_metadata')->where('item_id', $item)->lockForUpdate()->first();
+                if (! $existingDetails) {
                     DB::table('item_metadata')->insert(['item_id' => $item, 'created_at' => now('UTC'), 'updated_at' => now('UTC')] + $details);
-                } elseif ($details !== []) {
-                    DB::table('item_metadata')->where('item_id', $item)->update($details + ['updated_at' => now('UTC')]);
+                } else {
+                    $changes = array_filter($details, fn ($value, $key) => $existingDetails->$key !== $value, ARRAY_FILTER_USE_BOTH);
+                    if ($changes !== []) {
+                        DB::table('item_metadata')->where('item_id', $item)->update($changes + ['updated_at' => now('UTC')]);
+                    }
                 }
             }
             foreach ($classifications as $collection => $classification) {
@@ -113,10 +122,12 @@ class CatalogSeeder extends Seeder
                     throw new LogicException("Catalog row {$line} has the wrong number of columns.");
                 }
                 $row = array_combine($header, $values);
+                unset($row['ItemDescription']);
                 $rules = array_fill_keys(['Category', 'Collection', 'Item'], ['required', 'string', 'max:255']);
                 $rules += array_fill_keys(['SkuPre', 'SkuPost'], ['required', 'string', 'max:50', 'regex:/\A[A-Za-z0-9_-]+\z/D']);
                 $rules['Sku'] = ['required', 'string', 'max:101'];
                 foreach (self::OPTIONAL as $field) {
+                    if ($field === 'ItemDescription') continue;
                     $rules[$field] = ['nullable', 'string', 'max:'.(in_array($field, ['Variety', 'CollectionPurpose', 'CollectionProgram'], true) ? '255' : '5000')];
                 }
                 if ($hasClassification) {
@@ -142,7 +153,7 @@ class CatalogSeeder extends Seeder
                 }
                 // Repeated category/collection descriptions must agree within a file.
                 foreach (['CategoryDescription' => $row['Category'], 'CollectionDescription' => $key] as $field => $identity) {
-                    if (($row[$field] ?? '') !== '') {
+                    if (trim($row[$field] ?? '') !== '') {
                         $descriptionKey = $field.':'.$identity;
                         if (isset($descriptions[$descriptionKey]) && $descriptions[$descriptionKey] !== $row[$field]) {
                             throw new LogicException("Catalog row {$line} has conflicting descriptions.");
@@ -206,14 +217,14 @@ class CatalogSeeder extends Seeder
         return $id;
     }
 
-    private function metadata(string $kind, int $id, array $fields): void
+    private function description(string $table, int $id, ?string $description): void
     {
-        $identity = ['kind' => $kind, 'record_id' => $id];
-        $fields = array_filter($fields, fn ($value) => $value !== null && $value !== '');
-        if (! DB::table('catalog_metadata')->where($identity)->exists()) {
-            DB::table('catalog_metadata')->insert($identity + $fields + ['state' => 'active', 'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
-        } elseif ($fields !== []) {
-            DB::table('catalog_metadata')->where($identity)->update($fields + ['updated_at' => now('UTC')]);
+        if ($description === null || trim($description) === '') {
+            return;
+        }
+        $owner = DB::table($table)->where('id', $id);
+        if ($owner->value('description') !== $description) {
+            $owner->update(['description' => $description, 'updated_at' => now('UTC')]);
         }
     }
 }

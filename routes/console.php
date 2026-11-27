@@ -63,15 +63,15 @@ Artisan::command('catalog:prepare {--hosted}', function () {
         if (! app(CatalogPreparation::class)->prepare((bool) $this->option('hosted'))) {
             throw new RuntimeException;
         }
-        $this->info('Additive catalog schema verified; existing stock/history retained.');
+        $this->info('Catalog schema verified; this compatibility command made no changes.');
 
         return 0;
     } catch (Throwable) {
-        $this->error('Catalog preparation failed; retain data for inspection and forward repair. Activation must stop.');
+        $this->error('Catalog is not ready. Inspect the target and follow the documented ordered migration procedure.');
 
         return 1;
     }
-})->purpose('Guarded forward additive Phase 5 migration only');
+})->purpose('Read-only compatibility check for Catalog preparation');
 
 Artisan::command('catalog:check', function () {
     try {
@@ -79,7 +79,7 @@ Artisan::command('catalog:check', function () {
         if (! $probe->inspect()['ready'] || ! $probe->schemaState(DB::connection())['catalogReady']) {
             throw new RuntimeException;
         }
-        $this->info('Exact additive catalog schema and migration record verified.');
+        $this->info('Exact Catalog schema and cutover migration verified.');
 
         return 0;
     } catch (Throwable) {
@@ -94,15 +94,15 @@ Artisan::command('inventory:prepare {--hosted}', function () {
         if (! app(InventoryPreparation::class)->prepare((bool) $this->option('hosted'))) {
             throw new RuntimeException;
         }
-        $this->info('Inventory schema verified.');
+        $this->info('Inventory schema verified; this compatibility command made no changes.');
 
         return 0;
     } catch (Throwable) {
-        $this->error('Inventory preparation failed; retain data for inspection and forward repair. Activation must stop.');
+        $this->error('Inventory is not ready. Inspect the target and follow the documented ordered migration procedure.');
 
         return 1;
     }
-})->purpose('Guarded forward correction-slice migration only');
+})->purpose('Read-only compatibility check for Inventory preparation');
 
 Artisan::command('inventory:check', function () {
     try {

@@ -41,6 +41,14 @@ On a platform such as Laravel Forge, prepare the new release before activating i
 
 For the release footer, supply `APP_BRANCH` and the full `APP_REVISION` from the intended branch and actual checkout before caching configuration. Keep deployment hooks and credentials private.
 
+### Catalog owner-field cutover
+
+Catalog lifecycle state belongs to categories, collections, items and storage locations. Categories, collections and locations own their descriptions. Locations own their required mailing address and default to `address missing` where no address was supplied. Item Notes stay in `item_metadata`.
+
+For an upgrade that includes the Catalog owner migrations, verify a recoverable database backup, stop web and background writes, and keep the site in maintenance until the new release passes its checks. The usual build-before-activation instructions still apply to dependency and asset preparation. Use the ordinary ordered `php artisan migrate --force` path for the database cutover. The final migration refreshes the owner values from the legacy table, verifies the copy, records aggregate counts of retired values, and removes the legacy table. Both owner migrations must be recorded and `catalog_metadata` must be absent before traffic resumes. Run `php artisan baseline:schema`, `php artisan inventory:check`, and `php artisan catalog:check` against the intended database.
+
+`inventory:prepare` and `catalog:prepare` are read-only compatibility commands. For fresh installs use the full ordered migration chain. If the upgrade stops after any schema change, keep maintenance active and inspect the table shape and migration ledger against the backup. MariaDB may commit the schema change before the migration is recorded. A source rollback alone cannot recover retired Catalog data.
+
 ## Contributor checks
 
 Two focused PHP checks cover Style Guide route visibility and account access,

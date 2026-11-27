@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\CatalogSchema;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -13,8 +14,13 @@ class LocationSeeder extends Seeder
 
     public function run(?string $file = null): array
     {
-        if (! in_array(DB::connection()->getConfig('driver'), ['mysql', 'mariadb'], true)) {
+        $connection = DB::connection();
+        if (! in_array($connection->getConfig('driver'), ['mysql', 'mariadb'], true)) {
             throw new LogicException('Location seeding requires the configured MySQL/MariaDB connection.');
+        }
+        if (! $connection->getSchemaBuilder()->hasTable('migrations')
+            || ! $connection->table('migrations')->where('migration', CatalogSchema::OWNER_CUTOVER_MIGRATION)->exists()) {
+            throw new LogicException('Run the ordered application migrations before location seeding.');
         }
         $rows = $this->readRows($file ?? database_path('fixtures/locations.csv'));
 
@@ -45,8 +51,11 @@ class LocationSeeder extends Seeder
             $summary = ['rows' => count($rows), 'created' => 0, 'updated' => 0, 'unchanged' => 0];
             foreach ($plans as [$row, $existing]) {
                 $now = now('UTC');
-                $id = $existing ? (int) $existing->id : (int) DB::table('storage_locations')->insertGetId([
+                $fields = ['mailing_address' => $row['mailing_address']];
+                if ($row['description'] !== '') $fields['description'] = $row['description'];
+                $id = $existing ? (int) $existing->id : (int) DB::table('storage_locations')->insertGetId($fields + [
                     'name' => $row['name'], 'is_central' => $row['is_central'], 'created_at' => $now, 'updated_at' => $now,
+                    'state' => $row['status'],
                 ]);
                 $identity = ['kind' => 'storage_locations', 'record_id' => $id];
                 $registry = DB::table('catalog_names')->where($identity)->lockForUpdate()->first();
@@ -57,19 +66,13 @@ class LocationSeeder extends Seeder
                 } elseif ((int) $registry->parent_id !== 0 || $registry->name !== ($existing->name ?? $row['name'])) {
                     throw new LogicException('Existing location name registry conflicts with the location; no locations changed.');
                 }
-                $metadata = DB::table('catalog_metadata')->where($identity)->lockForUpdate()->first();
-                if ($row['is_central'] && $metadata && $metadata->state !== 'active') {
+                if ($row['is_central'] && $existing && $existing->state !== 'active') {
                     throw new LogicException('The existing Central location must be active; no locations changed.');
                 }
-                $fields = ['mailing_address' => $row['mailing_address']];
-                if ($row['description'] !== '') $fields['description'] = $row['description'];
-                if (! $metadata) {
-                    DB::table('catalog_metadata')->insert($identity + $fields + ['state' => $row['status'], 'created_at' => $now, 'updated_at' => $now]);
-                    $changed = true;
-                } else {
-                    $changes = array_filter($fields, fn ($value, $key) => $metadata->{$key} !== $value, ARRAY_FILTER_USE_BOTH);
+                if ($existing) {
+                    $changes = array_filter($fields, fn ($value, $key) => $existing->$key !== $value, ARRAY_FILTER_USE_BOTH);
                     if ($changes !== []) {
-                        DB::table('catalog_metadata')->where('id', $metadata->id)->update($changes + ['updated_at' => $now]);
+                        DB::table('storage_locations')->where('id', $id)->update($changes + ['updated_at' => $now]);
                         $changed = true;
                     }
                 }

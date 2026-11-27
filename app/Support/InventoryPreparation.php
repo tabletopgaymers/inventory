@@ -2,13 +2,12 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class InventoryPreparation
 {
     /**
-     * Run the guarded inventory migration after prerequisite readiness and compatibility checks pass. Development requires the hosted flag.
+     * Verify Inventory preparation for the legacy command name. Apply schema changes with the ordered application migrations. Development requires the hosted flag.
      *
      * Scope: Domain-specific (Setup and readiness)
      * Task: Prepare inventory schema
@@ -21,12 +20,8 @@ class InventoryPreparation
             return false;
         }
         $state = $probe->schemaState(DB::connection());
-        if (! $state['authenticationReady'] || ! $state['canPrepare']) {
-            return false;
-        }
 
-        return Artisan::call('migrate', ['--force' => true, '--no-interaction' => true, '--path' => 'database/migrations/'.InventorySchema::MIGRATION.'.php']) === 0
-            && $probe->schemaState(DB::connection())['inventoryReady'];
+        return $state['inventoryReady'] && $state['catalogReady'];
     }
 
     /**
