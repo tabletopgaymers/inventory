@@ -29,7 +29,9 @@
     background-color: var(--app-surface);
     color: var(--app-text);
     scrollbar-color: currentColor transparent;
-    scrollbar-color: color-mix(in oklch, currentColor 35%, transparent) transparent;
+  }
+  @supports (scrollbar-color: color-mix(in oklch, currentColor 35%, transparent) transparent) {
+    :root { scrollbar-color: color-mix(in oklch, currentColor 35%, transparent) transparent; }
   }
 }
 

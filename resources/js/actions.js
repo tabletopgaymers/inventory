@@ -4,6 +4,7 @@
  *
  * Scope: Shared
  * Task: Create a button from the shared action style
+ * @param {{variant?: string, control?: (string|null), text?: string}} [options]
  * @example resources/js/item-list-picker.js
  */
 export function createAction({ variant = 'secondary', control = null, text = '' } = {}) {

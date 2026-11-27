@@ -6,6 +6,12 @@ const instances = new WeakMap();
  *
  * Scope: Shared
  * Task: Activate and navigate workflow tabs
+ * @param {Element} root
+ * @param {Object} [options]
+ * @param {string} [options.initialKey]
+ * @param {string} [options.queryParam]
+ * @param {string[]} [options.removeQueryParams]
+ * @param {function(string, HTMLButtonElement): void} [options.onChange] Receives the active key and its tab button.
  * @example resources/js/relocation.js
  */
 export function mountTabs(root, { initialKey, queryParam = 'tab', removeQueryParams = [], onChange = () => {} } = {}) {
