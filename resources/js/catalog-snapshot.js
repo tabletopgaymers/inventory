@@ -9,14 +9,23 @@
 export const CATALOG_MAX_AGE_MS = 15 * 60 * 1000;
 const version = 1;
 const id = value => Number.isSafeInteger(value) && value > 0;
+const quantity = value => (typeof value === 'number' || (typeof value === 'string' && /^-?\d+$/.test(value)))
+    && Number.isSafeInteger(Number(value));
 const rows = (value, valid) => Array.isArray(value) && value.every(valid);
-const validCatalog = data => data && typeof data === 'object'
-    && rows(data.categories, row => row && id(row.id) && typeof row.name === 'string')
-    && rows(data.collections, row => row && id(row.id) && id(row.category_id) && typeof row.name === 'string' && typeof row.sku_prefix === 'string')
-    && rows(data.items, row => row && id(row.id) && id(row.collection_id) && typeof row.name === 'string' && typeof row.sku === 'string')
-    && rows(data.locations, row => row && id(row.id) && typeof row.name === 'string')
-    && rows(data.inventory, row => row && id(row.item_id) && id(row.storage_location_id) && Number.isSafeInteger(Number(row.quantity)))
-    && (data.central_id === null || id(data.central_id));
+const validCatalog = data => {
+    if (!data || typeof data !== 'object'
+        || !rows(data.categories, row => row && id(row.id) && typeof row.name === 'string')
+        || !rows(data.collections, row => row && id(row.id) && id(row.category_id) && typeof row.name === 'string' && typeof row.sku_prefix === 'string')
+        || !Array.isArray(data.items)
+        || !rows(data.locations, row => row && id(row.id) && typeof row.name === 'string')
+        || !rows(data.inventory, row => row && id(row.item_id) && id(row.storage_location_id) && quantity(row.quantity))
+        || (data.central_id !== null && !id(data.central_id))) return false;
+
+    // The picker groups every selected item under its collection.
+    const collectionIds = new Set(data.collections.map(row => row.id));
+    return data.items.every(row => row && id(row.id) && collectionIds.has(row.collection_id)
+        && typeof row.name === 'string' && typeof row.sku === 'string');
+};
 
 /**
  * Loads a validated per-user snapshot from browser storage or a same-origin JSON endpoint. Force refresh to bypass reuse. Reports cache and storage status and leaves item selections to the caller.
