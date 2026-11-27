@@ -9,6 +9,8 @@ class InventorySchema
 
     public const CLASSIFICATION_MIGRATION = '2026_11_09_231000_add_collection_classifications';
 
+    public const CATALOG_OWNER_MIGRATION = '2026_11_27_000000_expand_catalog_owner_metadata';
+
     public const TABLES = ['categories', 'collections', 'items', 'storage_locations', 'inventory_balances', 'inventory_adjustments', 'inventory_adjustment_entries'];
 
     /**
@@ -24,14 +26,16 @@ class InventorySchema
             && $database->table('migrations')->where('migration', self::MIGRATION)->exists();
         $classified = in_array('migrations', $tables, true)
             && $database->table('migrations')->where('migration', self::CLASSIFICATION_MIGRATION)->exists();
+        $catalogOwnersExpanded = in_array('migrations', $tables, true)
+            && $database->table('migrations')->where('migration', self::CATALOG_OWNER_MIGRATION)->exists();
         if ($present === []) {
-            return ['compatible' => ! $recorded && ! $classified, 'ready' => false];
+            return ['compatible' => ! $recorded && ! $classified && ! $catalogOwnersExpanded, 'ready' => false];
         }
         if (count($present) !== count(self::TABLES) || ! $recorded) {
             return ['compatible' => false, 'ready' => false];
         }
         $schema = $database->getSchemaBuilder();
-        foreach ($this->contract($classified) as $table => $expected) {
+        foreach ($this->contract($classified, $catalogOwnersExpanded) as $table => $expected) {
             $actual = [];
             foreach ($schema->getColumns($table) as $column) {
                 $actual[$column['name']] = [
@@ -85,7 +89,7 @@ class InventorySchema
         return ['compatible' => true, 'ready' => true];
     }
 
-    private function contract(bool $classified): array
+    private function contract(bool $classified, bool $catalogOwnersExpanded): array
     {
         $id = ['bigint unsigned', false, true];
         $reference = ['bigint unsigned', false, false];
@@ -95,12 +99,15 @@ class InventorySchema
         $timestamps = ['created_at' => ['timestamp', true, false], 'updated_at' => ['timestamp', true, false]];
         $classificationColumns = $classified ? array_fill_keys(['purpose_id', 'program_id'], ['bigint unsigned', true, false]) : [];
         $classificationKeys = $classified ? ['purpose_id:catalog_references:id', 'program_id:catalog_references:id'] : [];
+        $state = $catalogOwnersExpanded ? ['state' => ['varchar(10)', false, false]] : [];
+        $description = $catalogOwnersExpanded ? ['description' => ['text', true, false]] : [];
+        $address = $catalogOwnersExpanded ? ['mailing_address' => ['text', false, false]] : [];
 
         return [
-            'categories' => ['columns' => ['id' => $id, 'name' => $name] + $timestamps, 'unique' => ['id'], 'foreign' => []],
-            'collections' => ['columns' => ['id' => $id, 'category_id' => $reference, 'name' => $name, 'sku_prefix' => ['varchar(50)', false, false]] + $timestamps + $classificationColumns, 'unique' => ['id'], 'foreign' => ['category_id:categories:id', ...$classificationKeys]],
-            'items' => ['columns' => ['id' => $id, 'collection_id' => $reference, 'name' => $name, 'sku_suffix' => ['varchar(50)', false, false], 'sku' => ['varchar(101)', false, false], 'unit_cost' => $cost] + $timestamps, 'unique' => ['id', 'sku'], 'foreign' => ['collection_id:collections:id']],
-            'storage_locations' => ['columns' => ['id' => $id, 'name' => $name, 'is_central' => ['tinyint(1)', false, false]] + $timestamps, 'unique' => ['id'], 'foreign' => []],
+            'categories' => ['columns' => ['id' => $id, 'name' => $name] + $timestamps + $state + $description, 'unique' => ['id'], 'foreign' => []],
+            'collections' => ['columns' => ['id' => $id, 'category_id' => $reference, 'name' => $name, 'sku_prefix' => ['varchar(50)', false, false]] + $timestamps + $classificationColumns + $state + $description, 'unique' => ['id'], 'foreign' => ['category_id:categories:id', ...$classificationKeys]],
+            'items' => ['columns' => ['id' => $id, 'collection_id' => $reference, 'name' => $name, 'sku_suffix' => ['varchar(50)', false, false], 'sku' => ['varchar(101)', false, false], 'unit_cost' => $cost] + $timestamps + $state, 'unique' => ['id', 'sku'], 'foreign' => ['collection_id:collections:id']],
+            'storage_locations' => ['columns' => ['id' => $id, 'name' => $name, 'is_central' => ['tinyint(1)', false, false]] + $timestamps + $state + $description + $address, 'unique' => ['id'], 'foreign' => []],
             'inventory_balances' => ['columns' => ['id' => $id, 'item_id' => $reference, 'storage_location_id' => $reference, 'quantity' => $quantity] + $timestamps, 'unique' => ['id', 'item_id,storage_location_id'], 'foreign' => ['item_id:items:id', 'storage_location_id:storage_locations:id']],
             'inventory_adjustments' => ['columns' => ['id' => $id, 'operation_id' => ['char(36)', false, false], 'actor_id' => $reference, 'item_id' => $reference, 'actor_name' => $name, 'item_name' => $name, 'item_sku' => ['varchar(101)', false, false], 'posted_at' => ['timestamp', false, false]], 'unique' => ['id', 'operation_id'], 'foreign' => ['actor_id:users:id', 'item_id:items:id']],
             'inventory_adjustment_entries' => ['columns' => ['id' => $id, 'inventory_adjustment_id' => $reference, 'storage_location_id' => $reference, 'location_name' => $name, 'description' => ['varchar(300)', false, false], 'before_quantity' => $quantity, 'after_quantity' => $quantity, 'quantity_change' => $quantity, 'unit_cost' => $cost, 'rationale' => ['varchar(1000)', true, false]], 'unique' => ['id', 'inventory_adjustment_id,storage_location_id'], 'foreign' => ['inventory_adjustment_id:inventory_adjustments:id', 'storage_location_id:storage_locations:id']],
