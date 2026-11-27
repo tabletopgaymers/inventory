@@ -14,6 +14,19 @@ export function mountSearchPersistence(root, config, {criteria, apply, changed})
     const notice = root.querySelector('[data-is-persistence-feedback]');
     let timer, queue = Promise.resolve(), navigating = false;
     const report = text => { notice.textContent = text; notice.hidden = !text; };
+    let endpoint = null;
+    if (config.endpoint !== undefined && config.endpoint !== null) {
+        if (typeof config.endpoint === 'string' && config.endpoint.trim()) {
+            try {
+                const url = new URL(config.endpoint, location.href);
+                if (url.protocol === location.protocol && url.origin === location.origin && !url.username && !url.password) endpoint = url;
+            } catch { /* Invalid preference configuration does not prevent searching. */ }
+        }
+        if (!endpoint) {
+            report('Search settings could not be remembered. Searching is still available.');
+            return null;
+        }
+    }
     const read = () => {
         try { return JSON.parse(localStorage.getItem(storageKey)); } catch { return null; }
     };
@@ -41,11 +54,6 @@ export function mountSearchPersistence(root, config, {criteria, apply, changed})
         data.set('destination', '');
         return data;
     };
-    let endpoint = null;
-    if (config.endpoint) {
-        endpoint = new URL(config.endpoint, location.href);
-        if (endpoint.origin !== location.origin) throw new Error('Search persistence must use this site.');
-    }
     const save = () => {
         remember();
         if (!endpoint) return Promise.resolve();
