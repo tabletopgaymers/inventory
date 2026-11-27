@@ -6,6 +6,17 @@ import '../inventory-search-controls.js';
  *
  * Scope: Domain-specific (Purchase)
  * Task: Attach purchase search and material selection
+ * @param {Object} options
+ * @param {Element} options.root
+ * @param {HTMLTableSectionElement} options.results
+ * @param {HTMLElement} options.feedback
+ * @param {HTMLButtonElement} options.button
+ * @param {function(): Array<number|string>} options.getIds
+ * @param {function(): number} options.getCount
+ * @param {function(Array<{item: Object, quantity: string}>): void} options.onAdd
+ * @param {function(): boolean} [options.isBusy]
+ * @param {string} [options.stage]
+ * @param {function(): string} [options.getDestinationChoice] Enables destination-stock checks on the request form.
  * @example resources/js/purchase-work-invoice.js
  */
 export function mountPurchasePicker({root,results,feedback,button,getIds,getCount,onAdd,isBusy=()=>false,stage='request',getDestinationChoice=null}) {
