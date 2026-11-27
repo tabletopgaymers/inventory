@@ -50,7 +50,7 @@ if (form) {
     location.disabled = true;
     let itemIds = [];
     try { const saved = JSON.parse(itemInput.value); if (Array.isArray(saved)) itemIds = saved; } catch { /* Server validation retains invalid input for correction. */ }
-    mountItemListPicker(root, {
+    void mountItemListPicker(root, {
         persistSelection: false, initialItemIds: itemIds, initialLocationId: location.value,
         onChange: ({selectedItemIds, locationId}) => {
             itemInput.value = JSON.stringify(selectedItemIds);

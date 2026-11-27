@@ -10,35 +10,27 @@ import { loadCatalogSnapshot, CATALOG_MAX_AGE_MS } from './catalog-snapshot.js';
  * Task: Mount a catalog item selection panel
  * @example resources/js/saved-lists.js
  */
-export async function mountItemListPicker(root, {persistSelection = true, initialItemIds = [], initialLocationId, onChange = () => {}, onReady = () => {}} = {}) {
+export function mountItemListPicker(root, options) {
     const container = root.closest('[data-memory-picker]');
-    const showInventory = root.dataset.showInventory !== '0';
     const snapshotLabel = container.querySelector('[data-memory-snapshot]');
-    const showUnavailable = () => {
+    return initializePicker(root, snapshotLabel, options).catch(() => {
+        root.inert = true;
         snapshotLabel.textContent = 'Catalog and inventory unavailable.';
         container.querySelector('[data-memory-load-error]').hidden = false;
         container.querySelector('[data-memory-retry]').addEventListener('click', () => window.location.reload());
-    };
-    let snapshot;
-    let missingSavedLocation;
-    try {
-        const options = {userId: root.dataset.userId, endpoint: root.dataset.catalogUrl};
-        snapshot = await loadCatalogSnapshot(options);
-        // Saved items or a default location can be newer than another page's cache.
-        const requestedLocation = initialLocationId === '' || initialLocationId === null || initialLocationId === undefined ? null : Number(initialLocationId);
-        const missingLocation = () => requestedLocation !== null && !snapshot.catalog.locations.some(row => row.id === requestedLocation);
-        if (!persistSelection && (missingLocation() || initialItemIds.some(id => !snapshot.catalog.items.some(item => item.id === Number(id))))) {
-            snapshot = await loadCatalogSnapshot({...options, refresh: true});
-        }
-        missingSavedLocation = !persistSelection && missingLocation();
-    }
-    catch {
-        showUnavailable();
-        return;
-    }
-    if (missingSavedLocation) {
-        showUnavailable();
-        return;
+    });
+}
+
+async function initializePicker(root, snapshotLabel, {persistSelection = true, initialItemIds = [], initialLocationId, onChange = () => {}, onReady = () => {}} = {}) {
+    const showInventory = root.dataset.showInventory !== '0';
+    const options = {userId: root.dataset.userId, endpoint: root.dataset.catalogUrl};
+    let snapshot = await loadCatalogSnapshot(options);
+    // Saved items or a default location can be newer than another page's cache.
+    const requestedLocation = initialLocationId === '' || initialLocationId === null || initialLocationId === undefined ? null : Number(initialLocationId);
+    const missingLocation = () => requestedLocation !== null && !snapshot.catalog.locations.some(row => row.id === requestedLocation);
+    if (!persistSelection && (missingLocation() || initialItemIds.some(id => !snapshot.catalog.items.some(item => item.id === Number(id))))) {
+        snapshot = await loadCatalogSnapshot({...options, refresh: true});
+        if (missingLocation()) throw new Error('Saved location is missing from the catalog.');
     }
     const catalog = snapshot.catalog;
     const updateSnapshotAge = () => {
@@ -49,7 +41,6 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
             + (!snapshot.persisted ? ' Browser storage is unavailable; this snapshot cannot be reused after leaving.' : '');
     };
     updateSnapshotAge();
-    window.setInterval(updateSnapshotAge, 30000);
     const categories = new Map(catalog.categories.map(row => [row.id, row]));
     const collections = new Map(catalog.collections.map(row => [row.id, row]));
     const items = new Map(catalog.items.map(row => [row.id, row]));
@@ -210,8 +201,6 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
         remember();
     };
     renderResults();
-    input.disabled = false; locationSelect.disabled = false;
-    onReady();
     locationSelect.addEventListener('change', () => {
         selectedLocationId = locationSelect.value ? Number(locationSelect.value) : null;
         renderResults();
@@ -346,4 +335,7 @@ export async function mountItemListPicker(root, {persistSelection = true, initia
             suggestions.hidden = false; input.setAttribute('aria-expanded', 'true'); activate(active);
         }
     });
+    input.disabled = false; locationSelect.disabled = false;
+    onReady();
+    window.setInterval(updateSnapshotAge, 30000);
 }
