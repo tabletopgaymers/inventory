@@ -85,9 +85,14 @@ class CatalogSeeder extends Seeder
             throw new LogicException('Supply a readable UTF-8 catalog CSV file in database/fixtures/catalog.csv, or select one with --file.');
         }
         $handle = fopen('php://temp', 'w+');
-        fwrite($handle, preg_replace('/\A\xEF\xBB\xBF/', '', $contents));
-        rewind($handle);
+        if ($handle === false) {
+            throw new LogicException('Could not open a temporary buffer for the catalog CSV.');
+        }
         try {
+            $csv = str_starts_with($contents, "\xEF\xBB\xBF") ? substr($contents, 3) : $contents;
+            if (fwrite($handle, $csv) !== strlen($csv) || ! rewind($handle)) {
+                throw new LogicException('Could not read the complete catalog CSV from the temporary buffer.');
+            }
             $header = fgetcsv($handle, 0, ',', '"', '');
             if (! is_array($header) || count(array_unique($header)) !== count($header)
                 || array_diff(self::REQUIRED, $header) || array_diff($header, array_merge(self::REQUIRED, self::OPTIONAL))) {
@@ -120,7 +125,7 @@ class CatalogSeeder extends Seeder
                 Validator::make($row, $rules)->validate();
                 if ($hasClassification) {
                     $row['CollectionPurpose'] = trim($row['CollectionPurpose']);
-                    $row['CollectionProgram'] = trim($row['CollectionProgram']);
+                    $row['CollectionProgram'] = trim($row['CollectionProgram'] ?? '');
                 }
                 foreach (self::REQUIRED as $field) {
                     if (trim($row[$field]) !== $row[$field] || trim($row[$field]) === '') {
