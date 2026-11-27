@@ -5,6 +5,10 @@ const instances = new WeakMap();
  *
  * Scope: Shared
  * Task: Move between quantity inputs by keyboard
+ * @param {Element} root
+ * @param {Object} options
+ * @param {function(HTMLInputElement): Iterable<Element|null>} options.resolveFields Ordered candidates. The helper filters unavailable entries.
+ * @param {function(): boolean} [options.isBusy]
  * @example resources/js/location-counts.js
  */
 export function mountQuantityNavigation(root, { resolveFields, isBusy = () => false }) {
