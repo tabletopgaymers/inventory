@@ -92,7 +92,7 @@ class InventoryController
 
                 return $entry;
             });
-            $history = $history->concat($costHistory)->sort(function ($a, $b) use ($sort) {
+            $history = $history->concat($costHistory->all())->sort(function ($a, $b) use ($sort) {
                 if ($sort === 'description') {
                     $description = strnatcasecmp($a->description, $b->description);
                     if ($description !== 0) {
@@ -109,7 +109,7 @@ class InventoryController
 
                 return $entry;
             });
-            $history = $history->concat($requestHistory)->sort(function ($a, $b) use ($sort) {
+            $history = $history->concat($requestHistory->all())->sort(function ($a, $b) use ($sort) {
                 if ($sort === 'description' && ($comparison = strnatcasecmp($a->description, $b->description)) !== 0) {
                     return $comparison;
                 }
@@ -126,7 +126,7 @@ class InventoryController
 
                     return $entry;
                 });
-            $history = $history->concat($eventHistory)->sort(function ($a, $b) use ($sort) {
+            $history = $history->concat($eventHistory->all())->sort(function ($a, $b) use ($sort) {
                 if ($sort === 'description' && ($comparison = strnatcasecmp($a->description, $b->description)) !== 0) {
                     return $comparison;
                 }

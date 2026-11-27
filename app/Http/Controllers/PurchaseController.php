@@ -77,6 +77,12 @@ class PurchaseController
         return redirect('/purchase/work/'.$token.($request->has('tab') ? '?'.http_build_query($request->only('tab', 'mode')) : ''));
     }
 
+    /**
+     * New requests have no record ID until their first save. The Receiving tab assigns its
+     * operation token when opened so retries can use the same token.
+     *
+     * @return array{id: int|null, receiving_operation?: string, ...}
+     */
     private function workspace(Request $request, string $token): array
     {
         abort_unless(Str::isUuid($token), 404);
@@ -264,7 +270,7 @@ class PurchaseController
     {
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
-            abort_unless($work['id'], 404);
+            abort_unless((bool) $work['id'], 404);
             $data = $request->validate(['action' => ['required', 'in:save,complete'], 'received_date' => ['required', 'date_format:Y-m-d']]);
             $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
             $service = app(PurchaseFulfillment::class);
@@ -297,7 +303,7 @@ class PurchaseController
     {
         $this->ready();
         $work = $this->workspace($request, $token);
-        abort_unless($work['id'], 409, 'Save Basic info first.');
+        abort_unless((bool) $work['id'], 409, 'Save Basic info first.');
         $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
         $stage=$request->query('stage','request');
         if ($stage === 'request') abort_unless($row->status === 'Draft' && app(PurchaseRequests::class)->editable($request->user(), $row), 403);
@@ -496,7 +502,7 @@ class PurchaseController
     {
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
-            abort_unless($work['id'], 404);
+            abort_unless((bool) $work['id'], 404);
             $request->validate(['mode' => ['required', 'in:order'], 'action' => ['nullable', 'in:save,next,add,remove,confirm,ship,recalculate,replace_vendor,discard_order'], 'tab' => ['required', 'in:order,invoice,charges,order-review']]);
             $mode = $request->input('mode');
             abort_unless(isset($work['invoices'][$mode]), 404);
@@ -649,7 +655,9 @@ class PurchaseController
     {
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
-            abort_unless($work['id'], 404);
+            if (! $work['id']) {
+                abort(404);
+            }
             app(PurchaseRequests::class)->note((int) $request->user()->id, $work['id'], $request->input('note'));
 
             return back()->with('success', 'Permanent note added.');
@@ -660,7 +668,7 @@ class PurchaseController
     {
         return $this->write($request, function () use ($request, $token) {
             $work = $this->workspace($request, $token);
-            abort_unless($work['id'], 404);
+            abort_unless((bool) $work['id'], 404);
             $request->validate(['action' => ['required', 'in:cancel,backward']]);
             $row = DB::table('purchase_requests')->where('id', $work['id'])->firstOrFail();
             if ($row->status === 'Draft' && $request->input('action') === 'cancel') app(PurchaseRequests::class)->transition((int) $request->user()->id, $row->id, $request->input('revision'), 'cancel');
